@@ -1,0 +1,115 @@
+module Synfini.Mint.Test where
+
+import qualified Daml.Finance.Interface.Account.Account as Account
+import qualified Daml.Finance.Interface.Account.Factory as Account
+import Daml.Finance.Interface.Types.Common.Types
+import qualified Daml.Finance.Interface.Holding.Factory as Holding
+import qualified Daml.Finance.Interface.Holding.Fungible as Fungible
+import qualified Daml.Finance.Interface.Settlement.Batch as Batch
+import qualified Daml.Finance.Interface.Settlement.Factory as Settlement
+
+import qualified Daml.Finance.Account.Account as AccountImpl
+import qualified Daml.Finance.Holding.Fungible as FungibleImpl
+import qualified Daml.Finance.Settlement.Factory as SettlementImpl
+
+import Daml.Script
+import qualified DA.List as L
+import qualified DA.Map as Map
+import qualified DA.Set as Set
+import Synfini.Mint
+
+endToEndTest : Script ()
+endToEndTest = do
+  public <- allocateParty "public"
+  custodian <- allocateParty "custodian"
+  issuer <- allocateParty "issuer"
+  depository <- allocateParty "depository"
+  minter <- allocateParty "minter"
+  burner <- allocateParty "burner"
+  issuerViewer <- allocateParty "issuerViewer"
+  serviceProvider <- allocateParty "serviceProvider"
+  alice <- allocateParty "alice"
+
+  holdingFactoryCid : ContractId Holding.Factory <- fmap toInterfaceContractId . submit custodian $
+    createCmd FungibleImpl.Factory with
+      provider = custodian
+      observers = Map.fromList [("public", Set.fromList [public])]
+  accountFactoryCid : ContractId Account.Factory <- fmap toInterfaceContractId . submit custodian $
+    createCmd AccountImpl.Factory with
+      provider = custodian
+      observers = Map.fromList [("public", Set.fromList [public])]
+  settlementFactoryCid : ContractId Settlement.Factory <- fmap toInterfaceContractId . submit custodian $
+    createCmd SettlementImpl.Factory with
+      provider = custodian
+      observers = Set.fromList [public]
+
+  let supplyAccount = AccountKey with
+        custodian
+        owner = burner
+        id = Id "supply"
+  submitMulti [custodian, burner] [] $ exerciseCmd accountFactoryCid Account.Create with
+    account = supplyAccount
+    controllers = Account.Controllers with
+      incoming = Set.fromList [custodian, minter]
+      outgoing = Set.fromList [custodian, burner]
+    holdingFactoryCid
+    description = "Supply account"
+    observers = Map.fromList [("public", Set.fromList [public])]
+
+  let aliceAccount = AccountKey with
+        custodian
+        owner = alice
+        id = Id "0"
+  submitMulti [custodian, alice] [] $ exerciseCmd accountFactoryCid Account.Create with
+    account = aliceAccount
+    controllers = Account.Controllers with
+      incoming = Set.fromList [serviceProvider]
+      outgoing = Set.fromList [alice]
+    holdingFactoryCid
+    description = "Alice's account"
+    observers = Map.fromList [("Issuer", Set.fromList [issuerViewer])]
+
+  let instrument = InstrumentKey with
+        issuer
+        depository
+        id = Id "MyCoin"
+        version = "0"
+
+  mintCid <- submitMulti [custodian, serviceProvider] [] $ createCmd Mint with
+    custodian
+    minter
+    burner
+    ownerAuthorisers = Set.fromList [serviceProvider]
+    supplyAccountId = supplyAccount.id
+    instrument
+    settlementFactoryCid
+    observers = Set.fromList [public]
+
+  -- BEGIN Minting
+  mintRequest <- submitMulti [alice] [public, issuerViewer] $ exerciseCmd mintCid RequestMint with
+    requestor = alice
+    account = aliceAccount
+    amount = 99.9
+    id = Id "mint1"
+  submitMulti [minter] [public] $ exerciseCmd mintRequest.takeDeliveryDelegationCid PerformTakeDeliveryApproval
+  [aliceHolding, burnerHolding] : [ContractId Fungible.I] <- fmap coerceInterfaceContractId <$>
+    submitMulti [minter] [public, issuerViewer] do
+      exerciseCmd mintRequest.batchCid Batch.Settle with actors = Set.fromList [minter]
+  -- END Minting
+
+  let burnAmount = 9.9
+  aliceSplit <- submit alice $ exerciseCmd aliceHolding Fungible.Split with amounts = [burnAmount]
+
+  -- BEGIN Burning
+  burnRequest <- submitMulti [alice] [public] $ exerciseCmd mintCid RequestBurn with
+    requestor = alice
+    holdingCid = toInterfaceContractId . L.head $ aliceSplit.splitCids
+    id = Id "burn1"
+  burnerSplit <- submit burner $ exerciseCmd burnerHolding Fungible.Split with amounts = [burnAmount]
+  submitMulti [burner] [public, issuerViewer] $
+    exerciseCmd burnRequest.pledgeDelegationCid PerformPledgeAllocation with
+      holdingCid = toInterfaceContractId (L.head burnerSplit.splitCids)
+  submitMulti [burner] [public, issuerViewer] $
+    exerciseCmd burnRequest.batchCid Batch.Settle with actors = Set.fromList [burner]
+  -- END Burning
+  pure ()

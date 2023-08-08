@@ -1,0 +1,12 @@
+sdk-version: 2.6.0
+name: daml-mint
+source: src
+version: 0.0.1
+dependencies:
+  - daml-prim
+  - daml-stdlib
+data-dependencies:
+  - ../.lib/daml-finance-interface-account.dar
+  - ../.lib/daml-finance-interface-holding.dar
+  - ../.lib/daml-finance-interface-settlement.dar
+  - ../.lib/daml-finance-interface-types-common.dar

@@ -1,0 +1,202 @@
+module Synfini.Mint where
+
+import qualified Daml.Finance.Interface.Holding.Base as Holding
+import qualified Daml.Finance.Interface.Settlement.Batch as Batch
+import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
+import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
+import Daml.Finance.Interface.Settlement.Types (Allocation(..), Approval(..), RoutedStep(..))
+import Daml.Finance.Interface.Types.Common.Types
+import DA.Optional (isSome)
+import DA.Set (Set)
+import qualified DA.Set as Set
+
+displayInstrument : InstrumentKey -> Text
+displayInstrument instrument =
+  show instrument.id <>
+  " (version: " <> instrument.version <>
+  ", issuer: " <> show instrument.issuer  <>
+  ", depository: " <> show instrument.depository <> ")" 
+
+data MintRequestResult = MintRequestResult
+  with
+    batchCid : ContractId Batch.I
+    takeDeliveryDelegationCid : ContractId TakeDeliveryDelegation
+  deriving (Show, Eq)
+
+data BurnRequestResult = BurnRequestResult
+  with
+    batchCid : ContractId Batch.I
+    pledgeDelegationCid : ContractId PledgeDelegation
+  deriving (Show, Eq)
+
+template Mint
+  with
+    custodian : Party
+    ownerAuthorisers : Set Party
+    minter : Party
+    burner : Party
+    supplyAccountId : Id
+    instrument : InstrumentKey
+    settlementFactoryCid : ContractId SettlementFactory.I
+    observers : Set Party
+  where
+    signatory custodian, ownerAuthorisers
+
+    observer observers
+
+    nonconsuming choice RequestMint : MintRequestResult
+      with
+        requestor : Party
+        account : AccountKey
+        amount : Decimal
+        id : Id
+      controller requestor
+      do
+        assertMsg "Account must have expected custodian" (account.custodian == custodian)
+        assertMsg "Requestor must be owner or minter" (requestor == account.owner || requestor == minter)
+
+        let actors = Set.fromList [custodian, requestor] <> ownerAuthorisers
+        let quantity = Quantity with unit = instrument, amount
+        let custodianToOwner = RoutedStep with
+              custodian
+              sender = custodian
+              receiver = account.owner
+              quantity
+            custodianToBurner = RoutedStep with
+              custodian
+              sender = custodian
+              receiver = burner
+              quantity
+        (batchCid, [custodianToOwnerCid, custodianToBurnerCid]) <- exercise
+          settlementFactoryCid
+          SettlementFactory.Instruct with
+            instructors = actors
+            settlers = Set.fromList [minter]
+            id
+            description = "Mint: " <> displayInstrument instrument
+            contextId = None
+            routedSteps = [custodianToOwner, custodianToBurner]
+            settlementTime = None
+
+        (allocatedCustodianToOwnerCid, _) <- exercise custodianToOwnerCid Instruction.Allocate with
+          actors
+          allocation = CreditReceiver
+        approvedCustodianToOwnerCid <- exercise allocatedCustodianToOwnerCid Instruction.Approve with
+          actors
+          approval = TakeDelivery account
+
+        (allocatedCustodianToBurnerCid, _) <- exercise custodianToBurnerCid Instruction.Allocate with
+          actors
+          allocation = CreditReceiver
+        takeDeliveryDelegationCid <- create TakeDeliveryDelegation with
+          delegator = custodian
+          delegate = minter
+          instructionCid = allocatedCustodianToBurnerCid
+          account = AccountKey with custodian, owner = burner, id = supplyAccountId
+
+        pure MintRequestResult with
+          batchCid
+          takeDeliveryDelegationCid
+
+    nonconsuming choice RequestBurn : BurnRequestResult
+      with
+        requestor : Party
+        holdingCid : ContractId Holding.I
+        id : Id
+      controller requestor
+      do
+        let actors = Set.fromList [custodian, requestor]
+
+        holdingView <- exercise holdingCid Holding.GetView with viewer = requestor
+        assertMsg "Requestor must be the owner" (holdingView.account.owner == requestor)
+        assertMsg "Must have expected instrument" (holdingView.instrument == instrument)
+        assertMsg "Must have expected custodian" (holdingView.account.custodian == custodian)
+
+        let quantity = Quantity with unit = holdingView.instrument, amount = holdingView.amount
+        let ownerToCustodian = RoutedStep with
+              custodian
+              sender = holdingView.account.owner
+              receiver = custodian
+              quantity
+            burnerToCustodian = RoutedStep with
+              custodian
+              sender = burner
+              receiver = custodian
+              quantity
+        (batchCid, [ownerToCustodianCid, burnerToCustodianCid]) <- exercise
+          settlementFactoryCid
+          SettlementFactory.Instruct with
+            instructors = actors
+            settlers = Set.fromList [burner]
+            id
+            description = "Burn: " <> displayInstrument instrument
+            contextId = None
+            routedSteps = [ownerToCustodian, burnerToCustodian]
+            settlementTime = None
+
+        (allocatedOwnerToCustodianCid, _) <- exercise ownerToCustodianCid Instruction.Allocate with
+          actors
+          allocation = Pledge holdingCid
+
+        -- TODO is the holding lock check needed?
+        Pledge lockedHoldingCid <- (.allocation) <$> exercise allocatedOwnerToCustodianCid Instruction.GetView with
+          viewer = requestor
+        lockedHolding <- exercise lockedHoldingCid Holding.GetView with viewer = requestor
+        let lockOpt = lockedHolding.lock
+        assertMsg "Holding must have lock" (isSome lockOpt)
+        let (Some lock) = lockOpt
+        assertMsg "Holding must be locked by custodian" (Set.member custodian lock.lockers)
+
+        approvedOwnerToCustodianCid <- exercise allocatedOwnerToCustodianCid Instruction.Approve with
+          actors
+          approval = DebitSender
+
+        approvedBurnerToCustodianCid <- exercise burnerToCustodianCid Instruction.Approve with
+          actors
+          approval = DebitSender
+
+        pledgeDelegationCid <- create PledgeDelegation with
+          delegator = custodian
+          delegate = burner
+          instructionCid = approvedBurnerToCustodianCid
+
+        pure BurnRequestResult with
+          batchCid
+          pledgeDelegationCid
+
+template TakeDeliveryDelegation
+  with
+    delegator : Party
+    delegate : Party
+    instructionCid : ContractId Instruction.I
+    account : AccountKey
+  where
+    signatory delegator
+
+    observer delegate
+
+    choice PerformTakeDeliveryApproval : ContractId Instruction.I
+      controller delegate
+      do
+        exercise instructionCid Instruction.Approve with
+          actors = Set.fromList [delegator, delegate]
+          approval = TakeDelivery account
+
+template PledgeDelegation
+  with
+    delegator : Party
+    delegate : Party
+    instructionCid : ContractId Instruction.I
+  where
+    signatory delegator
+
+    observer delegate
+
+    choice PerformPledgeAllocation : (ContractId Instruction.I, Optional (ContractId Holding.I))
+      with
+        holdingCid : ContractId Holding.I
+      controller delegate
+      do
+        exercise instructionCid Instruction.Allocate with
+          actors = Set.fromList [delegator, delegate]
+          allocation = Pledge holdingCid

@@ -1,0 +1,20 @@
+sdk-version: 2.6.0
+name: daml-mint-test
+source: src
+version: 0.0.1
+dependencies:
+  - daml-prim
+  - daml-stdlib
+  - daml-script
+data-dependencies:
+  - ../main/.daml/dist/daml-mint-0.0.1.dar
+
+  - ../.lib/daml-finance-interface-account.dar
+  - ../.lib/daml-finance-interface-holding.dar
+  - ../.lib/daml-finance-interface-settlement.dar
+  - ../.lib/daml-finance-interface-types-common.dar
+
+  - ../.lib/daml-finance-account.dar
+  - ../.lib/daml-finance-holding.dar
+  - ../.lib/daml-finance-settlement.dar
+init-script: Synfini.Mint.Demo:setup
