@@ -24,8 +24,7 @@ endToEndTest = do
   custodian <- allocateParty "custodian"
   issuer <- allocateParty "issuer"
   depository <- allocateParty "depository"
-  minter <- allocateParty "minter"
-  burner <- allocateParty "burner"
+  minterBurner <- allocateParty "minterBurner"
   issuerViewer <- allocateParty "issuerViewer"
   serviceProvider <- allocateParty "serviceProvider"
   alice <- allocateParty "alice"
@@ -45,13 +44,13 @@ endToEndTest = do
 
   let supplyAccount = AccountKey with
         custodian
-        owner = burner
+        owner = minterBurner
         id = Id "supply"
-  submitMulti [custodian, burner] [] $ exerciseCmd accountFactoryCid Account.Create with
+  submitMulti [custodian, minterBurner] [] $ exerciseCmd accountFactoryCid Account.Create with
     account = supplyAccount
     controllers = Account.Controllers with
-      incoming = Set.fromList [custodian, minter]
-      outgoing = Set.fromList [custodian, burner]
+      incoming = Set.fromList [custodian, minterBurner]
+      outgoing = Set.fromList [custodian, minterBurner]
     holdingFactoryCid
     description = "Supply account"
     observers = Map.fromList [("public", Set.fromList [public])]
@@ -64,7 +63,7 @@ endToEndTest = do
     account = aliceAccount
     controllers = Account.Controllers with
       incoming = Set.fromList [serviceProvider]
-      outgoing = Set.fromList [alice]
+      outgoing = Set.fromList [serviceProvider, alice]
     holdingFactoryCid
     description = "Alice's account"
     observers = Map.fromList [("Issuer", Set.fromList [issuerViewer])]
@@ -77,9 +76,8 @@ endToEndTest = do
 
   mintCid <- submitMulti [custodian, serviceProvider] [] $ createCmd Mint with
     custodian
-    minter
-    burner
-    ownerAuthorisers = Set.fromList [serviceProvider]
+    minterBurner = minterBurner
+    receiverAuthorisers = Set.fromList [serviceProvider]
     supplyAccountId = supplyAccount.id
     instrument
     settlementFactoryCid
@@ -91,10 +89,10 @@ endToEndTest = do
     account = aliceAccount
     amount = 99.9
     id = Id "mint1"
-  submitMulti [minter] [public] $ exerciseCmd mintRequest.takeDeliveryDelegationCid PerformTakeDeliveryApproval
+  submitMulti [minterBurner] [public] $ exerciseCmd mintRequest.takeDeliveryDelegationCid PerformTakeDeliveryApproval
   [aliceHolding, burnerHolding] : [ContractId Fungible.I] <- fmap coerceInterfaceContractId <$>
-    submitMulti [minter] [public, issuerViewer] do
-      exerciseCmd mintRequest.batchCid Batch.Settle with actors = Set.fromList [minter]
+    submitMulti [minterBurner] [public, issuerViewer] do
+      exerciseCmd mintRequest.batchCid Batch.Settle with actors = Set.fromList [minterBurner]
   -- END Minting
 
   let burnAmount = 9.9
@@ -105,11 +103,11 @@ endToEndTest = do
     requestor = alice
     holdingCid = toInterfaceContractId . L.head $ aliceSplit.splitCids
     id = Id "burn1"
-  burnerSplit <- submit burner $ exerciseCmd burnerHolding Fungible.Split with amounts = [burnAmount]
-  submitMulti [burner] [public, issuerViewer] $
+  burnerSplit <- submit minterBurner $ exerciseCmd burnerHolding Fungible.Split with amounts = [burnAmount]
+  submitMulti [minterBurner] [public, issuerViewer] $
     exerciseCmd burnRequest.pledgeDelegationCid PerformPledgeAllocation with
       holdingCid = toInterfaceContractId (L.head burnerSplit.splitCids)
-  submitMulti [burner] [public, issuerViewer] $
-    exerciseCmd burnRequest.batchCid Batch.Settle with actors = Set.fromList [burner]
+  submitMulti [minterBurner] [public, issuerViewer] $
+    exerciseCmd burnRequest.batchCid Batch.Settle with actors = Set.fromList [minterBurner]
   -- END Burning
   pure ()

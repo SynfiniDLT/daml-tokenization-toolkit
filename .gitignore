@@ -1,3 +1,4 @@
 .daml
-/log
+log
 navigator.log
+.lib
