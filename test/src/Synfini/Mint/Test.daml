@@ -25,7 +25,6 @@ endToEndTest = do
   issuer <- allocateParty "issuer"
   depository <- allocateParty "depository"
   minterBurner <- allocateParty "minterBurner"
-  issuerViewer <- allocateParty "issuerViewer"
   serviceProvider <- allocateParty "serviceProvider"
   alice <- allocateParty "alice"
 
@@ -66,7 +65,7 @@ endToEndTest = do
       outgoing = Set.fromList [serviceProvider, alice]
     holdingFactoryCid
     description = "Alice's account"
-    observers = Map.fromList [("Issuer", Set.fromList [issuerViewer])]
+    observers = Map.fromList [("Issuer", Set.fromList [minterBurner])]
 
   let instrument = InstrumentKey with
         issuer
@@ -84,14 +83,14 @@ endToEndTest = do
     observers = Set.fromList [public]
 
   -- BEGIN Minting
-  mintRequest <- submitMulti [alice] [public, issuerViewer] $ exerciseCmd mintCid RequestMint with
-    requestor = alice
+  mintRequest <- submitMulti [minterBurner] [public] $ exerciseCmd mintCid RequestMint with
+    requestor = minterBurner
     account = aliceAccount
     amount = 99.9
     id = Id "mint1"
   submitMulti [minterBurner] [public] $ exerciseCmd mintRequest.takeDeliveryDelegationCid PerformTakeDeliveryApproval
   [aliceHolding, burnerHolding] : [ContractId Fungible.I] <- fmap coerceInterfaceContractId <$>
-    submitMulti [minterBurner] [public, issuerViewer] do
+    submitMulti [minterBurner] [public] do
       exerciseCmd mintRequest.batchCid Batch.Settle with actors = Set.fromList [minterBurner]
   -- END Minting
 
@@ -104,10 +103,10 @@ endToEndTest = do
     holdingCid = toInterfaceContractId . L.head $ aliceSplit.splitCids
     id = Id "burn1"
   burnerSplit <- submit minterBurner $ exerciseCmd burnerHolding Fungible.Split with amounts = [burnAmount]
-  submitMulti [minterBurner] [public, issuerViewer] $
+  submitMulti [minterBurner] [public] $
     exerciseCmd burnRequest.pledgeDelegationCid PerformPledgeAllocation with
       holdingCid = toInterfaceContractId (L.head burnerSplit.splitCids)
-  submitMulti [minterBurner] [public, issuerViewer] $
+  submitMulti [minterBurner] [public] $
     exerciseCmd burnRequest.batchCid Batch.Settle with actors = Set.fromList [minterBurner]
   -- END Burning
   pure ()
