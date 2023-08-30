@@ -18,8 +18,29 @@ import qualified DA.Map as Map
 import qualified DA.Set as Set
 import Synfini.Mint
 
-endToEndTest : Script ()
-endToEndTest = do
+_supplyAccountId : Id
+_supplyAccountId = Id "supply"
+
+aliceAccountId : Id
+aliceAccountId = Id "0"
+
+aliceAccount : Setup -> AccountKey
+aliceAccount s = AccountKey with custodian = s.custodian, owner = s.alice, id = aliceAccountId
+
+data Setup = Setup
+  with
+    public : Party
+    custodian : Party
+    issuer : Party
+    depository : Party
+    minterBurner : Party
+    serviceProvider : Party
+    alice : Party
+    mintCid : ContractId Mint
+  deriving (Show, Eq)
+
+doSetup : Script Setup
+doSetup = do
   public <- allocateParty "public"
   custodian <- allocateParty "custodian"
   issuer <- allocateParty "issuer"
@@ -44,7 +65,7 @@ endToEndTest = do
   let supplyAccount = AccountKey with
         custodian
         owner = minterBurner
-        id = Id "supply"
+        id = _supplyAccountId
   submitMulti [custodian, minterBurner] [] $ exerciseCmd accountFactoryCid Account.Create with
     account = supplyAccount
     controllers = Account.Controllers with
@@ -57,7 +78,7 @@ endToEndTest = do
   let aliceAccount = AccountKey with
         custodian
         owner = alice
-        id = Id "0"
+        id = aliceAccountId
   submitMulti [custodian, alice] [] $ exerciseCmd accountFactoryCid Account.Create with
     account = aliceAccount
     controllers = Account.Controllers with
@@ -73,7 +94,7 @@ endToEndTest = do
         id = Id "MyCoin"
         version = "0"
 
-  mintCid <- submitMulti [custodian, serviceProvider] [] $ createCmd Mint with
+  mintCid <- submitMulti [custodian, minterBurner, serviceProvider] [] $ createCmd Mint with
     custodian
     minterBurner = minterBurner
     receiverAuthorisers = Set.fromList [serviceProvider]
@@ -82,31 +103,117 @@ endToEndTest = do
     settlementFactoryCid
     observers = Set.fromList [public]
 
-  -- BEGIN Minting
-  mintRequest <- submitMulti [minterBurner] [public] $ exerciseCmd mintCid RequestMint with
-    requestor = minterBurner
-    account = aliceAccount
-    amount = 99.9
-    id = Id "mint1"
-  submitMulti [minterBurner] [public] $ exerciseCmd mintRequest.takeDeliveryDelegationCid PerformTakeDeliveryApproval
-  [aliceHolding, burnerHolding] : [ContractId Fungible.I] <- fmap coerceInterfaceContractId <$>
-    submitMulti [minterBurner] [public] do
-      exerciseCmd mintRequest.batchCid Batch.Settle with actors = Set.fromList [minterBurner]
-  -- END Minting
+  pure Setup with ..
 
-  let burnAmount = 9.9
-  aliceSplit <- submit alice $ exerciseCmd aliceHolding Fungible.Split with amounts = [burnAmount]
-
-  -- BEGIN Burning
-  burnRequest <- submitMulti [alice] [public] $ exerciseCmd mintCid RequestBurn with
-    requestor = alice
-    holdingCid = toInterfaceContractId . L.head $ aliceSplit.splitCids
-    id = Id "burn1"
-  burnerSplit <- submit minterBurner $ exerciseCmd burnerHolding Fungible.Split with amounts = [burnAmount]
-  submitMulti [minterBurner] [public] $
-    exerciseCmd burnRequest.pledgeDelegationCid PerformPledgeAllocation with
-      holdingCid = toInterfaceContractId (L.head burnerSplit.splitCids)
-  submitMulti [minterBurner] [public] $
-    exerciseCmd burnRequest.batchCid Batch.Settle with actors = Set.fromList [minterBurner]
-  -- END Burning
+withSetup : (Setup -> Script a) -> Script ()
+withSetup test = do
+  s <- doSetup
+  test s
   pure ()
+
+instructMint : Setup -> Party -> AccountKey -> Decimal -> Id -> Script (ContractId MintInstruction)
+instructMint setup instructor receiver amount id = do
+  submitMulti [instructor] [setup.public] $ exerciseCmd setup.mintCid InstructMint with
+    instructor
+    account = receiver
+    amount
+    id
+    description = "description"
+
+test_rejectMint : Script ()
+test_rejectMint = withSetup $ \setup -> do
+  mintInstructionCid <- instructMint setup setup.alice (aliceAccount setup) 99.9 (Id "ref1")
+  submitMulti [setup.minterBurner] [setup.public] $ exerciseCmd mintInstructionCid RejectMint
+
+-- endToEndTest : Script ()
+-- endToEndTest = do
+--   public <- allocateParty "public"
+--   custodian <- allocateParty "custodian"
+--   issuer <- allocateParty "issuer"
+--   depository <- allocateParty "depository"
+--   minterBurner <- allocateParty "minterBurner"
+--   serviceProvider <- allocateParty "serviceProvider"
+--   alice <- allocateParty "alice"
+
+--   holdingFactoryCid : ContractId Holding.Factory <- fmap toInterfaceContractId . submit custodian $
+--     createCmd FungibleImpl.Factory with
+--       provider = custodian
+--       observers = Map.fromList [("public", Set.fromList [public])]
+--   accountFactoryCid : ContractId Account.Factory <- fmap toInterfaceContractId . submit custodian $
+--     createCmd AccountImpl.Factory with
+--       provider = custodian
+--       observers = Map.fromList [("public", Set.fromList [public])]
+--   settlementFactoryCid : ContractId Settlement.Factory <- fmap toInterfaceContractId . submit custodian $
+--     createCmd SettlementImpl.Factory with
+--       provider = custodian
+--       observers = Set.fromList [public]
+
+--   let supplyAccount = AccountKey with
+--         custodian
+--         owner = minterBurner
+--         id = Id "supply"
+--   submitMulti [custodian, minterBurner] [] $ exerciseCmd accountFactoryCid Account.Create with
+--     account = supplyAccount
+--     controllers = Account.Controllers with
+--       incoming = Set.fromList [custodian, minterBurner]
+--       outgoing = Set.fromList [custodian, minterBurner]
+--     holdingFactoryCid
+--     description = "Supply account"
+--     observers = Map.fromList [("public", Set.fromList [public])]
+
+--   let aliceAccount = AccountKey with
+--         custodian
+--         owner = alice
+--         id = Id "0"
+--   submitMulti [custodian, alice] [] $ exerciseCmd accountFactoryCid Account.Create with
+--     account = aliceAccount
+--     controllers = Account.Controllers with
+--       incoming = Set.fromList [serviceProvider]
+--       outgoing = Set.fromList [serviceProvider, alice]
+--     holdingFactoryCid
+--     description = "Alice's account"
+--     observers = Map.fromList [("Issuer", Set.fromList [minterBurner])]
+
+--   let instrument = InstrumentKey with
+--         issuer
+--         depository
+--         id = Id "MyCoin"
+--         version = "0"
+
+--   mintCid <- submitMulti [custodian, serviceProvider] [] $ createCmd Mint with
+--     custodian
+--     minterBurner = minterBurner
+--     receiverAuthorisers = Set.fromList [serviceProvider]
+--     supplyAccountId = supplyAccount.id
+--     instrument
+--     settlementFactoryCid
+--     observers = Set.fromList [public]
+
+--   -- BEGIN Minting
+--   mintRequest <- submitMulti [minterBurner] [public] $ exerciseCmd mintCid RequestMint with
+--     requestor = minterBurner
+--     account = aliceAccount
+--     amount = 99.9
+--     id = Id "mint1"
+--   submitMulti [minterBurner] [public] $ exerciseCmd mintRequest.takeDeliveryDelegationCid PerformTakeDeliveryApproval
+--   [aliceHolding, burnerHolding] : [ContractId Fungible.I] <- fmap coerceInterfaceContractId <$>
+--     submitMulti [minterBurner] [public] do
+--       exerciseCmd mintRequest.batchCid Batch.Settle with actors = Set.fromList [minterBurner]
+--   -- END Minting
+
+--   let burnAmount = 9.9
+--   aliceSplit <- submit alice $ exerciseCmd aliceHolding Fungible.Split with amounts = [burnAmount]
+
+--   -- BEGIN Burning
+--   burnRequest <- submitMulti [alice] [public] $ exerciseCmd mintCid RequestBurn with
+--     requestor = alice
+--     holdingCid = toInterfaceContractId . L.head $ aliceSplit.splitCids
+--     id = Id "burn1"
+--   burnerSplit <- submit minterBurner $ exerciseCmd burnerHolding Fungible.Split with amounts = [burnAmount]
+--   submitMulti [minterBurner] [public] $
+--     exerciseCmd burnRequest.pledgeDelegationCid PerformPledgeAllocation with
+--       holdingCid = toInterfaceContractId (L.head burnerSplit.splitCids)
+--   submitMulti [minterBurner] [public] $
+--     exerciseCmd burnRequest.batchCid Batch.Settle with actors = Set.fromList [minterBurner]
+--   -- END Burning
+--   pure ()

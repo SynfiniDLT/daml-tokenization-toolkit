@@ -76,7 +76,7 @@ setup = do
         id = Id "MyCoin"
         version = "0"
 
-  mintCid <- submitMulti [custodian, serviceProvider] [] $ createCmd Mint with
+  mintCid <- submitMulti [custodian, minterBurner, serviceProvider] [] $ createCmd Mint with
     custodian
     minterBurner
     receiverAuthorisers = Set.fromList [serviceProvider]
