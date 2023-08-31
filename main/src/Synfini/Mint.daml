@@ -22,7 +22,7 @@ template Mint
     settlementFactoryCid : ContractId SettlementFactory.I
     observers : Set Party
   where
-    signatory custodian, minterBurner, receiverAuthorisers
+    signatory custodian, minterBurner, instrument.issuer, receiverAuthorisers
 
     observer observers
 
@@ -94,6 +94,7 @@ template Mint
         assertMsg "Requestor must be the owner" (holdingView.account.owner == instructor)
         assertMsg "Must have expected instrument" (holdingView.instrument == instrument)
         assertMsg "Must have expected custodian" (holdingView.account.custodian == custodian)
+        assertMsg "Holding cannot already be locked" (O.isNone holdingView.lock)
 
         let allActors = Set.fromList [custodian, instructor] <> receiverAuthorisers
             onlyCustodian = Set.fromList [custodian]
@@ -172,10 +173,23 @@ template MintInstruction
           actors = Set.fromList [minterBurner]
         pure ExecuteMintResult with receiverHoldingCid, supplyHoldingCid
 
-    choice RejectMint : [ContractId Holding.I]
+    choice RejectMint : ()
       controller minterBurner
       do
         exercise batchCid Batch.Cancel with actors = Set.insert minterBurner requestors
+        pure ()
+
+template InstructMintHelper
+  with
+    instructor : Party
+  where
+    signatory instructor
+
+    choice InstructMintFromFungibles : ContractId MintInstruction
+      with
+        holdingCids : [Fungible.I]
+      controller instructor
+      do
 
 template BurnInstruction
   with
@@ -203,17 +217,20 @@ template BurnInstruction
       do
         holding <- exercise holdingCid Holding.GetView with viewer = minterBurner
         assertMsg "Holding must be from supply account" (holding.account.id == supplyAccountId)
+        assertMsg "Holding cannot already be locked" (O.isNone holding.lock)
         (newSupplyInstructionCid, _) <- exercise supplyInstructionCid Instruction.Allocate with
           actors = Set.fromList [custodian, minterBurner]
           allocation = Pledge holdingCid
         create this with supplyInstructionCid = newSupplyInstructionCid, isAllocated = True
 
-    choice RejectBurn : [ContractId Holding.I]
+    choice RejectBurn : ContractId Holding.I
       controller minterBurner
       do
-        exercise batchCid Batch.Cancel with actors = Set.insert minterBurner requestors
+        assertMsg "Cannot already be allocated" (not isAllocated)
+        [senderHoldingCid] <- exercise batchCid Batch.Cancel with actors = Set.insert minterBurner requestors
+        pure senderHoldingCid
 
-data AllocateBurnSupplyFromHoldingsResult = AllocateBurnSupplyFromHoldingsResult
+data AllocateBurnSupplyFromFungiblesResult = AllocateBurnSupplyFromFungiblesResult
   with
     burnInstructionCid : ContractId BurnInstruction
     allocatedHoldingCid : ContractId Fungible.I
@@ -226,21 +243,26 @@ template AllocateBurnSupplyHelper
   where
     signatory minterBurner
 
-    choice AllocateBurnSupplyFromHoldings : AllocateBurnSupplyFromHoldingsResult
+    choice AllocateBurnSupplyFromFungibles : AllocateBurnSupplyFromFungiblesResult
       with
         burnInstructionCid : ContractId BurnInstruction
         holdingCids : [ContractId Fungible.I]
       controller minterBurner
       do
-        burnInstruction <- fetch burnInstructionCid
-        mergedHoldingCid <- case holdingCids of
-          [] -> error "Holdings list cannot be empty" 
-          [firstHoldingCid] -> pure firstHoldingCid
-          firstHoldingCid :: others -> exercise firstHoldingCid Fungible.Merge with fungibleCids = others
-        splitResult <- exercise mergedHoldingCid Fungible.Split with amounts = [burnInstruction.quantity.amount]
-        let holdingCidToAllocate = O.fromSomeNote "Unexpected empty list" (List.head splitResult.splitCids)
+        (holdingCidToAllocate, otherHoldingCid) <- mergeAndSplitHelper holdingCids burnInstructionCid.quantity.amount
         burnInstructionCid' <- exercise burnInstructionCid AllocateBurnSupply with holdingCid = toInterfaceContractId holdingCidToAllocate
-        pure AllocateBurnSupplyFromHoldingsResult with
+        pure AllocateBurnSupplyFromFungiblesResult with
           burnInstructionCid = burnInstructionCid'
           allocatedHoldingCid = holdingCidToAllocate
           otherHoldingCid = splitResult.rest
+
+mergeAndSplitHelper : [ContractId Fungible.I] ->
+                      Decimal ->
+                      Update (ContractId Fungible.I, Optional (ContractId Fungible.I))
+mergeAndSplitHelper holdingCids amount = do
+  mergedHoldingCid <- case holdingCids of
+    [] -> error "Holdings list cannot be empty" 
+    [firstHoldingCid] -> pure firstHoldingCid
+    firstHoldingCid :: others -> exercise firstHoldingCid Fungible.Merge with fungibleCids = others
+  splitResult <- exercise mergedHoldingCid Fungible.Split with amounts = [amount]
+  pure (O.fromSomeNote "Unexpected empty split result" (List.head splitResult.splitCids), splitResult.rest)

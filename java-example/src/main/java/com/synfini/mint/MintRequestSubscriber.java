@@ -147,17 +147,35 @@ public class MintRequestSubscriber {
       allocateForBurning(cid);
     } else {
       logger.info("Executing burn instruction (not implemented yet)");
-      // TODO
+      executeBurn(cid);
     }
+  }
+
+  private void executeBurn(BurnInstruction.ContractId cid) {
+    ledgerClient
+      .getCommandClient()
+      .submitAndWait(
+        commandsSubmission(List.of(cid.exerciseExecuteBurn()))
+      ).blockingGet();
+  }
+
+  private void rejectBurn(BurnInstruction.ContractId cid) {
+    final var rejectResult = ledgerClient
+      .getCommandClient()
+      .submitAndWaitForResult(
+        updateSubmission(cid.exerciseRejectBurn())
+      )
+      .blockingGet();
+    rejectResult.exerciseResult.forEach(holdingCid -> holdings.remove(holdingCid.contractId));
   }
 
   private void processMintInstruction(MintInstruction.ContractId cid, MintInstruction mintInstruction) {
     if (mintInstruction.requestors.map.containsKey(minterBurner)) {
       logger.info("Accepting mint request");
-      acceptRequest(cid);
+      executeMint(cid);
     } else {
       logger.info("Not requested by the minter/burner. Rejecting the request as this feature is not supported");
-      rejectRequest(cid);
+      rejectMint(cid);
     }
   }
 
@@ -174,7 +192,7 @@ public class MintRequestSubscriber {
       .ifPresent(cid -> holdings.add(cid.contractId));
   }
 
-  private void acceptRequest(MintInstruction.ContractId mintInstructionCid) {
+  private void executeMint(MintInstruction.ContractId mintInstructionCid) {
     final var result = ledgerClient
       .getCommandClient()
       .submitAndWaitForResult(
@@ -183,7 +201,7 @@ public class MintRequestSubscriber {
     holdings.add(result.exerciseResult.supplyHoldingCid.contractId);
   }
 
-  private void rejectRequest(MintInstruction.ContractId mintInstructionCid) {
+  private void rejectMint(MintInstruction.ContractId mintInstructionCid) {
     ledgerClient
       .getCommandClient()
       .submitAndWait(
