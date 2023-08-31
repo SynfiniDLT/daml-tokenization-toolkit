@@ -2,6 +2,7 @@ package com.synfini.mint;
 
 import com.daml.ledger.javaapi.data.*;
 import com.daml.ledger.javaapi.data.codegen.HasCommands;
+import com.daml.ledger.javaapi.data.codegen.Update;
 import com.daml.ledger.rxjava.LedgerClient;
 import daml.finance.interface$.holding.base.Base;
 import daml.finance.interface$.holding.fungible.Fungible;
@@ -9,7 +10,7 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import synfini.mint.AllocateBurnSupplyUtil;
+import synfini.mint.AllocateBurnSupplyHelper;
 import synfini.mint.BurnInstruction;
 import synfini.mint.MintInstruction;
 
@@ -17,15 +18,16 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class MintRequestSubscriber implements Subscriber<Event> {
+public class MintRequestSubscriber {
   private static final Logger logger = LoggerFactory.getLogger(MintRequestSubscriber.class);
 
   private final LedgerClient ledgerClient;
   private final String appId;
   private final String minterBurner;
   private final String readAs;
-  private Subscription subscription;
   private final Set<String> holdings;
+  private final List<CreatedEvent> instructionsAwaitingProcessing;
+  private Optional<String> acsOffset;
 
   public MintRequestSubscriber(
     LedgerClient ledgerClient, String appId, String minterBurner, String readAs
@@ -35,46 +37,104 @@ public class MintRequestSubscriber implements Subscriber<Event> {
     this.minterBurner = minterBurner;
     this.readAs = readAs;
     this.holdings = new HashSet<>();
+    this.instructionsAwaitingProcessing = new ArrayList<>();
+    this.acsOffset = Optional.empty();
   }
 
-  @Override
-  public void onSubscribe(Subscription s) {
-    this.subscription = s;
-    s.request(1);
+  public List<CreatedEvent> getInstructionsAwaitingProcessing() {
+    return instructionsAwaitingProcessing;
   }
 
-  @Override
-  public void onNext(Event event) {
-    logger.info("Processing event with template ID: " + event.getTemplateId());
-    if (event instanceof CreatedEvent) {
-      final var createdEvent = (CreatedEvent) event;
-      if (createdEvent.getTemplateId().equals(MintInstruction.TEMPLATE_ID)) {
-        processMintInstruction(
-          new MintInstruction.ContractId(createdEvent.getContractId()),
-          MintInstruction.valueDecoder().decode(createdEvent.getArguments())
-        );
-      } if (createdEvent.getTemplateId().equals(BurnInstruction.TEMPLATE_ID)) {
-        processBurnInstruction(
-          new BurnInstruction.ContractId(createdEvent.getContractId()),
-          BurnInstruction.valueDecoder().decode(createdEvent.getArguments())
-        );
-      } else {
-        final var holdingValue = createdEvent.getInterfaceViews().get(Base.TEMPLATE_ID);
-        if (holdingValue != null) {
-          logger.info("Found a holding!");
-          final var holding = Base.INTERFACE.valueDecoder.decode(holdingValue);
-          if (holding.account.owner.equals(minterBurner) && holding.lock.isEmpty()) {
-            holdings.add(createdEvent.getContractId());
+  public Optional<String> getAcsOffset() {
+    return acsOffset;
+  }
+
+  public Subscriber<GetActiveContractsResponse> acsSubscriber() {
+    return new Subscriber<>() {
+      private Subscription subscription;
+
+      @Override
+      public void onSubscribe(Subscription s) {
+        this.subscription = s;
+        subscription.request(1);
+      }
+
+      @Override
+      public void onNext(GetActiveContractsResponse getActiveContractsResponse) {
+        for (final var createdEvent : getActiveContractsResponse.getCreatedEvents()) {
+          final var holdingValue = createdEvent.getInterfaceViews().get(Base.TEMPLATE_ID);
+          if (holdingValue != null) {
+            logger.info("Found a holding!");
+            final var holding = Base.INTERFACE.valueDecoder.decode(holdingValue);
+            if (holding.account.owner.equals(minterBurner) && holding.lock.isEmpty()) {
+              holdings.add(createdEvent.getContractId());
+            }
+          } else {
+            instructionsAwaitingProcessing.add(createdEvent);
           }
         }
+
+        if (getActiveContractsResponse.getOffset().isPresent()) {
+          acsOffset = getActiveContractsResponse.getOffset();
+        }
+
+        subscription.request(1);
       }
-    } else if (event instanceof ArchivedEvent) {
-      holdings.remove(event.getContractId());
-    }
 
-    logger.info("size of holdings " + holdings.size());
+      @Override
+      public void onError(Throwable t) {
+        logger.error("Failure in ACS subscriber", t);
+      }
 
-    subscription.request(1);
+      @Override
+      public void onComplete() {
+        logger.info("ACS subscriber has completed");
+      }
+    };
+  }
+
+  public Subscriber<Event> eventsSubscriber() {
+    return new Subscriber<>() {
+      private Subscription subscription;
+
+      @Override
+      public void onSubscribe(Subscription s) {
+        this.subscription = s;
+        subscription.request(1);
+      }
+
+      @Override
+      public void onNext(Event event) {
+        if (event instanceof CreatedEvent) {
+          final var createdEvent = (CreatedEvent) event;
+          if (createdEvent.getTemplateId().equals(MintInstruction.TEMPLATE_ID)) {
+            processMintInstruction(
+              new MintInstruction.ContractId(createdEvent.getContractId()),
+              MintInstruction.valueDecoder().decode(createdEvent.getArguments())
+            );
+          } else if (createdEvent.getTemplateId().equals(BurnInstruction.TEMPLATE_ID)) {
+            processBurnInstruction(
+              new BurnInstruction.ContractId(createdEvent.getContractId()),
+              BurnInstruction.valueDecoder().decode(createdEvent.getArguments())
+            );
+          } else {
+            throw new IllegalArgumentException("Unexpected template ID " + createdEvent.getTemplateId());
+          }
+        }
+
+        subscription.request(1);
+      }
+
+      @Override
+      public void onError(Throwable t) {
+        logger.error("Error in events subscriber", t);
+      }
+
+      @Override
+      public void onComplete() {
+        logger.warn("Event subscriber completed unexpectedly");
+      }
+    };
   }
 
   private void processBurnInstruction(BurnInstruction.ContractId cid, BurnInstruction burnInstruction) {
@@ -95,30 +155,24 @@ public class MintRequestSubscriber implements Subscriber<Event> {
 
   private void allocateForBurning(BurnInstruction.ContractId burnInstructionCid) {
     final var holdingCids = holdings.stream().map(Fungible.ContractId::new).collect(Collectors.toList());
-    final var command = new AllocateBurnSupplyUtil(minterBurner)
+    final var command = new AllocateBurnSupplyHelper(minterBurner)
       .createAnd()
-      .exerciseMergeSplitAndAllocate(burnInstructionCid, holdingCids);
-    ledgerClient.getCommandClient().submitAndWait(commandsSubmission(List.of(command))).blockingGet();
-  }
-
-  @Override
-  public void onError(Throwable t) {
-    logger.info("Subscription failed", t);
-  }
-
-  @Override
-  public void onComplete() {
-    // Given the application does not provide an end offset, this method should never be called (i.e. subscription
-    // never ends)
-    logger.warn("Subscription completed");
+      .exerciseAllocateBurnSupplyFromHoldings(burnInstructionCid, holdingCids);
+    final var allocateResult = ledgerClient.getCommandClient().submitAndWaitForResult(updateSubmission(command)).blockingGet();
+    holdings.clear();
+    allocateResult
+      .exerciseResult
+      .otherHoldingCid
+      .ifPresent(cid -> holdings.add(cid.contractId));
   }
 
   private void acceptRequest(MintInstruction.ContractId mintInstructionCid) {
-    ledgerClient
+    final var result = ledgerClient
       .getCommandClient()
-      .submitAndWait(
-        commandsSubmission(List.of(mintInstructionCid.exerciseExecuteMint()))
+      .submitAndWaitForResult(
+        updateSubmission(mintInstructionCid.exerciseExecuteMint())
       ).blockingGet();
+    holdings.add(result.exerciseResult.supplyHoldingCid.contractId);
   }
 
   private void rejectRequest(MintInstruction.ContractId mintInstructionCid) {
@@ -134,6 +188,14 @@ public class MintRequestSubscriber implements Subscriber<Event> {
       appId,
       UUID.randomUUID().toString(),
       commands
+    ).withActAs(minterBurner).withReadAs(List.of(readAs));
+  }
+
+  private <T> UpdateSubmission<T> updateSubmission(Update<T> update) {
+    return UpdateSubmission.create(
+      appId,
+      UUID.randomUUID().toString(),
+      update
     ).withActAs(minterBurner).withReadAs(List.of(readAs));
   }
 

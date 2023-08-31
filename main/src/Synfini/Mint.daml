@@ -29,14 +29,14 @@ template Mint
     nonconsuming choice InstructMint : ContractId MintInstruction
       with
         instructor : Party
-        account : AccountKey
+        receiver : Party
+        receiverAccountId : Id
         amount : Decimal
         id : Id
         description : Text
       controller instructor
       do
-        assertMsg "Account must have expected custodian" (account.custodian == custodian)
-        assertMsg "Requestor must be owner or minter" (instructor == account.owner || instructor == minterBurner)
+        assertMsg "Requestor must be owner or minter" (instructor == receiver || instructor == minterBurner)
 
         let allActors = Set.fromList [custodian, instructor] <> receiverAuthorisers
             onlyCustodian = Set.fromList [custodian]
@@ -44,7 +44,7 @@ template Mint
         let custodianToOwner = RoutedStep with
               custodian
               sender = custodian
-              receiver = account.owner
+              receiver
               quantity
             custodianToMb = RoutedStep with
               custodian
@@ -67,7 +67,7 @@ template Mint
           allocation = CreditReceiver
         approvedCustodianToOwnerCid <- exercise allocatedCustodianToOwnerCid Instruction.Approve with
           actors = onlyCustodian <> receiverAuthorisers
-          approval = TakeDelivery account
+          approval = TakeDelivery (AccountKey with custodian, owner = receiver, id = receiverAccountId)
 
         (allocatedCustodianToMbCid, _) <- exercise custodianToMbCid Instruction.Allocate with
           actors = onlyCustodian
@@ -150,6 +150,12 @@ template Mint
           supplyInstructionCid = approvedMbToCustodianCid
           isAllocated = False
 
+data ExecuteMintResult = ExecuteMintResult
+  with
+    receiverHoldingCid : ContractId Holding.I
+    supplyHoldingCid : ContractId Holding.I
+  deriving (Show, Eq)
+
 template MintInstruction
   with
     custodian : Party
@@ -159,10 +165,12 @@ template MintInstruction
   where
     signatory custodian, minterBurner, requestors
 
-    choice ExecuteMint : [ContractId Holding.I]
+    choice ExecuteMint : ExecuteMintResult
       controller minterBurner
       do
-        exercise batchCid Batch.Settle with actors = Set.fromList [minterBurner]
+        [receiverHoldingCid, supplyHoldingCid] <- exercise batchCid Batch.Settle with
+          actors = Set.fromList [minterBurner]
+        pure ExecuteMintResult with receiverHoldingCid, supplyHoldingCid
 
     choice RejectMint : [ContractId Holding.I]
       controller minterBurner
@@ -182,10 +190,11 @@ template BurnInstruction
   where
     signatory custodian, minterBurner, requestors
 
-    choice ExecuteBurn : [ContractId Holding.I]
+    choice ExecuteBurn : ()
       controller minterBurner
       do
         exercise batchCid Batch.Settle with actors = Set.fromList [minterBurner]
+        pure ()
 
     choice AllocateBurnSupply : ContractId BurnInstruction
       with
@@ -202,13 +211,20 @@ template BurnInstruction
       do
         exercise batchCid Batch.Cancel with actors = Set.insert minterBurner requestors
 
-template AllocateBurnSupplyUtil
+data AllocateBurnSupplyFromHoldingsResult = AllocateBurnSupplyFromHoldingsResult
+  with
+    burnInstructionCid : ContractId BurnInstruction
+    allocatedHoldingCid : ContractId Fungible.I
+    otherHoldingCid : Optional (ContractId Fungible.I)
+  deriving (Show, Eq)
+
+template AllocateBurnSupplyHelper
   with
     minterBurner : Party
   where
     signatory minterBurner
 
-    choice MergeSplitAndAllocate : ContractId BurnInstruction
+    choice AllocateBurnSupplyFromHoldings : AllocateBurnSupplyFromHoldingsResult
       with
         burnInstructionCid : ContractId BurnInstruction
         holdingCids : [ContractId Fungible.I]
@@ -221,4 +237,8 @@ template AllocateBurnSupplyUtil
           firstHoldingCid :: others -> exercise firstHoldingCid Fungible.Merge with fungibleCids = others
         splitResult <- exercise mergedHoldingCid Fungible.Split with amounts = [burnInstruction.quantity.amount]
         let holdingCidToAllocate = O.fromSomeNote "Unexpected empty list" (List.head splitResult.splitCids)
-        exercise burnInstructionCid AllocateBurnSupply with holdingCid = toInterfaceContractId holdingCidToAllocate
+        burnInstructionCid' <- exercise burnInstructionCid AllocateBurnSupply with holdingCid = toInterfaceContractId holdingCidToAllocate
+        pure AllocateBurnSupplyFromHoldingsResult with
+          burnInstructionCid = burnInstructionCid'
+          allocatedHoldingCid = holdingCidToAllocate
+          otherHoldingCid = splitResult.rest

@@ -4,6 +4,7 @@ import com.daml.ledger.javaapi.data.*;
 import com.daml.ledger.rxjava.DamlLedgerClient;
 import daml.finance.interface$.holding.base.Base;
 import io.grpc.netty.NettyChannelBuilder;
+import io.reactivex.Flowable;
 import synfini.mint.BurnInstruction;
 import synfini.mint.MintInstruction;
 
@@ -23,19 +24,37 @@ public class Application {
     final var ledgerClient = DamlLedgerClient.newBuilder(channelBuilder).build();
     ledgerClient.connect();
 
-    final var filter = new FiltersByParty(
+    final var instructionTemplateIds = Set.of(MintInstruction.TEMPLATE_ID, BurnInstruction.TEMPLATE_ID);
+    final var holdingsAndInstructionsFilter = new FiltersByParty(
       Map.of(
         minterBurner,
         new InclusiveFilter(
-          Set.of(MintInstruction.TEMPLATE_ID, BurnInstruction.TEMPLATE_ID),
+          instructionTemplateIds,
           Map.of(Base.TEMPLATE_ID, Filter.Interface.INCLUDE_VIEW)
         )
       )
     );
-
+    final var subscriber = new MintRequestSubscriber(ledgerClient, appId, minterBurner, readAs);
     ledgerClient
+      .getActiveContractSetClient()
+        .getActiveContracts(holdingsAndInstructionsFilter, false)
+        .blockingSubscribe(subscriber.acsSubscriber());
+
+    final var streamBeginOffset = subscriber
+      .getAcsOffset()
+      .orElseThrow(() -> new IllegalStateException("ACS offset not present"));
+    final var instructionsFilter = new FiltersByParty(
+      Map.of(
+        minterBurner,
+        InclusiveFilter.ofTemplateIds(instructionTemplateIds)
+      )
+    );
+    final var instructionsAwaitingProcessing = Flowable.fromIterable(subscriber.getInstructionsAwaitingProcessing());
+    final var subsequentInstructions = ledgerClient
       .getTransactionsClient()
-      .getTransactions(LedgerOffset.LedgerEnd.getInstance(), filter, false)
-      .blockingSubscribe(new MintRequestSubscriber(ledgerClient, appId, minterBurner, readAs));
+      .getTransactions(new LedgerOffset.Absolute(streamBeginOffset), instructionsFilter, false)
+      .flatMap(transaction -> Flowable.fromIterable(transaction.getEvents()));
+    final var allInstructions = Flowable.concat(instructionsAwaitingProcessing, subsequentInstructions);
+    allInstructions.blockingSubscribe(subscriber.eventsSubscriber());
   }
 }

@@ -2,3 +2,7 @@
 log
 navigator.log
 .lib
+java-example/target
+java-example/src/generated-main
+java-example/.idea
+java-example/*.iml

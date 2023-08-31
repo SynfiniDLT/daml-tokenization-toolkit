@@ -111,18 +111,19 @@ withSetup test = do
   test s
   pure ()
 
-instructMint : Setup -> Party -> AccountKey -> Decimal -> Id -> Script (ContractId MintInstruction)
-instructMint setup instructor receiver amount id = do
+instructMint : Setup -> Party -> Party -> Id -> Decimal -> Id -> Script (ContractId MintInstruction)
+instructMint setup instructor receiver receiverAccountId amount id = do
   submitMulti [instructor] [setup.public] $ exerciseCmd setup.mintCid InstructMint with
     instructor
-    account = receiver
+    receiver
+    receiverAccountId
     amount
     id
     description = "description"
 
 test_rejectMint : Script ()
 test_rejectMint = withSetup $ \setup -> do
-  mintInstructionCid <- instructMint setup setup.alice (aliceAccount setup) 99.9 (Id "ref1")
+  mintInstructionCid <- instructMint setup setup.alice setup.alice aliceAccountId 99.9 (Id "ref1")
   submitMulti [setup.minterBurner] [setup.public] $ exerciseCmd mintInstructionCid RejectMint
 
 -- endToEndTest : Script ()
