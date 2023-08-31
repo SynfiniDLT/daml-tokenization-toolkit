@@ -179,18 +179,19 @@ template MintInstruction
         exercise batchCid Batch.Cancel with actors = Set.insert minterBurner requestors
         pure ()
 
-template InstructMintHelper
+template InstructBurnHelper
   with
     instructor : Party
   where
     signatory instructor
 
-    choice InstructMintFromFungibles : ContractId MintInstruction
+    choice InstructBurnFromFungibles : ContractId MintInstruction
       with
+        amount : Decimal
         holdingCids : [Fungible.I]
       controller instructor
       do
-
+        (holdingCidToBurn, otherHoldingCid) <-
 template BurnInstruction
   with
     custodian : Party
