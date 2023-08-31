@@ -64,9 +64,13 @@ public class MintRequestSubscriber {
         for (final var createdEvent : getActiveContractsResponse.getCreatedEvents()) {
           final var holdingValue = createdEvent.getInterfaceViews().get(Base.TEMPLATE_ID);
           if (holdingValue != null) {
-            logger.info("Found a holding!");
+            logger.info("Processing holding contract");
             final var holding = Base.INTERFACE.valueDecoder.decode(holdingValue);
+            // We assume the minterBurner only has one account, with only one instrument in it
+            // If this is not the case, then additional conditions must be placed in the below if statement
+            // Otherwise, when allocating the holdings for burning, then they may be from the wrong account/
             if (holding.account.owner.equals(minterBurner) && holding.lock.isEmpty()) {
+              logger.info("Adding holding to cache");
               holdings.add(createdEvent.getContractId());
             }
           } else {
@@ -139,7 +143,11 @@ public class MintRequestSubscriber {
 
   private void processBurnInstruction(BurnInstruction.ContractId cid, BurnInstruction burnInstruction) {
     if (!burnInstruction.isAllocated) {
+      logger.info("Allocating to burn instruction");
       allocateForBurning(cid);
+    } else {
+      logger.info("Executing burn instruction (not implemented yet)");
+      // TODO
     }
   }
 

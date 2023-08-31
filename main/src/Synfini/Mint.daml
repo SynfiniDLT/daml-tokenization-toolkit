@@ -201,6 +201,8 @@ template BurnInstruction
         holdingCid : ContractId Holding.I
       controller minterBurner
       do
+        holding <- exercise holdingCid Holding.GetView with viewer = minterBurner
+        assertMsg "Holding must be from supply account" (holding.account.id == supplyAccountId)
         (newSupplyInstructionCid, _) <- exercise supplyInstructionCid Instruction.Allocate with
           actors = Set.fromList [custodian, minterBurner]
           allocation = Pledge holdingCid
