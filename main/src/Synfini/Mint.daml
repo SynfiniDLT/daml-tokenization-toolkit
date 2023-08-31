@@ -80,6 +80,7 @@ template Mint
           custodian
           minterBurner
           requestors = allActors
+          quantity = Quantity with unit = instrument, amount
           batchCid
 
     nonconsuming choice InstructBurn : ContractId BurnInstruction
@@ -162,6 +163,7 @@ template MintInstruction
     custodian : Party
     minterBurner : Party
     requestors : Set Party
+    quantity : Quantity InstrumentKey Decimal
     batchCid : ContractId Batch.I
   where
     signatory custodian, minterBurner, requestors
@@ -179,19 +181,35 @@ template MintInstruction
         exercise batchCid Batch.Cancel with actors = Set.insert minterBurner requestors
         pure ()
 
+data InstructBurnFromFungiblesResult = InstructBurnFromFungiblesResult
+  with
+    burnInstructionCid : ContractId BurnInstruction
+    remainingHoldingCid : Optional (ContractId Fungible.I)
+  deriving (Show, Eq)
+
 template InstructBurnHelper
   with
     instructor : Party
   where
     signatory instructor
 
-    choice InstructBurnFromFungibles : ContractId MintInstruction
+    choice InstructBurnFromFungibles : InstructBurnFromFungiblesResult
       with
+        mintCid : ContractId Mint
         amount : Decimal
-        holdingCids : [Fungible.I]
+        holdingCids : [ContractId Fungible.I]
+        id : Id
+        description : Text
       controller instructor
       do
-        (holdingCidToBurn, otherHoldingCid) <-
+        (holdingCidToBurn, remainingHoldingCid) <- mergeAndSplitHelper holdingCids amount
+        burnInstructionCid <- exercise mintCid InstructBurn with
+          instructor
+          holdingCid = toInterfaceContractId holdingCidToBurn
+          id
+          description
+        pure InstructBurnFromFungiblesResult with burnInstructionCid, remainingHoldingCid
+
 template BurnInstruction
   with
     custodian : Party
@@ -234,8 +252,7 @@ template BurnInstruction
 data AllocateBurnSupplyFromFungiblesResult = AllocateBurnSupplyFromFungiblesResult
   with
     burnInstructionCid : ContractId BurnInstruction
-    allocatedHoldingCid : ContractId Fungible.I
-    otherHoldingCid : Optional (ContractId Fungible.I)
+    remainingHoldingCid : Optional (ContractId Fungible.I)
   deriving (Show, Eq)
 
 template AllocateBurnSupplyHelper
@@ -250,12 +267,13 @@ template AllocateBurnSupplyHelper
         holdingCids : [ContractId Fungible.I]
       controller minterBurner
       do
-        (holdingCidToAllocate, otherHoldingCid) <- mergeAndSplitHelper holdingCids burnInstructionCid.quantity.amount
-        burnInstructionCid' <- exercise burnInstructionCid AllocateBurnSupply with holdingCid = toInterfaceContractId holdingCidToAllocate
+        burnInstruction <- fetch burnInstructionCid
+        (holdingCidToAllocate, remainingHoldingCid) <- mergeAndSplitHelper holdingCids burnInstruction.quantity.amount
+        burnInstructionCid' <- exercise burnInstructionCid AllocateBurnSupply with
+          holdingCid = toInterfaceContractId holdingCidToAllocate
         pure AllocateBurnSupplyFromFungiblesResult with
           burnInstructionCid = burnInstructionCid'
-          allocatedHoldingCid = holdingCidToAllocate
-          otherHoldingCid = splitResult.rest
+          remainingHoldingCid
 
 mergeAndSplitHelper : [ContractId Fungible.I] ->
                       Decimal ->

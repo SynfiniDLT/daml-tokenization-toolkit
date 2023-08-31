@@ -3,6 +3,7 @@ module Synfini.Mint.Test where
 import qualified Daml.Finance.Interface.Account.Account as Account
 import qualified Daml.Finance.Interface.Account.Factory as Account
 import Daml.Finance.Interface.Types.Common.Types
+import qualified Daml.Finance.Interface.Holding.Base as Holding
 import qualified Daml.Finance.Interface.Holding.Factory as Holding
 import qualified Daml.Finance.Interface.Holding.Fungible as Fungible
 import qualified Daml.Finance.Interface.Settlement.Batch as Batch
@@ -94,7 +95,7 @@ doSetup = do
         id = Id "MyCoin"
         version = "0"
 
-  mintCid <- submitMulti [custodian, minterBurner, serviceProvider] [] $ createCmd Mint with
+  mintCid <- submitMulti [custodian, issuer, minterBurner, serviceProvider] [] $ createCmd Mint with
     custodian
     minterBurner = minterBurner
     receiverAuthorisers = Set.fromList [serviceProvider]
@@ -124,7 +125,19 @@ instructMint setup instructor receiver receiverAccountId amount id = do
 test_rejectMint : Script ()
 test_rejectMint = withSetup $ \setup -> do
   mintInstructionCid <- instructMint setup setup.alice setup.alice aliceAccountId 99.9 (Id "ref1")
+  submitMultiMustFail [setup.custodian] [setup.public] $ exerciseCmd mintInstructionCid RejectMint
   submitMulti [setup.minterBurner] [setup.public] $ exerciseCmd mintInstructionCid RejectMint
+  activeInstructions <- query @MintInstruction setup.alice
+  assertMsg "Instructions must be empty" (null activeInstructions)
+
+test_acceptMint : Script ()
+test_acceptMint = withSetup $ \setup -> do
+  mintInstructionCid <- instructMint setup setup.alice setup.alice aliceAccountId 99.9 (Id "ref1")
+  submitMultiMustFail [setup.custodian] [setup.public] $ exerciseCmd mintInstructionCid ExecuteMint
+  mintResult <- submitMulti [setup.minterBurner] [setup.public] $ exerciseCmd mintInstructionCid ExecuteMint
+  [(aliceHoldingCid, aliceHolding)] <- queryInterface @Holding.I setup.alice
+  assertMsg "Must have correct contract ID" (aliceHoldingCid == )
+  pure ()
 
 -- endToEndTest : Script ()
 -- endToEndTest = do

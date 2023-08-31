@@ -166,7 +166,7 @@ public class MintRequestSubscriber {
         updateSubmission(cid.exerciseRejectBurn())
       )
       .blockingGet();
-    rejectResult.exerciseResult.forEach(holdingCid -> holdings.remove(holdingCid.contractId));
+    // TODO use result?
   }
 
   private void processMintInstruction(MintInstruction.ContractId cid, MintInstruction mintInstruction) {
@@ -183,12 +183,12 @@ public class MintRequestSubscriber {
     final var holdingCids = holdings.stream().map(Fungible.ContractId::new).collect(Collectors.toList());
     final var command = new AllocateBurnSupplyHelper(minterBurner)
       .createAnd()
-      .exerciseAllocateBurnSupplyFromHoldings(burnInstructionCid, holdingCids);
+      .exerciseAllocateBurnSupplyFromFungibles(burnInstructionCid, holdingCids);
     final var allocateResult = ledgerClient.getCommandClient().submitAndWaitForResult(updateSubmission(command)).blockingGet();
     holdings.clear();
     allocateResult
       .exerciseResult
-      .otherHoldingCid
+      .remainingHoldingCid
       .ifPresent(cid -> holdings.add(cid.contractId));
   }
 
