@@ -28,21 +28,21 @@ setup = do
   issuer <- setupParty "CoinIssuer"
   depository <- setupParty "CoinDepository"
   minterBurner <- setupParty "CoinMinterBurner"
-  serviceProvider <- setupParty "WalletServiceProvider"
-  alice <- setupParty "Alice"
+  coinOperator <- setupParty "CoinOperator"
+  investorA <- setupParty "InvestorA"
 
   holdingFactoryCid : ContractId Holding.Factory <- fmap toInterfaceContractId . submit custodian $
     createCmd FungibleImpl.Factory with
       provider = custodian
-      observers = Map.fromList [("observers", Set.fromList [minterBurner, alice])]
+      observers = Map.fromList [("observers", Set.fromList [minterBurner, investorA])]
   accountFactoryCid : ContractId Account.Factory <- fmap toInterfaceContractId . submit custodian $
     createCmd AccountImpl.Factory with
       provider = custodian
-      observers = Map.fromList [("observers", Set.fromList [alice])]
+      observers = Map.fromList [("observers", Set.fromList [investorA])]
   settlementFactoryCid : ContractId Settlement.Factory <- fmap toInterfaceContractId . submit custodian $
     createCmd SettlementImpl.Factory with
       provider = custodian
-      observers = Set.fromList [minterBurner, alice]
+      observers = Set.fromList [minterBurner, investorA]
 
   let supplyAccount = AccountKey with
         custodian
@@ -55,19 +55,19 @@ setup = do
       outgoing = Set.fromList [custodian, minterBurner]
     holdingFactoryCid
     description = "Supply account"
-    observers = Map.fromList [("observers", Set.fromList [alice, minterBurner])]
+    observers = Map.fromList [("observers", Set.fromList [investorA, minterBurner])]
 
-  let aliceAccount = AccountKey with
+  let investorAAccount = AccountKey with
         custodian
-        owner = alice
+        owner = investorA
         id = Id "0"
-  submitMulti [custodian, alice] [] $ exerciseCmd accountFactoryCid Account.Create with
-    account = aliceAccount
+  submitMulti [custodian, investorA] [] $ exerciseCmd accountFactoryCid Account.Create with
+    account = investorAAccount
     controllers = Account.Controllers with
-      incoming = Set.fromList [serviceProvider]
-      outgoing = Set.fromList [alice]
+      incoming = Set.fromList [coinOperator]
+      outgoing = Set.fromList [investorA]
     holdingFactoryCid
-    description = "Alice's account"
+    description = "InvestorA's account"
     observers = Map.fromList [("observers", Set.fromList [minterBurner])]
 
   let instrument = InstrumentKey with
@@ -76,12 +76,12 @@ setup = do
         id = Id "MyCoin"
         version = "0"
 
-  mintCid <- submitMulti [custodian, serviceProvider] [] $ createCmd Mint with
+  mintCid <- submitMulti [custodian, issuer, minterBurner, coinOperator] [] $ createCmd Mint with
     custodian
     minterBurner
-    receiverAuthorisers = Set.fromList [serviceProvider]
+    receiverAuthorisers = Set.fromList [coinOperator]
     supplyAccountId = supplyAccount.id
     instrument
     settlementFactoryCid
-    observers = Set.fromList [alice, minterBurner]
+    observers = Set.fromList [investorA, minterBurner]
   pure ()

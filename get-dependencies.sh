@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Copyright (c) 2022 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
 
 set -euo pipefail
 
@@ -12,18 +10,12 @@ mkdir .lib
 
 # Get the dependency list
 echo "Downloading the list of dependencies"
-# TODO find a better way to get the .conf file, rather than using a link to tutorial
-version=0.0.3
-curl -L# \
-  -H 'Cache-Control: no-cache, no-store' \
-  -o .lib/${version}.conf \
-  https://raw.githubusercontent.com/digital-asset/daml-finance/main/docs/code-samples/tutorials-config/${version}.conf
 
 # For each dependency, download and install
 while IFS=" " read -r url out
 do
   printf "Downloading: %s, to: %s\n" "$url" "$out"
   curl -Lf# "${url}" -o ${out}
-done < .lib/${version}.conf
+done < dependencies.conf
 
 echo "All dependencies successfully downloaded!"
