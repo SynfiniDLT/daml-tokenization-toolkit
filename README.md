@@ -47,4 +47,3 @@ mvn exec:java \
   -Dexec.mainClass="com.synfini.mint.Application" \
   -Dexec.args="localhost 6865 CoinMinterBurner::1220fb19f16f892f6b690decfecc133d4e273b3e026e4bc4f9faaf97f9a8a4a9ce16"
 ```
-ssssssssssssssssss
