@@ -16,7 +16,7 @@ public class Application {
     final var ledgerHost = args[0];
     final int ledgerPort = Integer.parseInt(args[1]);
     final var minterBurner = args[2];
-    final var readAs = args[3];
+    final var readAs = minterBurner; // TODO can add support for another read-as party
     final var appId = "MintApp"; // TODO this should be configurable (for an authenticated ledger this must be equal to the userId)
 
     final var channelBuilder = NettyChannelBuilder.forAddress(ledgerHost, ledgerPort);

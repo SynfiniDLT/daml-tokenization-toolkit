@@ -5,8 +5,6 @@ import qualified Daml.Finance.Interface.Account.Factory as Account
 import Daml.Finance.Interface.Types.Common.Types
 import qualified Daml.Finance.Interface.Holding.Base as Holding
 import qualified Daml.Finance.Interface.Holding.Factory as Holding
-import qualified Daml.Finance.Interface.Holding.Fungible as Fungible
-import qualified Daml.Finance.Interface.Settlement.Batch as Batch
 import qualified Daml.Finance.Interface.Settlement.Factory as Settlement
 
 import qualified Daml.Finance.Account.Account as AccountImpl
@@ -14,7 +12,6 @@ import qualified Daml.Finance.Holding.Fungible as FungibleImpl
 import qualified Daml.Finance.Settlement.Factory as SettlementImpl
 
 import Daml.Script
-import qualified DA.List as L
 import qualified DA.Map as Map
 import qualified DA.Set as Set
 import Synfini.Mint
@@ -122,6 +119,9 @@ instructMint setup instructor receiver receiverAccountId amount id = do
     id
     description = "description"
 
+test_instructMint : Script ()
+test_instructMint = pure () -- TODO
+
 test_rejectMint : Script ()
 test_rejectMint = withSetup $ \setup -> do
   mintInstructionCid <- instructMint setup setup.alice setup.alice aliceAccountId 99.9 (Id "ref1")
@@ -132,102 +132,30 @@ test_rejectMint = withSetup $ \setup -> do
 
 test_acceptMint : Script ()
 test_acceptMint = withSetup $ \setup -> do
-  mintInstructionCid <- instructMint setup setup.alice setup.alice aliceAccountId 99.9 (Id "ref1")
+  let amount = 99.9
+  mintInstructionCid <- instructMint setup setup.alice setup.alice aliceAccountId amount (Id "ref1")
   submitMultiMustFail [setup.custodian] [setup.public] $ exerciseCmd mintInstructionCid ExecuteMint
   mintResult <- submitMulti [setup.minterBurner] [setup.public] $ exerciseCmd mintInstructionCid ExecuteMint
-  [(aliceHoldingCid, aliceHolding)] <- queryInterface @Holding.I setup.alice
-  assertMsg "Must have correct contract ID" (aliceHoldingCid == )
-  pure ()
+  [(aliceHoldingCid, Some aliceHolding)] <- queryInterface @Holding.I setup.alice
+  assertMsg "Reciever must have correct contract ID" (aliceHoldingCid == mintResult.receiverHoldingCid)
+  assertMsg "Receiver must have correct amount" (aliceHolding.amount == amount)
+  [(minterBurnerHoldingCid, Some minterBurnerHolding)] <- queryInterface @Holding.I setup.minterBurner
+  assertMsg "Minter/burner must have correct contract ID" (minterBurnerHoldingCid == mintResult.supplyHoldingCid)
+  assertMsg "Minter/burner must have correct amount" (minterBurnerHolding.amount == amount)
 
--- endToEndTest : Script ()
--- endToEndTest = do
---   public <- allocateParty "public"
---   custodian <- allocateParty "custodian"
---   issuer <- allocateParty "issuer"
---   depository <- allocateParty "depository"
---   minterBurner <- allocateParty "minterBurner"
---   serviceProvider <- allocateParty "serviceProvider"
---   alice <- allocateParty "alice"
+test_instructBurn : Script ()
+test_instructBurn = pure () -- TODO
 
---   holdingFactoryCid : ContractId Holding.Factory <- fmap toInterfaceContractId . submit custodian $
---     createCmd FungibleImpl.Factory with
---       provider = custodian
---       observers = Map.fromList [("public", Set.fromList [public])]
---   accountFactoryCid : ContractId Account.Factory <- fmap toInterfaceContractId . submit custodian $
---     createCmd AccountImpl.Factory with
---       provider = custodian
---       observers = Map.fromList [("public", Set.fromList [public])]
---   settlementFactoryCid : ContractId Settlement.Factory <- fmap toInterfaceContractId . submit custodian $
---     createCmd SettlementImpl.Factory with
---       provider = custodian
---       observers = Set.fromList [public]
-
---   let supplyAccount = AccountKey with
---         custodian
---         owner = minterBurner
---         id = Id "supply"
---   submitMulti [custodian, minterBurner] [] $ exerciseCmd accountFactoryCid Account.Create with
---     account = supplyAccount
---     controllers = Account.Controllers with
---       incoming = Set.fromList [custodian, minterBurner]
---       outgoing = Set.fromList [custodian, minterBurner]
---     holdingFactoryCid
---     description = "Supply account"
---     observers = Map.fromList [("public", Set.fromList [public])]
-
---   let aliceAccount = AccountKey with
---         custodian
---         owner = alice
---         id = Id "0"
---   submitMulti [custodian, alice] [] $ exerciseCmd accountFactoryCid Account.Create with
---     account = aliceAccount
---     controllers = Account.Controllers with
---       incoming = Set.fromList [serviceProvider]
---       outgoing = Set.fromList [serviceProvider, alice]
---     holdingFactoryCid
---     description = "Alice's account"
---     observers = Map.fromList [("Issuer", Set.fromList [minterBurner])]
-
---   let instrument = InstrumentKey with
---         issuer
---         depository
---         id = Id "MyCoin"
---         version = "0"
-
---   mintCid <- submitMulti [custodian, serviceProvider] [] $ createCmd Mint with
---     custodian
---     minterBurner = minterBurner
---     receiverAuthorisers = Set.fromList [serviceProvider]
---     supplyAccountId = supplyAccount.id
---     instrument
---     settlementFactoryCid
---     observers = Set.fromList [public]
-
---   -- BEGIN Minting
---   mintRequest <- submitMulti [minterBurner] [public] $ exerciseCmd mintCid RequestMint with
---     requestor = minterBurner
---     account = aliceAccount
---     amount = 99.9
---     id = Id "mint1"
---   submitMulti [minterBurner] [public] $ exerciseCmd mintRequest.takeDeliveryDelegationCid PerformTakeDeliveryApproval
---   [aliceHolding, burnerHolding] : [ContractId Fungible.I] <- fmap coerceInterfaceContractId <$>
---     submitMulti [minterBurner] [public] do
---       exerciseCmd mintRequest.batchCid Batch.Settle with actors = Set.fromList [minterBurner]
---   -- END Minting
-
---   let burnAmount = 9.9
---   aliceSplit <- submit alice $ exerciseCmd aliceHolding Fungible.Split with amounts = [burnAmount]
-
---   -- BEGIN Burning
---   burnRequest <- submitMulti [alice] [public] $ exerciseCmd mintCid RequestBurn with
---     requestor = alice
---     holdingCid = toInterfaceContractId . L.head $ aliceSplit.splitCids
---     id = Id "burn1"
---   burnerSplit <- submit minterBurner $ exerciseCmd burnerHolding Fungible.Split with amounts = [burnAmount]
---   submitMulti [minterBurner] [public] $
---     exerciseCmd burnRequest.pledgeDelegationCid PerformPledgeAllocation with
---       holdingCid = toInterfaceContractId (L.head burnerSplit.splitCids)
---   submitMulti [minterBurner] [public] $
---     exerciseCmd burnRequest.batchCid Batch.Settle with actors = Set.fromList [minterBurner]
---   -- END Burning
---   pure ()
+test_rejectBurn : Script ()
+test_rejectBurn = withSetup $ \setup -> do
+  mintInstructionCid <- instructMint setup setup.alice setup.alice aliceAccountId 99.9 (Id "ref1")
+  mintResult <- submitMulti [setup.minterBurner] [setup.public] $ exerciseCmd mintInstructionCid ExecuteMint
+  burnInstructionCid <- submitMulti [setup.alice] [setup.public] $ exerciseCmd setup.mintCid InstructBurn with
+    instructor = setup.alice
+    holdingCid = mintResult.receiverHoldingCid
+    id = Id "ref2"
+    description = "Burn"
+  submitMultiMustFail [setup.custodian] [setup.public] $ exerciseCmd burnInstructionCid RejectBurn
+  submitMulti [setup.minterBurner] [setup.public] $ exerciseCmd burnInstructionCid RejectBurn
+  activeInstructions <- query @BurnInstruction setup.alice
+  assertMsg "Instructions must be empty" (null activeInstructions)
