@@ -34,7 +34,7 @@ public class Application {
         )
       )
     );
-    final var subscriber = new MintRequestSubscriber(ledgerClient, appId, minterBurner, readAs);
+    final var subscriber = new MinterBurnerSubscriber(ledgerClient, appId, minterBurner, readAs);
     ledgerClient
       .getActiveContractSetClient()
         .getActiveContracts(holdingsAndInstructionsFilter, false)

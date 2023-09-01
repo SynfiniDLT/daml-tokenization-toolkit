@@ -15,11 +15,10 @@ import synfini.mint.BurnInstruction;
 import synfini.mint.MintInstruction;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class MintRequestSubscriber {
-  private static final Logger logger = LoggerFactory.getLogger(MintRequestSubscriber.class);
+public class MinterBurnerSubscriber {
+  private static final Logger logger = LoggerFactory.getLogger(MinterBurnerSubscriber.class);
 
   private final LedgerClient ledgerClient;
   private final String appId;
@@ -29,7 +28,7 @@ public class MintRequestSubscriber {
   private final List<CreatedEvent> instructionsAwaitingProcessing;
   private Optional<String> acsOffset;
 
-  public MintRequestSubscriber(
+  public MinterBurnerSubscriber(
     LedgerClient ledgerClient, String appId, String minterBurner, String readAs
   ) {
     this.ledgerClient = ledgerClient;
@@ -68,7 +67,7 @@ public class MintRequestSubscriber {
             final var holding = Base.INTERFACE.valueDecoder.decode(holdingValue);
             // We assume the minterBurner only has one account, with only one instrument in it
             // If this is not the case, then additional conditions must be placed in the below if statement
-            // Otherwise, when allocating the holdings for burning, then they may be from the wrong account/
+            // Otherwise, when allocating the holdings for burning, then they may be from the wrong account/instrument
             if (holding.account.owner.equals(minterBurner) && holding.lock.isEmpty()) {
               logger.info("Adding holding to cache");
               holdings.add(createdEvent.getContractId());
@@ -112,15 +111,9 @@ public class MintRequestSubscriber {
         if (event instanceof CreatedEvent) {
           final var createdEvent = (CreatedEvent) event;
           if (createdEvent.getTemplateId().equals(MintInstruction.TEMPLATE_ID)) {
-            processMintInstruction(
-              new MintInstruction.ContractId(createdEvent.getContractId()),
-              MintInstruction.valueDecoder().decode(createdEvent.getArguments())
-            );
+            processMintInstruction(MintInstruction.Contract.fromCreatedEvent(createdEvent));
           } else if (createdEvent.getTemplateId().equals(BurnInstruction.TEMPLATE_ID)) {
-            processBurnInstruction(
-              new BurnInstruction.ContractId(createdEvent.getContractId()),
-              BurnInstruction.valueDecoder().decode(createdEvent.getArguments())
-            );
+            processBurnInstruction(BurnInstruction.Contract.fromCreatedEvent(createdEvent));
           } else {
             throw new IllegalArgumentException("Unexpected template ID " + createdEvent.getTemplateId());
           }
@@ -141,13 +134,15 @@ public class MintRequestSubscriber {
     };
   }
 
-  private void processBurnInstruction(BurnInstruction.ContractId cid, BurnInstruction burnInstruction) {
-    if (!burnInstruction.isAllocated) {
+  private void processBurnInstruction(BurnInstruction.Contract burnInstruction) {
+    if (!burnInstruction.data.isAllocated) {
       logger.info("Allocating to burn instruction");
-      allocateForBurning(cid);
+      allocateForBurning(burnInstruction.id);
+      // Or, if we want to reject the request, we could do
+      // rejectBurn(burnInstruction.id)
     } else {
-      logger.info("Executing burn instruction (not implemented yet)");
-      executeBurn(cid);
+      logger.info("Executing burn instruction");
+      executeBurn(burnInstruction.id);
     }
   }
 
@@ -160,32 +155,36 @@ public class MintRequestSubscriber {
   }
 
   private void rejectBurn(BurnInstruction.ContractId cid) {
-    final var rejectResult = ledgerClient
+    ledgerClient
       .getCommandClient()
       .submitAndWaitForResult(
         updateSubmission(cid.exerciseRejectBurn())
       )
       .blockingGet();
-    // TODO use result?
   }
 
-  private void processMintInstruction(MintInstruction.ContractId cid, MintInstruction mintInstruction) {
-    if (mintInstruction.requestors.map.containsKey(minterBurner)) {
+  private void processMintInstruction(MintInstruction.Contract mintInstruction) {
+    if (mintInstruction.data.requestors.map.containsKey(minterBurner)) {
       logger.info("Accepting mint request");
-      executeMint(cid);
+      executeMint(mintInstruction.id);
     } else {
       logger.info("Not requested by the minter/burner. Rejecting the request as this feature is not supported");
-      rejectMint(cid);
+      rejectMint(mintInstruction.id);
     }
   }
 
   private void allocateForBurning(BurnInstruction.ContractId burnInstructionCid) {
+    // We use the helper contract to split/merge our holdings into the correct amount
     final var holdingCids = holdings.stream().map(Fungible.ContractId::new).collect(Collectors.toList());
     final var command = new AllocateBurnSupplyHelper(minterBurner)
       .createAnd()
       .exerciseAllocateBurnSupplyFromFungibles(burnInstructionCid, holdingCids);
-    final var allocateResult = ledgerClient.getCommandClient().submitAndWaitForResult(updateSubmission(command)).blockingGet();
+    final var allocateResult = ledgerClient
+      .getCommandClient()
+      .submitAndWaitForResult(updateSubmission(command)).blockingGet();
+    // We've merge all our holdings together (so the contracts are archived), so we can clear the cache
     holdings.clear();
+    // If there's any more supply left, we add it into the cache
     allocateResult
       .exerciseResult
       .remainingHoldingCid
@@ -223,11 +222,5 @@ public class MintRequestSubscriber {
       UUID.randomUUID().toString(),
       update
     ).withActAs(minterBurner).withReadAs(List.of(readAs));
-  }
-
-  private da.set.types.Set<String> damlSet(String... element) {
-    return new da.set.types.Set<>(
-      Arrays.stream(element).collect(Collectors.toMap(Function.identity(), s -> Unit.getInstance()))
-    );
   }
 }
