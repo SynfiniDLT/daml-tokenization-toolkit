@@ -25,7 +25,7 @@ java-example/src/generated-main/java: .build/daml-mint.dar
 build-java: java-example/src/generated-main/java java-example/pom.xml $(shell find java-example/src/main -type f)
 	cd java-example && mvn compile
 
-test: .build/daml-mint.dar test/daml.yaml $(shell find test -name '*.daml')
+test: .build/daml-mint.dar
 	cd test && daml test
 
 clean:

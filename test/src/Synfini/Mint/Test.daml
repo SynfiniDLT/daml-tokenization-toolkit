@@ -5,16 +5,20 @@ import qualified Daml.Finance.Interface.Account.Factory as Account
 import Daml.Finance.Interface.Types.Common.Types
 import qualified Daml.Finance.Interface.Holding.Base as Holding
 import qualified Daml.Finance.Interface.Holding.Factory as Holding
+import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
 import qualified Daml.Finance.Interface.Settlement.Factory as Settlement
 
 import qualified Daml.Finance.Account.Account as AccountImpl
 import qualified Daml.Finance.Holding.Fungible as FungibleImpl
+import qualified Daml.Finance.Holding.NonFungible as NonFungibleImpl
 import qualified Daml.Finance.Settlement.Factory as SettlementImpl
 
 import Daml.Script
 import qualified DA.Map as Map
 import qualified DA.Set as Set
 import Synfini.Mint
+import qualified Daml.Finance.Interface.Settlement.Types as Instruction
+import qualified Daml.Finance.Interface.Holding.Fungible as Fungible
 
 _supplyAccountId : Id
 _supplyAccountId = Id "supply"
@@ -24,6 +28,16 @@ aliceAccountId = Id "0"
 
 aliceAccount : Setup -> AccountKey
 aliceAccount s = AccountKey with custodian = s.custodian, owner = s.alice, id = aliceAccountId
+
+mintInstrumentId = Id "MyCoin"
+mintInstrumentVersion = "0"
+
+mintInstrument : Setup -> InstrumentKey
+mintInstrument s = InstrumentKey with
+  issuer = s.issuer
+  depository = s.depository
+  id = mintInstrumentId
+  version = mintInstrumentVersion
 
 data Setup = Setup
   with
@@ -86,18 +100,12 @@ doSetup = do
     description = "Alice's account"
     observers = Map.fromList [("Issuer", Set.fromList [minterBurner])]
 
-  let instrument = InstrumentKey with
-        issuer
-        depository
-        id = Id "MyCoin"
-        version = "0"
-
   mintCid <- submitMulti [custodian, issuer, minterBurner, serviceProvider] [] $ createCmd Mint with
     custodian
     minterBurner = minterBurner
     receiverAuthorisers = Set.fromList [serviceProvider]
     supplyAccountId = supplyAccount.id
-    instrument
+    instrument = InstrumentKey with issuer, depository, id = mintInstrumentId, version = mintInstrumentVersion
     settlementFactoryCid
     observers = Set.fromList [public]
 
@@ -159,3 +167,49 @@ test_rejectBurn = withSetup $ \setup -> do
   submitMulti [setup.minterBurner] [setup.public] $ exerciseCmd burnInstructionCid RejectBurn
   activeInstructions <- query @BurnInstruction setup.alice
   assertMsg "Instructions must be empty" (null activeInstructions)
+
+test_attemptBurnWithBadHoldingTemplate : Script ()
+test_attemptBurnWithBadHoldingTemplate = withSetup $ \setup -> do
+  let mintAmount = 99.9
+  mintInstructionCid <- instructMint setup setup.alice setup.alice aliceAccountId mintAmount (Id "ref1")
+  mintResult <- submitMulti [setup.minterBurner] [setup.public] $ exerciseCmd mintInstructionCid ExecuteMint
+
+  nonFungibleCid <- submitMulti [setup.custodian, setup.alice] [] $ createCmd
+    NonFungibleImpl.NonFungible with
+      instrument = mintInstrument setup
+      account = aliceAccount setup
+      amount = mintAmount
+      lock = None
+      observers = Map.fromList [("obs", Set.fromList [setup.minterBurner])]
+
+  burnInstructionCid <- submitMulti [setup.alice] [setup.public] $ exerciseCmd setup.mintCid InstructBurn with
+    instructor = setup.alice
+    holdingCid = toInterfaceContractId nonFungibleCid
+    id = Id "ref2"
+    description = "Burn"
+  submitMultiMustFail [setup.minterBurner] [setup.public] $ exerciseCmd burnInstructionCid AllocateBurnSupply with
+    holdingCid = mintResult.supplyHoldingCid
+
+test_attemptBurnAndChangeAllocation : Script ()
+test_attemptBurnAndChangeAllocation = withSetup $ \setup -> do
+  mintInstructionCid <- instructMint setup setup.alice setup.alice aliceAccountId 100.0 (Id "ref1")
+  mintResult <- submitMulti [setup.minterBurner] [setup.public] $ exerciseCmd mintInstructionCid ExecuteMint
+  let mintAmount = 50.0
+  let aliceFungibleCid : ContractId Fungible.I = coerceInterfaceContractId mintResult.receiverHoldingCid
+  [holdingCid, otherHoldingCid] <- (.splitCids) <$>
+    submit setup.alice (exerciseCmd aliceFungibleCid Fungible.Split with amounts = [mintAmount, mintAmount])
+
+  burnInstructionCid <- submitMulti [setup.alice] [setup.public] $ exerciseCmd setup.mintCid InstructBurn with
+    instructor = setup.alice
+    holdingCid = toInterfaceContractId holdingCid
+    id = Id "ref2"
+    description = "Burn"
+
+  instructions <- queryInterface @Instruction.I setup.alice
+  let [(instructionFromAliceCid, Some _)] = filter (\(_, Some v) -> v.routedStep.sender == setup.alice) instructions
+  -- Cannot change allocation without permission of custodian
+  -- This stops the sender from re-allocating using an invalid holding
+  submitMultiMustFail [setup.alice, setup.serviceProvider] [setup.public] $
+    exerciseCmd instructionFromAliceCid Instruction.Allocate with
+      actors = Set.fromList [setup.alice, setup.serviceProvider]
+      allocation = Instruction.Pledge (toInterfaceContractId otherHoldingCid)

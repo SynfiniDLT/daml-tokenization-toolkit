@@ -1,5 +1,6 @@
 module Synfini.Mint where
 
+import Daml.Finance.Interface.Account.Util (fetchAccount)
 import qualified Daml.Finance.Interface.Holding.Base as Holding
 import qualified Daml.Finance.Interface.Holding.Fungible as Fungible
 import qualified Daml.Finance.Interface.Settlement.Batch as Batch
@@ -91,7 +92,8 @@ template Mint
         description : Text
       controller instructor
       do
-        holdingView <- exercise holdingCid Holding.GetView with viewer = instructor
+        holding <- fetch holdingCid
+        let holdingView = view holding
         assertMsg "Requestor must be the owner" (holdingView.account.owner == instructor)
         assertMsg "Must have expected instrument" (holdingView.instrument == instrument)
         assertMsg "Must have expected custodian" (holdingView.account.custodian == custodian)
@@ -126,8 +128,8 @@ template Mint
           allocation = Pledge holdingCid
 
         -- TODO is the holding lock check needed?
-        -- Pledge lockedHoldingCid <- (.allocation) <$> exercise allocatedOwnerToCustodianCid Instruction.GetView with
-        --   viewer = instructor
+        Pledge ownerHoldingCid <- (.allocation) <$> exercise allocatedOwnerToCustodianCid Instruction.GetView with
+          viewer = instructor
         -- lockedHolding <- exercise lockedHoldingCid Holding.GetView with viewer = instructor
         -- let lockOpt = lockedHolding.lock
         -- assertMsg "Holding must have lock" (isSome lockOpt)
@@ -149,6 +151,7 @@ template Mint
           quantity = Quantity with unit = instrument, amount = holdingView.amount
           requestors = allActors
           batchCid
+          ownerHoldingCid
           supplyInstructionCid = approvedMbToCustodianCid
           isAllocated = False
 
@@ -217,6 +220,7 @@ template BurnInstruction
     requestors : Set Party
     supplyAccountId : Id
     quantity : Quantity InstrumentKey Decimal
+    ownerHoldingCid : ContractId Holding.I
     batchCid : ContractId Batch.I
     supplyInstructionCid : ContractId Instruction.I
     isAllocated : Bool
@@ -234,9 +238,13 @@ template BurnInstruction
         holdingCid : ContractId Holding.I
       controller minterBurner
       do
-        holding <- exercise holdingCid Holding.GetView with viewer = minterBurner
-        assertMsg "Holding must be from supply account" (holding.account.id == supplyAccountId)
-        assertMsg "Holding cannot already be locked" (O.isNone holding.lock)
+        ownerHolding <- fetch ownerHoldingCid
+        holding <- fetch holdingCid
+        assertMsg "Must have correct template type rep" (interfaceTypeRep ownerHolding == interfaceTypeRep holding)
+        let holdingView = view holding
+        assertMsg "Holding must be from supply account" (holdingView.account.id == supplyAccountId)
+        assertMsg "Holding cannot already be locked" (O.isNone holdingView.lock)
+
         (newSupplyInstructionCid, _) <- exercise supplyInstructionCid Instruction.Allocate with
           actors = Set.fromList [custodian, minterBurner]
           allocation = Pledge holdingCid
@@ -245,7 +253,6 @@ template BurnInstruction
     choice RejectBurn : ContractId Holding.I
       controller minterBurner
       do
-        assertMsg "Cannot already be allocated" (not isAllocated)
         [senderHoldingCid] <- exercise batchCid Batch.Cancel with actors = Set.insert minterBurner requestors
         pure senderHoldingCid
 
