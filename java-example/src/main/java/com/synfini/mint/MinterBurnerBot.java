@@ -180,6 +180,7 @@ public class MinterBurnerBot {
       ).blockingGet();
   }
 
+  // We can use a CommandsSubmission if we don't care about the data/payload contained in the command result
   private CommandsSubmission commandsSubmission(List<? extends HasCommands> commands) {
     return CommandsSubmission.create(
       appId,
@@ -188,6 +189,7 @@ public class MinterBurnerBot {
     ).withActAs(minterBurner).withReadAs(List.of(readAs));
   }
 
+  // The UpdateSubmission can be used if we need the data/payload of the command result
   private <T> UpdateSubmission<T> updateSubmission(Update<T> update) {
     return UpdateSubmission.create(
       appId,
