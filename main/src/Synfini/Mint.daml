@@ -37,7 +37,9 @@ template Mint
         description : Text
       controller instructor
       do
-        assertMsg "Requestor must be owner or minter" (instructor == receiver || instructor == minterBurner)
+        assertMsgPrefixed
+          "Mint instructor must be owner or minter/burner"
+          (instructor == receiver || instructor == minterBurner)
 
         let allActors = Set.fromList [custodian, instructor] <> receiverAuthorisers
             onlyCustodian = Set.fromList [custodian]
@@ -94,10 +96,10 @@ template Mint
       do
         holding <- fetch holdingCid
         let holdingView = view holding
-        assertMsg "Requestor must be the owner" (holdingView.account.owner == instructor)
-        assertMsg "Must have expected instrument" (holdingView.instrument == instrument)
-        assertMsg "Must have expected custodian" (holdingView.account.custodian == custodian)
-        assertMsg "Holding cannot already be locked" (O.isNone holdingView.lock)
+        assertMsgPrefixed "Burn instructor must be the owner" (holdingView.account.owner == instructor)
+        assertMsgPrefixed "Holding to be burned must have expected instrument" (holdingView.instrument == instrument)
+        assertMsgPrefixed "Holding to be burned must have expected custodian" (holdingView.account.custodian == custodian)
+        assertMsgPrefixed "Holding to be burned cannot already be locked" (O.isNone holdingView.lock)
 
         let allActors = Set.fromList [custodian, instructor] <> receiverAuthorisers
             onlyCustodian = Set.fromList [custodian]
@@ -132,9 +134,9 @@ template Mint
           viewer = instructor
         -- lockedHolding <- exercise lockedHoldingCid Holding.GetView with viewer = instructor
         -- let lockOpt = lockedHolding.lock
-        -- assertMsg "Holding must have lock" (isSome lockOpt)
+        -- assertMsgPrefixed "Holding must have lock" (isSome lockOpt)
         -- let (Some lock) = lockOpt
-        -- assertMsg "Holding must be locked by custodian" (Set.member custodian lock.lockers)
+        -- assertMsgPrefixed "Holding must be locked by custodian" (Set.member custodian lock.lockers)
 
         approvedOwnerToCustodianCid <- exercise allocatedOwnerToCustodianCid Instruction.Approve with
           actors = onlyCustodian
@@ -213,6 +215,12 @@ template InstructBurnHelper
           description
         pure InstructBurnFromFungiblesResult with burnInstructionCid, remainingHoldingCid
 
+data RejectBurnResult = RejectBurnResult
+  with
+    releasedOwnerHoldingCid : ContractId Holding.I
+    releasedSupplyHoldingCid : Optional (ContractId Holding.I)
+  deriving (Show, Eq)
+
 template BurnInstruction
   with
     custodian : Party
@@ -240,21 +248,27 @@ template BurnInstruction
       do
         ownerHolding <- fetch ownerHoldingCid
         holding <- fetch holdingCid
-        assertMsg "Must have correct template type rep" (interfaceTypeRep ownerHolding == interfaceTypeRep holding)
+        assertMsgPrefixed
+          "Allocations must have same template type rep"
+          (interfaceTypeRep ownerHolding == interfaceTypeRep holding)
         let holdingView = view holding
-        assertMsg "Holding must be from supply account" (holdingView.account.id == supplyAccountId)
-        assertMsg "Holding cannot already be locked" (O.isNone holdingView.lock)
+        assertMsgPrefixed "Burn supply must be from expected account" (holdingView.account.id == supplyAccountId)
+        assertMsgPrefixed "Burn supply cannot already be locked" (O.isNone holdingView.lock)
 
         (newSupplyInstructionCid, _) <- exercise supplyInstructionCid Instruction.Allocate with
           actors = Set.fromList [custodian, minterBurner]
           allocation = Pledge holdingCid
         create this with supplyInstructionCid = newSupplyInstructionCid, isAllocated = True
 
-    choice RejectBurn : ContractId Holding.I
+    choice RejectBurn : RejectBurnResult
       controller minterBurner
       do
-        [senderHoldingCid] <- exercise batchCid Batch.Cancel with actors = Set.insert minterBurner requestors
-        pure senderHoldingCid
+        releasedHoldingCids <- exercise batchCid Batch.Cancel with actors = Set.insert minterBurner requestors
+        let (releasedOwnerHoldingCid, releasedSupplyHoldingCid) = case releasedHoldingCids of
+              [h1, h2] -> (h1, Some h2)
+              [h1] -> (h1, None)
+              _ -> errorPrefixed "Internal error: expected one or two released holdings"
+        pure RejectBurnResult with releasedOwnerHoldingCid, releasedSupplyHoldingCid
 
 data AllocateBurnSupplyFromFungiblesResult = AllocateBurnSupplyFromFungiblesResult
   with
@@ -287,8 +301,20 @@ mergeAndSplitHelper : [ContractId Fungible.I] ->
                       Update (ContractId Fungible.I, Optional (ContractId Fungible.I))
 mergeAndSplitHelper holdingCids amount = do
   mergedHoldingCid <- case holdingCids of
-    [] -> error "Holdings list cannot be empty" 
+    [] -> errorPrefixed "Cannot merge/split empty holdings" 
     [firstHoldingCid] -> pure firstHoldingCid
     firstHoldingCid :: others -> exercise firstHoldingCid Fungible.Merge with fungibleCids = others
   splitResult <- exercise mergedHoldingCid Fungible.Split with amounts = [amount]
-  pure (O.fromSomeNote "Unexpected empty split result" (List.head splitResult.splitCids), splitResult.rest)
+  pure (
+      O.fromSomeNote "Internal error: unexpected empty split result" (List.head splitResult.splitCids),
+      splitResult.rest
+    )
+
+msgPrefix : Text
+msgPrefix = "Mint: "
+
+assertMsgPrefixed : CanAssert m => Text -> Bool -> m ()
+assertMsgPrefixed msg = assertMsg (msgPrefix <> " " <> msg)
+
+errorPrefixed : Text -> a
+errorPrefixed msg = error (msgPrefix <> " " <> msg)

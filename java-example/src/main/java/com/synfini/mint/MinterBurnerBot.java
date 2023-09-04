@@ -6,8 +6,7 @@ import com.daml.ledger.javaapi.data.codegen.Update;
 import com.daml.ledger.rxjava.LedgerClient;
 import daml.finance.interface$.holding.base.Base;
 import daml.finance.interface$.holding.fungible.Fungible;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
+import io.reactivex.Flowable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import synfini.mint.AllocateBurnSupplyHelper;
@@ -15,51 +14,43 @@ import synfini.mint.BurnInstruction;
 import synfini.mint.MintInstruction;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-public class MinterBurnerSubscriber {
-  private static final Logger logger = LoggerFactory.getLogger(MinterBurnerSubscriber.class);
+public class MinterBurnerBot {
+  private static final Logger logger = LoggerFactory.getLogger(MinterBurnerBot.class);
 
   private final LedgerClient ledgerClient;
   private final String appId;
   private final String minterBurner;
   private final String readAs;
-  private final Set<String> holdings;
-  private final List<CreatedEvent> instructionsAwaitingProcessing;
-  private Optional<String> acsOffset;
 
-  public MinterBurnerSubscriber(
-    LedgerClient ledgerClient, String appId, String minterBurner, String readAs
-  ) {
+  public MinterBurnerBot(LedgerClient ledgerClient, String appId, String minterBurner, String readAs) {
     this.ledgerClient = ledgerClient;
     this.appId = appId;
     this.minterBurner = minterBurner;
     this.readAs = readAs;
-    this.holdings = new HashSet<>();
-    this.instructionsAwaitingProcessing = new ArrayList<>();
-    this.acsOffset = Optional.empty();
   }
 
-  public List<CreatedEvent> getInstructionsAwaitingProcessing() {
-    return instructionsAwaitingProcessing;
-  }
+  public void blockingExecute() {
+    final Set<String> holdings = new HashSet<>();
+    final var instructionsAwaitingProcessing = new ArrayList<>();
 
-  public Optional<String> getAcsOffset() {
-    return acsOffset;
-  }
-
-  public Subscriber<GetActiveContractsResponse> acsSubscriber() {
-    return new Subscriber<>() {
-      private Subscription subscription;
-
-      @Override
-      public void onSubscribe(Subscription s) {
-        this.subscription = s;
-        subscription.request(1);
-      }
-
-      @Override
-      public void onNext(GetActiveContractsResponse getActiveContractsResponse) {
+    final var instructionTemplateIds = Set.of(MintInstruction.TEMPLATE_ID, BurnInstruction.TEMPLATE_ID);
+    final var holdingsAndInstructionsFilter = new FiltersByParty(
+      Map.of(
+        minterBurner,
+        new InclusiveFilter(
+          instructionTemplateIds,
+          Map.of(Base.TEMPLATE_ID, Filter.Interface.INCLUDE_VIEW)
+        )
+      )
+    );
+    AtomicReference<Optional<String>> acsOffset = new AtomicReference<>(Optional.empty());
+    ledgerClient
+      .getActiveContractSetClient()
+      .getActiveContracts(holdingsAndInstructionsFilter, false)
+      .blockingForEach(getActiveContractsResponse -> {
         for (final var createdEvent : getActiveContractsResponse.getCreatedEvents()) {
           final var holdingValue = createdEvent.getInterfaceViews().get(Base.TEMPLATE_ID);
           if (holdingValue != null) {
@@ -77,67 +68,47 @@ public class MinterBurnerSubscriber {
           }
         }
 
+        // ACS offset is present on the last response in the stream
         if (getActiveContractsResponse.getOffset().isPresent()) {
-          acsOffset = getActiveContractsResponse.getOffset();
+          acsOffset.set(getActiveContractsResponse.getOffset());
         }
+      });
 
-        subscription.request(1);
+    final var streamBeginOffset = acsOffset.get().orElseThrow(() -> new IllegalStateException("ACS offset not present"));
+    final var instructionsFilter = new FiltersByParty(
+      Map.of(
+        minterBurner,
+        InclusiveFilter.ofTemplateIds(instructionTemplateIds)
+      )
+    );
+    final var subsequentInstructions = ledgerClient
+      .getTransactionsClient()
+      .getTransactions(new LedgerOffset.Absolute(streamBeginOffset), instructionsFilter, false)
+      .flatMap(transaction -> Flowable.fromIterable(transaction.getEvents()));
+    final var allInstructions = Flowable.concat(
+      Flowable.fromIterable(instructionsAwaitingProcessing),
+      subsequentInstructions
+    );
+    allInstructions.blockingForEach(event -> {
+      if (event instanceof CreatedEvent) {
+        final var createdEvent = (CreatedEvent) event;
+        if (createdEvent.getTemplateId().equals(MintInstruction.TEMPLATE_ID)) {
+          processMintInstruction(holdings, MintInstruction.Contract.fromCreatedEvent(createdEvent));
+        } else if (createdEvent.getTemplateId().equals(BurnInstruction.TEMPLATE_ID)) {
+          processBurnInstruction(holdings, BurnInstruction.Contract.fromCreatedEvent(createdEvent));
+        } else {
+          throw new IllegalArgumentException("Unexpected template ID " + createdEvent.getTemplateId());
+        }
       }
-
-      @Override
-      public void onError(Throwable t) {
-        logger.error("Failure in ACS subscriber", t);
-      }
-
-      @Override
-      public void onComplete() {
-        logger.info("ACS subscriber has completed");
-      }
-    };
+    });
   }
 
-  public Subscriber<Event> eventsSubscriber() {
-    return new Subscriber<>() {
-      private Subscription subscription;
-
-      @Override
-      public void onSubscribe(Subscription s) {
-        this.subscription = s;
-        subscription.request(1);
-      }
-
-      @Override
-      public void onNext(Event event) {
-        if (event instanceof CreatedEvent) {
-          final var createdEvent = (CreatedEvent) event;
-          if (createdEvent.getTemplateId().equals(MintInstruction.TEMPLATE_ID)) {
-            processMintInstruction(MintInstruction.Contract.fromCreatedEvent(createdEvent));
-          } else if (createdEvent.getTemplateId().equals(BurnInstruction.TEMPLATE_ID)) {
-            processBurnInstruction(BurnInstruction.Contract.fromCreatedEvent(createdEvent));
-          } else {
-            throw new IllegalArgumentException("Unexpected template ID " + createdEvent.getTemplateId());
-          }
-        }
-
-        subscription.request(1);
-      }
-
-      @Override
-      public void onError(Throwable t) {
-        logger.error("Error in events subscriber", t);
-      }
-
-      @Override
-      public void onComplete() {
-        logger.warn("Event subscriber completed unexpectedly");
-      }
-    };
-  }
-
-  private void processBurnInstruction(BurnInstruction.Contract burnInstruction) {
+  private void processBurnInstruction(Set<String> holdings, BurnInstruction.Contract burnInstruction) {
     if (!burnInstruction.data.isAllocated) {
+      // Allocating the holding acts as an acknowledgement that we've received the request and will process it.
+      // It also reduces the available supply for burning by the requested amount.
       logger.info("Allocating to burn instruction");
-      allocateForBurning(burnInstruction.id);
+      allocateForBurning(holdings, burnInstruction.id);
       // Or, if we want to reject the request, we could do
       // rejectBurn(burnInstruction.id)
     } else {
@@ -163,26 +134,27 @@ public class MinterBurnerSubscriber {
       .blockingGet();
   }
 
-  private void processMintInstruction(MintInstruction.Contract mintInstruction) {
+  private void processMintInstruction(Set<String> holdings, MintInstruction.Contract mintInstruction) {
     if (mintInstruction.data.requestors.map.containsKey(minterBurner)) {
       logger.info("Accepting mint request");
-      executeMint(mintInstruction.id);
+      executeMint(holdings, mintInstruction.id);
     } else {
       logger.info("Not requested by the minter/burner. Rejecting the request as this feature is not supported");
       rejectMint(mintInstruction.id);
     }
   }
 
-  private void allocateForBurning(BurnInstruction.ContractId burnInstructionCid) {
+  private void allocateForBurning(Set<String> holdings, BurnInstruction.ContractId burnInstructionCid) {
     // We use the helper contract to split/merge our holdings into the correct amount
     final var holdingCids = holdings.stream().map(Fungible.ContractId::new).collect(Collectors.toList());
+    // The helper contract will be created and exercised (and archived) in one transaction
     final var command = new AllocateBurnSupplyHelper(minterBurner)
       .createAnd()
       .exerciseAllocateBurnSupplyFromFungibles(burnInstructionCid, holdingCids);
     final var allocateResult = ledgerClient
       .getCommandClient()
       .submitAndWaitForResult(updateSubmission(command)).blockingGet();
-    // We've merge all our holdings together (so the contracts are archived), so we can clear the cache
+    // We've merge all our previous holdings together (making the contracts are archived), so we can clear the cache
     holdings.clear();
     // If there's any more supply left, we add it into the cache
     allocateResult
@@ -191,7 +163,7 @@ public class MinterBurnerSubscriber {
       .ifPresent(cid -> holdings.add(cid.contractId));
   }
 
-  private void executeMint(MintInstruction.ContractId mintInstructionCid) {
+  private void executeMint(Set<String> holdings, MintInstruction.ContractId mintInstructionCid) {
     final var result = ledgerClient
       .getCommandClient()
       .submitAndWaitForResult(

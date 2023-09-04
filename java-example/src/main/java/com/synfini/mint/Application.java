@@ -1,17 +1,13 @@
 package com.synfini.mint;
 
-import com.daml.ledger.javaapi.data.*;
 import com.daml.ledger.rxjava.DamlLedgerClient;
-import daml.finance.interface$.holding.base.Base;
 import io.grpc.netty.NettyChannelBuilder;
-import io.reactivex.Flowable;
-import synfini.mint.BurnInstruction;
-import synfini.mint.MintInstruction;
-
-import java.util.Map;
-import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Application {
+  private static final Logger logger = LoggerFactory.getLogger(Application.class);
+
   public static void main(String[] args) {
     final var ledgerHost = args[0];
     final int ledgerPort = Integer.parseInt(args[1]);
@@ -22,39 +18,10 @@ public class Application {
     final var channelBuilder = NettyChannelBuilder.forAddress(ledgerHost, ledgerPort);
     // TODO you can update the channel builder to use TLS or change other settings
     final var ledgerClient = DamlLedgerClient.newBuilder(channelBuilder).build();
+    logger.info("Connecting to the ledger");
     ledgerClient.connect();
 
-    final var instructionTemplateIds = Set.of(MintInstruction.TEMPLATE_ID, BurnInstruction.TEMPLATE_ID);
-    final var holdingsAndInstructionsFilter = new FiltersByParty(
-      Map.of(
-        minterBurner,
-        new InclusiveFilter(
-          instructionTemplateIds,
-          Map.of(Base.TEMPLATE_ID, Filter.Interface.INCLUDE_VIEW)
-        )
-      )
-    );
-    final var subscriber = new MinterBurnerSubscriber(ledgerClient, appId, minterBurner, readAs);
-    ledgerClient
-      .getActiveContractSetClient()
-        .getActiveContracts(holdingsAndInstructionsFilter, false)
-        .blockingSubscribe(subscriber.acsSubscriber());
-
-    final var streamBeginOffset = subscriber
-      .getAcsOffset()
-      .orElseThrow(() -> new IllegalStateException("ACS offset not present"));
-    final var instructionsFilter = new FiltersByParty(
-      Map.of(
-        minterBurner,
-        InclusiveFilter.ofTemplateIds(instructionTemplateIds)
-      )
-    );
-    final var instructionsAwaitingProcessing = Flowable.fromIterable(subscriber.getInstructionsAwaitingProcessing());
-    final var subsequentInstructions = ledgerClient
-      .getTransactionsClient()
-      .getTransactions(new LedgerOffset.Absolute(streamBeginOffset), instructionsFilter, false)
-      .flatMap(transaction -> Flowable.fromIterable(transaction.getEvents()));
-    final var allInstructions = Flowable.concat(instructionsAwaitingProcessing, subsequentInstructions);
-    allInstructions.blockingSubscribe(subscriber.eventsSubscriber());
+    logger.info("Starting bot");
+    new MinterBurnerBot(ledgerClient, appId, minterBurner, readAs).blockingExecute();
   }
 }
