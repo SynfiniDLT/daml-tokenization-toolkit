@@ -154,7 +154,7 @@ public class MinterBurnerBot {
     final var allocateResult = ledgerClient
       .getCommandClient()
       .submitAndWaitForResult(updateSubmission(command)).blockingGet();
-    // We've merge all our previous holdings together (making the contracts are archived), so we can clear the cache
+    // We've merged all our previous holdings together (making the contracts are archived), so we can clear the cache
     holdings.clear();
     // If there's any more supply left, we add it into the cache
     allocateResult
