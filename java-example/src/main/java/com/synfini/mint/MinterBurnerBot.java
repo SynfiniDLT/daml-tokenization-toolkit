@@ -46,7 +46,7 @@ public class MinterBurnerBot {
         )
       )
     );
-    AtomicReference<Optional<String>> acsOffset = new AtomicReference<>(Optional.empty());
+    final AtomicReference<Optional<String>> acsOffset = new AtomicReference<>(Optional.empty());
     ledgerClient
       .getActiveContractSetClient()
       .getActiveContracts(holdingsAndInstructionsFilter, false)
