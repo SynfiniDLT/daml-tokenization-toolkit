@@ -1,0 +1,7 @@
+sdk-version: 2.6.3
+name: sandbox-test-setup
+source: src
+version: 0.0.1
+dependencies:
+  - daml-prim
+  - daml-stdlib

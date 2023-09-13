@@ -1,0 +1,178 @@
+module Synfini.Mint.Demo where
+
+import qualified Daml.Finance.Interface.Account.Account as Account
+import qualified Daml.Finance.Interface.Account.Factory as Account
+import Daml.Finance.Interface.Types.Common.Types
+import qualified Daml.Finance.Interface.Holding.Factory as Holding
+import qualified Daml.Finance.Interface.Settlement.Factory as Settlement
+
+import qualified Daml.Finance.Account.Account as AccountImpl
+import qualified Daml.Finance.Holding.Fungible as FungibleImpl
+import qualified Daml.Finance.Settlement.Factory as SettlementImpl
+
+import Daml.Script
+import DA.Map (Map)
+import qualified DA.Map as Map
+import qualified DA.Set as Set
+import Synfini.Mint
+import DA.Foldable (forA_)
+import qualified DA.Optional as O
+
+data SetupPartiesInput = SetupPartiesInput
+  with
+    names : [Text]
+
+data PartyInfo = PartyInfo
+  with
+    name : Text
+    partyId : Party
+
+data SetupPartiesOutput = SetupPartiesOutput
+  with
+    parties : [PartyInfo]
+
+setupParties : SetupPartiesInput -> Script SetupPartiesOutput
+setupParties input = do
+  parties <- forA input.names $ \name -> do
+    partyId <- allocatePartyWithHint name (PartyIdHint name)
+    pure PartyInfo with name, partyId
+  pure SetupPartiesOutput with parties
+
+data UserSettings = UserSettings
+  with
+    userId : Text
+    primaryParty : Optional Text
+    readAs : [Text]
+    actAs : [Text]
+
+data SetupUsersInput = SetupUsersInput
+  with
+    parties : [PartyInfo]
+    users : [UserSettings]
+
+partiesMap : [PartyInfo] -> Map Text Party
+partiesMap parties = Map.fromList $ (\partyInfo -> (partyInfo.name, partyInfo.partyId)) <$> parties
+
+getPartyId : Map Text Party -> Text -> Party
+getPartyId parties name = O.fromSomeNote ("Party not provided: " <> name) $ Map.lookup name parties
+
+setupUsers : SetupUsersInput -> Script ()
+setupUsers input = do
+  let nameToPartyId = partiesMap input.parties
+  let p = getPartyId nameToPartyId 
+  forA_ input.users $ \user -> do
+    userId <- validateUserId user.userId
+
+    let actAs = (CanActAs . p) <$> user.actAs
+        readAs = (CanReadAs . p) <$> user.readAs
+    createUser (User userId (p <$> user.primaryParty)) (actAs <> readAs)
+    pure ()
+
+data SetupContractsInput = SetupContractsInput
+  with
+    parties : [PartyInfo]
+
+setup : SetupContractsInput -> Script ()
+setup input = do
+  let pm = partiesMap input.parties
+  let p = getPartyId pm
+  let custodian = p "SynfiniValidator"
+      issuer = p "AUDN_Issuer"
+      depository = p "AUDN_Depository"
+      minterBurner = p "AUDN_MinterBurner"
+      coinOperator = p "AUDN_Operator"
+      investorA = p "InvestorA"
+      investorB = p "InvestorB"
+
+  holdingFactoryCid : ContractId Holding.Factory <- fmap toInterfaceContractId . submit custodian $
+    createCmd FungibleImpl.Factory with
+      provider = custodian
+      observers = Map.fromList [("observers", Set.fromList [minterBurner, investorA])]
+  accountFactoryCid : ContractId Account.Factory <- fmap toInterfaceContractId . submit custodian $
+    createCmd AccountImpl.Factory with
+      provider = custodian
+      observers = Map.fromList [("observers", Set.fromList [investorA])]
+  settlementFactoryCid : ContractId Settlement.Factory <- fmap toInterfaceContractId . submit custodian $
+    createCmd SettlementImpl.Factory with
+      provider = custodian
+      observers = Set.fromList [minterBurner, investorA]
+
+  let instrument = InstrumentKey with
+        issuer
+        depository
+        id = Id "AUDN"
+        version = "1"
+  let supplyAccount = AccountKey with
+        custodian
+        owner = minterBurner
+        id = Id "AUDN_Supply"
+  submitMulti [custodian, minterBurner] [] $ exerciseCmd accountFactoryCid Account.Create with
+    account = supplyAccount
+    controllers = Account.Controllers with
+      incoming = Set.fromList [custodian, minterBurner]
+      outgoing = Set.fromList [custodian, minterBurner]
+    holdingFactoryCid
+    description = "Total supply of " <> show instrument.id
+    observers = Map.fromList [("observers", Set.fromList [investorA, investorB, minterBurner])]
+
+  let investorAAccount = AccountKey with
+        custodian
+        owner = investorA
+        id = Id "1234"
+  submitMulti [custodian, investorA] [] $ exerciseCmd accountFactoryCid Account.Create with
+    account = investorAAccount
+    controllers = Account.Controllers with
+      incoming = Set.fromList [coinOperator]
+      outgoing = Set.fromList [investorA]
+    holdingFactoryCid
+    description = "Synfini transaction acount"
+    observers = Map.fromList [("observers", Set.fromList [minterBurner])]
+
+  let investorBAccount = AccountKey with
+        custodian
+        owner = investorB
+        id = Id "5678"
+  submitMulti [custodian, investorB] [] $ exerciseCmd accountFactoryCid Account.Create with
+    account = investorBAccount
+    controllers = Account.Controllers with
+      incoming = Set.fromList [coinOperator]
+      outgoing = Set.fromList [investorB]
+    holdingFactoryCid
+    description = "Synfini transaction acount"
+    observers = Map.fromList [("observers", Set.fromList [minterBurner])]
+
+  mintCid <- submitMulti [custodian, issuer, minterBurner, coinOperator] [] $ createCmd Mint with
+    custodian
+    minterBurner
+    receiverAuthorisers = Set.fromList [coinOperator]
+    supplyAccountId = supplyAccount.id
+    instrument
+    settlementFactoryCid
+    observers = Set.fromList [investorA, minterBurner]
+
+  mintInstructionCid1 <- submit minterBurner $ exerciseCmd mintCid InstructMint with
+    instructor = minterBurner
+    receiver = investorA
+    receiverAccountId = investorAAccount.id
+    amount = 1000.0
+    id = Id "1111111"
+    description = "AUDN purchase"
+  mintResult1 <- submit minterBurner $ exerciseCmd mintInstructionCid1 ExecuteMint
+
+  mintInstructionCid2 <- submit minterBurner $ exerciseCmd mintCid InstructMint with
+    instructor = minterBurner
+    receiver = investorB
+    receiverAccountId = investorBAccount.id
+    amount = 500.0
+    id = Id "222222"
+    description = "AUDN purchase"
+  submit minterBurner $ exerciseCmd mintInstructionCid2 ExecuteMint
+
+  submit investorA do
+    createAndExerciseCmd (InstructBurnHelper investorA) InstructBurnFromFungibles with
+      mintCid
+      amount = 200.0
+      holdingCids = [coerceInterfaceContractId mintResult1.receiverHoldingCid]
+      id = Id "333333"
+      description = "AUDN redemption"
+  pure ()

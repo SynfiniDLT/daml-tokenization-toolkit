@@ -1,0 +1,53 @@
+module Synfini.Interface.Instrument.PartyBoundAttributes.Factory where
+
+-- import Daml.Finance.Interface.Instrument.Token.Types (Token)
+import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
+import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Instrument as Instrument
+import Daml.Finance.Interface.Types.Common.Types
+
+-- | Type synonym for `Factory`.
+type F = Factory
+
+-- | Type synonym for `View`.
+type V = View
+
+-- View of `Factory`.
+data View = View
+  with
+    provider : Party
+      -- ^ The provider of the `Factory`.
+  deriving (Eq, Show)
+
+-- | Factory interface to instantiate simple tokens.
+interface Factory requires Disclosure.I where
+  viewtype V
+
+  create' : Create -> Update (ContractId Instrument.I)
+    -- ^ Implementation of `Create` choice.
+  remove : Remove -> Update ()
+    -- ^ Implementation of `Remove` choice.
+
+  nonconsuming choice Create : ContractId Instrument.I
+    -- ^ Create a new token.
+    with
+      instrument : InstrumentKey
+      description : Text
+      validAsOf : Time
+      owner : Party
+      attributes : Instrument.Attributes
+        -- ^ Attributes to create a token.
+      observers : PartiesMap
+        -- ^ The instrument's observers.
+    controller instrument.depository, instrument.issuer
+    do
+      create' this arg
+
+  nonconsuming choice Remove : ()
+    -- ^ Archive a token.
+    with
+      instrument : InstrumentKey
+      owner : Party
+        -- ^ The instrument's key.
+    controller instrument.depository, instrument.issuer
+      do
+        remove this arg

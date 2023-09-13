@@ -1,0 +1,125 @@
+-- Warning: if any types are added to this module they should also be added to the `UsedTypes` in
+-- Synfini.Wallet.Api.Types.Internal, otherwise they will not appear in the codegen output
+module Synfini.Wallet.Api.Types where
+
+import qualified Daml.Finance.Interface.Account.Account as Account
+import qualified Daml.Finance.Interface.Holding.Base as Holding
+import qualified Daml.Finance.Interface.Settlement.Batch as Batch
+import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
+import qualified Daml.Finance.Interface.Instrument.Token.Instrument as Token
+import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Instrument as Pbt
+import Daml.Finance.Interface.Settlement.Types
+import Daml.Finance.Interface.Types.Common.Types
+import DA.Set (Set)
+
+data Balance = Balance
+  with
+    account : AccountKey
+    instrument : InstrumentKey
+    unlocked : Decimal
+    locked : Decimal
+  deriving (Show, Eq)
+
+data Balances = Balances
+  with
+    balances : [Balance]
+  deriving (Show, Eq)
+
+data TransactionDetail = TransactionDetail
+  with
+    offset : Text
+    effectiveTime : Time
+  deriving (Show, Eq)
+
+data HoldingSummary = HoldingSummary
+  with
+    cid : ContractId Holding.I
+    view : Holding.V
+    create : Optional TransactionDetail
+  deriving (Show, Eq)
+
+data Holdings = Holdings
+  with
+    holdings : [HoldingSummary]
+  deriving (Show, Eq)
+
+data BalanceFilter = BalanceFilter
+  with
+    account : AccountKey
+  deriving (Show, Eq)
+
+data HoldingFilter = HoldingFilter
+  with
+    account : AccountKey
+    instrument : InstrumentKey
+  deriving (Show, Eq)
+
+data AccountFilter = AccountFilter
+  with
+    owner : Party
+  deriving (Show, Eq)
+
+data AccountSummary = AccountSummary
+  with
+    cid : ContractId Account.I
+    view : Account.V
+    open : Optional TransactionDetail
+    close : Optional TransactionDetail
+  deriving (Show, Eq)
+
+data Accounts = Accounts
+  with
+    accounts : [AccountSummary]
+  deriving (Show, Eq)
+
+data SettlementsFilter = SettlementsFilter
+  with
+    before : Optional Text
+    limit : Optional Int
+  deriving (Show, Eq)
+
+data SettlementStep = SettlementStep
+  with
+    routedStep : RoutedStep
+    instructionId : Id
+    instructionCid : ContractId Instruction.I
+    allocation : Optional Allocation
+    approval : Optional Approval
+  deriving (Show, Eq)
+
+data SettlementSummary = SettlementSummary
+  with
+    batchId : Id
+    requestors : Set Party
+    batchCid : Optional (ContractId Batch.I)
+    contextId : Optional Id
+    description : Optional Text
+    steps : [SettlementStep]
+    witness : TransactionDetail
+    execution : Optional TransactionDetail
+  deriving (Show, Eq)
+
+data Settlements = Settlements
+  with
+    settlements : [SettlementSummary]
+  deriving (Show, Eq)
+
+-- TODO may need to add contract ID to this type, and create/archive TransactionDetail
+data InstrumentSummary = InstrumentSummary
+  with
+    tokenView : Optional Token.View
+    pbtView : Optional Pbt.View
+  deriving (Show, Eq)
+
+data Instruments = Instruments
+  with
+    instruments : [InstrumentSummary]
+  deriving (Show, Eq)
+
+data InstrumentsFilter = InstrumentsFilter
+  with
+    depository : Party
+    issuer : Party
+    id : Id
+    version : Optional Text
+  deriving (Show, Eq)

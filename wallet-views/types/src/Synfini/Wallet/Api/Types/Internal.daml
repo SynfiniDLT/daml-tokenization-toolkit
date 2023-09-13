@@ -1,0 +1,27 @@
+{-# LANGUAGE TypeOperators #-}
+
+module Synfini.Wallet.Api.Types.Internal where
+
+import Synfini.Wallet.Api.Types
+
+undefinedParty : Party
+undefinedParty = undefined
+
+type a :+: b = Either a b
+
+-- Dummy template which is used to instruct the code generator to generate definitions for these types
+template UsedTypes
+  with
+    types :
+      Balances :+:
+      BalanceFilter :+:
+      Holdings :+:
+      HoldingFilter :+:
+      Accounts :+:
+      AccountFilter :+:
+      Settlements :+:
+      SettlementsFilter :+:
+      Instruments :+:
+      InstrumentsFilter
+  where
+    signatory undefinedParty

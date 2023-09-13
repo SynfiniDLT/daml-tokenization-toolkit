@@ -1,0 +1,9 @@
+sandbox.keys.secret.upload("participantKey.key", Some("participantKey"))
+val namespace = "1220facc0504d0689c876c616736695a92dbdd54a2aad49cc7a8b2f54935604c35ac"
+sandbox.topology.namespace_delegations.authorize(TopologyChangeOp.Add, namespace, namespace, true)
+sandbox.topology.init_id("sandbox", namespace)
+val enc = sandbox.keys.secret.generate_encryption_key()
+val sig = sandbox.keys.secret.generate_signing_key()
+sandbox.topology.owner_to_key_mappings.authorize(TopologyChangeOp.Add, sandbox.id, enc.fingerprint, enc.purpose)
+sandbox.topology.owner_to_key_mappings.authorize(TopologyChangeOp.Add, sandbox.id, sig.fingerprint, sig.purpose)
+sandbox.domains.connect_local(local)
