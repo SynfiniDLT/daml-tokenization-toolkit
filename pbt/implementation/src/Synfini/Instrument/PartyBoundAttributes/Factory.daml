@@ -1,0 +1,52 @@
+module Synfini.Instrument.PartyBoundAttributes.Factory where
+
+import Daml.Finance.Interface.Types.Common.Types (PartiesMap)
+import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
+import qualified Synfini.Instrument.PartyBoundAttributes.Instrument as PbtImpl
+import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Factory as PbtFactory
+import qualified Daml.Finance.Util.Disclosure as DisclosureUtil
+import qualified DA.Set as Set
+import qualified Daml.Finance.Interface.Instrument.Base.Instrument as Instrument
+import qualified Daml.Finance.Interface.Instrument.Base.Instrument as BaseInstrument
+
+-- | Type synonym for `Factory`.
+type F = Factory
+
+-- | Factory template for instrument creation.
+template Factory
+  with
+    provider : Party
+      -- ^ The factory's provider.
+    observers : PartiesMap
+      -- ^ The factory's observers.
+  where
+    signatory provider
+    observer Disclosure.flattenObservers observers
+
+    interface instance PbtFactory.F for Factory where
+      view = PbtFactory.View with provider
+      create' c@(PbtFactory.Create {instrument, description, validAsOf, owner, attributes }) = do
+        cid <- toInterfaceContractId <$>
+          create PbtImpl.Instrument with
+            depository = instrument.depository
+            issuer = instrument.issuer
+            id = instrument.id
+            version = instrument.version
+            description
+            validAsOf
+            attributes
+            owner
+            observers = c.observers
+        Instrument.createReference instrument.depository $ toInterfaceContractId cid
+        pure cid
+      remove PbtFactory.Remove {instrument} = do
+        (refCid, ref) <- fetchByKey @BaseInstrument.R instrument
+        instrumentCid <- exercise refCid BaseInstrument.GetCid with viewer = instrument.depository
+        archive instrumentCid
+        archive refCid
+
+    interface instance Disclosure.I for Factory where
+      view = Disclosure.View with disclosureControllers = Set.singleton provider; observers
+      setObservers = DisclosureUtil.setObserversImpl @Factory @Disclosure.I this None
+      addObservers = DisclosureUtil.addObserversImpl @Factory @Disclosure.I this None
+      removeObservers = DisclosureUtil.removeObserversImpl @Factory @Disclosure.I this None

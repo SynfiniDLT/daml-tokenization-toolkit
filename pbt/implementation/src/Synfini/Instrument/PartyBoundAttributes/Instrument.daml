@@ -1,0 +1,58 @@
+module Synfini.Instrument.PartyBoundAttributes.Instrument where
+
+import qualified Daml.Finance.Interface.Instrument.Base.Instrument as BaseInstrument
+import qualified Daml.Finance.Interface.Instrument.Token.Instrument as Token
+import Daml.Finance.Interface.Types.Common.Types
+import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
+import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Instrument as Pbt
+import Daml.Finance.Interface.Instrument.Token.Types (Token(..))
+import qualified Daml.Finance.Lifecycle.Event.Replacement as Replacement
+import qualified Daml.Finance.Util.Disclosure as DisclosureUtil
+import qualified DA.Set as Set
+
+type T = Instrument
+
+template Instrument
+  with
+    issuer : Party
+    depository : Party
+    id : Id
+    version : Text
+    description : Text
+    validAsOf : Time
+    attributes : Pbt.Attributes
+    owner : Party
+    observers : PartiesMap
+  where
+    signatory depository, issuer
+    observer Disclosure.flattenObservers observers
+
+    let instrument = InstrumentKey with depository; issuer; id; version
+  
+    interface instance BaseInstrument.I for Instrument where
+      view = BaseInstrument.View with depository; issuer; id; validAsOf; description; version
+      getKey = instrument
+
+    interface instance Pbt.I for Instrument where
+      view = Pbt.View with instrument, description, validAsOf, attributes, owner
+      declareUpgrade Pbt.DeclareUpgrade {
+        id;
+        description;
+        effectiveTime
+      } = toInterfaceContractId <$> create Replacement.Event with
+        id
+        description
+        providers = Set.fromList [issuer, depository]
+        effectiveTime
+        targetInstrument = instrument
+        perUnitReplacement = [Quantity with unit = instrument, amount = 1.0]
+        observers = Disclosure.flattenObservers observers
+
+    interface instance Disclosure.I for Instrument where
+      view = Disclosure.View with disclosureControllers = Set.fromList [issuer, owner]; observers
+      setObservers = DisclosureUtil.setObserversImpl this $
+        Some (BaseInstrument.disclosureUpdateReference instrument)
+      addObservers = DisclosureUtil.addObserversImpl @Instrument this $
+        Some (BaseInstrument.disclosureUpdateReference instrument)
+      removeObservers = DisclosureUtil.removeObserversImpl this $
+        Some (BaseInstrument.disclosureUpdateReference instrument)

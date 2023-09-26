@@ -1,0 +1,39 @@
+module Synfini.Onboarding.User where
+
+import Synfini.Onboarding.Party
+import Daml.Script
+import DA.Map (Map)
+import qualified DA.Map as Map
+import qualified DA.Set as Set
+import DA.Foldable (forA_)
+import qualified DA.Optional as O
+
+data UserSettings = UserSettings
+  with
+    userId : Text
+    primaryParty : Optional Text
+    readAs : [Text]
+    actAs : [Text]
+
+data SetupUsersInput = SetupUsersInput
+  with
+    parties : [PartyInfo]
+    users : [UserSettings]
+
+partiesMap : [PartyInfo] -> Map Text Party
+partiesMap parties = Map.fromList $ (\partyInfo -> (partyInfo.name, partyInfo.partyId)) <$> parties
+
+getPartyId : Map Text Party -> Text -> Party
+getPartyId parties name = O.fromSomeNote ("Party not provided: " <> name) $ Map.lookup name parties
+
+setupUsers : SetupUsersInput -> Script ()
+setupUsers input = do
+  let nameToPartyId = partiesMap input.parties
+  let p = getPartyId nameToPartyId 
+  forA_ input.users $ \user -> do
+    userId <- validateUserId user.userId
+
+    let actAs = (CanActAs . p) <$> user.actAs
+        readAs = (CanReadAs . p) <$> user.readAs
+    createUser (User userId (p <$> user.primaryParty)) (actAs <> readAs)
+    pure ()

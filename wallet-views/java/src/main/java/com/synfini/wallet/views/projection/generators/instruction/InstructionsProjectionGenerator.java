@@ -1,0 +1,118 @@
+package com.synfini.wallet.views.projection.generators.instruction;
+
+import akka.grpc.GrpcClientSettings;
+import com.daml.ledger.javaapi.data.ArchivedEvent;
+import com.daml.ledger.javaapi.data.CreatedEvent;
+import com.daml.ledger.javaapi.data.DamlRecord;
+import com.daml.ledger.javaapi.data.Event;
+import com.daml.projection.*;
+import com.daml.projection.javadsl.BatchSource;
+import com.synfini.wallet.views.Util;
+import com.synfini.wallet.views.projection.ProjectionGenerator;
+import com.synfini.wallet.views.projection.events.InstructionEvent;
+import daml.finance.interface$.settlement.instruction.Instruction;
+import daml.finance.interface$.settlement.instruction.View;
+
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+public class InstructionsProjectionGenerator implements ProjectionGenerator<Event, InstructionEvent> {
+  private final String readAs;
+  private final Connection connection;
+
+  public InstructionsProjectionGenerator(String readAs, Connection connection) {
+    this.readAs = readAs;
+    this.connection = connection;
+  }
+
+  @Override
+  public BatchSource<Event> source(GrpcClientSettings grpcClientSettings) {
+    return BatchSource.events(grpcClientSettings);
+  }
+
+  @Override
+  public Projection<Event> projection() {
+    return Projection.create(
+      new ProjectionId("instructions-projection-for-" + readAs),
+      ProjectionFilter.singleContractType(
+        Set.of(readAs),
+        Instruction.INTERFACE
+      )
+    );
+  }
+
+  @Override
+  public Project<Event, InstructionEvent> project() {
+    return envelope -> {
+      Event event = envelope.getEvent();
+      if (event instanceof CreatedEvent) {
+        CreatedEvent createdEvent = (CreatedEvent) event;
+        DamlRecord viewRecord = createdEvent.getInterfaceViews().get(Instruction.INTERFACE.TEMPLATE_ID);
+        if (viewRecord == null) throw new InternalError("Interface view not available");
+        var view = View.valueDecoder().decode(viewRecord);
+        return List.of(
+          new InstructionEvent(
+            createdEvent.getContractId(),
+            envelope.getOffset(),
+            envelope.getLedgerEffectiveTime(),
+            Optional.of(view)
+          )
+        );
+      } else if (event instanceof ArchivedEvent) {
+        return List.of(
+          new InstructionEvent(
+            event.getContractId(),
+            envelope.getOffset(),
+            envelope.getLedgerEffectiveTime(),
+            Optional.empty()
+          )
+        );
+      } else {
+        return Collections.emptyList();
+      }
+    };
+  }
+
+  @Override
+  public BatchRows<InstructionEvent, JdbcAction> batchRows() {
+    final var table = new ProjectionTable("instructions");
+    final var defaultRequestors = new da.set.types.Set<String>(Collections.emptyMap());
+    final var bind = Sql.<InstructionEvent>binder(
+      "INSERT INTO " + table.getName() + "\n" +
+      "        (batch_id,  requestors_hash,  requestors,  instruction_id,  cid,  sender,  receiver,  custodian,  amount,  instrument_depository,  instrument_issuer,  instrument_id,  instrument_version,  allocation_pledge_cid,  approval_take_delivery_account_custodian,  approval_take_delivery_account_owner,  approval_take_delivery_account_id,  create_offset,  create_effective_time)\n" +
+      "VALUES (:batch_id, :requestors_hash, :requestors, :instruction_id, :cid, :sender, :receiver, :custodian, :amount, :instrument_depository, :instrument_issuer, :instrument_id, :instrument_version, :allocation_pledge_cid, :approval_take_delivery_account_custodian, :approval_take_delivery_account_owner, :approval_take_delivery_account_id, :create_offset, :create_effective_time)\n" +
+      "ON CONFLICT(cid) DO UPDATE SET\n" +
+      "  archive_offset = CASE WHEN :update_archive_offset THEN :archive_offset ELSE " + table.getName() + ".archive_offset END,\n" +
+      "  archive_effective_time = CASE WHEN :update_archive_effective_time THEN :archive_effective_time ELSE " + table.getName() + ".archive_effective_time END\n"
+    )
+    .bind("batch_id", e -> e.view.map(v -> v.batchId.unpack).orElse(""), Bind.String())
+    .bind("requestors_hash", e -> e.view.map(v -> v.requestors).orElse(defaultRequestors).hashCode(), Bind.Int())
+    .bind("requestors", e -> Util.setToArray(e.view.map(v -> v.requestors), connection), Bind.Array())
+    .bind("instruction_id", e -> e.view.map(v -> v.id.unpack).orElse(""), Bind.String())
+    .bind("cid", e -> e.contractId, Bind.String())
+    .bind("sender", e -> e.view.map(v -> v.routedStep.sender).orElse(""), Bind.String())
+    .bind("receiver", e -> e.view.map(v -> v.routedStep.receiver).orElse(""), Bind.String())
+    .bind("custodian", e -> e.view.map(v -> v.routedStep.custodian).orElse(""), Bind.String())
+    .bind("amount", e -> e.view.map(v -> v.routedStep.quantity.amount).orElse(new BigDecimal("0.0")), Bind.BigDecimal())
+    .bind("instrument_depository", e -> e.view.map(v -> v.routedStep.quantity.unit.depository).orElse(""), Bind.String())
+    .bind("instrument_issuer", e -> e.view.map(v -> v.routedStep.quantity.unit.issuer).orElse(""), Bind.String())
+    .bind("instrument_id", e -> e.view.map(v -> v.routedStep.quantity.unit.id.unpack).orElse(""), Bind.String())
+    .bind("instrument_version", e -> e.view.map(v -> v.routedStep.quantity.unit.version).orElse(""), Bind.String())
+    .bind("allocation_pledge_cid", e -> e.getAllocationPledgeCid().map(cid -> cid.contractId), Bind.Optional(Bind.String()))
+    .bind("approval_take_delivery_account_custodian", e -> e.getApprovalTakeDeliveryAccount().map(a -> a.custodian), Bind.Optional(Bind.String()))
+    .bind("approval_take_delivery_account_owner", e -> e.getApprovalTakeDeliveryAccount().map(a -> a.owner), Bind.Optional(Bind.String()))
+    .bind("approval_take_delivery_account_id", e -> e.getApprovalTakeDeliveryAccount().map(a -> a.id.unpack), Bind.Optional(Bind.String()))
+    .bind("create_offset", e -> e.offset.map(o -> o.value()), Bind.Optional(Bind.String()))
+    .bind("create_effective_time", e -> e.effectiveTime, Bind.Optional(Bind.Instant()))
+    .bind("update_archive_offset",  e -> e.view.isEmpty(), Bind.Boolean())
+    .bind("archive_offset", e -> e.offset.map(o -> o.value()), Bind.Optional(Bind.String()))
+    .bind("update_archive_effective_time",  e -> e.view.isEmpty(), Bind.Boolean())
+    .bind("archive_effective_time", e -> e.effectiveTime, Bind.Optional(Bind.Instant()));
+
+    return UpdateMany.create(bind);
+  }
+}

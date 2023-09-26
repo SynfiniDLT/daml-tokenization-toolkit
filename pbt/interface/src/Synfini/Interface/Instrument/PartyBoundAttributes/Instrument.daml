@@ -1,0 +1,53 @@
+module Synfini.Interface.Instrument.PartyBoundAttributes.Instrument where
+
+import qualified Daml.Finance.Interface.Instrument.Base.Instrument as BaseInstrument
+import qualified Daml.Finance.Interface.Lifecycle.Event as Event
+import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
+import DA.Map (Map)
+import Daml.Finance.Interface.Types.Common.Types
+
+-- | Type synonym for `Instrument`.
+type I = Instrument
+
+-- | Type synonym for `View`.
+type V = View
+
+type Attributes = Map Text Text
+
+-- | View of `Instrument`.
+data View = View
+  with
+    instrument : InstrumentKey
+    description : Text
+    validAsOf : Time
+    owner : Party
+    attributes : Attributes
+      -- ^ Attributes belonging to this token.
+  deriving (Eq, Show)
+
+interface Instrument requires BaseInstrument.I, Disclosure.I where
+  viewtype V
+
+  declareUpgrade : DeclareUpgrade -> Update (ContractId Event.I)
+
+  nonconsuming choice GetView : V
+    -- ^ Retrieves the interface view.
+    with
+      viewer : Party
+        -- ^ The party retrieving the view.
+    controller viewer
+    do
+      pure $ view this
+
+  nonconsuming choice DeclareUpgrade : ContractId Event.I
+    with
+      id : Id
+        -- ^ Event identifier of the dividend distribution.
+      description : Text
+        -- ^ Description of the dividend event.
+      effectiveTime : Time
+        -- ^ Time at which the upgrade is recorded
+      newInstrument : InstrumentKey
+    controller (view $ toInterface @BaseInstrument.I this).issuer
+    do
+      declareUpgrade this arg
