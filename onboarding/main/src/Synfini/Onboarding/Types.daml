@@ -19,8 +19,8 @@ getPartyId parties name = O.fromSomeNote ("Party not provided: " <> name) $ Map.
 
 data Observer = Observer
   with
-    label : Text
+    context : Text
     parties : [Text]
 
 asPartiesMap : (Text -> Party) -> [Observer] -> PartiesMap
-asPartiesMap p observers = Map.fromList $ (\o -> (o.label, Set.fromList (p <$> o.parties))) <$> observers
+asPartiesMap p observers = Map.fromList $ (\o -> (o.context, Set.fromList (p <$> o.parties))) <$> observers

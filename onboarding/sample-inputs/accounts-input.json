@@ -12,7 +12,7 @@
       "holdingFactory": "AliceFungible",
       "observers": [
         {
-          "label": "o",
+          "context": "o",
           "parties": ["Bob"]
         }
       ]
