@@ -1,1 +1,5 @@
 module Synfini.Onboarding.Account.Unilateral where
+
+data AccountSettings = AccountSettings
+  with
+    

@@ -1,0 +1,26 @@
+module Synfini.Onboarding.Types where
+
+import Daml.Finance.Interface.Types.Common.Types
+import qualified DA.Map as Map
+import DA.Map (Map)
+import qualified DA.Set as Set
+import qualified DA.Optional as O
+
+data PartyInfo = PartyInfo
+  with
+    name : Text
+    partyId : Party
+
+partyTable : [PartyInfo] -> Map Text Party
+partyTable parties = Map.fromList $ (\partyInfo -> (partyInfo.name, partyInfo.partyId)) <$> parties
+
+getPartyId : Map Text Party -> Text -> Party
+getPartyId parties name = O.fromSomeNote ("Party not provided: " <> name) $ Map.lookup name parties
+
+data Observer = Observer
+  with
+    label : Text
+    parties : [Text]
+
+asPartiesMap : (Text -> Party) -> [Observer] -> PartiesMap
+asPartiesMap p observers = Map.fromList $ (\o -> (o.label, Set.fromList (p <$> o.parties))) <$> observers

@@ -1,6 +1,6 @@
 module Synfini.Onboarding.User where
 
-import Synfini.Onboarding.Party
+import Synfini.Onboarding.Types
 import Daml.Script
 import DA.Map (Map)
 import qualified DA.Map as Map
@@ -20,15 +20,9 @@ data SetupUsersInput = SetupUsersInput
     parties : [PartyInfo]
     users : [UserSettings]
 
-partiesMap : [PartyInfo] -> Map Text Party
-partiesMap parties = Map.fromList $ (\partyInfo -> (partyInfo.name, partyInfo.partyId)) <$> parties
-
-getPartyId : Map Text Party -> Text -> Party
-getPartyId parties name = O.fromSomeNote ("Party not provided: " <> name) $ Map.lookup name parties
-
 setupUsers : SetupUsersInput -> Script ()
 setupUsers input = do
-  let nameToPartyId = partiesMap input.parties
+  let nameToPartyId = partyTable input.parties
   let p = getPartyId nameToPartyId 
   forA_ input.users $ \user -> do
     userId <- validateUserId user.userId

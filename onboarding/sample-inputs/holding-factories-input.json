@@ -1,0 +1,26 @@
+{
+  "holdingFactorySettings": [
+    {
+      "label": "AliceFungible",
+      "holdingType": "Fungible",
+      "provider": "Alice",
+      "observers": [
+        {
+          "label": "o",
+          "parties": ["Bob"]
+        }
+      ]
+    },
+    {
+      "label": "AliceNonTransferable",
+      "holdingType": "NonTransferable",
+      "provider": "Alice",
+      "observers": [
+        {
+          "label": "o",
+          "parties": ["Bob"]
+        }
+      ]
+    }
+  ]
+}

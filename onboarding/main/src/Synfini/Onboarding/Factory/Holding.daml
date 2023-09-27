@@ -1,0 +1,47 @@
+module Synfini.Onboarding.Factory.Holding where
+
+import qualified Daml.Finance.Holding.Fungible as FungibleImpl
+import qualified Daml.Finance.Holding.NonFungible as NonFungibleImpl
+import qualified Daml.Finance.Holding.NonTransferable as NonTranferableImpl
+import qualified Daml.Finance.Interface.Holding.Factory as Holding
+import Daml.Script
+import Synfini.Onboarding.Types
+
+data HoldingFactorySettings = HoldingFactorySettings
+  with
+    label : Text
+    holdingType : Text
+    provider : Text
+    observers : [Observer]
+
+data CreateHoldingFactoriesInput = CreateHoldingFactoriesInput
+  with
+    parties : [PartyInfo]
+    holdingFactorySettings : [HoldingFactorySettings]
+
+data HoldingFactory = HoldingFactory
+  with
+    label : Text
+    cid : ContractId Holding.F
+
+data CreateHoldingFactoriesOutput = CreateHoldingFactoriesOutput
+  with
+    holdingFactories : [HoldingFactory]
+
+createHoldingFactories : CreateHoldingFactoriesInput -> Script CreateHoldingFactoriesOutput
+createHoldingFactories CreateHoldingFactoriesInput { parties, holdingFactorySettings } = do
+  let pm = partyTable parties
+  let p = getPartyId pm
+  holdingFactories <- forA holdingFactorySettings $ \settings -> do
+    let observers = asPartiesMap p settings.observers
+    let provider = p settings.provider
+    cid <- case settings.holdingType of
+      "Fungible" -> toInterfaceContractId <$> submit provider do
+        createCmd FungibleImpl.Factory with provider, observers
+      "NonFungible" -> toInterfaceContractId <$> submit provider do
+        createCmd NonFungibleImpl.Factory with provider, observers
+      "NonTransferable" -> toInterfaceContractId <$> submit provider do
+        createCmd NonTranferableImpl.Factory with provider, observers
+      other -> error ("Unsupported holding type: " <> show other)
+    pure HoldingFactory with label = settings.label, cid
+  pure CreateHoldingFactoriesOutput with holdingFactories

@@ -1,0 +1,16 @@
+{
+  "holdingFactories": [
+    {
+      "label": "AliceFungible",
+      "cid": "006d7cd5e550de9bcfab787b3a641fdd5b3d0ea6b2d2adb9cd00429b46101b488dca011220a5e626e72f1194425276d8df63327b7cb7d7e550fcc8307bb9a825140776415e"
+    },
+    {
+      "label": "AliceNonTransferable",
+      "cid": "00aebcf1130f5185c4da92956b939b7de0483fc2bdcef7ae3ff58ec5b2eb304b53ca011220f605047bab8bf7f8bf2c843331e9594c12ecf09995111b93cb01e05b6fa2a3c8"
+    },
+    {
+      "label": "AliceNonFungible",
+      "cid": "0012c7049a8ad12e107007c2cda62e591c8aa754506a132ebb3abc4412e6d3f2dbca011220ef034ccae26b3ac386bb1432ddf03d1b38f1504f8e59cc0592e0a56e7945ad2e"
+    }
+  ]
+}

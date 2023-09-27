@@ -1,0 +1,9 @@
+{
+  "accountFactorySettings": [
+    {
+      "label": "Alice",
+      "provider": "Alice",
+      "observers": [{"label": "o", "parties": ["Bob"]}]
+    }
+  ]
+}

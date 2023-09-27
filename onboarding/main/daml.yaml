@@ -10,4 +10,9 @@ dependencies:
   - daml-script
 data-dependencies:
   - ../../.lib/daml-finance-interface-account.dar
+  - ../../.lib/daml-finance-interface-holding.dar
   - ../../.lib/daml-finance-interface-types-common.dar
+
+  - ../../.lib/daml-finance-account.dar
+  - ../../.lib/daml-finance-holding.dar
+  - ../../.lib/daml-finance-settlement.dar

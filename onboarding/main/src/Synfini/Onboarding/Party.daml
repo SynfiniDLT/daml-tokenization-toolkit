@@ -16,15 +16,11 @@ import qualified DA.Map as Map
 import qualified DA.Set as Set
 import DA.Foldable (forA_)
 import qualified DA.Optional as O
+import Synfini.Onboarding.Types
 
 data SetupPartiesInput = SetupPartiesInput
   with
     names : [Text]
-
-data PartyInfo = PartyInfo
-  with
-    name : Text
-    partyId : Party
 
 data SetupPartiesOutput = SetupPartiesOutput
   with

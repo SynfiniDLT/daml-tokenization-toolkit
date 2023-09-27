@@ -1,0 +1,16 @@
+{
+  "parties": [
+    {
+      "name": "Alice",
+      "partyId": "Alice::12203a3b99f457ca3b8655d62a70e5d692f945305a0c9cef595501c2c9f6d03d9bf9"
+    },
+    {
+      "name": "Bob",
+      "partyId": "Bob::12203a3b99f457ca3b8655d62a70e5d692f945305a0c9cef595501c2c9f6d03d9bf9"
+    },
+    {
+      "name": "Charlie",
+      "partyId": "Charlie::12203a3b99f457ca3b8655d62a70e5d692f945305a0c9cef595501c2c9f6d03d9bf9"
+    }
+  ]
+}

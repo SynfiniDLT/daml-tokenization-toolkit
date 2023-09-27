@@ -1,0 +1,10 @@
+{
+  "users": [
+    {
+      "userId": "alice-user",
+      "primaryParty": "Alice",
+      "actAs": ["Alice"],
+      "readAs": []
+    }
+  ]
+}
