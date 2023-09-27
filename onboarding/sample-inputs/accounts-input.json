@@ -1,0 +1,31 @@
+{
+  "readAs": ["Alice"],
+  "accountFactory": "Alice",
+  "accountSettings": [
+    {
+      "owner": "Alice",
+      "custodian": "Bob",
+      "id": "111",
+      "description": "transaction account",
+      "incomingControllers": [],
+      "outgoingControllers": ["Alice"],
+      "holdingFactory": "AliceFungible",
+      "observers": [
+        {
+          "label": "o",
+          "parties": ["Bob"]
+        }
+      ]
+    },
+    {
+      "owner": "Bob",
+      "custodian": "Alice",
+      "id": "222",
+      "description": "transaction account",
+      "incomingControllers": [],
+      "outgoingControllers": ["Bob"],
+      "holdingFactory": "AliceFungible",
+      "observers": []
+    }
+  ]
+}

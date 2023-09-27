@@ -33,6 +33,8 @@ elif [ "$command" = "account-factories" ]; then
   ./create-account-factories.sh $@
 elif [ "$command" = "holding-factories" ]; then
   ./create-holding-factories.sh $@
+elif [ "$command" = "accounts-unilateral" ]; then
+  ./create-accounts-unilateral.sh $@
 else
   echo "Unsupported command"
   exit 1
