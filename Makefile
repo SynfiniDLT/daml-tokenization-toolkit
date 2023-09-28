@@ -1,4 +1,4 @@
-.PHONY: build-mint build-mint-demo start-mint-demo-local build-mint-java test-mint build-onboarding build-pbt build-wallet-views test-wallet-views build-wallet-views-client test-wallet-views-client build-wallet-ui clean
+.PHONY: build-mint build-mint-demo start-mint-demo-local build-mint-java test-mint build-onboarding build-pbt build-wallet-views test-wallet-views build-wallet-views-client test-wallet-views-client build-wallet-ui start-wallet-ui clean
 
 # Conf file is used to configure dependencies on Daml Finance
 # It has been copied from https://github.com/digital-asset/daml-finance/blob/8a4b826a683364f06f6dd1068a3d2f15f03ff6e6/docs/code-samples/tutorials-config/0.0.3.conf
@@ -83,6 +83,9 @@ build-wallet-views-client: wallet-views/typescript-client/lib
 ## BEGIN wallet ui
 build-wallet-ui: wallet-views/typescript-client/lib
 	cd wallet-ui && npm install && npm run build
+
+start-wallet-ui: wallet-views/typescript-client/lib
+	cd wallet-ui && npm install && npm run build && npm start
 ## END wallet ui
 
 clean:

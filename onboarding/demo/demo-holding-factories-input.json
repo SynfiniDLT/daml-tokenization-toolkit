@@ -1,0 +1,26 @@
+{
+    "holdingFactorySettings": [
+      {
+        "label": "FungibleV1",
+        "holdingType": "Fungible",
+        "provider": "SynfiniValidator",
+        "observers": [
+          {
+            "label": "o",
+            "parties": ["Synfini_Public"]
+          }
+        ]
+      },
+      {
+        "label": "NonTransferableV1",
+        "holdingType": "NonTransferable",
+        "provider": "SynfiniValidator",
+        "observers": [
+          {
+            "label": "o",
+            "parties": ["Synfini_Public"]
+          }
+        ]
+      }
+    ]
+  }
