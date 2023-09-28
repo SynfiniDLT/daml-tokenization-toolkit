@@ -3,7 +3,7 @@
     {
       "label": "Alice",
       "provider": "Alice",
-      "observers": [{"label": "o", "parties": ["Bob"]}]
+      "observers": [{"context": "o", "parties": ["Bob"]}]
     }
   ]
 }

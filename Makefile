@@ -32,7 +32,7 @@ test-mint: .build/daml-mint.dar
 ## END mint
 
 ## BEGIN onboarding
-.build/tokenization-onboarding.dar: .lib onboarding/main/daml.yaml $(shell ./find-daml-project-files.sh onboarding/main)
+.build/tokenization-onboarding.dar: .lib .build/daml-mint.dar onboarding/main/daml.yaml $(shell ./find-daml-project-files.sh onboarding/main)
 	cd onboarding/main && daml build -o ../../.build/tokenization-onboarding.dar
 
 build-onboarding: .build/tokenization-onboarding.dar
@@ -72,7 +72,7 @@ wallet-views/typescript-client/daml.js: .build/daml-wallet-views-types.dar
 	rm -rf wallet-views/typescript-client/daml.js
 	daml codegen js .build/daml-wallet-views-types.dar -o wallet-views/typescript-client/daml.js
 
-wallet-views/typescript-client/lib: wallet-views/typescript-client/daml.js
+wallet-views/typescript-client/lib: wallet-views/typescript-client/daml.js $(shell ./find-ts-project-files.sh wallet-views/typescript-client)
 	cd wallet-views/typescript-client && npm install && npm run build
 
 build-wallet-views-client: wallet-views/typescript-client/lib
@@ -81,7 +81,7 @@ build-wallet-views-client: wallet-views/typescript-client/lib
 ## END wallet-views
 
 ## BEGIN wallet ui
-build-wallet-ui: wallet-views/typescript-client/lib
+build-wallet-ui: wallet-views/typescript-client/lib $(shell ./find-ts-project-files.sh wallet-ui)
 	cd wallet-ui && npm install && npm run build
 
 start-wallet-ui: wallet-views/typescript-client/lib

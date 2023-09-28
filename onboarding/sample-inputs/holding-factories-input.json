@@ -6,7 +6,7 @@
       "provider": "Alice",
       "observers": [
         {
-          "label": "o",
+          "context": "o",
           "parties": ["Bob"]
         }
       ]
@@ -17,7 +17,7 @@
       "provider": "Alice",
       "observers": [
         {
-          "label": "o",
+          "context": "o",
           "parties": ["Bob"]
         }
       ]
