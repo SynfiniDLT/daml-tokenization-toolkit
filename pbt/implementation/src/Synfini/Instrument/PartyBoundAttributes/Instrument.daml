@@ -25,7 +25,7 @@ template Instrument
     observers : PartiesMap
   where
     signatory depository, issuer
-    observer Disclosure.flattenObservers observers
+    observer owner, Disclosure.flattenObservers observers
 
     let instrument = InstrumentKey with depository; issuer; id; version
   

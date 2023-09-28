@@ -1,0 +1,9 @@
+{
+  "settlementFactorySettings": [
+    {
+      "label": "V1",
+      "provider": "Alice",
+      "observers": ["Bob"]
+    }
+  ]
+}

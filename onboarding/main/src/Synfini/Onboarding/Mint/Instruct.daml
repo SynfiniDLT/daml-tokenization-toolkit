@@ -1,0 +1,43 @@
+module Synfini.Onboarding.Mint.Instruct where
+
+import Daml.Finance.Interface.Types.Common.Types
+import Daml.Script
+import Synfini.Mint
+import Synfini.Onboarding.Types
+
+data InstructMintSettings = InstructMintSettings
+  with
+    instrumentDepository : Text
+    instrumentIssuer : Text
+    instrumentId : Text
+    instrumentVersion: Text
+    instructor : Text
+    receiver : Text
+    receiverAccountId : Text
+    referenceId : Text
+    amount : Decimal
+
+data InstructMintInput = InstructMintInput
+  with
+    parties : [PartyInfo]
+    instructMintSettings : InstructMintSettings
+
+instructMint : InstructMintInput -> Script ()
+instructMint input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let issuer = p input.instructMintSettings.instrumentIssuer
+      depository = p input.instructMintSettings.instrumentDepository
+      instructor = p input.instructMintSettings.instructor
+      receiver = p input.instructMintSettings.receiver
+  let instrument = InstrumentKey with
+        issuer, depository, id = Id input.instructMintSettings.instrumentId, version = input.instructMintSettings.instrumentVersion
+  submit instructor do
+    exerciseByKeyCmd @Mint instrument InstructMint with
+      instructor
+      receiver
+      receiverAccountId = Id input.instructMintSettings.receiverAccountId
+      id = Id input.instructMintSettings.referenceId
+      amount = input.instructMintSettings.amount
+      description = "Delivery of " <> show instrument <> " requested by " <> show instructor
+  pure ()

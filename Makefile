@@ -32,7 +32,7 @@ test-mint: .build/daml-mint.dar
 ## END mint
 
 ## BEGIN onboarding
-.build/tokenization-onboarding.dar: .lib onboarding/main/daml.yaml $(shell ./find-daml-project-files.sh onboarding/main)
+.build/tokenization-onboarding.dar: .lib .build/daml-mint.dar onboarding/main/daml.yaml $(shell ./find-daml-project-files.sh onboarding/main)
 	cd onboarding/main && daml build -o ../../.build/tokenization-onboarding.dar
 
 build-onboarding: .build/tokenization-onboarding.dar
