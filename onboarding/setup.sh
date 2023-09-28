@@ -2,7 +2,7 @@
 
 set -e
 
-export TOKENIZATION_INTERNAL=${TOKENIZATION_INTERNAL:-.setup}
+export TOKENIZATION_INTERNAL=${TOKENIZATION_INTERNAL:-$(pwd)/.setup}
 if [ ! -d "${TOKENIZATION_INTERNAL}" ]; then
   mkdir $TOKENIZATION_INTERNAL
 fi
@@ -27,26 +27,29 @@ fi
 command=$1
 shift
 
-export TOKENIZATION_ONBOARDING_DAR=../.build/tokenization-onboarding.dar
+export TOKENIZATION_ONBOARDING_DAR=$(pwd)/../.build/tokenization-onboarding.dar
+export TOKENIZATION_UTIL=$(pwd)/util
 
 if [ "$command" = "upload-dar" ]; then
   daml ledger upload-dar $@ ${TOKENIZATION_ONBOARDING_DAR}
 elif [ "$command" = "parties" ]; then
-  ./allocate-parties.sh $@
+  ./commands/allocate-parties.sh $@
 elif [ "$command" = "users" ]; then
-  ./create-users.sh $@
+  ./commands/create-users.sh $@
 elif [ "$command" = "account-factories" ]; then
-  ./create-account-factories.sh $@
+  ./commands/create-account-factories.sh $@
 elif [ "$command" = "holding-factories" ]; then
-  ./create-holding-factories.sh $@
+  ./commands/create-holding-factories.sh $@
 elif [ "$command" = "settlement-factories" ]; then
-  ./create-settlement-factories.sh $@
+  ./commands/create-settlement-factories.sh $@
 elif [ "$command" = "accounts-unilateral" ]; then
-  ./create-accounts-unilateral.sh $@
+  ./commands/create-accounts-unilateral.sh $@
 elif [ "$command" = "mint-unilateral" ]; then
-  ./create-mint-unilateral.sh $@
+  ./commands/create-mint-unilateral.sh $@
 elif [ "$command" = "instruct-mint" ]; then
-  ./instruct-mint.sh $@
+  ./commands/instruct-mint.sh $@
+elif [ "$command" = "instruct-mint" ]; then
+  ./commands/execute-mint.sh $@
 else
   echo "Unsupported command"
   exit 1
