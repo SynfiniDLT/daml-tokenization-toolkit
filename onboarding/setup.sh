@@ -50,6 +50,8 @@ elif [ "$command" = "instruct-mint" ]; then
   ./commands/instruct-mint.sh $@
 elif [ "$command" = "execute-mint" ]; then
   ./commands/execute-mint.sh $@
+elif [ "$command" = "instruct-burn" ]; then
+  ./commands/instruct-burn.sh $@
 else
   echo "Unsupported command"
   exit 1
