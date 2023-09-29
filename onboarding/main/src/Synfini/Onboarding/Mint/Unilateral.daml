@@ -42,7 +42,7 @@ createMint input = do
           input.settlementFactories
         )
       observers = Set.fromList (p <$> input.mintSettings.observers)
-  submitMulti [issuer, depository, minterBurner] [] do
+  submitMulti [issuer, depository, minterBurner, custodian] [] do
     createCmd Mint with
       custodian
       receiverAuthorisers = Set.empty

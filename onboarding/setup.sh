@@ -48,7 +48,7 @@ elif [ "$command" = "mint-unilateral" ]; then
   ./commands/create-mint-unilateral.sh $@
 elif [ "$command" = "instruct-mint" ]; then
   ./commands/instruct-mint.sh $@
-elif [ "$command" = "instruct-mint" ]; then
+elif [ "$command" = "execute-mint" ]; then
   ./commands/execute-mint.sh $@
 else
   echo "Unsupported command"
