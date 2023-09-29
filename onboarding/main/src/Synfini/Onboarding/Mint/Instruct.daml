@@ -24,6 +24,7 @@ data InstructMintSettings = InstructMintSettings
 
 data InstructMintInput = InstructMintInput
   with
+    readAs : [Text]
     parties : [PartyInfo]
     instructMintSettings : InstructMintSettings
 
@@ -35,9 +36,10 @@ instructMint input = do
       depository = p input.instructMintSettings.instrumentDepository
       instructor = p input.instructMintSettings.instructor
       receiver = p input.instructMintSettings.receiver
+      readAs = p <$> input.readAs
   let instrument = InstrumentKey with
         issuer, depository, id = Id input.instructMintSettings.instrumentId, version = input.instructMintSettings.instrumentVersion
-  submit instructor do
+  submitMulti [instructor] readAs do
     exerciseByKeyCmd @Mint instrument InstructMint with
       instructor
       receiver
@@ -87,6 +89,7 @@ data InstructBurnSettings = InstructBurnSettings
 
 data InstructBurnInput = InstructBurnInput
   with
+    readAs : [Text]
     parties : [PartyInfo]
     instructBurnSettings : InstructBurnSettings
 
@@ -98,12 +101,13 @@ instructBurn input = do
       depository = p input.instructBurnSettings.instrumentDepository
       sender = p input.instructBurnSettings.sender
       custodian = p input.instructBurnSettings.custodian
+      readAs = p <$> input.readAs
   let instrument = InstrumentKey with
         issuer, depository, id = Id input.instructBurnSettings.instrumentId, version = input.instructBurnSettings.instrumentVersion
       senderAccount = AccountKey with custodian, owner = sender, id = Id input.instructBurnSettings.senderAccountId
   holdings <- queryInterface @Holding.I sender
   let relevantHoldings = filter (\(_, Some v) -> v.account == senderAccount && v.instrument == instrument) holdings
-  submit sender do
+  submitMulti [sender] readAs do
     createAndExerciseCmd (InstructBurnHelper sender)
       (
         InstructBurnFromFungibles with
