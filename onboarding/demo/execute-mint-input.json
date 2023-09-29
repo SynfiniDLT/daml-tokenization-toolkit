@@ -1,8 +1,0 @@
-{
-  "executeMintSettings": {
-    "custodian": "Alice",
-    "instructor": "Alice",
-    "minterBurner": "Alice",
-    "referenceId": "abc123"
-  }
-}

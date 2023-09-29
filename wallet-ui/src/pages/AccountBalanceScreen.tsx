@@ -67,6 +67,8 @@ const AccountBalanceScreen: React.FC = () => {
     );
   }
 
+  console.log("balances",balances)
+
   return (
     <PageLayout>
       <h3 className="profile__title" style={{marginTop: '10px'}}>Account Balance</h3>
