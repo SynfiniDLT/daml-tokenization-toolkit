@@ -1,0 +1,12 @@
+{
+    "names": [
+      "SynfiniValidator",
+      "Synfini_Public",
+      "AUDN_Issuer",
+      "AUDN_Depository",
+      "AUDN_MinterBurner",
+      "AUDN_Operator",
+      "InvestorA",
+      "InvestorB"
+    ]
+  }

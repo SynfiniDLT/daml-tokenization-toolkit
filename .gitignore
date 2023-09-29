@@ -15,3 +15,5 @@ generated-test
 daml.js
 wallet-views/typescript-client/lib
 wallet-ui/build
+wallet-ui/package-lock.json
+wallet-views/typescript-client/package-lock.json

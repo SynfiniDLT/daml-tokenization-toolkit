@@ -1,0 +1,9 @@
+{
+    "accountFactorySettings": [
+      {
+        "label": "v1",
+        "provider": "SynfiniValidator",
+        "observers": [{"label": "o", "parties": ["Synfini_Public"]}]
+      }
+    ]
+  }

@@ -19,7 +19,7 @@ export default function Balances(props: { balances?: any[] }) {
                 <th>Instrument | Version<QuestionCircle /></th>
                 <th>Depository<QuestionCircle /></th>
                 <th>Issuer<QuestionCircle /></th>
-                <th>Balance<QuestionCircle /></th>
+                <th>Balance(locked and unlocked)<QuestionCircle /></th>
               </tr>
             </thead>
             <tbody>
@@ -31,7 +31,7 @@ export default function Balances(props: { balances?: any[] }) {
                   </td>
                   <td>{balance.instrument.depository.substring(0, 30)}...</td>
                   <td>{balance.instrument.issuer.substring(0, 30)}...</td>
-                  <td>{balance.balance}</td>
+                  <td>{balance.unlocked}</td>
                 </tr>
               ))}
             </tbody>

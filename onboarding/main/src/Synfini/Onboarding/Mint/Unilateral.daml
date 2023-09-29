@@ -1,0 +1,58 @@
+module Synfini.Onboarding.Mint.Unilateral where
+
+import Daml.Script
+import Synfini.Onboarding.Types
+import Synfini.Onboarding.Factory.Settlement
+import Synfini.Mint
+import qualified DA.Optional as O
+import qualified DA.Set as Set
+import Daml.Finance.Interface.Types.Common.Types
+
+data MintSettings = MintSettings
+  with
+    custodian : Text
+    instrumentDepository : Text
+    instrumentIssuer : Text
+    instrumentId : Text
+    instrumentVersion: Text
+    minterBurner : Text
+    supplyAccountId : Text
+    settlementFactory : Text
+    observers : [Text]
+
+data CreateMintInput = CreateMintInput
+  with
+    parties : [PartyInfo]
+    settlementFactories : [SettlementFactory]
+    mintSettings : MintSettings
+
+createMint : CreateMintInput -> Script ()
+createMint input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let custodian = p input.mintSettings.custodian
+      issuer = p input.mintSettings.instrumentIssuer
+      depository = p input.mintSettings.instrumentDepository
+      minterBurner = p input.mintSettings.minterBurner
+      settlementFactoryCid = O.fromSomeNote
+        "Settlement factory not found"
+        (
+          O.findOptional
+          (\f -> if f.label == input.mintSettings.settlementFactory then Some f.cid else None)
+          input.settlementFactories
+        )
+      observers = Set.fromList (p <$> input.mintSettings.observers)
+  submitMulti [issuer, depository, minterBurner, custodian] [] do
+    createCmd Mint with
+      custodian
+      receiverAuthorisers = Set.empty
+      minterBurner
+      supplyAccountId = Id input.mintSettings.supplyAccountId
+      instrument = InstrumentKey with
+        issuer
+        depository
+        id = Id input.mintSettings.instrumentId
+        version = input.mintSettings.instrumentVersion
+      settlementFactoryCid
+      observers
+  pure ()

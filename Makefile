@@ -1,4 +1,4 @@
-.PHONY: build-mint build-mint-demo start-mint-demo-local build-mint-java test-mint build-onboarding build-pbt build-wallet-views test-wallet-views build-wallet-views-client test-wallet-views-client build-wallet-ui clean
+.PHONY: build-mint build-mint-demo start-mint-demo-local build-mint-java test-mint build-onboarding build-pbt build-wallet-views test-wallet-views build-wallet-views-client test-wallet-views-client build-wallet-ui start-wallet-ui clean
 
 # Conf file is used to configure dependencies on Daml Finance
 # It has been copied from https://github.com/digital-asset/daml-finance/blob/8a4b826a683364f06f6dd1068a3d2f15f03ff6e6/docs/code-samples/tutorials-config/0.0.3.conf
@@ -32,7 +32,7 @@ test-mint: .build/daml-mint.dar
 ## END mint
 
 ## BEGIN onboarding
-.build/tokenization-onboarding.dar: .lib onboarding/main/daml.yaml $(shell ./find-daml-project-files.sh onboarding/main)
+.build/tokenization-onboarding.dar: .lib .build/daml-mint.dar onboarding/main/daml.yaml $(shell ./find-daml-project-files.sh onboarding/main)
 	cd onboarding/main && daml build -o ../../.build/tokenization-onboarding.dar
 
 build-onboarding: .build/tokenization-onboarding.dar
@@ -72,7 +72,7 @@ wallet-views/typescript-client/daml.js: .build/daml-wallet-views-types.dar
 	rm -rf wallet-views/typescript-client/daml.js
 	daml codegen js .build/daml-wallet-views-types.dar -o wallet-views/typescript-client/daml.js
 
-wallet-views/typescript-client/lib: wallet-views/typescript-client/daml.js
+wallet-views/typescript-client/lib: wallet-views/typescript-client/daml.js $(shell ./find-ts-project-files.sh wallet-views/typescript-client)
 	cd wallet-views/typescript-client && npm install && npm run build
 
 build-wallet-views-client: wallet-views/typescript-client/lib
@@ -81,8 +81,11 @@ build-wallet-views-client: wallet-views/typescript-client/lib
 ## END wallet-views
 
 ## BEGIN wallet ui
-build-wallet-ui: wallet-views/typescript-client/lib
+build-wallet-ui: wallet-views/typescript-client/lib $(shell ./find-ts-project-files.sh wallet-ui)
 	cd wallet-ui && npm install && npm run build
+
+start-wallet-ui: wallet-views/typescript-client/lib
+	cd wallet-ui && npm install && npm run build && npm start
 ## END wallet ui
 
 clean:

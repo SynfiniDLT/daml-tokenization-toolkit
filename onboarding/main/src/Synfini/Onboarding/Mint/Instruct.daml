@@ -1,0 +1,121 @@
+module Synfini.Onboarding.Mint.Instruct where
+
+import qualified Daml.Finance.Interface.Holding.Util as Holding
+import qualified Daml.Finance.Interface.Holding.Fungible as Fungible
+import Daml.Finance.Interface.Types.Common.Types
+import Daml.Script
+import qualified DA.Set as Set
+import Synfini.Mint
+import Synfini.Onboarding.Types
+import qualified Daml.Finance.Interface.Account.Util as Account
+import qualified Daml.Finance.Interface.Holding.Base as Holding
+
+data InstructMintSettings = InstructMintSettings
+  with
+    instrumentDepository : Text
+    instrumentIssuer : Text
+    instrumentId : Text
+    instrumentVersion: Text
+    instructor : Text
+    receiver : Text
+    receiverAccountId : Text
+    referenceId : Text
+    amount : Decimal
+
+data InstructMintInput = InstructMintInput
+  with
+    readAs : [Text]
+    parties : [PartyInfo]
+    instructMintSettings : InstructMintSettings
+
+instructMint : InstructMintInput -> Script ()
+instructMint input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let issuer = p input.instructMintSettings.instrumentIssuer
+      depository = p input.instructMintSettings.instrumentDepository
+      instructor = p input.instructMintSettings.instructor
+      receiver = p input.instructMintSettings.receiver
+      readAs = p <$> input.readAs
+  let instrument = InstrumentKey with
+        issuer, depository, id = Id input.instructMintSettings.instrumentId, version = input.instructMintSettings.instrumentVersion
+  submitMulti [instructor] readAs do
+    exerciseByKeyCmd @Mint instrument InstructMint with
+      instructor
+      receiver
+      receiverAccountId = Id input.instructMintSettings.receiverAccountId
+      id = Id input.instructMintSettings.referenceId
+      amount = input.instructMintSettings.amount
+      description = "Delivery of " <> show instrument <> " requested by " <> show instructor
+  pure ()
+
+data ExecuteMintSettings = ExecuteMintSettings
+  with
+    custodian : Text
+    instructor : Text
+    minterBurner : Text
+    referenceId : Text
+
+data ExecuteMintInput = ExecuteMintInput
+  with
+    parties : [PartyInfo]
+    readAs : [Text]
+    executeMintSettings : ExecuteMintSettings
+
+executeMint : ExecuteMintInput -> Script ()
+executeMint input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let custodian = p input.executeMintSettings.custodian
+      instructor = p input.executeMintSettings.instructor
+      minterBurner = p input.executeMintSettings.minterBurner
+      readAs = p <$> input.readAs
+  submitMulti [minterBurner] readAs do
+    exerciseByKeyCmd
+      @MintInstruction
+      (Set.fromList [custodian, instructor], Id input.executeMintSettings.referenceId)
+      ExecuteMint
+  pure ()
+
+data InstructBurnSettings = InstructBurnSettings
+  with
+    instrumentDepository : Text
+    instrumentIssuer : Text
+    instrumentId : Text
+    instrumentVersion: Text
+    sender : Text
+    custodian : Text
+    senderAccountId : Text
+    referenceId : Text
+    amount : Decimal
+
+data InstructBurnInput = InstructBurnInput
+  with
+    readAs : [Text]
+    parties : [PartyInfo]
+    instructBurnSettings : InstructBurnSettings
+
+instructBurn : InstructBurnInput -> Script ()
+instructBurn input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let issuer = p input.instructBurnSettings.instrumentIssuer
+      depository = p input.instructBurnSettings.instrumentDepository
+      sender = p input.instructBurnSettings.sender
+      custodian = p input.instructBurnSettings.custodian
+      readAs = p <$> input.readAs
+  let instrument = InstrumentKey with
+        issuer, depository, id = Id input.instructBurnSettings.instrumentId, version = input.instructBurnSettings.instrumentVersion
+      senderAccount = AccountKey with custodian, owner = sender, id = Id input.instructBurnSettings.senderAccountId
+  holdings <- queryInterface @Holding.I sender
+  let relevantHoldings = filter (\(_, Some v) -> v.account == senderAccount && v.instrument == instrument) holdings
+  submitMulti [sender] readAs do
+    createAndExerciseCmd (InstructBurnHelper sender)
+      (
+        InstructBurnFromFungibles with
+          holdingCids = coerceInterfaceContractId . fst <$> holdings
+          id = Id input.instructBurnSettings.referenceId
+          amount = input.instructBurnSettings.amount
+          description = "Redemption of " <> show instrument <> " requested by " <> show sender
+      )
+  pure ()

@@ -2,6 +2,7 @@ module Synfini.Mint where
 
 import Daml.Finance.Interface.Account.Util (fetchAccount)
 import qualified Daml.Finance.Interface.Holding.Base as Holding
+import qualified Daml.Finance.Interface.Holding.Util as Holding
 import qualified Daml.Finance.Interface.Holding.Fungible as Fungible
 import qualified Daml.Finance.Interface.Settlement.Batch as Batch
 import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
@@ -26,6 +27,9 @@ template Mint
     signatory custodian, minterBurner, instrument.issuer, receiverAuthorisers
 
     observer observers
+
+    key instrument : InstrumentKey
+    maintainer key.issuer
 
     nonconsuming choice InstructMint : ContractId MintInstruction
       with
@@ -54,6 +58,8 @@ template Mint
               sender = custodian
               receiver = minterBurner
               quantity
+        existingInstructionCid <- lookupByKey @MintInstruction (allActors, id)
+        assertMsg "Instructiona already exists for this ID" (O.isNone existingInstructionCid)
         (batchCid, [custodianToOwnerCid, custodianToMbCid]) <- exercise
           settlementFactoryCid
           SettlementFactory.Instruct with
@@ -83,6 +89,7 @@ template Mint
           custodian
           minterBurner
           requestors = allActors
+          id
           quantity = Quantity with unit = instrument, amount
           batchCid
 
@@ -168,10 +175,14 @@ template MintInstruction
     custodian : Party
     minterBurner : Party
     requestors : Set Party
+    id : Id
     quantity : Quantity InstrumentKey Decimal
     batchCid : ContractId Batch.I
   where
     signatory custodian, minterBurner, requestors
+
+    key (requestors, id) : (Set Party, Id)
+    maintainer key._1
 
     choice ExecuteMint : ExecuteMintResult
       controller minterBurner
@@ -200,7 +211,6 @@ template InstructBurnHelper
 
     choice InstructBurnFromFungibles : InstructBurnFromFungiblesResult
       with
-        mintCid : ContractId Mint
         amount : Decimal
         holdingCids : [ContractId Fungible.I]
         id : Id
@@ -208,7 +218,8 @@ template InstructBurnHelper
       controller instructor
       do
         (holdingCidToBurn, remainingHoldingCid) <- mergeAndSplitHelper holdingCids amount
-        burnInstructionCid <- exercise mintCid InstructBurn with
+        holdingToBurn <- fetch holdingCidToBurn
+        burnInstructionCid <- exerciseByKey @Mint (Holding.getInstrument holdingToBurn) InstructBurn with
           instructor
           holdingCid = toInterfaceContractId holdingCidToBurn
           id
