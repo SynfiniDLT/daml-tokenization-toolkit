@@ -59,6 +59,7 @@ data ExecuteMintSettings = ExecuteMintSettings
 data ExecuteMintInput = ExecuteMintInput
   with
     parties : [PartyInfo]
+    readAs : [Text]
     executeMintSettings : ExecuteMintSettings
 
 executeMint : ExecuteMintInput -> Script ()
@@ -68,7 +69,8 @@ executeMint input = do
   let custodian = p input.executeMintSettings.custodian
       instructor = p input.executeMintSettings.instructor
       minterBurner = p input.executeMintSettings.minterBurner
-  submit minterBurner do
+      readAs = p <$> input.readAs
+  submitMulti [minterBurner] readAs do
     exerciseByKeyCmd
       @MintInstruction
       (Set.fromList [custodian, instructor], Id input.executeMintSettings.referenceId)
