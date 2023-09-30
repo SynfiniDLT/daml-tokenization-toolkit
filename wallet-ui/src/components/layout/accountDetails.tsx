@@ -1,18 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { QuestionCircle } from "react-bootstrap-icons";
+import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 
 interface AccountDetailsProps {
-  account: {
-    cid: string;
-    view: {
-      id: {
-        unpack: string;
-      };
-      description: string;
-      custodian: string;
-    };
-  };
+  account: AccountSummary;
 }
 
 export default function AccountDetails(props: AccountDetailsProps) {
@@ -29,7 +21,7 @@ export default function AccountDetails(props: AccountDetailsProps) {
       0 0.9px 1.5px hsla(0, 0%, 0%, 0.045), 0 3.5px 6px hsla(0, 0%, 0%, 0.09);
   `;
 
-  const handleClick = (account: any) => {
+  const handleClick = (account: AccountSummary) => {
     nav("/wallet/account/balance/", { state: { account: account } });
   };
 
@@ -68,7 +60,7 @@ export function AccountDetailsSimple(props: AccountDetailsProps) {
       0 0.9px 1.5px hsla(0, 0%, 0%, 0.045), 0 3.5px 6px hsla(0, 0%, 0%, 0.09);
   `;
 
-  const handleClick = (account: any) => {
+  const handleClick = (account: AccountSummary) => {
     nav("/wallet");
   };
 

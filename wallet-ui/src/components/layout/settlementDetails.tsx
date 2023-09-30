@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlTypes from "@daml/types";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
@@ -12,7 +12,7 @@ interface SettlementDetailsProps {
 export default function SettlementDetails(props: SettlementDetailsProps) {
   const [toggle, setToggle] = useState(false);
 
-  const setToggleCol = (step: any) => {
+  const setToggleCol = () => {
     setToggle((prev) => {
       return !prev;
     });
@@ -60,6 +60,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
     });
   };
 
+  // TODO may need to adjust formatting of `step.routedStep.quantity.amount`?
   return (
     <SettlementDetailsContainer>
       <div key={props.settlement.batchCid}>
@@ -90,7 +91,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
         </div>
 
         <hr></hr>
-        {props.settlement.steps.map((step: any, index: number) => (
+        {props.settlement.steps.map((step: SettlementStep, index: number) => (
           <div key={index}>
             <h5 className="profile__title">Step {index + 1}</h5>
             <div style={{ margin: "15px" }}>
@@ -104,12 +105,12 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
               {step.routedStep.custodian.substring(0, 30)}...
               <br />
               <Field>Amount: </Field>
-              {new Intl.NumberFormat().format(step.routedStep.quantity.amount)}
+              {step.routedStep.quantity.amount}
               <br />
               <div
-                onClick={() => setToggleCol({ step })}
+                onClick={setToggleCol}
                 id={step.routedStep.quantity.unit.id.unpack}
-                key={step}
+                key={step.instructionCid}
               >
                 <Field>Instrument:</Field>{step.routedStep.quantity.unit.id.unpack}
                 <Field>Version:</Field>{step.routedStep.quantity.unit.version} <br />

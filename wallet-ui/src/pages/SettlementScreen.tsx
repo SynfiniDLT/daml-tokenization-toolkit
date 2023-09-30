@@ -6,6 +6,7 @@ import { PageLoader } from "../components/layout/page-loader";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
 import Settlements from "../components/layout/settlements";
+import { SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 
 const SettlementScreen: React.FC = () => {
   const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}/wallet-views`;
@@ -14,7 +15,7 @@ const SettlementScreen: React.FC = () => {
 
   const { isAuthenticated, isLoading } = useAuth0();
   const [primaryParty, setPrimaryParty] = useState<string>();
-  const [settlements, setSettlements] = useState<any[]>();
+  const [settlements, setSettlements] = useState<SettlementSummary[]>();
 
   let walletClient: WalletViewsClient;
 
