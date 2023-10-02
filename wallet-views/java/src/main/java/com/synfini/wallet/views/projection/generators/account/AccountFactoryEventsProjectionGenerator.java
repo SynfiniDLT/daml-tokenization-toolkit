@@ -38,11 +38,11 @@ public class AccountFactoryEventsProjectionGenerator implements ProjectionGenera
   @Override
   public Project<ExercisedEvent, AccountFactoryEvent> project() {
     return envelope -> {
-      ExercisedEvent exercisedEvent = envelope.getEvent();
+      final var exercisedEvent = envelope.getEvent();
       if (Optional.of(Factory.TEMPLATE_ID).equals(exercisedEvent.getInterfaceId())) {
         if (Factory.CHOICE_Create.name.equals(exercisedEvent.getChoice())) {
-          Create create = Create.valueDecoder().decode(exercisedEvent.getChoiceArgument());
-          ContractId accountCid = (ContractId) exercisedEvent.getExerciseResult();
+          final var create = Create.valueDecoder().decode(exercisedEvent.getChoiceArgument());
+          final var accountCid = (ContractId) exercisedEvent.getExerciseResult();
           return Collections.singletonList(
             new AccountFactoryEvent(Optional.of(accountCid.getValue()),
               create.account,
@@ -50,7 +50,7 @@ public class AccountFactoryEventsProjectionGenerator implements ProjectionGenera
             )
           );
         } else if (Factory.CHOICE_Remove.name.equals(exercisedEvent.getChoice())) {
-          Remove remove = Remove.valueDecoder().decode(exercisedEvent.getChoiceArgument());
+          final var remove = Remove.valueDecoder().decode(exercisedEvent.getChoiceArgument());
           return Collections.singletonList(
             new AccountFactoryEvent(
               Optional.empty(),

@@ -232,7 +232,7 @@ public class WalletRepository {
       "  t.instrument_version instrument_version,\n" +
       "  t.description description,\n" +
       "  t.valid_as_of valid_as_of\n" +
-      "FROM token_instruments t INNER JOIN instrument_witnesses ON token_instruments.cid = instrument_witnesses.cid\n" +
+      "FROM token_instruments t INNER JOIN instrument_witnesses ON t.cid = instrument_witnesses.cid\n" +
       "WHERE\n" +
       "  instrument_witnesses.party = ANY(?) AND\n" +
       "  t.instrument_depository = ? AND\n" +
@@ -240,7 +240,7 @@ public class WalletRepository {
       "  t.instrument_id = ? AND\n" +
       "  (? IS NULL OR t.instrument_version = ?) AND\n" +
       "  t.archive_offset IS NULL\n" +
-      "ORDER BY create_offset DESC",
+      "ORDER BY instrument_depository, instrument_issuer, instrument_id, instrument_version",
       ps -> {
         final Array r;
         Connection conn = null;

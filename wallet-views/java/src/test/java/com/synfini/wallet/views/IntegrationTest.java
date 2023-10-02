@@ -17,6 +17,7 @@ import daml.finance.interface$.account.account.Controllers;
 import daml.finance.interface$.holding.base.Base;
 import daml.finance.interface$.holding.fungible.Fungible;
 import daml.finance.interface$.holding.fungible.SplitResult;
+import daml.finance.interface$.instrument.token.types.Token;
 import daml.finance.interface$.settlement.batch.Batch;
 import daml.finance.interface$.settlement.factory.Instruct;
 import daml.finance.interface$.settlement.instruction.Instruction;
@@ -68,6 +69,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.*;
+import java.util.Date;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
@@ -88,6 +90,8 @@ public class IntegrationTest {
   private static Path clientSecretFile;
   private static Integer sandboxPort;
   private static Process sandboxProcess;
+  private static String depository;
+  private static String issuer;
   private static String custodian;
   private static String custodianUser;
   private static String investor1;
@@ -100,18 +104,6 @@ public class IntegrationTest {
   private static DamlLedgerClient allPartiesLedgerClient;
   private static final List<ExecutorService> projectionExecutorServices = new ArrayList<>();
   private static final List<Future<Integer>> projectionDaemonFutures = new ArrayList<>();
-  private static final InstrumentKey instrument1 = new InstrumentKey(
-    "someDepository",
-    "someIssuer",
-    new Id("someId"),
-    "someVersion"
-  );
-  private static final InstrumentKey instrument2 = new InstrumentKey(
-    "someDepository",
-    "someIssuer",
-    new Id("someId"),
-    "someVersion2"
-  );
   @Value("${spring.datasource.url}")
   private String springDataSourceUrl;
   @Value("${spring.datasource.username}")
@@ -122,6 +114,7 @@ public class IntegrationTest {
   private static daml.finance.interface$.account.factory.Factory.ContractId accountFactoryCid;
   private static daml.finance.interface$.holding.factory.Factory.ContractId holdingFactoryCid;
   private static daml.finance.interface$.settlement.factory.Factory.ContractId settlementFactoryCid;
+  private static daml.finance.interface$.instrument.token.factory.Factory.ContractId tokenInstrumentFactoryCid;
 
   @Autowired
   private MockMvc mvc;
@@ -174,7 +167,8 @@ public class IntegrationTest {
           List.of(
             "daml-finance-holding.dar",
             "daml-finance-account.dar",
-            "daml-finance-settlement.dar"
+            "daml-finance-settlement.dar",
+            "daml-finance-instrument-token.dar"
           )
         ) {
           uploadDarFile(darFileName, adminChannel);
@@ -236,20 +230,16 @@ public class IntegrationTest {
 
     mockTokenClient = MockClient.register();
     mockTokenClient.defaultResponse().thenReturn("Did not match any expected responses").withStatus(400);
+    final var entropy = UUID.randomUUID().toString().substring(0, 6);
     // Allocate parties
     final var partyManagementService = PartyManagementServiceGrpc.newBlockingStub(adminChannel);
-    custodian = partyManagementService.allocateParty(
-      PartyManagementServiceOuterClass.AllocatePartyRequest.newBuilder().setDisplayName("Custodian").build()
-    ).getPartyDetails().getParty();
-    investor1 = partyManagementService.allocateParty(
-      PartyManagementServiceOuterClass.AllocatePartyRequest.newBuilder().setDisplayName("Investor1").build()
-    ).getPartyDetails().getParty();
-    investor2 = partyManagementService.allocateParty(
-      PartyManagementServiceOuterClass.AllocatePartyRequest.newBuilder().setDisplayName("Investor2").build()
-    ).getPartyDetails().getParty();
+    custodian = allocateParty(partyManagementService, "Custodian", entropy);
+    investor1 = allocateParty(partyManagementService, "Investor1", entropy);
+    investor2 = allocateParty(partyManagementService, "Investor2", entropy);;
+    depository = allocateParty(partyManagementService, "Depository", entropy);
+    issuer = allocateParty(partyManagementService, "Issuer", entropy);
 
     // Create users
-    final var entropy = UUID.randomUUID().toString();
     custodianUser = "custodian-" + entropy;
     investor1User = "investor1-" + entropy;
     investor2User = "investor2-" + entropy;
@@ -265,7 +255,9 @@ public class IntegrationTest {
         new User(allPartiesUser, custodian),
         new User.Right.CanActAs(custodian),
         new User.Right.CanActAs(investor1),
-        new User.Right.CanActAs(investor2)
+        new User.Right.CanActAs(investor2),
+        new User.Right.CanActAs(depository),
+        new User.Right.CanActAs(issuer)
       )
     ).blockingGet();
     adminLedgerClient.close();
@@ -276,11 +268,12 @@ public class IntegrationTest {
     allPartiesLedgerClient = DamlLedgerClient.newBuilder(allPartiesChannelBuilder).build();
     allPartiesLedgerClient.connect();
 
-    final var obs = arrayToSet(investor1, investor2);
-    final var obsMap = Collections.singletonMap("investors", obs);
+    final var obs = arrayToSet(investor1, investor2, depository, issuer);
+    final var obsMap = Collections.singletonMap("everyone", obs);
     final var accountFactory = new daml.finance.account.account.Factory(custodian, obsMap);
     final var holdingFactory = new daml.finance.holding.fungible.Factory(custodian, obsMap);
     final var settlementFactory = new daml.finance.settlement.factory.Factory(custodian, obs);
+    final var tokenInstrumentFactory = new daml.finance.instrument.token.factory.Factory(custodian, obsMap);
     accountFactoryCid = new daml.finance.interface$.account.factory.Factory.ContractId(
       allPartiesLedgerClient
         .getCommandClient()
@@ -301,6 +294,14 @@ public class IntegrationTest {
       allPartiesLedgerClient
         .getCommandClient()
         .submitAndWaitForResult(allPartiesUpdateSubmission(settlementFactory.create()))
+        .blockingGet()
+        .contractId
+        .contractId
+    );
+    tokenInstrumentFactoryCid = new daml.finance.interface$.instrument.token.factory.Factory.ContractId(
+      allPartiesLedgerClient
+        .getCommandClient()
+        .submitAndWaitForResult(allPartiesUpdateSubmission(tokenInstrumentFactory.create()))
         .blockingGet()
         .contractId
         .contractId
@@ -368,7 +369,7 @@ public class IntegrationTest {
 
     final var accountCid = createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
     final var creditAmount = new BigDecimal("99.0");
-    creditAccount(accountCid, instrument1, creditAmount);
+    creditAccount(accountCid, instrument1(), creditAmount);
     delayForLedger();
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
@@ -378,13 +379,13 @@ public class IntegrationTest {
           .json(
             toJson(
               new Balances(
-                Collections.singletonList(new Balance(account, instrument1, creditAmount, BigDecimal.ZERO))
+                Collections.singletonList(new Balance(account, instrument1(), creditAmount, BigDecimal.ZERO))
               )
             )
           )
       );
 
-    final var holdingCid_1_01 = creditAccount(accountCid, instrument1, new BigDecimal("1.01"));
+    final var holdingCid_1_01 = creditAccount(accountCid, instrument1(), new BigDecimal("1.01"));
     delayForLedger();
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
@@ -395,7 +396,7 @@ public class IntegrationTest {
             toJson(
               new Balances(
                 Collections.singletonList(
-                  new Balance(account, instrument1, new BigDecimal("100.01"), BigDecimal.ZERO)
+                  new Balance(account, instrument1(), new BigDecimal("100.01"), BigDecimal.ZERO)
                 )
               )
             )
@@ -410,11 +411,11 @@ public class IntegrationTest {
     debitAccount(accountCid, new Base.ContractId(splitResult.splitCids.get(0).contractId));
 
     // Credit + debit the account (causing no change to balance)
-    final var holdingCid_5 = creditAccount(accountCid, instrument1, new BigDecimal("5.0"));
+    final var holdingCid_5 = creditAccount(accountCid, instrument1(), new BigDecimal("5.0"));
     debitAccount(accountCid, holdingCid_5);
 
     // Credit account
-    creditAccount(accountCid, instrument1, new BigDecimal("5.0"));
+    creditAccount(accountCid, instrument1(), new BigDecimal("5.0"));
     delayForLedger();
 
     mvc
@@ -426,7 +427,7 @@ public class IntegrationTest {
             toJson(
               new Balances(
                 Collections.singletonList(
-                  new Balance(account, instrument1, new BigDecimal("105.0"), BigDecimal.ZERO)
+                  new Balance(account, instrument1(), new BigDecimal("105.0"), BigDecimal.ZERO)
                 )
               )
             )
@@ -442,7 +443,7 @@ public class IntegrationTest {
             toJson(
               new Balances(
                 Collections.singletonList(
-                  new Balance(account, instrument1, new BigDecimal("105.0"), BigDecimal.ZERO)
+                  new Balance(account, instrument1(), new BigDecimal("105.0"), BigDecimal.ZERO)
                 )
               )
             )
@@ -460,7 +461,7 @@ public class IntegrationTest {
 
     final var accountCid = createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
     final var creditAmount = new BigDecimal("99.0");
-    final var holdingCid = creditAccount(accountCid, instrument1, creditAmount);
+    final var holdingCid = creditAccount(accountCid, instrument1(), creditAmount);
     splitHolding(
       new daml.finance.interface$.holding.fungible.Fungible.ContractId(holdingCid.contractId),
       List.of(new BigDecimal("42.1"), new BigDecimal("0.01"))
@@ -473,7 +474,7 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new Balances(Collections.singletonList(new Balance(account, instrument1, creditAmount, BigDecimal.ZERO)))
+              new Balances(Collections.singletonList(new Balance(account, instrument1(), creditAmount, BigDecimal.ZERO)))
             )
           )
       );
@@ -488,7 +489,7 @@ public class IntegrationTest {
     final var account = new AccountKey(custodian, investor1, new Id("1"));
     final var creditAmount= new BigDecimal("99.0");
     final var accountCid = createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
-    final var holdingCid = creditAccount(accountCid, instrument1, creditAmount);
+    final var holdingCid = creditAccount(accountCid, instrument1(), creditAmount);
 
     final var lockedHoldingCid1 = lockHolding(holdingCid, arrayToSet(custodian), "ctx", LockType.REENTRANT);
     delayForLedger();
@@ -500,7 +501,7 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new Balances(Collections.singletonList(new Balance(account, instrument1, BigDecimal.ZERO, creditAmount)))
+              new Balances(Collections.singletonList(new Balance(account, instrument1(), BigDecimal.ZERO, creditAmount)))
             )
           )
       );
@@ -516,7 +517,7 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new Balances(Collections.singletonList(new Balance(account, instrument1, BigDecimal.ZERO, creditAmount)))
+              new Balances(Collections.singletonList(new Balance(account, instrument1(), BigDecimal.ZERO, creditAmount)))
             )
           )
       );
@@ -546,7 +547,7 @@ public class IntegrationTest {
             toJson(
               new Balances(
                 Collections.singletonList(
-                  new Balance(account, instrument1, creditAmount.subtract(lockAmount), lockAmount)
+                  new Balance(account, instrument1(), creditAmount.subtract(lockAmount), lockAmount)
                 )
               )
             )
@@ -565,8 +566,8 @@ public class IntegrationTest {
     final var creditAmount2 = new BigDecimal("0.001");
 
     final var accountCid = createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
-    creditAccount(accountCid, instrument1, creditAmount1);
-    creditAccount(accountCid, instrument2, creditAmount2);
+    creditAccount(accountCid, instrument1(), creditAmount1);
+    creditAccount(accountCid, instrument2(), creditAmount2);
     delayForLedger();
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
@@ -577,8 +578,8 @@ public class IntegrationTest {
             toJson(
               new Balances(
                 List.of(
-                  new Balance(account, instrument1, creditAmount1, BigDecimal.ZERO),
-                  new Balance(account, instrument2, creditAmount2, BigDecimal.ZERO)
+                  new Balance(account, instrument1(), creditAmount1, BigDecimal.ZERO),
+                  new Balance(account, instrument2(), creditAmount2, BigDecimal.ZERO)
                 )
               )
             )
@@ -597,10 +598,10 @@ public class IntegrationTest {
     final var creditAmount = new BigDecimal("1.0");
 
     final var accountCid1 = createAccount(account1, List.of(investor1), Collections.emptyList(), Collections.emptyList());
-    creditAccount(accountCid1, instrument1, creditAmount);
+    creditAccount(accountCid1, instrument1(), creditAmount);
 
     final var accountCid2 = createAccount(account2, List.of(investor1), Collections.emptyList(), Collections.emptyList());
-    creditAccount(accountCid2, instrument1, creditAmount);
+    creditAccount(accountCid2, instrument1(), creditAmount);
 
     delayForLedger();
 
@@ -613,7 +614,7 @@ public class IntegrationTest {
             toJson(
               new Balances(
                 Collections.singletonList(
-                  new Balance(account1, instrument1, creditAmount, BigDecimal.ZERO)
+                  new Balance(account1, instrument1(), creditAmount, BigDecimal.ZERO)
                 )
               )
             )
@@ -627,7 +628,7 @@ public class IntegrationTest {
 
     final var accountCid = createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
     final var creditAmount = new BigDecimal("99.0");
-    creditAccount(accountCid, instrument1, creditAmount);
+    creditAccount(accountCid, instrument1(), creditAmount);
     delayForLedger();
 
     registerAuthMock(custodianUser, 60 * 60 * 24);
@@ -642,7 +643,7 @@ public class IntegrationTest {
           .json(
             toJson(
               new Balances(
-                Collections.singletonList(new Balance(account, instrument1, creditAmount, BigDecimal.ZERO))
+                Collections.singletonList(new Balance(account, instrument1(), creditAmount, BigDecimal.ZERO))
               )
             )
           )
@@ -658,12 +659,12 @@ public class IntegrationTest {
 
     final var accountCid = createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
     final var creditAmount = new BigDecimal("99.0");
-    final var holdingCid = creditAccount(accountCid, instrument1, creditAmount);
+    final var holdingCid = creditAccount(accountCid, instrument1(), creditAmount);
     final var ledgerOffset = getLedgerEnd();
     delayForLedger();
 
     mvc
-      .perform(getHoldingsBuilder(account, instrument1).headers(userTokenHeader(investor1User)))
+      .perform(getHoldingsBuilder(account, instrument1()).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(
         content()
@@ -673,7 +674,7 @@ public class IntegrationTest {
                 Collections.singletonList(
                   new HoldingSummary(
                     holdingCid,
-                    new View(instrument1, account, creditAmount, Optional.empty()),
+                    new View(instrument1(), account, creditAmount, Optional.empty()),
                     Optional.of(new TransactionDetail(ledgerOffset, Instant.EPOCH))
                   )
                 )
@@ -690,7 +691,7 @@ public class IntegrationTest {
 
     final var expectedLock = new Lock(arrayToSet(custodian, investor2), arrayToSet(lockContext), lockType);
     mvc
-      .perform(getHoldingsBuilder(account, instrument1).headers(userTokenHeader(investor1User)))
+      .perform(getHoldingsBuilder(account, instrument1()).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(
         content()
@@ -699,7 +700,7 @@ public class IntegrationTest {
               new Holdings(
                 Collections.singletonList(
                   new HoldingSummary(
-                    lockedHoldingCid, new View(instrument1, account, creditAmount, Optional.of(expectedLock)),
+                    lockedHoldingCid, new View(instrument1(), account, creditAmount, Optional.of(expectedLock)),
                     Optional.of(new TransactionDetail(newLedgerOffset, Instant.EPOCH))
                   )
                 )
@@ -834,12 +835,12 @@ public class IntegrationTest {
     final var investor2Account = new AccountKey(custodian, investor2, new Id("2"));
     createAccount(investor2Account, List.of(investor2), List.of(), List.of(investor1));
     final var amount = new BigDecimal("100.0");
-    final var investor1HoldingCid = creditAccount(investor1AccountCid, instrument1, amount);
+    final var investor1HoldingCid = creditAccount(investor1AccountCid, instrument1(), amount);
 
     final var batchId = new Id("batch1");
     final var description = "tx description";
     final Optional<Id> contextId = Optional.empty();
-    final var routedStep = new RoutedStep(investor1, investor2, custodian, new Quantity<>(instrument1, amount));
+    final var routedStep = new RoutedStep(investor1, investor2, custodian, new Quantity<>(instrument1(), amount));
     final var requestors = arrayToSet(investor1);
     final var settlers = requestors;
     final var createBatchResult = createBatch(
@@ -918,13 +919,13 @@ public class IntegrationTest {
     final var investor2Account = new AccountKey(custodian, investor2, new Id("2"));
     createAccount(investor2Account, List.of(investor2), List.of(), List.of(investor1));
     final var amount = new BigDecimal("100.0");
-    final var investor1HoldingCid = creditAccount(investor1AccountCid, instrument1, amount);
+    final var investor1HoldingCid = creditAccount(investor1AccountCid, instrument1(), amount);
 
     // BEGIN batch 1
     final var batch1Id = new Id("batch1");
     final var description1 = "tx description";
     final Optional<Id> contextId1 = Optional.empty();
-    final var routedStep1 = new RoutedStep(investor1, investor2, custodian, new Quantity<>(instrument1, amount));
+    final var routedStep1 = new RoutedStep(investor1, investor2, custodian, new Quantity<>(instrument1(), amount));
     final var requestors1 = arrayToSet(investor1);
     final var settlers1 = requestors1;
     final var createBatchResult1 = createBatch(
@@ -950,7 +951,7 @@ public class IntegrationTest {
     final var batch2Id = batch1Id; // use the same batch ID, but different requestors (making the key different)
     final var description2 = "tx description 2";
     final Optional<Id> contextId2 = Optional.of(new Id("Context ID"));
-    final var routedStep2 = new RoutedStep(investor2, investor1, custodian, new Quantity<>(instrument1, amount));
+    final var routedStep2 = new RoutedStep(investor2, investor1, custodian, new Quantity<>(instrument1(), amount));
     final var requestors2 = arrayToSet(investor1, investor2);
     final var settlers2 = arrayToSet(investor2);
     final var createBatchResult2 = createBatch(
@@ -1072,6 +1073,47 @@ public class IntegrationTest {
   }
 
   @Test
+  void returnsTokenInstruments() throws Exception {
+    registerAuthMock(investor1User, 60 * 60 * 24);
+    startProjectionDaemon(investor1, investor1User);
+    delayForProjectionToStart();
+
+    final var token = new Token(instrument1(), "my desc", Instant.EPOCH);
+    final var obs = Collections.singletonMap("o", arrayToSet(investor1));
+    allPartiesLedgerClient
+      .getCommandClient()
+      .submitAndWaitForResult(
+        allPartiesUpdateSubmission(tokenInstrumentFactoryCid.exerciseCreate(token, obs))
+      ).blockingGet();
+    delayForLedger();
+
+    mvc
+      .perform(
+        getInstrumentsBuilder(
+          token.instrument.depository,
+          token.instrument.issuer,
+          token.instrument.id,
+          Optional.of(token.instrument.version)
+        ).headers(userTokenHeader(investor1User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(
+          toJson(
+            new Instruments(
+              List.of(
+                new InstrumentSummary(
+                  Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token)),
+                  Optional.empty()
+                )
+              )
+            )
+          )
+        )
+      );
+  }
+
+  @Test
   void deniesAccessWithoutToken() throws Exception {
     mvc
       .perform(getAccountsBuilder(investor1))
@@ -1086,7 +1128,7 @@ public class IntegrationTest {
     mvc
       .perform(
         getHoldingsBuilder(
-          new AccountKey(custodian, investor1, new Id("1")), instrument1
+          new AccountKey(custodian, investor1, new Id("1")), instrument1()
         )
       )
       .andExpect(status().isUnauthorized());
@@ -1109,7 +1151,7 @@ public class IntegrationTest {
     mvc
       .perform(
         getHoldingsBuilder(
-          new AccountKey(custodian, investor1, new Id("1")), instrument1
+          new AccountKey(custodian, investor1, new Id("1")), instrument1()
         ).headers(userTokenHeader(investor2User))
       )
       .andExpect(status().isForbidden());
@@ -1158,6 +1200,20 @@ public class IntegrationTest {
     return new AllocationResult(r._1, cid);
   }
 
+  private static String allocateParty(
+    PartyManagementServiceGrpc.PartyManagementServiceBlockingStub partyManagementService,
+    String name,
+    String entropy
+  ) {
+    return partyManagementService.allocateParty(
+      PartyManagementServiceOuterClass.AllocatePartyRequest
+        .newBuilder()
+        .setPartyIdHint(name + "-" + entropy)
+        .setDisplayName(name)
+        .build()
+    ).getPartyDetails().getParty();
+  }
+
   private static CommandsSubmission allPartiesCommandSubmission(List<? extends HasCommands> commands) {
     return CommandsSubmission
       .create(allPartiesUser, UUID.randomUUID().toString(), commands)
@@ -1167,7 +1223,7 @@ public class IntegrationTest {
   private static <U> UpdateSubmission<U> allPartiesUpdateSubmission(Update<U> update) {
     return UpdateSubmission
       .create(allPartiesUser, UUID.randomUUID().toString(), update)
-      .withActAs(List.of(custodian, investor1, investor2));
+      .withActAs(List.of(custodian, investor1, investor2, depository, issuer));
   }
 
   private static Instruction.ContractId approve(
@@ -1351,6 +1407,18 @@ public class IntegrationTest {
       .contentType(MediaType.APPLICATION_JSON);
   }
 
+  private static MockHttpServletRequestBuilder getInstrumentsBuilder(
+    String dep,
+    String iss,
+    Id id,
+    Optional<String> version
+  ) {
+    return MockMvcRequestBuilders
+      .post("/v1/instruments")
+      .content(toJson(new InstrumentsFilter(dep, iss, id, version)))
+      .contentType(MediaType.APPLICATION_JSON);
+  }
+
   private static MockHttpServletRequestBuilder getSettlementsBuilder(
     Optional<String> before,
     Optional<Long> limit
@@ -1365,6 +1433,24 @@ public class IntegrationTest {
     return (
       (LedgerOffset.Absolute) allPartiesLedgerClient.getTransactionsClient().getLedgerEnd().blockingGet()
     ).getOffset();
+  }
+
+  private static InstrumentKey instrument1() {
+    return new InstrumentKey(
+      depository,
+      issuer,
+      new Id("someId"),
+      "someVersion"
+    );
+  }
+
+  private static InstrumentKey instrument2() {
+    return new InstrumentKey(
+      depository,
+      issuer,
+      new Id("someId"),
+      "someVersion2"
+    );
   }
 
   private static InputStream readResource(String fileName) throws FileNotFoundException {

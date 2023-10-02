@@ -15,10 +15,7 @@ import daml.finance.interface$.settlement.instruction.View;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 public class InstructionsProjectionGenerator implements ProjectionGenerator<Event, InstructionEvent> {
   private final String readAs;
@@ -48,20 +45,25 @@ public class InstructionsProjectionGenerator implements ProjectionGenerator<Even
   @Override
   public Project<Event, InstructionEvent> project() {
     return envelope -> {
-      Event event = envelope.getEvent();
+      final var event = envelope.getEvent();
       if (event instanceof CreatedEvent) {
-        CreatedEvent createdEvent = (CreatedEvent) event;
-        DamlRecord viewRecord = createdEvent.getInterfaceViews().get(Instruction.INTERFACE.TEMPLATE_ID);
-        if (viewRecord == null) throw new InternalError("Interface view not available");
-        var view = View.valueDecoder().decode(viewRecord);
-        return List.of(
-          new InstructionEvent(
-            createdEvent.getContractId(),
-            envelope.getOffset(),
-            envelope.getLedgerEffectiveTime(),
-            Optional.of(view)
-          )
-        );
+        final CreatedEvent createdEvent = (CreatedEvent) event;
+        final var view = Util.getView(createdEvent, Instruction.TEMPLATE_ID, View.valueDecoder());
+        if (view.isPresent()) {
+          final var expectedSignatories = new HashSet<>(view.get().requestors.map.keySet());
+          expectedSignatories.addAll(view.get().signedSenders.map.keySet());
+          expectedSignatories.addAll(view.get().signedReceivers.map.keySet());
+          if (createdEvent.getSignatories().containsAll(expectedSignatories)) {
+            return List.of(
+              new InstructionEvent(
+                createdEvent.getContractId(),
+                envelope.getOffset(),
+                envelope.getLedgerEffectiveTime(),
+                view
+              )
+            );
+          }
+        }
       } else if (event instanceof ArchivedEvent) {
         return List.of(
           new InstructionEvent(
@@ -71,9 +73,8 @@ public class InstructionsProjectionGenerator implements ProjectionGenerator<Even
             Optional.empty()
           )
         );
-      } else {
-        return Collections.emptyList();
       }
+      return Collections.emptyList();
     };
   }
 

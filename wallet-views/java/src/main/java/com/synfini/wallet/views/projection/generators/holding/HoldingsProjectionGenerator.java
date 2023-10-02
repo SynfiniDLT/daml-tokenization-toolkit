@@ -46,20 +46,23 @@ public class HoldingsProjectionGenerator implements ProjectionGenerator<Event, H
   @Override
   public Project<Event, HoldingEvent> project() {
     return envelope -> {
-      Event event = envelope.getEvent();
+      final var event = envelope.getEvent();
       if (event instanceof CreatedEvent) {
-        CreatedEvent createdEvent = (CreatedEvent) event;
-        DamlRecord viewRecord = createdEvent.getInterfaceViews().get(Base.INTERFACE.TEMPLATE_ID);
-        if (viewRecord == null) throw new InternalError("Interface view not available");
-        View view = View.valueDecoder().decode(viewRecord);
-        return List.of(
-          new HoldingEvent(
-            event.getContractId(),
-            envelope.getOffset(),
-            envelope.getLedgerEffectiveTime(),
-            Optional.of(view)
-          )
-        );
+        final CreatedEvent createdEvent = (CreatedEvent) event;
+        final var view = Util.getView(createdEvent, Base.INTERFACE.TEMPLATE_ID, View.valueDecoder());
+        if (
+          view.isPresent() &&
+          createdEvent.getSignatories().containsAll(List.of(view.get().account.custodian, view.get().account.owner))
+        ) {
+          return List.of(
+            new HoldingEvent(
+              event.getContractId(),
+              envelope.getOffset(),
+              envelope.getLedgerEffectiveTime(),
+              view
+            )
+          );
+        }
       } else if (event instanceof ArchivedEvent) {
         return List.of(
           new HoldingEvent(

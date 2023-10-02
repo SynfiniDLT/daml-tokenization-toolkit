@@ -1,11 +1,9 @@
 module Synfini.Instrument.PartyBoundAttributes.Instrument where
 
 import qualified Daml.Finance.Interface.Instrument.Base.Instrument as BaseInstrument
-import qualified Daml.Finance.Interface.Instrument.Token.Instrument as Token
 import Daml.Finance.Interface.Types.Common.Types
 import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
 import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Instrument as Pbt
-import Daml.Finance.Interface.Instrument.Token.Types (Token(..))
 import qualified Daml.Finance.Lifecycle.Event.Replacement as Replacement
 import qualified Daml.Finance.Util.Disclosure as DisclosureUtil
 import qualified DA.Set as Set

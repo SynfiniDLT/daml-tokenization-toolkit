@@ -7,8 +7,11 @@ import com.daml.ledger.javaapi.data.DamlRecord;
 import com.daml.ledger.javaapi.data.Event;
 import com.daml.projection.*;
 import com.daml.projection.javadsl.BatchSource;
+import com.synfini.wallet.views.Util;
 import com.synfini.wallet.views.projection.ProjectionGenerator;
 import com.synfini.wallet.views.projection.events.TokenInstrumentEvent;
+import daml.finance.interface$.instrument.token.instrument.Instrument;
+import daml.finance.interface$.instrument.token.instrument.View;
 
 import java.time.Instant;
 import java.util.*;
@@ -31,7 +34,7 @@ public class TokenProjectionGenerator implements ProjectionGenerator<Event, Toke
       new ProjectionId("token-instruments-projection-for-" + readAs),
       ProjectionFilter.singleContractType(
         Set.of(readAs),
-        daml.finance.interface$.instrument.token.instrument.Instrument.INTERFACE
+        Instrument.INTERFACE
       )
     );
   }
@@ -39,21 +42,26 @@ public class TokenProjectionGenerator implements ProjectionGenerator<Event, Toke
   @Override
   public Project<Event, TokenInstrumentEvent> project() {
     return envelope -> {
-      Event event = envelope.getEvent();
+      final var event = envelope.getEvent();
       if (event instanceof CreatedEvent) {
-        CreatedEvent createdEvent = (CreatedEvent) event;
-        DamlRecord viewRecord = createdEvent.getInterfaceViews().get(daml.finance.interface$.instrument.token.instrument.Instrument.INTERFACE.TEMPLATE_ID);
-        if (viewRecord == null) throw new InternalError("Interface view not available");
-        final var view = daml.finance.interface$.instrument.token.instrument.View.valueDecoder().decode(viewRecord);
-        return List.of(
-          new TokenInstrumentEvent(
-            createdEvent.getContractId(),
-            envelope.getOffset(),
-            envelope.getLedgerEffectiveTime(),
-            Optional.empty(),
-            Optional.of(view)
+        final CreatedEvent createdEvent = (CreatedEvent) event;
+        final var view = Util.getView(createdEvent, Instrument.INTERFACE.TEMPLATE_ID, View.valueDecoder());
+        if (
+          view.isPresent() &&
+          createdEvent.getSignatories().containsAll(
+            List.of(view.get().token.instrument.depository, view.get().token.instrument.issuer)
           )
-        );
+        ) {
+          return List.of(
+            new TokenInstrumentEvent(
+              createdEvent.getContractId(),
+              envelope.getOffset(),
+              envelope.getLedgerEffectiveTime(),
+              Optional.empty(),
+              view
+            )
+          );
+        }
       } else if (event instanceof ArchivedEvent) {
         return List.of(
           new TokenInstrumentEvent(

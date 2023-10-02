@@ -59,13 +59,13 @@ wallet-views/java/src/generated-main/java: .build/daml-wallet-views-types.dar
 
 wallet-views/java/src/generated-test/java: .lib .build/pbt.dar
 	rm -rf wallet-views/java/src/generated-test/java
-	daml codegen java -o wallet-views/java/src/generated-test/java .lib/daml-finance-account.dar .lib/daml-finance-holding.dar .lib/daml-finance-settlement.dar .build/pbt.dar
+	daml codegen java -o wallet-views/java/src/generated-test/java .lib/daml-finance-account.dar .lib/daml-finance-holding.dar .lib/daml-finance-settlement.dar .lib/daml-finance-instrument-token.dar .build/pbt.dar
 
 build-wallet-views: wallet-views/java/src/generated-main/java
 	cd wallet-views/java && mvn compile
 
 test-wallet-views: wallet-views/java/src/generated-main/java wallet-views/java/src/generated-test/java
-	cd wallet-views/java && mvn test
+	cd wallet-views/java && mvn test ${TEST_WALLET_VIEWS_ARGS}
 
 # Codegen - TypeScript
 wallet-views/typescript-client/daml.js: .build/daml-wallet-views-types.dar

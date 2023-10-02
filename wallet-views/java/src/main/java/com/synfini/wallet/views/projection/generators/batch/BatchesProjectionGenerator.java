@@ -51,17 +51,19 @@ public class BatchesProjectionGenerator implements ProjectionGenerator<Event, Ba
       final var event = envelope.getEvent();
       if (event instanceof CreatedEvent) {
         final var createdEvent = (CreatedEvent) event;
-        final var viewRecord = createdEvent.getInterfaceViews().get(Batch.INTERFACE.TEMPLATE_ID);
-        if (viewRecord == null) throw new InternalError("Interface view not available");
-        var view = View.valueDecoder().decode(viewRecord);
-        return List.of(
-          new BatchEvent(
-            event.getContractId(),
-            envelope.getOffset(),
-            envelope.getLedgerEffectiveTime(),
-            Optional.of(view)
-          )
-        );
+        final var view = Util.getView(createdEvent, Batch.INTERFACE.TEMPLATE_ID, View.valueDecoder());
+        if (
+          view.isPresent() &&
+          createdEvent.getSignatories().containsAll(view.get().requestors.map.keySet())) {
+          return List.of(
+            new BatchEvent(
+              event.getContractId(),
+              envelope.getOffset(),
+              envelope.getLedgerEffectiveTime(),
+              view
+            )
+          );
+        }
       } else if (event instanceof ArchivedEvent) {
         return List.of(
           new BatchEvent(
@@ -71,9 +73,8 @@ public class BatchesProjectionGenerator implements ProjectionGenerator<Event, Ba
             Optional.empty()
           )
         );
-      } else {
-        return Collections.emptyList();
       }
+      return Collections.emptyList();
     };
   }
 
