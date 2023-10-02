@@ -1,6 +1,7 @@
+import { Balance } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { QuestionCircle } from "react-bootstrap-icons";
 
-export default function Balances(props: { balances?: any[] }) {
+export default function Balances(props: { balances?: Balance[] }) {
   return (
     <>
       <div style={{ marginTop: "15px" }}>
@@ -23,8 +24,8 @@ export default function Balances(props: { balances?: any[] }) {
               </tr>
             </thead>
             <tbody>
-              {props.balances.map((balance: any, index: number) => (
-                <tr key={balance}>
+              {props.balances.map((balance: Balance, index: number) => (
+                <tr key={`${balance.instrument.depository}|${balance.instrument.issuer}|${balance.instrument.id}|${balance.instrument.version}`}>
                   <td>
                     {balance.instrument.id.unpack} {" | "}
                     version: {balance.instrument.version}

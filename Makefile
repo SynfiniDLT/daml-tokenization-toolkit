@@ -85,7 +85,7 @@ build-wallet-ui: wallet-views/typescript-client/lib $(shell ./find-ts-project-fi
 	cd wallet-ui && npm install && npm run build
 
 start-wallet-ui: wallet-views/typescript-client/lib
-	cd wallet-ui && npm install && npm run build && npm start
+	cd wallet-ui && npm install && npm start
 ## END wallet ui
 
 clean:

@@ -1,6 +1,7 @@
+import { SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import SettlementDetails from "./settlementDetails";
 
-export default function Settlements(props: { settlements?: any[] }) {
+export default function Settlements(props: { settlements?: SettlementSummary[] }) {
   return (
     <>
       <div style={{ marginTop: "15px" }}>
@@ -9,12 +10,12 @@ export default function Settlements(props: { settlements?: any[] }) {
       <div style={{ margin: "10px", padding: "10px" }}>
         {props.settlements !== undefined && (
           <>
-            {props.settlements.map((settlement: any, index: number) => (
+            {props.settlements.map((settlement: SettlementSummary, index: number) => (
               <div key={index}>
                 <h5 className="profile__title">Transaction {index+1}</h5>
                 <SettlementDetails
                   settlement={settlement}
-                  key={settlement}
+                  key={settlement.batchCid}
                 ></SettlementDetails>
               </div>
             ))}

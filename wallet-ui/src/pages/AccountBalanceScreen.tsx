@@ -8,6 +8,7 @@ import Balances from "../components/layout/balances";
 import { PageLayout } from "../components/PageLayout";
 import {AccountDetailsSimple} from "../components/layout/accountDetails";
 import { PageLoader } from "../components/layout/page-loader";
+import { Balance } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 
 const AccountBalanceScreen: React.FC = () => {
   const { isLoading } = useAuth0();
@@ -16,7 +17,7 @@ const AccountBalanceScreen: React.FC = () => {
   const ctx = useContext(AuthContextStore);
   const walletViewsBaseUrl: string = `${window.location.protocol}//${window.location.host}/wallet-views`;
 
-  const [balances, setBalances] = useState<any>();
+  const [balances, setBalances] = useState<Balance[]>();
   const [primaryParty, setPrimaryParty] = useState<string>('');
 
   let walletClient: WalletViewsClient;
