@@ -24,3 +24,13 @@ data Observer = Observer
 
 asPartiesMap : (Text -> Party) -> [Observer] -> PartiesMap
 asPartiesMap p observers = Map.fromList $ (\o -> (o.context, Set.fromList (p <$> o.parties))) <$> observers
+
+findFactoryContractId : (HasField "label" f Text, HasField "cid" f c) => Text -> [f] -> c
+findFactoryContractId label list =
+  O.fromSomeNote
+    ("Factory not found: " <> show label)
+    (
+      O.findOptional
+      (\f -> if f.label == label then Some f.cid else None)
+      list
+    )

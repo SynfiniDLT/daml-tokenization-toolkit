@@ -23,6 +23,10 @@ export TOKENIZATION_SETTLEMENT_FACTORIES_FILE=${TOKENIZATION_INTERNAL}/settlemen
 if [ ! -f "${TOKENIZATION_SETTLEMENT_FACTORIES_FILE}" ]; then
   echo '{"settlementFactories": []}' > "${TOKENIZATION_SETTLEMENT_FACTORIES_FILE}"
 fi
+export TOKENIZATION_INSTRUMENT_FACTORIES_FILE=${TOKENIZATION_INTERNAL}/instrument-factories.json
+if [ ! -f "${TOKENIZATION_INSTRUMENT_FACTORIES_FILE}" ]; then
+  echo '{"instrumentFactories": []}' > "${TOKENIZATION_INSTRUMENT_FACTORIES_FILE}"
+fi
 
 command=$1
 shift
@@ -42,8 +46,12 @@ elif [ "$command" = "holding-factories" ]; then
   ./commands/create-holding-factories.sh $@
 elif [ "$command" = "settlement-factories" ]; then
   ./commands/create-settlement-factories.sh $@
+elif [ "$command" = "instrument-factories" ]; then
+  ./commands/create-instrument-factories.sh $@
 elif [ "$command" = "accounts-unilateral" ]; then
   ./commands/create-accounts-unilateral.sh $@
+elif [ "$command" = "create-pbas-unilateral" ]; then
+  ./commands/create-pbas-unilateral.sh $@
 elif [ "$command" = "mint-unilateral" ]; then
   ./commands/create-mint-unilateral.sh $@
 elif [ "$command" = "instruct-mint" ]; then
