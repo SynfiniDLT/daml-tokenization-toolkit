@@ -49,14 +49,16 @@ public class AccountsProjectionGenerator implements ProjectionGenerator<Event, A
         final var viewRecord = createdEvent.getInterfaceViews().get(Account.INTERFACE.TEMPLATE_ID);
         if (viewRecord == null) throw new InternalError("Interface view not available");
         final var view = View.valueDecoder().decode(viewRecord);
-        return List.of(
-          new AccountEvent(
-            createdEvent.getContractId(),
-            envelope.getOffset(),
-            envelope.getLedgerEffectiveTime(),
-            Optional.of(view)
-          )
-        );
+        if (createdEvent.getSignatories().containsAll(List.of(view.custodian, view.owner))) {
+          return List.of(
+            new AccountEvent(
+              createdEvent.getContractId(),
+              envelope.getOffset(),
+              envelope.getLedgerEffectiveTime(),
+              Optional.of(view)
+            )
+          );
+        }
       } else if (envelope.getEvent() instanceof ArchivedEvent) {
         return List.of(
           new AccountEvent(

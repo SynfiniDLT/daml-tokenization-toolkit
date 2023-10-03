@@ -1,3 +1,6 @@
+-- Hstore (key/value) data type must be enabled
+CREATE EXTENSION hstore;
+
 CREATE TABLE accounts
 (
   cid VARCHAR NOT NULL,
@@ -56,6 +59,13 @@ CREATE INDEX holdings_instrument_key_index ON holdings
   (instrument_depository, instrument_id, instrument_issuer, instrument_version);
 CREATE INDEX holdings_create_offset_index ON holdings (create_offset);
 CREATE INDEX holdings_archive_offset_index ON holdings (archive_offset);
+
+CREATE TABLE holding_witnesses
+(
+  cid VARCHAR NOT NULL,
+  party VARCHAR NOT NULL,
+  PRIMARY KEY (cid, party)
+);
 
 CREATE TABLE account_balances
 (
@@ -161,6 +171,29 @@ CREATE TABLE token_instruments
   archive_offset VARCHAR,
   archive_effective_time TIMESTAMP
 );
+
+CREATE INDEX token_instruments_key_index ON token_instruments
+  (instrument_depository, instrument_id, instrument_issuer, instrument_version);
+
+CREATE TABLE pba_instruments
+(
+  instrument_depository VARCHAR NOT NULL,
+  instrument_issuer VARCHAR NOT NULL,
+  instrument_id VARCHAR NOT NULL,
+  instrument_version VARCHAR NOT NULL,
+  cid VARCHAR NOT NULL UNIQUE,
+  description VARCHAR NOT NULL,
+  valid_as_of TIMESTAMP NOT NULL,
+  owner VARCHAR NOT NULL,
+  attributes HSTORE NOT NULL,
+  create_offset VARCHAR,
+  create_effective_time TIMESTAMP,
+  archive_offset VARCHAR,
+  archive_effective_time TIMESTAMP
+);
+
+CREATE INDEX pba_instruments_key_index ON pba_instruments
+  (instrument_depository, instrument_id, instrument_issuer, instrument_version);
 
 CREATE TABLE instrument_witnesses
 (

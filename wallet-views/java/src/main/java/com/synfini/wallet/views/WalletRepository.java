@@ -8,6 +8,7 @@ import daml.finance.interface$.holding.base.Lock;
 import daml.finance.interface$.holding.base.LockType;
 import daml.finance.interface$.holding.base.View;
 import daml.finance.interface$.holding.factory.Factory;
+import daml.finance.interface$.instrument.base.instrument.Instrument;
 import daml.finance.interface$.instrument.token.types.Token;
 import daml.finance.interface$.settlement.batch.Batch;
 import daml.finance.interface$.settlement.instruction.Instruction;
@@ -198,41 +199,60 @@ public class WalletRepository {
     );
   }
 
-  public List<HoldingSummary> holdings(AccountKey account, InstrumentKey instrument) {
+  public List<HoldingSummary> holdings(AccountKey account, InstrumentKey instrument, List<String> readAs) {
     return jdbcTemplate.query(
-      "SELECT * FROM holdings\n" +
-       "WHERE account_custodian = ? AND\n" +
-        "  account_owner = ? AND\n" +
-        "  account_id = ? AND\n" +
-        "  instrument_depository = ? AND\n" +
-        "  instrument_issuer = ? AND\n" +
-        "  instrument_id = ? AND\n" +
-        "  instrument_version = ? AND\n" +
-        "  archive_offset IS NULL",
+  "SELECT DISTINCT ON (cid)\n" +
+      "  h.cid cid,\n" +
+      "  h.amount amount,\n" +
+      "  h.lockers lockers,\n" +
+      "  h.lock_context lock_context,\n" +
+      "  h.lock_type lock_type,\n" +
+      "  h.create_offset create_offset,\n" +
+      "  h.create_effective_time create_effective_time\n" +
+      "FROM holdings h INNER JOIN holding_witnesses ON h.cid = holding_witnesses.cid\n" +
+      "WHERE\n" +
+      "  holding_witnesses.party = ANY(?) AND\n" +
+      "  h.account_custodian = ? AND\n" +
+      "  h.account_owner = ? AND\n" +
+      "  h.account_id = ? AND\n" +
+      "  h.instrument_depository = ? AND\n" +
+      "  h.instrument_issuer = ? AND\n" +
+      "  h.instrument_id = ? AND\n" +
+      "  h.instrument_version = ? AND\n" +
+      "  h.archive_offset IS NULL\n" +
+      "ORDER BY cid",
       ps -> {
-        ps.setString(1, account.custodian);
-        ps.setString(2, account.owner);
-        ps.setString(3, account.id.unpack);
-        ps.setString(4, instrument.depository);
-        ps.setString(5, instrument.issuer);
-        ps.setString(6, instrument.id.unpack);
-        ps.setString(7, instrument.version);
+        ps.setArray(1, asSqlArray(readAs));
+        ps.setString(2, account.custodian);
+        ps.setString(3, account.owner);
+        ps.setString(4, account.id.unpack);
+        ps.setString(5, instrument.depository);
+        ps.setString(6, instrument.issuer);
+        ps.setString(7, instrument.id.unpack);
+        ps.setString(8, instrument.version);
       },
-      new HoldingsRowMapper()
+      new HoldingsRowMapper(account, instrument)
     );
   }
 
-  public List<InstrumentSummary> instruments(String depository, String issuer, Id id, Optional<String> version, List<String> readAs) {
-    List<InstrumentSummary> tokenInstruments = jdbcTemplate.query(
-      "SELECT DISTINCT ON (instrument_depository, instrument_issuer, instrument_id, instrument_version)\n" +
-      // "  t.cid cid,\n" +
+  public List<InstrumentSummary> instruments(
+    String depository,
+    String issuer,
+    Id id,
+    Optional<String> version,
+    List<String> readAs
+  ) {
+    // TODO clean up duplicated code here
+    final var instruments = jdbcTemplate.query(
+    "SELECT DISTINCT ON (instrument_depository, instrument_issuer, instrument_id, instrument_version)\n" +
+      "  t.cid cid,\n" +
       "  t.instrument_depository instrument_depository,\n" +
       "  t.instrument_issuer instrument_issuer,\n" +
       "  t.instrument_id instrument_id,\n" +
       "  t.instrument_version instrument_version,\n" +
       "  t.description description,\n" +
       "  t.valid_as_of valid_as_of\n" +
-      "FROM token_instruments t INNER JOIN instrument_witnesses ON token_instruments.cid = instrument_witnesses.cid\n" +
+      "FROM token_instruments t INNER JOIN instrument_witnesses ON t.cid = instrument_witnesses.cid\n" +
       "WHERE\n" +
       "  instrument_witnesses.party = ANY(?) AND\n" +
       "  t.instrument_depository = ? AND\n" +
@@ -240,19 +260,9 @@ public class WalletRepository {
       "  t.instrument_id = ? AND\n" +
       "  (? IS NULL OR t.instrument_version = ?) AND\n" +
       "  t.archive_offset IS NULL\n" +
-      "ORDER BY create_offset DESC",
+      "ORDER BY instrument_depository, instrument_issuer, instrument_id, instrument_version",
       ps -> {
-        final Array r;
-        Connection conn = null;
-        try {
-          conn = pgDataSource.getConnection();
-          r = conn.createArrayOf("varchar", readAs.toArray());
-        } finally {
-          if (conn != null) {
-            conn.close();
-          }
-        }
-        ps.setArray(1, r);
+        ps.setArray(1, asSqlArray(readAs));
         ps.setString(2, depository);
         ps.setString(3, issuer);
         ps.setString(4, id.unpack);
@@ -262,7 +272,40 @@ public class WalletRepository {
       new TokenInstrumentRowMapper()
     );
 
-    return tokenInstruments;
+    instruments.addAll(
+      jdbcTemplate.query(
+      "SELECT DISTINCT ON (instrument_depository, instrument_issuer, instrument_id, instrument_version)\n" +
+        "  t.cid cid,\n" +
+        "  t.instrument_depository instrument_depository,\n" +
+        "  t.instrument_issuer instrument_issuer,\n" +
+        "  t.instrument_id instrument_id,\n" +
+        "  t.instrument_version instrument_version,\n" +
+        "  t.description description,\n" +
+        "  t.valid_as_of valid_as_of,\n" +
+        "  t.owner owner,\n" +
+        "  t.attributes attributes\n" +
+        "FROM pba_instruments t INNER JOIN instrument_witnesses ON t.cid = instrument_witnesses.cid\n" +
+        "WHERE\n" +
+        "  instrument_witnesses.party = ANY(?) AND\n" +
+        "  t.instrument_depository = ? AND\n" +
+        "  t.instrument_issuer = ? AND\n" +
+        "  t.instrument_id = ? AND\n" +
+        "  (? IS NULL OR t.instrument_version = ?) AND\n" +
+        "  t.archive_offset IS NULL\n" +
+        "ORDER BY instrument_depository, instrument_issuer, instrument_id, instrument_version",
+        ps -> {
+          ps.setArray(1, asSqlArray(readAs));
+          ps.setString(2, depository);
+          ps.setString(3, issuer);
+          ps.setString(4, id.unpack);
+          ps.setString(5, version.orElse(null));
+          ps.setString(6, version.orElse(null));
+        },
+        new PbtInstrumentRowMapper()
+      )
+    );
+
+    return instruments;
   }
 
   public List<SettlementSummary> settlements(
@@ -336,17 +379,7 @@ public class WalletRepository {
     return jdbcTemplate.query(
       selectSettlements,
       ps -> {
-        final Array r;
-        Connection conn = null;
-        try {
-          conn = pgDataSource.getConnection();
-          r = conn.createArrayOf("varchar", readAs.toArray());
-        } finally {
-          if (conn != null) {
-            conn.close();
-          }
-        }
-
+        final var r = asSqlArray(readAs);
         ps.setArray(1, r);
 
         final var b = before.orElse(null);
@@ -402,18 +435,21 @@ public class WalletRepository {
   }
 
   private static class HoldingsRowMapper implements RowMapper<HoldingSummary> {
+    private final AccountKey account;
+    private final InstrumentKey instrument;
+
+    public HoldingsRowMapper(AccountKey account, InstrumentKey instrument) {
+      this.account = account;
+      this.instrument = instrument;
+    }
 
     @Override
     public HoldingSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
       return new HoldingSummary(
         new Base.ContractId(rs.getString("cid")),
         new View(
-          getInstrumentKey(rs),
-          new AccountKey(
-            rs.getString("account_custodian"),
-            rs.getString("account_owner"),
-            new Id(rs.getString("account_id"))
-          ),
+          instrument,
+          account,
           rs.getBigDecimal("amount"),
           getLock(rs)
         ),
@@ -521,6 +557,7 @@ public class WalletRepository {
     @Override
     public InstrumentSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
       return new InstrumentSummary(
+        new Instrument.ContractId(rs.getString("cid")),
         Optional.of(
           new daml.finance.interface$.instrument.token.instrument.View(
             new Token(
@@ -531,6 +568,25 @@ public class WalletRepository {
           )
         ),
         Optional.empty()
+      );
+    }
+  }
+
+  private static class PbtInstrumentRowMapper implements RowMapper<InstrumentSummary> {
+    @Override
+    public InstrumentSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return new InstrumentSummary(
+        new Instrument.ContractId(rs.getString("cid")),
+        Optional.empty(),
+        Optional.of(
+          new synfini.interface$.instrument.partyboundattributes.instrument.View(
+            getInstrumentKey(rs),
+            rs.getString("description"),
+            rs.getTimestamp("valid_as_of").toInstant(),
+            rs.getString("owner"),
+            (Map<String, String>) rs.getObject("attributes")
+          )
+        )
       );
     }
   }
@@ -573,5 +629,19 @@ public class WalletRepository {
     return new da.set.types.Set<>(
       Arrays.stream(stringArray).collect(Collectors.toMap(Function.identity(), x -> Unit.getInstance()))
     );
+  }
+
+  private Array asSqlArray(List<String> list) throws SQLException {
+    final Array arr;
+    Connection conn = null;
+    try {
+      conn = pgDataSource.getConnection();
+      arr = conn.createArrayOf("varchar", list.toArray());
+    } finally {
+      if (conn != null) {
+        conn.close();
+      }
+    }
+    return arr;
   }
 }

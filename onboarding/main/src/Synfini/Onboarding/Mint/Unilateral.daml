@@ -34,13 +34,7 @@ createMint input = do
       issuer = p input.mintSettings.instrumentIssuer
       depository = p input.mintSettings.instrumentDepository
       minterBurner = p input.mintSettings.minterBurner
-      settlementFactoryCid = O.fromSomeNote
-        "Settlement factory not found"
-        (
-          O.findOptional
-          (\f -> if f.label == input.mintSettings.settlementFactory then Some f.cid else None)
-          input.settlementFactories
-        )
+      settlementFactoryCid = findFactoryContractId input.mintSettings.settlementFactory input.settlementFactories
       observers = Set.fromList (p <$> input.mintSettings.observers)
   submitMulti [issuer, depository, minterBurner, custodian] [] do
     createCmd Mint with

@@ -12,6 +12,7 @@ import com.synfini.wallet.views.projection.generators.batch.BatchesProjectionGen
 import com.synfini.wallet.views.projection.generators.holding.HoldingsProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.instruction.InstructionExecutionsProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.instruction.InstructionsProjectionGenerator;
+import com.synfini.wallet.views.projection.generators.instrument.PbaProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.instrument.TokenProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.witness.WitnessProjectionGenerator;
 import com.zaxxer.hikari.HikariConfig;
@@ -153,7 +154,7 @@ public class ProjectionRunner implements Callable<Integer> {
     dbConfig.setJdbcUrl(jdbcUrl);
     dbConfig.setUsername(dbUser);
     dbConfig.setPassword(dbPassword);
-    dbConfig.setMaximumPoolSize(20); // TODO this should be set based on the number projections (e.g. 2 * numProjections)
+    dbConfig.setMaximumPoolSize(24); // TODO this should be set based on the number projections (e.g. 2 * numProjections)
 
     final Optional<SharedTokenCallCredentials> tokenCreds;
     if (tokenUrl != null) {
@@ -217,6 +218,9 @@ public class ProjectionRunner implements Callable<Integer> {
 
       // Holdings
       new HoldingsProjectionGenerator(readAs, connection),
+      new WitnessProjectionGenerator(
+        readAs, "holdings", daml.finance.interface$.holding.base.Base.INTERFACE, "holding_witnesses"
+      ),
 
       // Batches
       new BatchesProjectionGenerator(readAs, connection),
@@ -231,10 +235,17 @@ public class ProjectionRunner implements Callable<Integer> {
 
       // Instruments
       new TokenProjectionGenerator(readAs),
+      new PbaProjectionGenerator(readAs),
       new WitnessProjectionGenerator(
         readAs,
-        "instruments",
+        "token_instruments",
         daml.finance.interface$.instrument.token.instrument.Instrument.INTERFACE,
+        "instrument_witnesses"
+      ),
+      new WitnessProjectionGenerator(
+        readAs,
+        "pba_instruments",
+        synfini.interface$.instrument.partyboundattributes.instrument.Instrument.INTERFACE,
         "instrument_witnesses"
       )
     );

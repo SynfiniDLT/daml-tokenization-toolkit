@@ -1,0 +1,26 @@
+{
+  "instrumentFactorySettings": [
+    {
+      "label": "pba.V1",
+      "instrumentType": "Pba",
+      "provider": "SynfiniValidator",
+      "observers": [
+        {
+          "context": "public",
+          "parties": ["Synfini_Public"]
+        }
+      ]
+    },
+    {
+      "label": "token.V1",
+      "instrumentType": "Token",
+      "provider": "SynfiniValidator",
+      "observers": [
+        {
+          "context": "public",
+          "parties": ["Synfini_Public"]
+        }
+      ]
+    }
+  ]
+}

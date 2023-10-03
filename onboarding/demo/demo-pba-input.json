@@ -1,0 +1,35 @@
+{
+  "readAs": ["Synfini_Public"],
+  "pbaInstrument": {
+    "issuer": "",
+    "deposoitory": "",
+    "id": "",
+    "description": "Entity Name",
+    "custodian": ""
+  },
+  "settlementFactory": "V1",
+  "instrumentFactory": "pba.V1",
+  "pbas": [
+    {
+      "owner": "",
+      "accountId": "pba",
+      "attributes": [
+        ["Entity Name", ""]
+      ],
+      "validAsOf": "2023-10-03T23:15:48.569796Z",
+      "version": "....",
+      "instrumentObservers": [
+        {
+          "context": "",
+          "parties": [""]
+        }
+      ],
+      "holdingObservers": [
+        {
+          "context": "",
+          "parties": [""]
+        }
+      ]
+    }
+  ]
+}

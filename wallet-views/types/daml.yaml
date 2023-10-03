@@ -11,6 +11,7 @@ data-dependencies:
   - ../../.lib/daml-finance-interface-account.dar
   - ../../.lib/daml-finance-interface-holding.dar
   - ../../.lib/daml-finance-interface-settlement.dar
+  - ../../.lib/daml-finance-interface-instrument-base.dar
   - ../../.lib/daml-finance-interface-instrument-token.dar
   - ../../.lib/daml-finance-interface-types-common.dar
   - ../../.build/pbt-interface.dar

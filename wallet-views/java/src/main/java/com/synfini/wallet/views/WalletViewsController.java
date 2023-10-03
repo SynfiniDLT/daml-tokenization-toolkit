@@ -66,10 +66,9 @@ public class WalletViewsController {
     @RequestBody HoldingFilter filter,
     @RequestHeader(value = HttpHeaders.AUTHORIZATION, defaultValue = "") String auth
   ) {
-    if (!WalletAuth.canReadAsAnyOf(ledgerApiConfig, auth, filter.account.owner, filter.account.owner)) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    }
-    final var holdings = new Holdings(walletRepository.holdings(filter.account, filter.instrument));
+    final var userRights = WalletAuth.getUser(ledgerApiConfig, auth);
+    final var parties = allParties(userRights);
+    final var holdings = new Holdings(walletRepository.holdings(filter.account, filter.instrument, parties));
     return ResponseEntity.ok(asJson(holdings));
   }
 
