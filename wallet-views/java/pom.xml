@@ -20,6 +20,7 @@
         <damlVersion>2.6.3</damlVersion>
         <customViewsVersion>assembly-LOCAL-SNAPSHOT</customViewsVersion>
         <daml-lib-dir>${project.basedir}/../../.lib</daml-lib-dir>
+        <daml-build-dir>${project.basedir}/../../.build</daml-build-dir>
         <daml-lib-holding-file>daml-finance-holding.dar</daml-lib-holding-file>
         <daml-lib-account-file>daml-finance-account.dar</daml-lib-account-file>
         <daml-lib-settlement-file>daml-finance-settlement.dar</daml-lib-settlement-file>
@@ -250,6 +251,11 @@
                                         <include>
                                             ${daml-lib-instrument-token-file}
                                         </include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>${daml-build-dir}</directory>
+                                    <includes>
                                         <include>
                                             ${daml-lib-instrument-pbt-file}
                                         </include>

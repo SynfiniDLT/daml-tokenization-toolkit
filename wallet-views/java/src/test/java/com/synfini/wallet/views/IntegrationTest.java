@@ -69,7 +69,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.*;
-import java.util.Date;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
@@ -115,6 +114,7 @@ public class IntegrationTest {
   private static daml.finance.interface$.holding.factory.Factory.ContractId holdingFactoryCid;
   private static daml.finance.interface$.settlement.factory.Factory.ContractId settlementFactoryCid;
   private static daml.finance.interface$.instrument.token.factory.Factory.ContractId tokenInstrumentFactoryCid;
+  private static synfini.interface$.instrument.partyboundattributes.factory.Factory.ContractId  pbaInstrumentFactoryCid;
 
   @Autowired
   private MockMvc mvc;
@@ -168,7 +168,8 @@ public class IntegrationTest {
             "daml-finance-holding.dar",
             "daml-finance-account.dar",
             "daml-finance-settlement.dar",
-            "daml-finance-instrument-token.dar"
+            "daml-finance-instrument-token.dar",
+            "pbt.dar"
           )
         ) {
           uploadDarFile(darFileName, adminChannel);
@@ -274,6 +275,7 @@ public class IntegrationTest {
     final var holdingFactory = new daml.finance.holding.fungible.Factory(custodian, obsMap);
     final var settlementFactory = new daml.finance.settlement.factory.Factory(custodian, obs);
     final var tokenInstrumentFactory = new daml.finance.instrument.token.factory.Factory(custodian, obsMap);
+    final var pbaInstrumentFactory = new synfini.instrument.partyboundattributes.factory.Factory(custodian, obsMap);
     accountFactoryCid = new daml.finance.interface$.account.factory.Factory.ContractId(
       allPartiesLedgerClient
         .getCommandClient()
@@ -302,6 +304,14 @@ public class IntegrationTest {
       allPartiesLedgerClient
         .getCommandClient()
         .submitAndWaitForResult(allPartiesUpdateSubmission(tokenInstrumentFactory.create()))
+        .blockingGet()
+        .contractId
+        .contractId
+    );
+    pbaInstrumentFactoryCid = new synfini.interface$.instrument.partyboundattributes.factory.Factory.ContractId(
+      allPartiesLedgerClient
+        .getCommandClient()
+        .submitAndWaitForResult(allPartiesUpdateSubmission(pbaInstrumentFactory.create()))
         .blockingGet()
         .contractId
         .contractId
@@ -352,7 +362,7 @@ public class IntegrationTest {
 
     // Create new account and check balances
     createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
-    delayForLedger();
+    delayForProjectionIngestion();
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
@@ -370,7 +380,7 @@ public class IntegrationTest {
     final var accountCid = createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
     final var creditAmount = new BigDecimal("99.0");
     creditAccount(accountCid, instrument1(), creditAmount);
-    delayForLedger();
+    delayForProjectionIngestion();
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
@@ -386,7 +396,7 @@ public class IntegrationTest {
       );
 
     final var holdingCid_1_01 = creditAccount(accountCid, instrument1(), new BigDecimal("1.01"));
-    delayForLedger();
+    delayForProjectionIngestion();
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
@@ -416,7 +426,7 @@ public class IntegrationTest {
 
     // Credit account
     creditAccount(accountCid, instrument1(), new BigDecimal("5.0"));
-    delayForLedger();
+    delayForProjectionIngestion();
 
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
@@ -466,7 +476,7 @@ public class IntegrationTest {
       new daml.finance.interface$.holding.fungible.Fungible.ContractId(holdingCid.contractId),
       List.of(new BigDecimal("42.1"), new BigDecimal("0.01"))
     );
-    delayForLedger();
+    delayForProjectionIngestion();
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
@@ -492,7 +502,7 @@ public class IntegrationTest {
     final var holdingCid = creditAccount(accountCid, instrument1(), creditAmount);
 
     final var lockedHoldingCid1 = lockHolding(holdingCid, arrayToSet(custodian), "ctx", LockType.REENTRANT);
-    delayForLedger();
+    delayForProjectionIngestion();
 
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
@@ -508,7 +518,7 @@ public class IntegrationTest {
 
     // Lock again with different lock context
     final var lockedHoldingCid2 = lockHolding(lockedHoldingCid1, arrayToSet(custodian), "ctx2", LockType.REENTRANT);
-    delayForLedger();
+    delayForProjectionIngestion();
 
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
@@ -536,7 +546,7 @@ public class IntegrationTest {
       "ctx",
       LockType.SEMAPHORE
     );
-    delayForLedger();
+    delayForProjectionIngestion();
 
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
@@ -568,7 +578,7 @@ public class IntegrationTest {
     final var accountCid = createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
     creditAccount(accountCid, instrument1(), creditAmount1);
     creditAccount(accountCid, instrument2(), creditAmount2);
-    delayForLedger();
+    delayForProjectionIngestion();
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
@@ -603,7 +613,7 @@ public class IntegrationTest {
     final var accountCid2 = createAccount(account2, List.of(investor1), Collections.emptyList(), Collections.emptyList());
     creditAccount(accountCid2, instrument1(), creditAmount);
 
-    delayForLedger();
+    delayForProjectionIngestion();
 
     mvc
       .perform(getBalanceByAccountBuilder(account1).headers(userTokenHeader(investor1User)))
@@ -629,7 +639,7 @@ public class IntegrationTest {
     final var accountCid = createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
     final var creditAmount = new BigDecimal("99.0");
     creditAccount(accountCid, instrument1(), creditAmount);
-    delayForLedger();
+    delayForProjectionIngestion();
 
     registerAuthMock(custodianUser, 60 * 60 * 24);
     startProjectionDaemon(custodian, custodianUser);
@@ -661,7 +671,7 @@ public class IntegrationTest {
     final var creditAmount = new BigDecimal("99.0");
     final var holdingCid = creditAccount(accountCid, instrument1(), creditAmount);
     final var ledgerOffset = getLedgerEnd();
-    delayForLedger();
+    delayForProjectionIngestion();
 
     mvc
       .perform(getHoldingsBuilder(account, instrument1()).headers(userTokenHeader(investor1User)))
@@ -687,7 +697,7 @@ public class IntegrationTest {
     final var lockType = LockType.REENTRANT;
     final var lockedHoldingCid = acquireLock(holdingCid, lockContext, lockType, custodian, investor2);
     final var newLedgerOffset = getLedgerEnd();
-    delayForLedger();
+    delayForProjectionIngestion();
 
     final var expectedLock = new Lock(arrayToSet(custodian, investor2), arrayToSet(lockContext), lockType);
     mvc
@@ -725,7 +735,7 @@ public class IntegrationTest {
 
     final var accountCid = createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
     final var createOffset = getLedgerEnd();
-    delayForLedger();
+    delayForProjectionIngestion();
 
     mvc
       .perform(getAccountsBuilder(investor1).headers(userTokenHeader(investor1User)))
@@ -763,7 +773,7 @@ public class IntegrationTest {
     final var newControllers = new Controllers(arrayToSet("X"), arrayToSet("Y"));
     final var newDescription = "new desc";
     final var newAccountCid = updateAccount(account, newControllers, newDescription, obs);
-    delayForLedger();
+    delayForProjectionIngestion();
 
     mvc
       .perform(getAccountsBuilder(investor1).headers(userTokenHeader(investor1User)))
@@ -794,7 +804,7 @@ public class IntegrationTest {
 
     removeAccount(account);
     final var removeOffset = getLedgerEnd();
-    delayForLedger();
+    delayForProjectionIngestion();
 
     mvc
       .perform(getAccountsBuilder(investor1).headers(userTokenHeader(investor1User)))
@@ -860,7 +870,7 @@ public class IntegrationTest {
     final var approvedInstructionCid = approve(allocationResult.instructionCid, approval, List.of(investor2));
     settleBatch(createBatchResult.batchCid, List.of(investor1));
     final var settleOffset = getLedgerEnd();
-    delayForLedger();
+    delayForProjectionIngestion();
 
     mvc
       .perform(
@@ -973,7 +983,7 @@ public class IntegrationTest {
     final var approval2LedgerOffset = getLedgerEnd();
     // END batch2
 
-    delayForLedger();
+    delayForProjectionIngestion();
 
     final var settlement1 = new SettlementSummary(
       batch1Id,
@@ -1080,12 +1090,12 @@ public class IntegrationTest {
 
     final var token = new Token(instrument1(), "my desc", Instant.EPOCH);
     final var obs = Collections.singletonMap("o", arrayToSet(investor1));
-    allPartiesLedgerClient
+    final var tokenCid = allPartiesLedgerClient
       .getCommandClient()
       .submitAndWaitForResult(
         allPartiesUpdateSubmission(tokenInstrumentFactoryCid.exerciseCreate(token, obs))
-      ).blockingGet();
-    delayForLedger();
+      ).blockingGet().exerciseResult;
+    delayForProjectionIngestion();
 
     mvc
       .perform(
@@ -1103,8 +1113,68 @@ public class IntegrationTest {
             new Instruments(
               List.of(
                 new InstrumentSummary(
+                  new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(tokenCid.contractId),
                   Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token)),
                   Optional.empty()
+                )
+              )
+            )
+          )
+        )
+      );
+  }
+
+  @Test
+  void returnsPbaInstruments() throws Exception {
+    registerAuthMock(investor1User, 60 * 60 * 24);
+    startProjectionDaemon(investor1, investor1User);
+    delayForProjectionToStart();
+
+    final var instr = instrument1();
+    final var owner = investor2;
+    final var desc = "description";
+    final var validAsOf = Instant.EPOCH;
+    final var obs = Collections.singletonMap("o", arrayToSet(investor1));
+    final var attributes = Map.of(
+      "attr1", "val1",
+      "attr2", "val2"
+    );
+    final var instrumentCid = allPartiesLedgerClient
+      .getCommandClient()
+      .submitAndWaitForResult(
+        allPartiesUpdateSubmission(
+          pbaInstrumentFactoryCid.exerciseCreate(instr, desc, validAsOf, owner, attributes, obs)
+        )
+      ).blockingGet().exerciseResult;
+    delayForProjectionIngestion();
+
+    mvc
+      .perform(
+        getInstrumentsBuilder(
+          instr.depository,
+          instr.issuer,
+          instr.id,
+          Optional.of(instr.version)
+        ).headers(userTokenHeader(investor1User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(
+          toJson(
+            new Instruments(
+              List.of(
+                new InstrumentSummary(
+                  new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(instrumentCid.contractId),
+                  Optional.empty(),
+                  Optional.of(
+                    new synfini.interface$.instrument.partyboundattributes.instrument.View(
+                      instr,
+                      desc,
+                      validAsOf,
+                      owner,
+                      attributes
+                    )
+                  )
                 )
               )
             )
@@ -1344,7 +1414,7 @@ public class IntegrationTest {
 
   // Delay used to account for possible lag between when an event is added to ledger, and custom views writing the event
   // to the DB
-  private static void delayForLedger() throws InterruptedException {
+  private static void delayForProjectionIngestion() throws InterruptedException {
     Thread.sleep(8_000);
   }
 

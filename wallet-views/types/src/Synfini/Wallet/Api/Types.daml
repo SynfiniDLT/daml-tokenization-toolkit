@@ -6,6 +6,7 @@ import qualified Daml.Finance.Interface.Account.Account as Account
 import qualified Daml.Finance.Interface.Holding.Base as Holding
 import qualified Daml.Finance.Interface.Settlement.Batch as Batch
 import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
+import qualified Daml.Finance.Interface.Instrument.Base.Instrument as Instrument
 import qualified Daml.Finance.Interface.Instrument.Token.Instrument as Token
 import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Instrument as Pbt
 import Daml.Finance.Interface.Settlement.Types
@@ -107,8 +108,9 @@ data Settlements = Settlements
 -- TODO may need to add contract ID to this type, and create/archive TransactionDetail
 data InstrumentSummary = InstrumentSummary
   with
+    cid : ContractId Instrument.I
     tokenView : Optional Token.View
-    pbtView : Optional Pbt.View
+    pbaView : Optional Pbt.View
   deriving (Show, Eq)
 
 data Instruments = Instruments

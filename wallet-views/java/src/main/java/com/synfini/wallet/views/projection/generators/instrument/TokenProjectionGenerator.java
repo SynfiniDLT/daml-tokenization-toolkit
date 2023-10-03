@@ -3,7 +3,6 @@ package com.synfini.wallet.views.projection.generators.instrument;
 import akka.grpc.GrpcClientSettings;
 import com.daml.ledger.javaapi.data.ArchivedEvent;
 import com.daml.ledger.javaapi.data.CreatedEvent;
-import com.daml.ledger.javaapi.data.DamlRecord;
 import com.daml.ledger.javaapi.data.Event;
 import com.daml.projection.*;
 import com.daml.projection.javadsl.BatchSource;
@@ -57,7 +56,6 @@ public class TokenProjectionGenerator implements ProjectionGenerator<Event, Toke
               createdEvent.getContractId(),
               envelope.getOffset(),
               envelope.getLedgerEffectiveTime(),
-              Optional.empty(),
               view
             )
           );
@@ -68,7 +66,6 @@ public class TokenProjectionGenerator implements ProjectionGenerator<Event, Toke
             event.getContractId(),
             envelope.getOffset(),
             envelope.getLedgerEffectiveTime(),
-            Optional.empty(),
             Optional.empty()
           )
         );

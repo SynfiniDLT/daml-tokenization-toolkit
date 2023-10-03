@@ -8,6 +8,7 @@ import daml.finance.interface$.holding.base.Lock;
 import daml.finance.interface$.holding.base.LockType;
 import daml.finance.interface$.holding.base.View;
 import daml.finance.interface$.holding.factory.Factory;
+import daml.finance.interface$.instrument.base.instrument.Instrument;
 import daml.finance.interface$.instrument.token.types.Token;
 import daml.finance.interface$.settlement.batch.Batch;
 import daml.finance.interface$.settlement.instruction.Instruction;
@@ -222,10 +223,17 @@ public class WalletRepository {
     );
   }
 
-  public List<InstrumentSummary> instruments(String depository, String issuer, Id id, Optional<String> version, List<String> readAs) {
-    List<InstrumentSummary> tokenInstruments = jdbcTemplate.query(
-      "SELECT DISTINCT ON (instrument_depository, instrument_issuer, instrument_id, instrument_version)\n" +
-      // "  t.cid cid,\n" +
+  public List<InstrumentSummary> instruments(
+    String depository,
+    String issuer,
+    Id id,
+    Optional<String> version,
+    List<String> readAs
+  ) {
+    // TODO clean up duplicated code here
+    final var instruments = jdbcTemplate.query(
+    "SELECT DISTINCT ON (instrument_depository, instrument_issuer, instrument_id, instrument_version)\n" +
+      "  t.cid cid,\n" +
       "  t.instrument_depository instrument_depository,\n" +
       "  t.instrument_issuer instrument_issuer,\n" +
       "  t.instrument_id instrument_id,\n" +
@@ -262,7 +270,50 @@ public class WalletRepository {
       new TokenInstrumentRowMapper()
     );
 
-    return tokenInstruments;
+    instruments.addAll(
+      jdbcTemplate.query(
+      "SELECT DISTINCT ON (instrument_depository, instrument_issuer, instrument_id, instrument_version)\n" +
+        "  t.cid cid,\n" +
+        "  t.instrument_depository instrument_depository,\n" +
+        "  t.instrument_issuer instrument_issuer,\n" +
+        "  t.instrument_id instrument_id,\n" +
+        "  t.instrument_version instrument_version,\n" +
+        "  t.description description,\n" +
+        "  t.valid_as_of valid_as_of,\n" +
+        "  t.owner owner,\n" +
+        "  t.attributes attributes\n" +
+        "FROM pba_instruments t INNER JOIN instrument_witnesses ON t.cid = instrument_witnesses.cid\n" +
+        "WHERE\n" +
+        "  instrument_witnesses.party = ANY(?) AND\n" +
+        "  t.instrument_depository = ? AND\n" +
+        "  t.instrument_issuer = ? AND\n" +
+        "  t.instrument_id = ? AND\n" +
+        "  (? IS NULL OR t.instrument_version = ?) AND\n" +
+        "  t.archive_offset IS NULL\n" +
+        "ORDER BY instrument_depository, instrument_issuer, instrument_id, instrument_version",
+        ps -> {
+          final Array r;
+          Connection conn = null;
+          try {
+            conn = pgDataSource.getConnection();
+            r = conn.createArrayOf("varchar", readAs.toArray());
+          } finally {
+            if (conn != null) {
+              conn.close();
+            }
+          }
+          ps.setArray(1, r);
+          ps.setString(2, depository);
+          ps.setString(3, issuer);
+          ps.setString(4, id.unpack);
+          ps.setString(5, version.orElse(null));
+          ps.setString(6, version.orElse(null));
+        },
+        new PbtInstrumentRowMapper()
+      )
+    );
+
+    return instruments;
   }
 
   public List<SettlementSummary> settlements(
@@ -521,6 +572,7 @@ public class WalletRepository {
     @Override
     public InstrumentSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
       return new InstrumentSummary(
+        new Instrument.ContractId(rs.getString("cid")),
         Optional.of(
           new daml.finance.interface$.instrument.token.instrument.View(
             new Token(
@@ -531,6 +583,25 @@ public class WalletRepository {
           )
         ),
         Optional.empty()
+      );
+    }
+  }
+
+  private static class PbtInstrumentRowMapper implements RowMapper<InstrumentSummary> {
+    @Override
+    public InstrumentSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return new InstrumentSummary(
+        new Instrument.ContractId(rs.getString("cid")),
+        Optional.empty(),
+        Optional.of(
+          new synfini.interface$.instrument.partyboundattributes.instrument.View(
+            getInstrumentKey(rs),
+            rs.getString("description"),
+            rs.getTimestamp("valid_as_of").toInstant(),
+            rs.getString("owner"),
+            (Map<String, String>) rs.getObject("attributes")
+          )
+        )
       );
     }
   }
