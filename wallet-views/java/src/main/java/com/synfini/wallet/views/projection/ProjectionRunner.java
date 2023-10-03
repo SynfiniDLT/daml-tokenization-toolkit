@@ -154,7 +154,7 @@ public class ProjectionRunner implements Callable<Integer> {
     dbConfig.setJdbcUrl(jdbcUrl);
     dbConfig.setUsername(dbUser);
     dbConfig.setPassword(dbPassword);
-    dbConfig.setMaximumPoolSize(22); // TODO this should be set based on the number projections (e.g. 2 * numProjections)
+    dbConfig.setMaximumPoolSize(24); // TODO this should be set based on the number projections (e.g. 2 * numProjections)
 
     final Optional<SharedTokenCallCredentials> tokenCreds;
     if (tokenUrl != null) {
@@ -218,6 +218,9 @@ public class ProjectionRunner implements Callable<Integer> {
 
       // Holdings
       new HoldingsProjectionGenerator(readAs, connection),
+      new WitnessProjectionGenerator(
+        readAs, "holdings", daml.finance.interface$.holding.base.Base.INTERFACE, "holding_witnesses"
+      ),
 
       // Batches
       new BatchesProjectionGenerator(readAs, connection),

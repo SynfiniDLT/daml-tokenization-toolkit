@@ -105,7 +105,7 @@ data Settlements = Settlements
     settlements : [SettlementSummary]
   deriving (Show, Eq)
 
--- TODO may need to add contract ID to this type, and create/archive TransactionDetail
+-- TODO may need to add create/archive TransactionDetail for this type
 data InstrumentSummary = InstrumentSummary
   with
     cid : ContractId Instrument.I

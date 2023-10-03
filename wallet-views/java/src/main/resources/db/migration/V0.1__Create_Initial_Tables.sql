@@ -60,6 +60,13 @@ CREATE INDEX holdings_instrument_key_index ON holdings
 CREATE INDEX holdings_create_offset_index ON holdings (create_offset);
 CREATE INDEX holdings_archive_offset_index ON holdings (archive_offset);
 
+CREATE TABLE holding_witnesses
+(
+  cid VARCHAR NOT NULL,
+  party VARCHAR NOT NULL,
+  PRIMARY KEY (cid, party)
+);
+
 CREATE TABLE account_balances
 (
   account_custodian VARCHAR NOT NULL,
