@@ -10,5 +10,5 @@ $TOKENIZATION_UTIL/add-json.sh \
   --input-file /dev/stdin \
   --output-file ${output_file} \
   --dar ${TOKENIZATION_ONBOARDING_DAR} \
-  --script-name Synfini.Onboarding.PartyBoundAttributes:createPbas \
+  --script-name Synfini.Onboarding.PartyBoundAttributes.Unilateral:createPbas \
   "${@:2}"
