@@ -86,10 +86,13 @@ build-wallet-views-client: wallet-views/typescript-client/lib
 ## END wallet-views
 
 ## BEGIN wallet ui
-build-wallet-ui: wallet-views/typescript-client/lib $(shell ./find-ts-project-files.sh wallet-ui)
+wallet-ui/daml.js: .lib
+	daml codegen js .lib/daml-finance-interface-util.dar -o wallet-ui/daml.js
+
+build-wallet-ui: wallet-ui/daml.js wallet-views/typescript-client/lib $(shell ./find-ts-project-files.sh wallet-ui)
 	cd wallet-ui && npm install && npm run build
 
-start-wallet-ui: wallet-views/typescript-client/lib
+start-wallet-ui: wallet-ui/daml.js wallet-views/typescript-client/lib
 	cd wallet-ui && npm install && npm start
 ## END wallet ui
 

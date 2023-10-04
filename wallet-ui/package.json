@@ -18,6 +18,7 @@
   "dependencies": {
     "@auth0/auth0-react": "^2.0.1",
     "@daml.js/synfini-wallet-views-types": "file:../wallet-views/typescript-client/daml.js/daml-wallet-views-types-0.0.1",
+    "@daml.js/daml-finance-interface-util": "file:daml.js/daml-finance-interface-util-2.0.0",
     "@daml/ledger": "2.6.3",
     "@daml/react": "2.6.3",
     "@daml/types": "2.6.3",
