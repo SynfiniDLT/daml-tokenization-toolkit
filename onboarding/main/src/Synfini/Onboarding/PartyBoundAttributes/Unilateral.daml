@@ -86,7 +86,7 @@ createPbas input = do
       exerciseCmd instructionCid Instruction.Allocate with actors = Set.fromList [custodian], allocation = CreditReceiver
     submit owner do
       exerciseCmd instructionCid Instruction.Approve with actors = Set.fromList [owner], approval = TakeDelivery account
-    [pbaHoldingCid] <- submitMulti [custodian] readAs do
+    [pbaHoldingCid] <- submitMulti [custodian, issuer, depository] readAs do
       exerciseCmd instrumentFactoryCid Pba.Create with
         instrument
         description = input.pbaInstrument.description

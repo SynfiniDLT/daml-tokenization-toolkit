@@ -1,33 +1,54 @@
 {
   "readAs": ["Synfini_Public"],
   "pbaInstrument": {
-    "issuer": "",
-    "deposoitory": "",
-    "id": "",
+    "issuer": "SBT_Issuer",
+    "depository": "SBT_Depository",
+    "id": "EntityName",
     "description": "Entity Name",
-    "custodian": ""
+    "custodian": "SBT_Issuer"
   },
   "settlementFactory": "V1",
   "instrumentFactory": "pba.V1",
   "pbas": [
     {
-      "owner": "",
-      "accountId": "pba",
+      "owner": "InvestorA",
+      "accountId": "sbt",
       "attributes": [
-        ["Entity Name", ""]
+        ["Entity Name", "ACME Corp"]
       ],
       "validAsOf": "2023-10-03T23:15:48.569796Z",
-      "version": "....",
+      "version": "InvestorA.V1",
       "instrumentObservers": [
         {
           "context": "",
-          "parties": [""]
+          "parties": ["SynfiniValidator"]
         }
       ],
       "holdingObservers": [
         {
           "context": "",
-          "parties": [""]
+          "parties": ["SynfiniValidator"]
+        }
+      ]
+    },
+    {
+      "owner": "InvestorB",
+      "accountId": "sbt",
+      "attributes": [
+        ["Entity Name", "InvestorB Corp"]
+      ],
+      "validAsOf": "2023-10-03T23:15:48.569796Z",
+      "version": "InvestorB.V1",
+      "instrumentObservers": [
+        {
+          "context": "",
+          "parties": ["SynfiniValidator"]
+        }
+      ],
+      "holdingObservers": [
+        {
+          "context": "",
+          "parties": ["SynfiniValidator"]
         }
       ]
     }

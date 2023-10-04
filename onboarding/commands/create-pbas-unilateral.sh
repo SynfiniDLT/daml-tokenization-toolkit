@@ -8,7 +8,6 @@ $TOKENIZATION_UTIL/add-json.sh \
   $TOKENIZATION_SETTLEMENT_FACTORIES_FILE \
   $1 | daml script \
   --input-file /dev/stdin \
-  --output-file ${output_file} \
   --dar ${TOKENIZATION_ONBOARDING_DAR} \
   --script-name Synfini.Onboarding.PartyBoundAttributes.Unilateral:createPbas \
   "${@:2}"
