@@ -120,7 +120,7 @@ const MainScreen: React.FC = () => {
         <Accounts accounts={accounts} />
       </div>
       <Modal
-        id="giftModal"
+        id="shareSbtModal"
         className="sbtModal"
         isOpen={isOpen}
         onRequestClose={handleClick}

@@ -1,11 +1,17 @@
+import { useState } from "react";
 import { Balance, InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { QuestionCircle } from "react-bootstrap-icons";
 
 export default function Balances(props: { balances?: Balance[], instruments?: InstrumentSummary[] }) {
 
-  let entity: any = [];
+  const [isOpen, setIsOpen] = useState<boolean>(false);
 
-  
+  const handleClick = () => {
+    console.log("show modal");
+    setIsOpen(!isOpen);
+  };
+
+  let entity: any = [];
   if (props.instruments!== undefined && props.instruments?.length>0){
     entity = props.instruments?.[0].pbaView?.attributes.entriesArray();
 
@@ -16,11 +22,11 @@ export default function Balances(props: { balances?: Balance[], instruments?: In
       <div style={{ marginTop: "15px" }}>
         <h5 className="profile__title">Balances</h5>
       </div>
+      
       {props.balances?.length ===0 && (
-        
           <p>There is no balance for this account.</p>
-        
       )}
+
       {props.balances !== undefined && props.balances?.length >0 && (
         <>
           <table id="customers">
@@ -37,6 +43,7 @@ export default function Balances(props: { balances?: Balance[], instruments?: In
                 </>
                 : <>
                   <th>Attributes <QuestionCircle /></th>
+                  <th>#</th>
                 </>
                 }
               </tr>
@@ -58,6 +65,9 @@ export default function Balances(props: { balances?: Balance[], instruments?: In
                   </>
                   :<>
                     <td>{Array.from(entity, ([key,value]) => `${key} | ${value}`)}</td>
+                    <td><button type="button" className="button__login" style={{width: '100px'}} onClick={handleClick}>
+                          Share SBT
+                        </button></td>
                   </>
                   }
                 </tr>

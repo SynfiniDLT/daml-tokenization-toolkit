@@ -62,7 +62,6 @@ const AccountBalanceScreen: React.FC = () => {
   useEffect(() => {
     fetchBalances().then(res => {
       if (res!==null){
-
         res.balances.forEach(balance => {
           const resp_instrument = walletClient.getInstruments({
             depository: balance.instrument.depository,
@@ -70,7 +69,6 @@ const AccountBalanceScreen: React.FC = () => {
             id: { unpack: balance.instrument.id.unpack },
             version: balance.instrument.version
           });
-
           resp_instrument.then(resp_instrument => {
             setInstruments(resp_instrument.instruments);
           })
