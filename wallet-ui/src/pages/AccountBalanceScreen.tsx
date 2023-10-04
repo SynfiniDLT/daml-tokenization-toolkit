@@ -8,7 +8,7 @@ import Balances from "../components/layout/balances";
 import { PageLayout } from "../components/PageLayout";
 import {AccountDetailsSimple} from "../components/layout/accountDetails";
 import { PageLoader } from "../components/layout/page-loader";
-import { Balance } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { Balance, InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 
 const AccountBalanceScreen: React.FC = () => {
   const { isLoading } = useAuth0();
@@ -18,6 +18,7 @@ const AccountBalanceScreen: React.FC = () => {
   const walletViewsBaseUrl: string = `${window.location.protocol}//${window.location.host}/wallet-views`;
 
   const [balances, setBalances] = useState<Balance[]>();
+  const [instruments, setInstruments] = useState<InstrumentSummary[]>();
   const [primaryParty, setPrimaryParty] = useState<string>('');
 
   let walletClient: WalletViewsClient;
@@ -49,7 +50,9 @@ const AccountBalanceScreen: React.FC = () => {
         },
       });
       setBalances(resp.balances);
+      return resp;
     }
+    return null;
   };
 
   useEffect(() => {
@@ -57,7 +60,23 @@ const AccountBalanceScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchBalances();
+    fetchBalances().then(res => {
+      if (res!==null){
+
+        res.balances.forEach(balance => {
+          const resp_instrument = walletClient.getInstruments({
+            depository: balance.instrument.depository,
+            issuer: balance.instrument.issuer,
+            id: { unpack: balance.instrument.id.unpack },
+            version: balance.instrument.version
+          });
+
+          resp_instrument.then(resp_instrument => {
+            setInstruments(resp_instrument.instruments);
+          })
+        })
+      }
+    });
   }, [primaryParty]);
 
   if (isLoading) {
@@ -68,13 +87,11 @@ const AccountBalanceScreen: React.FC = () => {
     );
   }
 
-  console.log("balances",balances)
-
   return (
     <PageLayout>
       <h3 className="profile__title" style={{marginTop: '10px'}}>Account Balance</h3>
       <AccountDetailsSimple account={state.account}></AccountDetailsSimple>
-      <Balances balances={balances}></Balances>
+      <Balances balances={balances} instruments={instruments}></Balances>
     </PageLayout>
   );
 };

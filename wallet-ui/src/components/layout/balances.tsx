@@ -1,7 +1,16 @@
-import { Balance } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { Balance, InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { QuestionCircle } from "react-bootstrap-icons";
 
-export default function Balances(props: { balances?: Balance[] }) {
+export default function Balances(props: { balances?: Balance[], instruments?: InstrumentSummary[] }) {
+
+  let entity: any = [];
+
+  
+  if (props.instruments!== undefined && props.instruments?.length>0){
+    entity = props.instruments?.[0].pbaView?.attributes.entriesArray();
+
+  }
+
   return (
     <>
       <div style={{ marginTop: "15px" }}>
@@ -20,7 +29,16 @@ export default function Balances(props: { balances?: Balance[] }) {
                 <th>Instrument | Version<QuestionCircle /></th>
                 <th>Depository<QuestionCircle /></th>
                 <th>Issuer<QuestionCircle /></th>
-                <th>Balance(locked and unlocked)<QuestionCircle /></th>
+                {props.balances[0].account.id.unpack!=='sbt' ?
+                <>
+                <th>Balance<QuestionCircle /></th>
+                <th>Balance Unlocked<QuestionCircle /></th>
+                <th>Balance Locked<QuestionCircle /></th>
+                </>
+                : <>
+                  <th>Attributes <QuestionCircle /></th>
+                </>
+                }
               </tr>
             </thead>
             <tbody>
@@ -32,7 +50,16 @@ export default function Balances(props: { balances?: Balance[] }) {
                   </td>
                   <td>{balance.instrument.depository.substring(0, 30)}...</td>
                   <td>{balance.instrument.issuer.substring(0, 30)}...</td>
-                  <td>{balance.unlocked}</td>
+                  {balance.account.id.unpack!=='sbt' ?
+                  <>
+                    <td>{(parseFloat(balance.unlocked)+ parseFloat(balance.locked)).toFixed(2)}</td>
+                    <td>{parseFloat(balance.unlocked).toFixed(2)}</td>
+                    <td>{parseFloat(balance.locked).toFixed(2)}</td>
+                  </>
+                  :<>
+                    <td>{Array.from(entity, ([key,value]) => `${key} | ${value}`)}</td>
+                  </>
+                  }
                 </tr>
               ))}
             </tbody>
