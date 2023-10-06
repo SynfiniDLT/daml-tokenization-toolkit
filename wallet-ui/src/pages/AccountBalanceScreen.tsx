@@ -5,10 +5,15 @@ import { userContext } from "../App";
 import AuthContextStore from "../store/AuthContextStore";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import Balances from "../components/layout/balances";
+
 import { PageLayout } from "../components/PageLayout";
-import {AccountDetailsSimple} from "../components/layout/accountDetails";
+import { AccountDetailsSimple } from "../components/layout/accountDetails";
 import { PageLoader } from "../components/layout/page-loader";
-import { Balance, InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import {
+  Balance,
+  InstrumentSummary,
+} from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import BalanceSbts from "../components/layout/balanceSbts";
 
 const AccountBalanceScreen: React.FC = () => {
   const { isLoading } = useAuth0();
@@ -17,9 +22,9 @@ const AccountBalanceScreen: React.FC = () => {
   const ctx = useContext(AuthContextStore);
   const walletViewsBaseUrl: string = `${window.location.protocol}//${window.location.host}/wallet-views`;
 
-  const [balances, setBalances] = useState<Balance[]>();
+  const [balances, setBalances] = useState<Balance[]>([]);
+  const [primaryParty, setPrimaryParty] = useState<string>("");
   const [instruments, setInstruments] = useState<InstrumentSummary[]>();
-  const [primaryParty, setPrimaryParty] = useState<string>('');
 
   let walletClient: WalletViewsClient;
   walletClient = new WalletViewsClient({
@@ -28,20 +33,19 @@ const AccountBalanceScreen: React.FC = () => {
   });
 
   const fetchUserLedger = async () => {
-      try {
-        const user = await ledger.getUser();
-        if (user.primaryParty !== undefined) {
-          setPrimaryParty(user.primaryParty);
-          ctx.setPrimaryParty(user.primaryParty);
-        }
-      } catch (err) {
-        console.log("error when fetching primary party", err);
+    try {
+      const user = await ledger.getUser();
+      if (user.primaryParty !== undefined) {
+        setPrimaryParty(user.primaryParty);
+        ctx.setPrimaryParty(user.primaryParty);
       }
+    } catch (err) {
+      console.log("error when fetching primary party", err);
+    }
   };
 
   const fetchBalances = async () => {
     if (primaryParty !== "") {
-
       const resp = await walletClient.getBalance({
         account: {
           owner: primaryParty,
@@ -50,32 +54,42 @@ const AccountBalanceScreen: React.FC = () => {
         },
       });
       setBalances(resp.balances);
-      return resp;
+      return resp.balances;
     }
-    return null;
+    return [];
   };
 
+  const fetchInstruments = async (balancesIns: Balance[]) => {
+
+    let arr_test_instr: InstrumentSummary[] = [];
+    for (let index = 0; index < balancesIns.length; index++) {
+      const balance = balancesIns[index];
+      const resp_instrument = await walletClient.getInstruments({
+            depository: balance.instrument.depository,
+            issuer: balance.instrument.issuer,
+            id: { unpack: balance.instrument.id.unpack },
+            version: balance.instrument.version,
+      });
+      if (resp_instrument.instruments.length > 0) 
+        arr_test_instr.push(resp_instrument.instruments[0]);
+    }
+    return arr_test_instr;
+    
+    
+  }
+  
   useEffect(() => {
     fetchUserLedger();
   }, []);
 
   useEffect(() => {
-    fetchBalances().then(res => {
-      if (res!==null){
-        res.balances.forEach(balance => {
-          const resp_instrument = walletClient.getInstruments({
-            depository: balance.instrument.depository,
-            issuer: balance.instrument.issuer,
-            id: { unpack: balance.instrument.id.unpack },
-            version: balance.instrument.version
-          });
-          resp_instrument.then(resp_instrument => {
-            setInstruments(resp_instrument.instruments);
-          })
-        })
-      }
-    });
+    fetchBalances()
   }, [primaryParty]);
+
+  useEffect(() => {
+    fetchInstruments(balances)
+    .then((res => setInstruments(res)));
+  },[primaryParty, balances])
 
   if (isLoading) {
     return (
@@ -87,9 +101,15 @@ const AccountBalanceScreen: React.FC = () => {
 
   return (
     <PageLayout>
-      <h3 className="profile__title" style={{marginTop: '10px'}}>Account Balance</h3>
+      <h3 className="profile__title" style={{ marginTop: "10px" }}>
+        Account Balance
+      </h3>
       <AccountDetailsSimple account={state.account}></AccountDetailsSimple>
-      <Balances balances={balances} instruments={instruments}></Balances>
+      {state.account.view.id.unpack !== "sbt" ? (
+        <Balances balances={balances}></Balances>
+        ) : (
+        <BalanceSbts instruments={instruments} />
+      )}
     </PageLayout>
   );
 };
