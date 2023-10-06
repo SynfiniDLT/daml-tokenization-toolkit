@@ -9,6 +9,7 @@ import Synfini.Mint
 import Synfini.Onboarding.Types
 import qualified Daml.Finance.Interface.Account.Util as Account
 import qualified Daml.Finance.Interface.Holding.Base as Holding
+import qualified DA.Optional as O
 
 data InstructMintSettings = InstructMintSettings
   with
@@ -108,12 +109,14 @@ instructBurn input = do
         issuer, depository, id = Id input.instructBurnSettings.instrumentId, version = input.instructBurnSettings.instrumentVersion
       senderAccount = AccountKey with custodian, owner = sender, id = Id input.instructBurnSettings.senderAccountId
   holdings <- queryInterface @Holding.I sender
-  let relevantHoldings = filter (\(_, Some v) -> v.account == senderAccount && v.instrument == instrument) holdings
+  let relevantHoldings = filter
+        (\(_, Some v) -> v.account == senderAccount && v.instrument == instrument && O.isNone v.lock)
+        holdings
   submitMulti [sender] readAs do
     createAndExerciseCmd (InstructBurnHelper sender)
       (
         InstructBurnFromFungibles with
-          holdingCids = coerceInterfaceContractId . fst <$> holdings
+          holdingCids = coerceInterfaceContractId . fst <$> relevantHoldings
           id = Id input.instructBurnSettings.referenceId
           amount = input.instructBurnSettings.amount
           description = "Redemption of " <> show instrument <> " requested by " <> show sender

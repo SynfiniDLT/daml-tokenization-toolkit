@@ -67,30 +67,6 @@ CREATE TABLE holding_witnesses
   PRIMARY KEY (cid, party)
 );
 
-CREATE TABLE account_balances
-(
-  account_custodian VARCHAR NOT NULL,
-  account_owner VARCHAR NOT NULL,
-  account_id VARCHAR NOT NULL,
-  instrument_depository VARCHAR NOT NULL,
-  instrument_id VARCHAR NOT NULL,
-  instrument_issuer VARCHAR NOT NULL,
-  instrument_version VARCHAR NOT NULL,
-  balance NUMERIC NOT NULL,
-  locked BOOLEAN NOT NULL,
-  max_offset VARCHAR,
-  PRIMARY KEY (
-    account_custodian,
-    account_id,
-    account_owner,
-    instrument_depository,
-    instrument_id,
-    instrument_issuer,
-    instrument_version,
-    locked
-  )
-);
-
 CREATE TABLE batches
 (
   batch_id VARCHAR NOT NULL,

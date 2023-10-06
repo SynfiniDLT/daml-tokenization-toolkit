@@ -5,7 +5,7 @@ import com.daml.ledger.javaapi.data.User;
 import com.daml.ledger.javaapi.data.codegen.DefinedDataType;
 import com.daml.lf.codegen.json.JsonCodec;
 import com.synfini.wallet.views.config.LedgerApiConfig;
-import com.synfini.wallet.views.config.WalletViewsConfig;
+import com.synfini.wallet.views.config.WalletViewsApiConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,18 +22,18 @@ import java.util.stream.Stream;
 @RequestMapping("v1")
 public class WalletViewsController {
   private final WalletRepository walletRepository;
-  private final WalletViewsConfig walletViewsConfig;
+  private final WalletViewsApiConfig walletViewsApiConfig;
   private final LedgerApiConfig ledgerApiConfig;
   private static final JsonCodec jsonCodec = JsonCodec.apply(true, true);
 
   @Autowired
   public WalletViewsController(
     WalletRepository walletRepository,
-    WalletViewsConfig walletViewsConfig,
+    WalletViewsApiConfig walletViewsApiConfig,
     LedgerApiConfig ledgerApiConfig
   ) {
     this.walletRepository = walletRepository;
-    this.walletViewsConfig = walletViewsConfig;
+    this.walletViewsApiConfig = walletViewsApiConfig;
     this.ledgerApiConfig = ledgerApiConfig;
   }
 
@@ -79,11 +79,11 @@ public class WalletViewsController {
   ) {
     final var userRights = WalletAuth.getUser(ledgerApiConfig, auth);
     final var parties = allParties(userRights);
-    final var limit = filter.limit.orElse(walletViewsConfig.maxTransactionsResponseSize);
-    if (limit > walletViewsConfig.maxTransactionsResponseSize) {
+    final var limit = filter.limit.orElse(walletViewsApiConfig.maxTransactionsResponseSize);
+    if (limit > walletViewsApiConfig.maxTransactionsResponseSize) {
       return ResponseEntity
         .badRequest()
-        .body("Transactions limit cannot exceed " + walletViewsConfig.maxTransactionsResponseSize);
+        .body("Transactions limit cannot exceed " + walletViewsApiConfig.maxTransactionsResponseSize);
     }
     final var settlements = new Settlements(walletRepository.settlements(parties, filter.before, limit));
     return ResponseEntity.ok(asJson(settlements));
