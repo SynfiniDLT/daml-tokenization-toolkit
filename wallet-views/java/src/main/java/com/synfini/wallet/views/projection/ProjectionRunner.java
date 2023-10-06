@@ -103,19 +103,6 @@ public class ProjectionRunner implements Callable<Integer> {
     } else {
       tokenCreds = Optional.empty();
     }
-//    if (projectionConfig.tokenUrl != null) {
-//      if (clientId == null || audience == null || clientSecretFile == null) {
-//        logger.error("Please provide --token-client-id, --token-audience and --token-client-secret-file");
-//        return 1;
-//      }
-//      final var clientSecret = Files.readString(Path.of(clientSecretFile));
-//      tokenCreds = Optional.of(
-//        new SharedTokenCallCredentials(tokenUrl, clientId, clientSecret, audience, tokenRefreshWindowSeconds)
-//      );
-//    } else {
-//      logger.warn("--token-url not set: continuing without authentication");
-//      tokenCreds = Optional.empty();
-//    }
 
     int numRetries = 0;
     while (true) {
