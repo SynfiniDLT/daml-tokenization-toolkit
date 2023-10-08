@@ -1,35 +1,70 @@
 import { useState } from "react";
 import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { QuestionCircle } from "react-bootstrap-icons";
+import Modal from "react-modal";
+import styled from "styled-components";
 
 export default function BalanceSbts(props: {
   instruments?: InstrumentSummary[];
 }) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [sendTo, setSendTo] = useState<any>();
+  const [partiesInput, setPartiesInput] = useState<string>('');
 
-  const handleClick = () => {
+
+  const handlePartiesInput = (event: any) => {
+    setPartiesInput(event.target.value);
+    
+  }
+
+  const handleShareSbt = (obj: any) => {
+    setPartiesInput('')
     setIsOpen(!isOpen);
+    setSendTo(obj);
   };
+
+  const handleSend = () => {
+    console.log("==>", "sending parties to " + JSON.stringify(sendTo));
+  }
+
+  const Info = styled.span`
+    display: flex;
+    flex-direction: column;
+    font-size: 1.5rem;
+    row-gap: 0.5rem;
+    justify-content: left;
+  `;
+
 
   let trBalances;
 
   if (props.instruments !== undefined) {
-    props.instruments?.forEach((inss: any) => {
-      let entity: any = inss.pbaView?.attributes.entriesArray();
+    props.instruments?.forEach((inst: InstrumentSummary) => {
+      let entity: any = inst.pbaView?.attributes.entriesArray();
       trBalances = (
         <tr>
           <td>
-            {inss.pbaView?.instrument.id.unpack} |{" "}
-            {inss.pbaView?.instrument.version}
+            {inst.pbaView?.instrument.id.unpack} |{" "}
+            {inst.pbaView?.instrument.version}
           </td>
-          <td>{inss.pbaView?.instrument.depository.substring(0, 30)}</td>
-          <td>{inss.pbaView?.instrument.issuer.substring(0, 30)}</td>
+          <td>{inst.pbaView?.instrument.depository.substring(0, 30)}</td>
+          <td>{inst.pbaView?.instrument.issuer.substring(0, 30)}</td>
           <td>{Array.from(entity, ([key, value]) => `${key} | ${value}`)}</td>
-          <td>Button</td>
+          <td>
+            <button
+              type="button" className="button__login"
+              style={{ width: "100px"}}
+              onClick={() => handleShareSbt(inst)}
+            >
+              Share SBT
+            </button>
+          </td>
         </tr>
       );
     });
   }
+
+  console.dir(partiesInput)
 
   return (
     <>
@@ -64,6 +99,45 @@ export default function BalanceSbts(props: {
           <tbody>{trBalances}</tbody>
         </table>
       )}
+      <Modal
+        id="shareSbtModal"
+        className="sbtModal"
+        isOpen={isOpen}
+        onRequestClose={handleShareSbt}
+        contentLabel="share SBT"
+      >
+        <>
+          <form id="modalForm">
+            {/* <Info> */}
+            <div style={{fontSize: '1.5rem'}}>
+              <table style={{ width: "300px" }}>
+                <tbody>
+                  <tr>
+                    <td>
+                      {/* <FieldCardModal> */}
+                        Party:{" "}
+                        <input
+                          type="text"
+                          id="partyToShare"
+                          name="partyToShare"
+                          value={partiesInput}
+                          //ref={partiesInput}
+                          style={{ width: "200px" }}
+                          onChange={handlePartiesInput}
+                        />
+                      {/* </FieldCardModal> */}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              </div>
+                <button type="button" className="button__login" onClick={handleSend}>
+                  Send
+                </button>
+            {/* </Info> */}
+          </form>
+        </>
+      </Modal>
     </>
   );
 }

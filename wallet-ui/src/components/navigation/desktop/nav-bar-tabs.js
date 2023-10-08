@@ -8,7 +8,7 @@ export const NavBarTabs = () => {
     <>
       <NavBarTab path="/wallet" label="Wallet" />
       <NavBarTab path="/settlements" label="Transactions" />
-      <NavBarTab path="/instruments" label="Directory" />
+      <NavBarTab path="/directory" label="Directory" />
     </>
   );
 

@@ -7,7 +7,7 @@ import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
 import Instruments from "../components/layout/instruments";
 
-const InstrumentScreen: React.FC = () => {
+const DirectoryScreen: React.FC = () => {
   const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}/wallet-views`;
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
@@ -41,7 +41,6 @@ const InstrumentScreen: React.FC = () => {
   const fetchInstruments = async () => {
     if (primaryParty !== "") {
       const resp = await walletClient.getInstruments({ depository: "", issuer: "", id: {unpack:primaryParty}, version: "1" });
-      setInstruments(resp.instruments);
     }
   };
 
@@ -72,4 +71,4 @@ const InstrumentScreen: React.FC = () => {
   );
 };
 
-export default InstrumentScreen;
+export default DirectoryScreen;

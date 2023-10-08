@@ -9,7 +9,7 @@ import MainScreen from "./pages/MainScreen";
 import WalletScreen from "./pages/WalletScreen";
 import AccountBalanceScreen from "./pages/AccountBalanceScreen";
 import SettlementScreen from "./pages/SettlementScreen";
-import InstrumentScreen from "./pages/InstrumentScreen";
+import DirectoryScreen from "./pages/DirectoryScreen";
 import HomeScreen from "./pages/HomeScreen";
 
 // Context for the party of the user.
@@ -48,7 +48,7 @@ const App: React.FC = () => {
           <Route path="/wallet" element={<AuthenticationGuard component={WalletScreen} />} />
           <Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />
           <Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />
-          <Route path="/instruments" element={<AuthenticationGuard component={InstrumentScreen} />} />
+          <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
       </Routes>
       </userContext.DamlLedger>
       </AuthContextStore.Provider>
