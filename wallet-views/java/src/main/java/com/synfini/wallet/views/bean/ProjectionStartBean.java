@@ -69,8 +69,8 @@ public class ProjectionStartBean implements InitializingBean {
         // cancel all Future calls in the projection Daemon
         projectionDaemonFutures.forEach(daemon -> {
             try {
-                logger.info("Daemon " + daemon.get().longValue() + "is cancelled=" + daemon.isCancelled());
                 daemon.cancel(true);
+                logger.info("Daemon " + daemon.get().longValue() + "is cancelled=" + daemon.isCancelled());
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }

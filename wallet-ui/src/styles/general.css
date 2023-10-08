@@ -157,7 +157,7 @@ form {
   box-sizing: border-box;
   padding: 2rem;
   border-radius: 2rem;
-  border: 2px solid hsl(0, 0%, 90%);
+  /* border: 2px solid hsl(0, 0%, 90%); */
   display: grid;
   
   gap: 1.5rem;
@@ -573,4 +573,31 @@ input {
   
   .tooltip:hover .tooltiptext {
     visibility: visible;
+  }
+
+  .sbtModal{  
+    display: -ms-flexbox;
+    display: -webkit-box;
+    display: flex;
+    -ms-flex-align: center;
+    -ms-flex-pack: center;
+    -webkit-box-align: center;
+    border-radius: 15px;
+    -webkit-box-pack: center;
+    justify-content: center;
+    padding-top: 10px;
+    padding-bottom: 0px;
+    padding-left: 10px;
+    padding-right: 50px;
+    background-color: rgb(86, 97, 100);
+    color : white;
+    font-family: "Glober SemiBold";
+    font-size: 20px;
+    width: 600px;
+    text-align: -webkit-center;
+    margin-top: 150px;
+    margin-left: auto;
+    margin-right:auto;
+    z-index: "auto"
+    
   }
