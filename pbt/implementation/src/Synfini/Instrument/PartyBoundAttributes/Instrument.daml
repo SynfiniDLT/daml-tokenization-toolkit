@@ -23,9 +23,12 @@ template Instrument
     observers : PartiesMap
   where
     signatory depository, issuer
-    observer owner, Disclosure.flattenObservers observers
+    observer obs
+
+    ensure owner `Set.member` obs
 
     let instrument = InstrumentKey with depository; issuer; id; version
+        obs = Disclosure.flattenObservers observers
   
     interface instance BaseInstrument.I for Instrument where
       view = BaseInstrument.View with depository; issuer; id; validAsOf; description; version
@@ -44,7 +47,7 @@ template Instrument
         effectiveTime
         targetInstrument = instrument
         perUnitReplacement = [Quantity with unit = instrument, amount = 1.0]
-        observers = Disclosure.flattenObservers observers
+        observers = obs
 
     interface instance Disclosure.I for Instrument where
       view = Disclosure.View with disclosureControllers = Set.fromList [issuer, owner]; observers
