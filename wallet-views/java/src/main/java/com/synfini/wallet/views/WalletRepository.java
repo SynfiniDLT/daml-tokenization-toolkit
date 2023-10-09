@@ -99,101 +99,29 @@ public class WalletRepository {
   }
 
   public List<Balance> balanceByAccount(AccountKey account) {
-    jdbcTemplate.update(
-    "INSERT INTO account_balances(\n" +
-      "  account_custodian,\n" +
-      "  account_owner,\n" +
-      "  account_id,\n" +
+    return jdbcTemplate.query(
+    "SELECT\n" +
       "  instrument_depository,\n" +
       "  instrument_id,\n" +
       "  instrument_issuer,\n" +
       "  instrument_version,\n" +
-      "  locked,\n" +
-      "  balance,\n" +
-      "  max_offset\n" +
-      ") SELECT\n" +
-      "  ?,\n" +
-      "  ?,\n" +
-      "  ?,\n" +
-      "  holdings.instrument_depository,\n" +
-      "  holdings.instrument_id,\n" +
-      "  holdings.instrument_issuer,\n" +
-      "  holdings.instrument_version,\n" +
-      "  holdings.lock_type IS NOT NULL," +
-      "  coalesce(min(account_balances.balance), 0) +\n" +
-      "  sum(\n" +
-      "    CASE\n" +
-      "      WHEN account_balances.balance IS NULL THEN\n" +
-      "        holdings.amount\n" + // WHERE filter below ensures that the holding is not archived yet in this case
-      "      WHEN coalesce(holdings.create_offset, '') <= coalesce(account_balances.max_offset, '') THEN\n" +
-      "        (CASE WHEN holdings.archive_offset IS NULL THEN 0 ELSE -holdings.amount END)\n" +
-      "      WHEN holdings.archive_offset IS NULL THEN holdings.amount\n" +
-      "      ELSE 0\n" +
-      "    END),\n" +
-      "  max(coalesce(holdings.archive_offset, holdings.create_offset))\n" +
+      "  sum(CASE WHEN lock_type IS NULL THEN amount ELSE 0 END) unlocked_balance,\n" +
+      "  sum(CASE WHEN lock_type IS NOT NULL THEN amount ELSE 0 END) locked_balance\n" +
       "FROM holdings\n" +
-      "LEFT JOIN account_balances ON\n" +
-      "  holdings.account_custodian = account_balances.account_custodian AND\n" +
-      "  holdings.account_owner = account_balances.account_owner AND\n" +
-      "  holdings.account_id = account_balances.account_id AND\n" +
-      "  ((holdings.lock_type IS NOT NULL AND account_balances.locked) OR (holdings.lock_type IS NULL AND NOT account_balances.locked)) AND\n" +
-      "  holdings.instrument_depository = account_balances.instrument_depository AND\n" +
-      "  holdings.instrument_id = account_balances.instrument_id AND\n" +
-      "  holdings.instrument_issuer = account_balances.instrument_issuer AND\n" +
-      "  holdings.instrument_version = account_balances.instrument_version\n" +
-      "WHERE holdings.account_custodian = ? AND\n" +
-      "  holdings.account_owner = ? AND\n" +
-      "  holdings.account_id = ? AND\n" +
-      "  ((account_balances.balance IS NULL AND holdings.archive_offset IS NULL) OR\n" + // sum all active holdings if no balance is cached already
-      "  (account_balances.balance IS NOT NULL AND coalesce(holdings.archive_offset, holdings.create_offset) > coalesce(account_balances.max_offset, '')))" +
+      "WHERE\n" +
+      "  archive_offset IS NULL AND\n" +
+      "  account_custodian = ? AND\n" +
+      "  account_owner = ? AND\n" +
+      "  account_id = ?\n" +
       "GROUP BY\n" +
-      "  holdings.instrument_depository,\n" +
-      "  holdings.instrument_issuer,\n" +
-      "  holdings.instrument_id,\n" +
-      "  holdings.instrument_version,\n" +
-      "  holdings.lock_type IS NOT NULL\n" +
-      "ON CONFLICT ON CONSTRAINT account_balances_pkey DO UPDATE SET\n" +
-      "  balance = excluded.balance,\n" +
-      "  max_offset = excluded.max_offset\n",
+      "  instrument_depository,\n" +
+      "  instrument_issuer,\n" +
+      "  instrument_id,\n" +
+      "  instrument_version",
       ps -> {
         ps.setString(1, account.custodian);
         ps.setString(2, account.owner);
         ps.setString(3, account.id.unpack);
-        ps.setString(4, account.custodian);
-        ps.setString(5, account.owner);
-        ps.setString(6, account.id.unpack);
-      }
-    );
-    final var locked =
-      "SELECT *\n" +
-      "FROM account_balances\n" +
-      "WHERE account_custodian = ? AND account_owner = ? AND account_id = ? AND locked";
-    final var unlocked =
-      "SELECT *\n" +
-      "FROM account_balances\n" +
-      "WHERE account_custodian = ? AND account_owner = ? AND account_id = ? AND NOT locked";
-    return jdbcTemplate.query(
-    "SELECT\n" +
-      "  COALESCE(l.instrument_depository, nl.instrument_depository) instrument_depository,\n" +
-      "  COALESCE(l.instrument_issuer, nl.instrument_issuer) instrument_issuer,\n" +
-      "  COALESCE(l.instrument_id, nl.instrument_id) instrument_id,\n" +
-      "  COALESCE(l.instrument_version, nl.instrument_version) instrument_version,\n" +
-      "  l.balance locked_balance,\n" +
-      "  nl.balance unlocked_balance\n" +
-      "FROM (" + locked + ") l FULL OUTER JOIN (" + unlocked + ") nl\n" +
-      "ON\n" +
-      "  l.instrument_depository = nl.instrument_depository AND\n" +
-      "  l.instrument_issuer = nl.instrument_issuer AND\n" +
-      "  l.instrument_id = nl.instrument_id AND\n" +
-      "  l.instrument_version = nl.instrument_version",
-      ps -> {
-        ps.setString(1, account.custodian);
-        ps.setString(2, account.owner);
-        ps.setString(3, account.id.unpack);
-
-        ps.setString(4, account.custodian);
-        ps.setString(5, account.owner);
-        ps.setString(6, account.id.unpack);
       },
       new BalanceRowMapperWithAccount(account)
     );

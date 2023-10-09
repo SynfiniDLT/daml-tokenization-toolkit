@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.gson.GsonBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.io.IOException;
@@ -19,7 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Configuration
-public class WalletViewsConfig implements WebMvcConfigurer {
+public class WalletViewsApiConfig implements WebMvcConfigurer {
   @Value("${walletviews.max-transactions-response-size}")
   public Long maxTransactionsResponseSize;
 

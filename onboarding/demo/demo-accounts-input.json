@@ -12,7 +12,7 @@
         "holdingFactory": "FungibleV1",
         "observers": [
           {
-            "label": "o",
+            "context": "o",
             "parties": ["AUDN_MinterBurner"]
           }
         ]
@@ -25,10 +25,12 @@
         "incomingControllers": [],
         "outgoingControllers": ["InvestorB"],
         "holdingFactory": "FungibleV1",
-        "observers": [{
-            "label": "o",
+        "observers": [
+          {
+            "context": "o",
             "parties": ["AUDN_MinterBurner"]
-          }]
+          }
+        ]
       }
     ]
   }

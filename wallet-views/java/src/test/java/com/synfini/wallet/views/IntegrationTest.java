@@ -29,9 +29,11 @@ import daml.finance.interface$.settlement.types.approval.TakeDelivery;
 import io.grpc.*;
 import io.grpc.MethodDescriptor;
 import kong.unirest.*;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.test.context.ActiveProfiles;
 import synfini.wallet.api.types.*;
-import com.synfini.wallet.views.projection.ProjectionRunner;
 import daml.finance.interface$.account.account.Credit;
 import daml.finance.interface$.holding.base.Lock;
 import daml.finance.interface$.holding.base.LockType;
@@ -45,14 +47,12 @@ import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import picocli.CommandLine;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -63,8 +63,6 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
@@ -86,7 +84,6 @@ public class IntegrationTest {
   private static final String tokenAudience =
     "https://daml.com/jwt/aud/participant/sandbox::1220facc0504d0689c876c616736695a92dbdd54a2aad49cc7a8b2f54935604c35ac";
   private static final String clientSecret = "secret";
-  private static Path clientSecretFile;
   private static Integer sandboxPort;
   private static Process sandboxProcess;
   private static String depository;
@@ -101,15 +98,6 @@ public class IntegrationTest {
   private static ManagedChannel allPartiesChannel;
   private static ManagedChannel adminChannel;
   private static DamlLedgerClient allPartiesLedgerClient;
-  private static final List<ExecutorService> projectionExecutorServices = new ArrayList<>();
-  private static final List<Future<Integer>> projectionDaemonFutures = new ArrayList<>();
-  @Value("${spring.datasource.url}")
-  private String springDataSourceUrl;
-  @Value("${spring.datasource.username}")
-  private String springDataSourceUsername;
-  @Value("${spring.datasource.password}")
-  private String springDataSourcePassword;
-  private static Path dbPasswordFile;
   private static daml.finance.interface$.account.factory.Factory.ContractId accountFactoryCid;
   private static daml.finance.interface$.holding.factory.Factory.ContractId holdingFactoryCid;
   private static daml.finance.interface$.settlement.factory.Factory.ContractId settlementFactoryCid;
@@ -198,9 +186,6 @@ public class IntegrationTest {
     }
 
     adminChannel = adminChannelBuilder().build();
-
-    clientSecretFile = Files.createTempFile("wallet-views-test-client-secret", null);
-    Files.write(clientSecretFile, clientSecret.getBytes(StandardCharsets.UTF_8));
   }
 
   @AfterAll
@@ -217,18 +202,10 @@ public class IntegrationTest {
         throw new IllegalStateException("Failed to shutdown sandbox");
       }
     }
-
-    Files.delete(clientSecretFile);
-    Files.delete(dbPasswordFile);
   }
 
   @BeforeEach
   void beforeEach() throws Exception {
-    if (dbPasswordFile == null) {
-      dbPasswordFile = Files.createTempFile("wallet-views-test-db-password", null);
-      Files.write(dbPasswordFile,  springDataSourcePassword.getBytes(StandardCharsets.UTF_8));
-    }
-
     mockTokenClient = MockClient.register();
     mockTokenClient.defaultResponse().thenReturn("Did not match any expected responses").withStatus(400);
     final var entropy = UUID.randomUUID().toString().substring(0, 6);
@@ -321,20 +298,13 @@ public class IntegrationTest {
   @AfterEach
   void afterEach() throws Exception {
     logger.info("Shutting down projection executors");
-    for (ExecutorService projectionExecutorService : projectionExecutorServices) {
-      projectionExecutorService.shutdownNow();
-      if (!projectionExecutorService.awaitTermination(8, TimeUnit.SECONDS)) {
-        logger.warn("Timed out waiting for projection runner to stop");
-      }
-    }
-    for (Future<Integer> f : projectionDaemonFutures) {
-      final var exitCode = f.get();
-      if (exitCode != 0) {
-        throw new Exception("Projection daemon exited with non-zero exit code: " + exitCode);
-      }
-    }
-    projectionExecutorServices.clear();
-    projectionDaemonFutures.clear();
+    mvc
+      .perform(
+        MockMvcRequestBuilders
+          .post("/v1/projection/clear")
+      )
+      .andExpect(status().isOk());
+
     if (allPartiesChannel != null) {
       shutdownChannel(allPartiesChannel);
     }
@@ -413,7 +383,6 @@ public class IntegrationTest {
           )
       );
 
-    // Archive a Holding which was created before the previous time the balance was calculated
     final var splitResult = splitHolding(
       new Fungible.ContractId(holdingCid_1_01.contractId),
       List.of(new BigDecimal("0.01"))
@@ -428,22 +397,6 @@ public class IntegrationTest {
     creditAccount(accountCid, instrument1(), new BigDecimal("5.0"));
     delayForProjectionIngestion();
 
-    mvc
-      .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
-      .andExpect(status().isOk())
-      .andExpect(
-        content()
-          .json(
-            toJson(
-              new Balances(
-                Collections.singletonList(
-                  new Balance(account, instrument1(), new BigDecimal("105.0"), BigDecimal.ZERO)
-                )
-              )
-            )
-          )
-      );
-    // Balance is now cached and should return the same result
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
@@ -537,9 +490,11 @@ public class IntegrationTest {
       unlockHolding(lockedHoldingCid2, "ctx"),
       "ctx2"
     );
-    // Lock part of the balance
-    final var lockAmount = new BigDecimal("1.0");
-    final var splitResult = splitHolding(new Fungible.ContractId(unlockedHoldingCid.contractId), List.of(lockAmount));
+    // Lock parts of the balance
+    final var lockAmounts = List.of(new BigDecimal("1.0"), new BigDecimal("2.0"));
+    final var totalLocked = lockAmounts.get(0).add(lockAmounts.get(1));
+    final var splitResult = splitHolding(new Fungible.ContractId(unlockedHoldingCid.contractId), lockAmounts);
+
     lockHolding(
       new Base.ContractId(splitResult.splitCids.get(0).contractId),
       arrayToSet(custodian),
@@ -557,7 +512,31 @@ public class IntegrationTest {
             toJson(
               new Balances(
                 Collections.singletonList(
-                  new Balance(account, instrument1(), creditAmount.subtract(lockAmount), lockAmount)
+                  new Balance(account, instrument1(), creditAmount.subtract(lockAmounts.get(0)), lockAmounts.get(0))
+                )
+              )
+            )
+          )
+      );
+
+    lockHolding(
+      new Base.ContractId(splitResult.splitCids.get(1).contractId),
+      arrayToSet(custodian),
+      "ctx2",
+      LockType.SEMAPHORE
+    );
+    delayForProjectionIngestion();
+
+    mvc
+      .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
+      .andExpect(status().isOk())
+      .andExpect(
+        content()
+          .json(
+            toJson(
+              new Balances(
+                Collections.singletonList(
+                  new Balance(account, instrument1(), creditAmount.subtract(totalLocked), totalLocked)
                 )
               )
             )
@@ -1097,6 +1076,15 @@ public class IntegrationTest {
       ).blockingGet().exerciseResult;
     delayForProjectionIngestion();
 
+    final var expectedInstruments = new Instruments(
+      List.of(
+        new InstrumentSummary(
+          new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(tokenCid.contractId),
+          Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token)),
+          Optional.empty()
+        )
+      )
+    );
     mvc
       .perform(
         getInstrumentsBuilder(
@@ -1108,19 +1096,20 @@ public class IntegrationTest {
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(
-          toJson(
-            new Instruments(
-              List.of(
-                new InstrumentSummary(
-                  new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(tokenCid.contractId),
-                  Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token)),
-                  Optional.empty()
-                )
-              )
-            )
-          )
-        )
+        content().json(toJson(expectedInstruments))
+      );
+    mvc
+      .perform(
+        getInstrumentsBuilder(
+          token.instrument.depository,
+          token.instrument.issuer,
+          token.instrument.id,
+          Optional.empty()
+        ).headers(userTokenHeader(investor1User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(toJson(expectedInstruments))
       );
   }
 
@@ -1214,14 +1203,6 @@ public class IntegrationTest {
       .perform(
         getBalanceByAccountBuilder(
           new AccountKey(custodian, investor1, new Id("1"))
-        ).headers(userTokenHeader(investor2User))
-      )
-      .andExpect(status().isForbidden());
-
-    mvc
-      .perform(
-        getHoldingsBuilder(
-          new AccountKey(custodian, investor1, new Id("1")), instrument1()
         ).headers(userTokenHeader(investor2User))
       )
       .andExpect(status().isForbidden());
@@ -1630,29 +1611,21 @@ public class IntegrationTest {
       .exerciseResult;
   }
 
-  private void startProjectionDaemon(String readAs, String clientId) throws InterruptedException {
-    ExecutorService projectionExecutorService = Executors.newSingleThreadExecutor();
-    Future<Integer> projectionDaemonFuture = projectionExecutorService.submit(new Callable<Integer>() {
-      @Override
-      public Integer call() {
-        return new CommandLine(new ProjectionRunner()).execute(
-          "--ledger-host", "127.0.0.1",
-          "--ledger-port", sandboxPort.toString(),
-          "--ledger-plaintext",
-          "--db-url", springDataSourceUrl,
-          "--db-user", springDataSourceUsername,
-          "--db-password-file", dbPasswordFile.toString(),
-          "--token-url", mockTokenUrl,
-          "--token-client-id", clientId,
-          "--token-client-secret-file", clientSecretFile.toString(),
-          "--token-audience", tokenAudience,
-          "--token-refresh-window-seconds", "120",
-          "--read-as", readAs
-        );
-      }
-    });
-    projectionExecutorServices.add(projectionExecutorService);
-    projectionDaemonFutures.add(projectionDaemonFuture);
+  private void startProjectionDaemon(String readAs, String clientId) throws Exception {
+    final JsonObject startBody = new JsonObject();
+    startBody.addProperty("readAs", readAs);
+    startBody.addProperty("tokenUrl", mockTokenUrl);
+    startBody.addProperty("clientId", clientId);
+    startBody.addProperty("clientSecret", clientSecret);
+    startBody.addProperty("audience", tokenAudience);
+    mvc
+      .perform(
+        MockMvcRequestBuilders
+          .post("/v1/projection/start")
+          .content(new Gson().toJson(startBody))
+          .contentType(MediaType.APPLICATION_JSON)
+      )
+      .andExpect(status().isOk());
   }
 
   private static <T> String toJson(DefinedDataType<T> value) {

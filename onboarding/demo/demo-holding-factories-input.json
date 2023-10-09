@@ -6,7 +6,7 @@
         "provider": "SynfiniValidator",
         "observers": [
           {
-            "label": "o",
+            "context": "o",
             "parties": ["Synfini_Public"]
           }
         ]
@@ -17,7 +17,7 @@
         "provider": "SynfiniValidator",
         "observers": [
           {
-            "label": "o",
+            "context": "o",
             "parties": ["Synfini_Public"]
           }
         ]

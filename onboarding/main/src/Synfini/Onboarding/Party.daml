@@ -1,21 +1,6 @@
 module Synfini.Onboarding.Party where
 
--- import qualified Daml.Finance.Interface.Account.Account as Account
--- import qualified Daml.Finance.Interface.Account.Factory as Account
--- import Daml.Finance.Interface.Types.Common.Types
--- import qualified Daml.Finance.Interface.Holding.Factory as Holding
--- import qualified Daml.Finance.Interface.Settlement.Factory as Settlement
-
--- import qualified Daml.Finance.Account.Account as AccountImpl
--- import qualified Daml.Finance.Holding.Fungible as FungibleImpl
--- import qualified Daml.Finance.Settlement.Factory as SettlementImpl
-
 import Daml.Script
-import DA.Map (Map)
-import qualified DA.Map as Map
-import qualified DA.Set as Set
-import DA.Foldable (forA_)
-import qualified DA.Optional as O
 import Synfini.Onboarding.Types
 
 data SetupPartiesInput = SetupPartiesInput

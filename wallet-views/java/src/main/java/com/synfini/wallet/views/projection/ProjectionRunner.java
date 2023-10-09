@@ -6,6 +6,9 @@ import com.daml.projection.JdbcAction;
 import com.daml.projection.JdbcProjector;
 import com.daml.projection.javadsl.Control;
 import com.daml.projection.javadsl.Projector;
+import com.synfini.wallet.views.config.LedgerApiConfig;
+import com.synfini.wallet.views.config.ProjectionConfig;
+import com.synfini.wallet.views.config.SpringDbConfig;
 import com.synfini.wallet.views.projection.generators.account.AccountFactoryEventsProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.account.AccountsProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.batch.BatchesProjectionGenerator;
@@ -22,10 +25,7 @@ import daml.finance.interface$.settlement.instruction.Instruction;
 import io.grpc.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import picocli.CommandLine;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -35,139 +35,72 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ProjectionRunner implements Callable<Integer> {
   private static final Logger logger = LoggerFactory.getLogger(ProjectionRunner.class);
+  private final SpringDbConfig springDbConfig;
+  private final LedgerApiConfig ledgerApiConfig;
+  private final ProjectionConfig projectionConfig;
+  private final String readAs;
+  private final Optional<String> tokenUrl;
+  private final Optional<String> clientId;
+  private final Optional<String> clientSecret;
+  private final Optional<String> audience;
 
-  @CommandLine.Option(
-    names = "--ledger-host",
-    description = "Host of the ledger",
-    required = true
-  )
-  private static String ledgerHost;
+  public ProjectionRunner(
+    SpringDbConfig springDbConfig,
+    LedgerApiConfig ledgerApiConfig,
+    ProjectionConfig projectionConfig,
+    String readAs
+  ) {
+    this.springDbConfig = springDbConfig;
+    this.ledgerApiConfig = ledgerApiConfig;
+    this.projectionConfig = projectionConfig;
+    this.readAs = readAs;
+    this.tokenUrl = Optional.empty();
+    this.clientSecret = Optional.empty();
+    this.clientId = Optional.empty();
+    this.audience = Optional.empty();
+  }
 
-  @CommandLine.Option(
-    names = "--ledger-port",
-    description = "Port of the ledger",
-    required = true
-  )
-  private static int ledgerPort;
-
-  @CommandLine.Option(
-    names = "--ledger-plaintext",
-    description = "Use plaintext when connecting to the ledger API",
-    defaultValue = "false"
-  )
-  private static boolean ledgerPlaintext;
-
-  @CommandLine.Option(
-    names = "--db-url",
-    description = "JDBC url of the database",
-    required = true
-  )
-  private static String jdbcUrl;
-  @CommandLine.Option(
-    names = "--db-user",
-    description = "Database username",
-    required = true
-  )
-  private static String dbUser;
-
-  @CommandLine.Option(
-    names = "--db-password-file",
-    description = "File containing database password",
-    required = true
-  )
-  private static String dbPasswordFile;
-
-  @CommandLine.Option(
-    names = "--token-url",
-    description = "Url of the endpoint used to fetch ledger API Jwt tokens",
-    required = false
-  )
-  private static String tokenUrl;
-
-  @CommandLine.Option(
-    names = "--token-client-id",
-    description = "Client ID used when fetching ledger API Jwt tokens",
-    required = false
-  )
-  private static String clientId;
-
-  @CommandLine.Option(
-    names = "--token-client-secret-file",
-    description = "File containing secret used when fetching ledger API Jwt tokens",
-    required = false
-  )
-  private static String clientSecretFile;
-
-  @CommandLine.Option(
-    names = "--token-audience",
-    description = "Audience used when fetching ledger API Jwt tokens",
-    required = false
-  )
-  private static String audience;
-
-  @CommandLine.Option(
-    names = "--token-refresh-window-seconds",
-    description = "If the token is about to expire within this amount of time, then the application will fetch a fresh token",
-    required = false,
-    defaultValue = "600"
-  )
-  private static Long tokenRefreshWindowSeconds;
-
-  @CommandLine.Option(
-    names = "--retry-policy-limit",
-    description = "Maximum number of retries used if projection fails",
-    defaultValue = "5"
-  )
-  private static Integer maxRetries;
-
-  @CommandLine.Option(
-    names = "--retry-policy-window-seconds",
-    description = "After this amount of time the retry counter is set back to zero",
-    defaultValue = "60"
-  )
-  private static Integer retryWindowSeconds;
-
-  @CommandLine.Option(
-    names = "--retry-policy-delay-seconds",
-    description = "Delay between retries",
-    defaultValue = "5"
-  )
-  private static Integer retryDelaySeconds;
-
-  @CommandLine.Option(
-    names = "--read-as",
-    description = "Party to use when reading events from the ledger",
-    required = true
-  )
-  private static String readAs;
-
-  public static void main(String[] args) {
-    System.exit(new CommandLine(new ProjectionRunner()).execute(args));
+  public ProjectionRunner(
+    SpringDbConfig springDbConfig,
+    LedgerApiConfig ledgerApiConfig,
+    ProjectionConfig projectionConfig,
+    String readAs,
+    String tokenUrl,
+    String clientId,
+    String clientSecret,
+    String audience
+  ) {
+    this.springDbConfig = springDbConfig;
+    this.ledgerApiConfig = ledgerApiConfig;
+    this.projectionConfig = projectionConfig;
+    this.readAs = readAs;
+    this.tokenUrl = Optional.of(tokenUrl);
+    this.clientId = Optional.of(clientId);
+    this.clientSecret = Optional.of(clientSecret);
+    this.audience = Optional.of(audience);
   }
 
   @Override
   public Integer call() throws Exception {
-    final var dbPassword = Files.readString(Path.of(dbPasswordFile));
-
     // setup datasource and projection table
     final var dbConfig = new HikariConfig();
-    dbConfig.setJdbcUrl(jdbcUrl);
-    dbConfig.setUsername(dbUser);
-    dbConfig.setPassword(dbPassword);
+    dbConfig.setJdbcUrl(springDbConfig.url);
+    dbConfig.setUsername(springDbConfig.user);
+    dbConfig.setPassword(springDbConfig.password);
     dbConfig.setMaximumPoolSize(24); // TODO this should be set based on the number projections (e.g. 2 * numProjections)
 
     final Optional<SharedTokenCallCredentials> tokenCreds;
-    if (tokenUrl != null) {
-      if (clientId == null || audience == null || clientSecretFile == null) {
-        logger.error("Please provide --token-client-id, --token-audience and --token-client-secret-file");
-        return 1;
-      }
-      final var clientSecret = Files.readString(Path.of(clientSecretFile));
+    if (tokenUrl.isPresent()) {
       tokenCreds = Optional.of(
-        new SharedTokenCallCredentials(tokenUrl, clientId, clientSecret, audience, tokenRefreshWindowSeconds)
+        new SharedTokenCallCredentials(
+          tokenUrl.get(),
+          clientId.get(),
+          clientSecret.get(),
+          audience.get(),
+          projectionConfig.tokenRefreshWindowSeconds
+        )
       );
     } else {
-      logger.warn("--token-url not set: continuing without authentication");
       tokenCreds = Optional.empty();
     }
 
@@ -176,13 +109,13 @@ public class ProjectionRunner implements Callable<Integer> {
       final var startSeconds = System.currentTimeMillis() / 1000L;
       final var result = runProjections(dbConfig, tokenCreds);
       final var endSeconds = System.currentTimeMillis() / 1000L;
-      if (endSeconds - startSeconds > retryWindowSeconds) {
+      if (endSeconds - startSeconds > projectionConfig.retryWindowSeconds) {
         numRetries = 0;
       }
-      if (!result.shouldRetry || numRetries >= maxRetries) {
+      if (!result.shouldRetry || numRetries >= projectionConfig.maxRetries) {
         return result.exitCode;
       } else {
-        Thread.sleep(retryDelaySeconds * 1000L);
+        Thread.sleep(projectionConfig.retryDelaySeconds * 1000L);
         logger.info("Restarting projections");
         numRetries++;
       }
@@ -201,8 +134,8 @@ public class ProjectionRunner implements Callable<Integer> {
     final Projector<JdbcAction> projector = JdbcProjector.create(dataSource, system);
 
     final var baseGrpcClientSettings = GrpcClientSettings
-      .connectToServiceAt(ledgerHost, ledgerPort, system)
-      .withTls(!ledgerPlaintext);
+      .connectToServiceAt(ledgerApiConfig.ledgerHost, ledgerApiConfig.ledgerPort, system)
+      .withTls(!ledgerApiConfig.ledgerPlaintext);
     final var grpcClientSettings = tokenCallCredentials
       .map(baseGrpcClientSettings::withCallCredentials)
       .orElse(baseGrpcClientSettings);
