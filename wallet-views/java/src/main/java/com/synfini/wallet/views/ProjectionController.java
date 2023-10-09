@@ -16,7 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Optional;
 import java.util.concurrent.*;
 
-// TODO need to authentication to these endpoints. Could do this using `WalletAuth` utilities
+// TODO need to add authentication to these endpoints. Could do this using `WalletAuth` utilities
 @RestController
 @RequestMapping("v1")
 public class ProjectionController {
