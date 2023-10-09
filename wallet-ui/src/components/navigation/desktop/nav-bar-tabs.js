@@ -4,21 +4,20 @@ import { NavBarTab } from "./nav-bar-tab";
 export const NavBarTabs = () => {
   const { isAuthenticated } = useAuth0();
 
+  const walletTab = (
+    <>
+      <NavBarTab path="/wallet" label="Wallet" />
+      <NavBarTab path="/settlements" label="Transactions" />
+      <NavBarTab path="/directory" label="Directory" />
+    </>
+  );
 
+  const returnTab = isAuthenticated && walletTab;
 
-  const walletTab = <><NavBarTab path="/wallet" label="Wallet" /><NavBarTab path="/settlements" label="Transactions" /></>;
-
-
-  const returnTab = 
-    isAuthenticated &&  walletTab;
-    
-  
   return (
     <div className="nav-bar__tabs">
-
-      <NavBarTab path="/" label="Home" /> 
+      <NavBarTab path="/" label="Home" />
       {returnTab}
-    
     </div>
   );
 };

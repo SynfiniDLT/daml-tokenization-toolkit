@@ -7,6 +7,8 @@ import Accounts from "../components/layout/accounts";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import Modal from "react-modal";
+import styled from "styled-components";
 
 const WalletScreen: React.FC = () => {
   const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}/wallet-views`;
@@ -14,8 +16,9 @@ const WalletScreen: React.FC = () => {
   const ledger = userContext.useLedger();
 
   const { isLoading } = useAuth0();
-  const [primaryParty, setPrimaryParty] = useState<string>('');
+  const [primaryParty, setPrimaryParty] = useState<string>("");
   const [accounts, setAccounts] = useState<AccountSummary[]>();
+  const [isOpen, setIsOpen] = useState<boolean>(false);
 
   let walletClient: WalletViewsClient;
 
@@ -25,20 +28,23 @@ const WalletScreen: React.FC = () => {
   });
 
   const fetchUserLedger = async () => {
-      try {
-        const user = await ledger.getUser();
-        const rights = await ledger.listUserRights()
-        const found = rights.find(right => right.type === 'CanActAs' && right.party === user.primaryParty);
-        ctx.readOnly = found === undefined;
+    try {
+      const user = await ledger.getUser();
+      const rights = await ledger.listUserRights();
+      const found = rights.find(
+        (right) =>
+          right.type === "CanActAs" && right.party === user.primaryParty
+      );
+      ctx.readOnly = found === undefined;
 
-        if (user.primaryParty !== undefined) {
-          setPrimaryParty(user.primaryParty);
-          ctx.setPrimaryParty(user.primaryParty);
-        } else {
-        }
-      } catch (err) {
-        console.log("error when fetching primary party", err);
+      if (user.primaryParty !== undefined) {
+        setPrimaryParty(user.primaryParty);
+        ctx.setPrimaryParty(user.primaryParty);
+      } else {
       }
+    } catch (err) {
+      console.log("error when fetching primary party", err);
+    }
   };
 
   const fetchAccounts = async () => {
@@ -56,7 +62,34 @@ const WalletScreen: React.FC = () => {
     fetchAccounts();
   }, [primaryParty]);
 
-//console.log("rights",ctx.token)
+  const handleClick = () => {
+    console.log("show modal");
+    setIsOpen(!isOpen);
+  };
+
+  const InfoContainer = styled.h2`
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    color: #000;
+  `;
+
+  const Info = styled.span`
+    display: flex;
+    flex-direction: column;
+    font-size: 1.5rem;
+    row-gap: 0.5rem;
+    justify-content: left;
+  `;
+
+  const FieldCardModal = styled.div`
+    color: #ffffff;
+    text-align: left;
+    margin-bottom: 0rem;
+    font-weight: normal;
+    font-size: 15px;
+    padding: 10px;
+  `;
 
   if (isLoading) {
     return (
@@ -68,12 +101,42 @@ const WalletScreen: React.FC = () => {
 
   return (
     <PageLayout>
-      <h3 className="profile__title" style={{marginTop: '10px'}}></h3>
+      <h3 className="profile__title" style={{ marginTop: "10px" }}></h3>
       <div>
-            <Accounts accounts={accounts} />
-
+        <button
+          type="button"
+          className="button__login"
+          style={{ width: "200px", position: "absolute", right: "200px" }}
+          onClick={handleClick}
+        >
+          Share SBT
+        </button>
       </div>
-
+      <div>
+        <Accounts accounts={accounts} />
+      </div>
+      <Modal
+        id="giftModal"
+        className="sbtModal"
+        isOpen={isOpen}
+        onRequestClose={handleClick}
+        contentLabel="share SBT"
+      >
+        <>
+          <form >
+            <Info>
+              <table style={{ width: "300px" }}>
+                <tbody>
+                  <tr>
+                    <td><FieldCardModal>Party: <input type="text" name="partyToShare" value={""} style={{ width: "200px" }} /></FieldCardModal></td>
+                  </tr>
+                </tbody>
+                  <button type="button" className="button__login">Send</button>
+              </table>
+            </Info>
+          </form>
+        </>
+      </Modal>
     </PageLayout>
   );
 };
