@@ -62,10 +62,6 @@ const WalletScreen: React.FC = () => {
     fetchAccounts();
   }, [primaryParty]);
 
-  const handleClick = () => {
-    console.log("show modal");
-    setIsOpen(!isOpen);
-  };
 
   const InfoContainer = styled.h2`
     display: flex;
@@ -98,45 +94,14 @@ const WalletScreen: React.FC = () => {
       </div>
     );
   }
-
+  console.log(ctx.token)
   return (
     <PageLayout>
       <h3 className="profile__title" style={{ marginTop: "10px" }}></h3>
       <div>
-        <button
-          type="button"
-          className="button__login"
-          style={{ width: "200px", position: "absolute", right: "200px" }}
-          onClick={handleClick}
-        >
-          Share SBT
-        </button>
-      </div>
-      <div>
         <Accounts accounts={accounts} />
       </div>
-      <Modal
-        id="giftModal"
-        className="sbtModal"
-        isOpen={isOpen}
-        onRequestClose={handleClick}
-        contentLabel="share SBT"
-      >
-        <>
-          <form >
-            <Info>
-              <table style={{ width: "300px" }}>
-                <tbody>
-                  <tr>
-                    <td><FieldCardModal>Party: <input type="text" name="partyToShare" value={""} style={{ width: "200px" }} /></FieldCardModal></td>
-                  </tr>
-                </tbody>
-                  <button type="button" className="button__login">Send</button>
-              </table>
-            </Info>
-          </form>
-        </>
-      </Modal>
+      
     </PageLayout>
   );
 };

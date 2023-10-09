@@ -1,40 +1,52 @@
-import { useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
+import AuthContextStore from "../../store/AuthContextStore";
+import { userContext } from "../../App";
 import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { QuestionCircle } from "react-bootstrap-icons";
 import Modal from "react-modal";
-import styled from "styled-components";
+import { Disclosure } from "@daml.js/daml-finance-interface-util/lib/Daml/Finance/Interface/Util/Disclosure";
+import { Party, Map, emptyMap, Unit, ContractId } from "@daml/types";
 
 export default function BalanceSbts(props: {
   instruments?: InstrumentSummary[];
 }) {
+  const ctx = useContext(AuthContextStore);
+  const ledger = userContext.useLedger();
+
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [sendTo, setSendTo] = useState<any>();
-  const [partiesInput, setPartiesInput] = useState<string>('');
-
+  const [partiesInput, setPartiesInput] = useState<string>("");
 
   const handlePartiesInput = (event: any) => {
     setPartiesInput(event.target.value);
-    
-  }
+  };
 
-  const handleShareSbt = (obj: any) => {
-    setPartiesInput('')
+  const handleShareSBT = (obj: any) => {
+    setPartiesInput("");
     setIsOpen(!isOpen);
     setSendTo(obj);
   };
 
-  const handleSend = () => {
-    console.log("==>", "sending parties to " + JSON.stringify(sendTo));
-  }
-
-  const Info = styled.span`
-    display: flex;
-    flex-direction: column;
-    font-size: 1.5rem;
-    row-gap: 0.5rem;
-    justify-content: left;
-  `;
-
+  const handleSendSBT = () => {
+    console.log("obj send to", JSON.stringify(sendTo));
+    console.log("primary party", ctx.primaryParty);
+    const disclosers: Map<Party, Unit> = emptyMap();
+    const observers: Map<Party, Unit> = emptyMap();
+    const cid: ContractId<any> = sendTo.cid;
+    ledger
+      .exercise(Disclosure.AddObservers, cid, {
+        disclosers: { map: disclosers.set(ctx.primaryParty, {}) },
+        observersToAdd: {
+          _1: partiesInput,
+          _2: { map: observers.set(partiesInput, {}) },
+        },
+      })
+      .then((res) => {
+        console.log("post send sbt", res);
+        setIsOpen(false);
+      });
+  };
 
   let trBalances;
 
@@ -52,9 +64,10 @@ export default function BalanceSbts(props: {
           <td>{Array.from(entity, ([key, value]) => `${key} | ${value}`)}</td>
           <td>
             <button
-              type="button" className="button__login"
-              style={{ width: "100px"}}
-              onClick={() => handleShareSbt(inst)}
+              type="button"
+              className="button__login"
+              style={{ width: "100px" }}
+              onClick={() => handleShareSBT(inst)}
             >
               Share SBT
             </button>
@@ -64,7 +77,7 @@ export default function BalanceSbts(props: {
     });
   }
 
-  console.dir(partiesInput)
+  console.dir(partiesInput);
 
   return (
     <>
@@ -103,38 +116,37 @@ export default function BalanceSbts(props: {
         id="shareSbtModal"
         className="sbtModal"
         isOpen={isOpen}
-        onRequestClose={handleShareSbt}
+        onRequestClose={handleShareSBT}
         contentLabel="share SBT"
       >
         <>
           <form id="modalForm">
-            {/* <Info> */}
-            <div style={{fontSize: '1.5rem'}}>
+            <div style={{ fontSize: "1.5rem" }}>
               <table style={{ width: "300px" }}>
                 <tbody>
                   <tr>
                     <td>
-                      {/* <FieldCardModal> */}
-                        Party:{" "}
-                        <input
-                          type="text"
-                          id="partyToShare"
-                          name="partyToShare"
-                          value={partiesInput}
-                          //ref={partiesInput}
-                          style={{ width: "200px" }}
-                          onChange={handlePartiesInput}
-                        />
-                      {/* </FieldCardModal> */}
+                      Party:{" "}
+                      <input
+                        type="text"
+                        id="partyToShare"
+                        name="partyToShare"
+                        value={partiesInput}
+                        style={{ width: "200px" }}
+                        onChange={handlePartiesInput}
+                      />
                     </td>
                   </tr>
                 </tbody>
               </table>
-              </div>
-                <button type="button" className="button__login" onClick={handleSend}>
-                  Send
-                </button>
-            {/* </Info> */}
+            </div>
+            <button
+              type="button"
+              className="button__login"
+              onClick={handleSendSBT}
+            >
+              Send
+            </button>
           </form>
         </>
       </Modal>
