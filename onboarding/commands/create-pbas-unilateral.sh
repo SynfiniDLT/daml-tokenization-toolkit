@@ -6,7 +6,7 @@ $TOKENIZATION_UTIL/add-json.sh \
   $TOKENIZATION_PARTIES_FILE \
   $TOKENIZATION_INSTRUMENT_FACTORIES_FILE \
   $TOKENIZATION_SETTLEMENT_FACTORIES_FILE \
-  $1 | daml script \
+  $1 | $TOKENIZATION_UTIL/daml-script.sh \
   --input-file /dev/stdin \
   --dar ${TOKENIZATION_ONBOARDING_DAR} \
   --script-name Synfini.Onboarding.PartyBoundAttributes.Unilateral:createPbas \

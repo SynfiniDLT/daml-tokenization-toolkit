@@ -3,7 +3,7 @@
 set -eu
 
 output_file=$(mktemp)
-daml script \
+$TOKENIZATION_UTIL/daml-script.sh \
   --input-file $1 \
   --output-file $output_file \
   --dar ${TOKENIZATION_ONBOARDING_DAR} \

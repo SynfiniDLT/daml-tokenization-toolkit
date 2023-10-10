@@ -4,7 +4,7 @@ set -eu
 
 output_file=$(mktemp)
 
-$TOKENIZATION_UTIL/add-json.sh $TOKENIZATION_PARTIES_FILE $1 | daml script \
+$TOKENIZATION_UTIL/add-json.sh $TOKENIZATION_PARTIES_FILE $1 | $TOKENIZATION_UTIL/daml-script.sh \
   --input-file /dev/stdin \
   --output-file ${output_file} \
   --dar ${TOKENIZATION_ONBOARDING_DAR} \
