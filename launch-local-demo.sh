@@ -15,7 +15,7 @@ psql -h localhost -p 5432 -U postgres -c 'create database wallet_views'
 export LEDGER_HOST=localhost
 export LEDGER_PORT=6865
 export LEDGER_PLAINTEXT=true
-export LEDGER_AUTH=false
+export LEDGER_AUTH_ENABLED=false
 
 nohup daml sandbox &
 sandbox_pid=$!
@@ -32,7 +32,7 @@ cd ${tokenization_lib_home}/onboarding
 rm -rf .setup
 ./setup.sh upload-dar
 ./setup.sh parties demo/demo-parties-input.json
-read_as=$(jq -r '.parties[] | select(.name == "SynfiniValidator") | .partyId' .setup/parties.json)
+read_as=$(jq -r '.parties[] | select(.label == "SynfiniValidator") | .partyId' .setup/parties.json)
 ./setup.sh users demo/demo-users-input.json
 
 cd ${tokenization_lib_home}/wallet-views/java
@@ -63,8 +63,9 @@ cd ${tokenization_lib_home}/onboarding
 ./setup.sh settlement-factories demo/demo-settlement-factories-input.json
 ./setup.sh accounts-unilateral demo/demo-new-account-input.json
 ./setup.sh mint-unilateral demo/demo-mint-input.json
-./setup.sh instruct-mint demo/demo-instruct-mint.json
-./setup.sh execute-mint demo/demo-execute-mint-input.json
+instruct_mint_output_file=instruct-mint-output.json
+./setup.sh instruct-mint demo/demo-instruct-mint.json --output-file $instruct_mint_output_file
+./setup.sh execute-mint demo/demo-execute-mint-input.json $instruct_mint_output_file
 ./setup.sh instruct-burn demo/demo-instruct-burn.json
 ./setup.sh instrument-factories demo/demo-instrument-factories-input.json
 ./setup.sh parties demo/demo-sbt-parties-input.json

@@ -1,9 +1,3 @@
 {
-  "readAs": ["Synfini_Public"],
-  "executeMintSettings": {
-    "custodian": "SynfiniValidator",
-    "instructor": "AUDN_MinterBurner",
-    "minterBurner": "AUDN_MinterBurner",
-    "referenceId": "abc123"
-  }
+  "readAs": ["Synfini_Public"]
 }

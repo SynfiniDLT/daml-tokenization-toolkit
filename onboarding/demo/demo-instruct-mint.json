@@ -9,7 +9,6 @@
     "instructor": "AUDN_MinterBurner",
     "receiver": "InvestorA",
     "receiverAccountId": "111",
-    "referenceId": "abc123",
     "amount": 1e7
   }
 }

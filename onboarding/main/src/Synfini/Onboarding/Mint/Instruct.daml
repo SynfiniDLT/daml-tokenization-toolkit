@@ -29,7 +29,31 @@ data InstructMintInput = InstructMintInput
     parties : [PartyInfo]
     instructMintSettings : InstructMintSettings
 
-instructMint : InstructMintInput -> Script ()
+data ExecuteMintSettings = ExecuteMintSettings
+  with
+    custodian : Party
+    instructor : Party
+    minterBurner : Party
+    referenceId : Id
+
+data InstructMintOutput = InstructMintOutput
+  with
+    executeMintSettings : ExecuteMintSettings
+
+template FetchInstructionHelper
+  with
+    fetcher : Party
+  where
+    signatory fetcher
+
+    choice FetchInstruction : MintInstruction
+      with
+        instructionCid : ContractId MintInstruction
+      controller fetcher
+      do
+        fetch instructionCid
+
+instructMint : InstructMintInput -> Script InstructMintOutput
 instructMint input = do
   let pm = partyTable input.parties
   let p = getPartyId pm
@@ -40,7 +64,7 @@ instructMint input = do
       readAs = p <$> input.readAs
   let instrument = InstrumentKey with
         issuer, depository, id = Id input.instructMintSettings.instrumentId, version = input.instructMintSettings.instrumentVersion
-  submitMulti [instructor] readAs do
+  instructionCid <- submitMulti [instructor] readAs do
     exerciseByKeyCmd @Mint instrument InstructMint with
       instructor
       receiver
@@ -48,14 +72,14 @@ instructMint input = do
       id = Id input.instructMintSettings.referenceId
       amount = input.instructMintSettings.amount
       description = "Delivery of " <> show instrument <> " requested by " <> show instructor
-  pure ()
-
-data ExecuteMintSettings = ExecuteMintSettings
-  with
-    custodian : Text
-    instructor : Text
-    minterBurner : Text
-    referenceId : Text
+  instruction <- submitMulti [instructor] readAs do
+    createAndExerciseCmd (FetchInstructionHelper instructor) (FetchInstruction with instructionCid)
+  pure InstructMintOutput with
+    executeMintSettings = ExecuteMintSettings with
+      custodian = instruction.custodian
+      instructor
+      minterBurner = instruction.minterBurner
+      referenceId = instruction.id
 
 data ExecuteMintInput = ExecuteMintInput
   with
@@ -67,14 +91,14 @@ executeMint : ExecuteMintInput -> Script ()
 executeMint input = do
   let pm = partyTable input.parties
   let p = getPartyId pm
-  let custodian = p input.executeMintSettings.custodian
-      instructor = p input.executeMintSettings.instructor
-      minterBurner = p input.executeMintSettings.minterBurner
-      readAs = p <$> input.readAs
-  submitMulti [minterBurner] readAs do
+  let readAs = p <$> input.readAs
+  submitMulti [input.executeMintSettings.minterBurner] readAs do
     exerciseByKeyCmd
       @MintInstruction
-      (Set.fromList [custodian, instructor], Id input.executeMintSettings.referenceId)
+      (
+        Set.fromList [input.executeMintSettings.custodian, input.executeMintSettings.instructor],
+        input.executeMintSettings.referenceId
+      )
       ExecuteMint
   pure ()
 
