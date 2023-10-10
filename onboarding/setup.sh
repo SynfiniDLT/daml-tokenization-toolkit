@@ -35,8 +35,8 @@ export TOKENIZATION_ONBOARDING_DAR=$(pwd)/../.build/tokenization-onboarding.dar
 export TOKENIZATION_UTIL=$(pwd)/util
 
 set +u
-LEDGER_PLAINTEXT=${LEDGER_PLAINTEXT:false}
-LEDGER_AUTH_ENABLED=${LEDGER_AUTH_ENABLED:true}
+LEDGER_PLAINTEXT=${LEDGER_PLAINTEXT:-false}
+LEDGER_AUTH_ENABLED=${LEDGER_AUTH_ENABLED:-true}
 set -u
 
 host_port_args="--ledger-host ${LEDGER_HOST} --ledger-port ${LEDGER_PORT}"
