@@ -68,12 +68,6 @@ const MainScreen: React.FC = () => {
     setIsOpen(!isOpen);
   };
 
-  const InfoContainer = styled.h2`
-    display: flex;
-    justify-content: center;
-    text-align: center;
-    color: #000;
-  `;
 
   const Info = styled.span`
     display: flex;
@@ -99,8 +93,6 @@ const MainScreen: React.FC = () => {
       </div>
     );
   }
-
-  console.log(ctx.token);
 
   return (
     <PageLayout>

@@ -11,6 +11,7 @@ import AccountBalanceScreen from "./pages/AccountBalanceScreen";
 import SettlementScreen from "./pages/SettlementScreen";
 import DirectoryScreen from "./pages/DirectoryScreen";
 import HomeScreen from "./pages/HomeScreen";
+import AccountBalanceSbtScreen from "./pages/AccountBalanceSbtScreen";
 
 // Context for the party of the user.
 export const userContext = createLedgerContext();
@@ -47,6 +48,7 @@ const App: React.FC = () => {
           {isAuthenticated ? <Route path="/" element={<AuthenticationGuard component={MainScreen} />} /> : <Route path="/" element={<HomeScreen />} />}
           <Route path="/wallet" element={<AuthenticationGuard component={WalletScreen} />} />
           <Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />
+          <Route path="/wallet/account/balance/sbt" element={<AuthenticationGuard component={AccountBalanceSbtScreen} />} />
           <Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />
           <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
       </Routes>
