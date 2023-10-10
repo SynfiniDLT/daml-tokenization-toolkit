@@ -1,0 +1,3 @@
+[submodule "custom-views"]
+	path = custom-views
+	url = https://github.com/SynfiniDLT/custom-views

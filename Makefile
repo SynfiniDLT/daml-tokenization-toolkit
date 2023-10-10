@@ -1,9 +1,19 @@
-.PHONY: build-mint build-mint-demo start-mint-demo-local build-mint-java test-mint build-onboarding build-pbt build-wallet-views test-wallet-views build-wallet-views-client test-wallet-views-client build-wallet-ui start-wallet-ui clean
-
 # Conf file is used to configure dependencies on Daml Finance
 # It has been copied from https://github.com/digital-asset/daml-finance/blob/8a4b826a683364f06f6dd1068a3d2f15f03ff6e6/docs/code-samples/tutorials-config/0.0.3.conf
 .lib: dependencies.conf
 	./get-dependencies.sh
+
+.PHONY: install-custom-views
+install-custom-views:
+	cd custom-views && \
+	sbt 'set test in assembly := {}' clean assembly && \
+	mvn install:install-file \
+		-Dfile=target/scala-2.13/custom-views-assembly-LOCAL-SNAPSHOT.jar \
+		-DgroupId=com.daml \
+		-DartifactId=custom-views_2.13 \
+		-Dversion=assembly-LOCAL-SNAPSHOT \
+		-Dpackaging=jar \
+		-DgeneratePom=true
 
 ## BEGIN mint
 .build/daml-mint.dar: .lib $(shell ./find-daml-project-files.sh mint/main)
@@ -12,21 +22,19 @@
 .build/daml-mint-demo.dar: .build/daml-mint.dar $(shell ./find-daml-project-files.sh mint/demo)
 	cd mint/demo && daml build -o ../../.build/daml-mint-demo.dar
 
+.PHONY: build-mint
 build-mint: .build/daml-mint.dar
-
-build-mint-demo: .build/daml-mint-demo.dar
-
-start-mint-demo-local: .build/daml-mint.dar
-	cd mint/demo && daml start
 
 # Codegen
 mint/java-example/src/generated-main/java: .build/daml-mint.dar
 	rm -rf mint/java-example/src/generated-main/java
 	daml codegen java -o mint/java-example/src/generated-main/java .build/daml-mint.dar
 
-build-mint-java: mint/java-example/src/generated-main/java $(shell ./find-java-project-files.sh mint/java-example)
+.PHONY: build-mint-java-example
+build-mint-java-example: mint/java-example/src/generated-main/java $(shell ./find-java-project-files.sh mint/java-example)
 	cd mint/java-example && mvn compile
 
+.PHONY: test-mint
 test-mint: .build/daml-mint.dar
 	cd mint/test && daml test
 ## END mint
@@ -35,6 +43,7 @@ test-mint: .build/daml-mint.dar
 .build/tokenization-onboarding.dar: .lib .build/daml-mint.dar .build/pbt.dar onboarding/main/daml.yaml $(shell ./find-daml-project-files.sh onboarding/main)
 	cd onboarding/main && daml build -o ../../.build/tokenization-onboarding.dar
 
+.PHONY: build-onboarding
 build-onboarding: .build/tokenization-onboarding.dar
 ## END onboarding
 
@@ -45,6 +54,7 @@ build-onboarding: .build/tokenization-onboarding.dar
 .build/pbt.dar: .lib .build/pbt-interface.dar $(shell ./find-daml-project-files.sh pbt/implementation)
 	cd pbt/implementation && daml build -o ../../.build/pbt.dar
 
+.PHONY: build-pbt
 build-pbt: .build/pbt.dar
 ## END pbt
 
@@ -66,9 +76,11 @@ wallet-views/java/src/generated-test/java: .lib .build/pbt.dar
 		.lib/daml-finance-instrument-token.dar \
 		.build/pbt.dar
 
+.PHONY: build-wallet-views
 build-wallet-views: wallet-views/java/src/generated-main/java
 	cd wallet-views/java && mvn compile
 
+.PHONY: test-wallet-views
 test-wallet-views: wallet-views/java/src/generated-main/java wallet-views/java/src/generated-test/java
 	cd wallet-views/java && mvn test ${TEST_WALLET_VIEWS_ARGS}
 
@@ -80,6 +92,7 @@ wallet-views/typescript-client/daml.js: .build/daml-wallet-views-types.dar
 wallet-views/typescript-client/lib: wallet-views/typescript-client/daml.js $(shell ./find-ts-project-files.sh wallet-views/typescript-client)
 	cd wallet-views/typescript-client && npm install && npm run build
 
+.PHONY: build-wallet-views-client
 build-wallet-views-client: wallet-views/typescript-client/lib
 
 # TODO test client
@@ -89,13 +102,16 @@ build-wallet-views-client: wallet-views/typescript-client/lib
 wallet-ui/daml.js: .lib
 	daml codegen js .lib/daml-finance-interface-util.dar -o wallet-ui/daml.js
 
+.PHONY: build-wallet-ui
 build-wallet-ui: wallet-ui/daml.js wallet-views/typescript-client/lib $(shell ./find-ts-project-files.sh wallet-ui)
 	cd wallet-ui && npm install && npm run build
 
+.PHONY: start-wallet-ui
 start-wallet-ui: wallet-ui/daml.js wallet-views/typescript-client/lib
 	cd wallet-ui && npm install && npm start
 ## END wallet ui
 
+.PHONY: clean
 clean:
 	cd mint/main && daml clean
 	cd mint/test && daml clean
