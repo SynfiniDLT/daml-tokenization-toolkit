@@ -31,9 +31,9 @@ echo $json_api_pg_id > $tokenization_lib_home/json-api.pgid
 cd ${tokenization_lib_home}/onboarding
 rm -rf .setup
 ./setup.sh upload-dar
-./setup.sh parties demo/demo-parties-input.json
+./setup.sh allocate-parties demo/demo-parties-input.json
 read_as=$(jq -r '.parties[] | select(.label == "SynfiniValidator") | .partyId' .setup/parties.json)
-./setup.sh users demo/demo-users-input.json
+./setup.sh create-users demo/demo-users-input.json
 
 cd ${tokenization_lib_home}/wallet-views/java
 nohup mvn -Dmaven.test.skip=true spring-boot:run \
@@ -62,13 +62,13 @@ cd ${tokenization_lib_home}/onboarding
 ./setup.sh accounts-unilateral demo/demo-accounts-input.json
 ./setup.sh settlement-factories demo/demo-settlement-factories-input.json
 ./setup.sh accounts-unilateral demo/demo-new-account-input.json
-./setup.sh mint-unilateral demo/demo-mint-input.json
+./setup.sh create-mint-unilateral demo/demo-mint-input.json
 instruct_mint_output_file=instruct-mint-output.json
 ./setup.sh instruct-mint demo/demo-instruct-mint.json --output-file $instruct_mint_output_file
 ./setup.sh execute-mint demo/demo-execute-mint-input.json $instruct_mint_output_file
 ./setup.sh instruct-burn demo/demo-instruct-burn.json
 ./setup.sh instrument-factories demo/demo-instrument-factories-input.json
-./setup.sh parties demo/demo-sbt-parties-input.json
+./setup.sh allocate-parties demo/demo-sbt-parties-input.json
 ./setup.sh accounts-unilateral demo/demo-sbt-accounts-input.json
 ./setup.sh create-pbas-unilateral demo/demo-pba-input.json
 

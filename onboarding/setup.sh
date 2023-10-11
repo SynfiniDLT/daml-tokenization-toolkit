@@ -58,9 +58,11 @@ if [ "$command" = "upload-dar" ]; then
     --host ${LEDGER_HOST} \
     --port ${LEDGER_PORT} \
     ${tls_args} ${auth_args} $@ ${TOKENIZATION_ONBOARDING_DAR}
-elif [ "$command" = "parties" ]; then
+elif [ "$command" = "allocate-parties" ]; then
   ./commands/allocate-parties.sh $@
-elif [ "$command" = "users" ]; then
+elif [ "$command" = "import-parties" ]; then
+  ./commands/import-parties.sh $@
+elif [ "$command" = "create-users" ]; then
   ./commands/create-users.sh $@
 elif [ "$command" = "account-factories" ]; then
   ./commands/create-account-factories.sh $@
@@ -78,7 +80,7 @@ elif [ "$command" = "accounts-take-open-offer" ]; then
   ./commands/take-open-account-offer.sh $@
 elif [ "$command" = "create-pbas-unilateral" ]; then
   ./commands/create-pbas-unilateral.sh $@
-elif [ "$command" = "mint-unilateral" ]; then
+elif [ "$command" = "create-mint-unilateral" ]; then
   ./commands/create-mint-unilateral.sh $@
 elif [ "$command" = "instruct-mint" ]; then
   ./commands/instruct-mint.sh $@
