@@ -58,7 +58,6 @@ const AccountBalanceSbtScreen: React.FC = () => {
   };
 
   const fetchInstruments = async (balancesIns: Balance[]) => {
-    console.log("fetch instruments")
     let arr_test_instr: InstrumentSummary[] = [];
     for (let index = 0; index < balancesIns.length; index++) {
       const balance = balancesIns[index];

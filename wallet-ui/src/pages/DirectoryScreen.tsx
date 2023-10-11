@@ -45,7 +45,7 @@ const DirectoryScreen: React.FC = () => {
     if (primaryParty !== "" && sbt_depository!== undefined && sbt_issuer!== undefined) {
       console.log("aaa",sbt_depository +  "::" +primaryParty.split("::")[1])
       const resp = await walletClient.getInstruments({ depository: sbt_depository +  "::" +primaryParty.split("::")[1], issuer: sbt_issuer +  "::" +primaryParty.split("::")[1], id: {unpack:"EntityName"}, version: null });
-      setInstruments(resp.instruments)
+      setInstruments(resp.instruments.filter(instrument => instrument.pbaView?.owner !== primaryParty))
     }
   };
 

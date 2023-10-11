@@ -15,7 +15,7 @@ export default function BalanceSbts(props: {
   const ledger = userContext.useLedger();
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [sendTo, setSendTo] = useState<any>();
+  const [cid, setCid] = useState<ContractId<any>>();
   const [operation, setOperation] = useState<string>("");
   const [partiesInput, setPartiesInput] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -31,21 +31,20 @@ export default function BalanceSbts(props: {
     setOperation("");
   };
 
-  const handleShareSBT = (obj: any, operation: string) => {
+  const handleShareSBT = (instrument: InstrumentSummary, operation: string) => {
     setPartiesInput("");
     setIsOpen(!isOpen);
-    setSendTo(obj);
+    setCid(instrument.cid);
     setOperation(operation);
   };
-  const wait = (n: any) => new Promise((resolve) => setTimeout(resolve, n));
+  const wait = (n: number) => new Promise((resolve) => setTimeout(resolve, n));
 
   const handleSendSBT = async () => {
     console.log("operation", operation);
     console.log("primary party", ctx.primaryParty);
     const disclosers: Map<Party, Unit> = emptyMap();
     const observers: Map<Party, Unit> = emptyMap();
-    const cid: ContractId<any> = sendTo.cid;
-    if (operation === "add") {
+    if (operation === "add" && cid !== undefined && cid !== '') {
       ledger
         .exercise(Disclosure.AddObservers, cid, {
           disclosers: { map: disclosers.set(ctx.primaryParty, {}) },
@@ -76,7 +75,8 @@ export default function BalanceSbts(props: {
               JSON.stringify(err.errors[0])
           );
         });
-    } else if (operation === "remove") {
+    } 
+    if (operation === "remove" && cid !== undefined) {
       ledger
         .exercise(Disclosure.RemoveObservers, cid, {
           disclosers: { map: disclosers.set(ctx.primaryParty, {}) },
@@ -111,7 +111,6 @@ export default function BalanceSbts(props: {
               JSON.stringify(err.errors[0])
           );
         });
-    } else {
     }
     await wait(4000);
     ctx.setPrimaryParty("");

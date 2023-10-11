@@ -6,27 +6,45 @@ interface InstrumentDetailsProps {
 }
 
 export default function instrumentDetails(props: InstrumentDetailsProps) {
+  let entity: [string, string][] = [];
 
-  let entity: any = props.instrument.pbaView?.attributes.entriesArray();
+  if (props.instrument.pbaView?.attributes.entriesArray()) {
+    entity = props.instrument.pbaView?.attributes.entriesArray();
+  }
 
   const InstrumentDetailsContainer = styled.div`
     border-radius: 12px;
-    margin: 5px;
-    padding: 10px;
+    margin: 20px;
+    padding: 20px;
     background-color: #2a2b2f;
     box-shadow: 6.8px 13.6px 13.6px hsl(0deg 0% 0% / 0.29);
   `;
 
+  const Field = styled.span`
+    padding: 0px;
+    font-weight: 700;
+  `;
+
+  const FieldValue = styled.span`
+    padding: 5px;
+  `;
 
   return (
     <InstrumentDetailsContainer>
       <div key={props.instrument.cid}>
-        <span>Instrument</span><br />
-        <span>{props.instrument.pbaView?.instrument.id.unpack} | {props.instrument.pbaView?.instrument.version}</span> <br/>
-        <span>Onwer</span><br />
-        <span>{props.instrument.pbaView?.owner}</span><br />
-        <span>Entity</span><br />
-        <span>{Array.from(entity, ([key, value]) => `${key} | ${value}`)}</span>
+        <Field>SBT Holder ID</Field>
+        <br />
+        <FieldValue>{props.instrument.pbaView?.owner}</FieldValue>
+        <br />
+        <br />
+        <Field>SBT Holder Name</Field>
+        <br />
+        <FieldValue>{Array.from(entity, ([key, value]) => `${value}`)}</FieldValue>
+        <br />
+        <br />
+        <Field>SBT Issuing Authority</Field>
+        <br />
+        <FieldValue>{props.instrument.pbaView?.instrument.issuer}</FieldValue>
       </div>
     </InstrumentDetailsContainer>
   );

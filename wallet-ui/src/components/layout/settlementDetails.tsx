@@ -4,6 +4,7 @@ import * as damlTypes from "@daml/types";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { PlusCircleFill, DashCircleFill } from "react-bootstrap-icons";
+import { formatCurrency, nameFromParty } from "../Util";
 
 interface SettlementDetailsProps {
   settlement: SettlementSummary;
@@ -26,18 +27,10 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
     box-shadow: 6.8px 13.6px 13.6px hsl(0deg 0% 0% / 0.29);
   `;
 
-  const ContainerFieldValue = styled.div`
-    display: flex;
-    flex-wrap: wrap; /* Allows content to wrap to the next line if necessary */
-  `;
 
   const Field = styled.span`
     padding: 10px;
     font-weight: 700;
-  `;
-
-  const Value = styled.div`
-    padding: 10px;
   `;
 
   const FieldSettled = styled.span`
@@ -60,14 +53,22 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
     });
   };
 
+  const formatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD', 
+  });
+  
+
   // TODO may need to adjust formatting of `step.routedStep.quantity.amount`?
   return (
     <SettlementDetailsContainer>
       <div key={props.settlement.batchCid}>
         <div>
-          <Field>Batch ID:</Field>
-          {props.settlement.batchId.unpack} |<Field> Description:</Field>
-          {props.settlement.description} <br />
+          {/* <Field>Batch ID:</Field>
+          {props.settlement.batchId.unpack}  */}
+          {/* | <Field> Description:</Field>
+          {props.settlement.description}  */}
+          <br />
           <Field>Batch Status:</Field>
           {props.settlement.execution === null ? (
             <FieldPending>Pending</FieldPending>
@@ -96,16 +97,16 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
             <h5 className="profile__title">Step {index + 1}</h5>
             <div style={{ margin: "15px" }}>
               <Field>Sender: </Field>
-              {step.routedStep.sender.substring(0, 30)}...
+              {nameFromParty(step.routedStep.sender)}
               <br />
               <Field>Receiver: </Field>
-              {step.routedStep.receiver.substring(0, 30)}...
+              {nameFromParty(step.routedStep.receiver)}
               <br />
               <Field>Custodian: </Field>
-              {step.routedStep.custodian.substring(0, 30)}...
+              {nameFromParty(step.routedStep.custodian)}
               <br />
               <Field>Amount: </Field>
-              {step.routedStep.quantity.amount}
+              {formatCurrency(step.routedStep.quantity.amount, 'en-US', 'USD')}
               <br />
               <div
                 onClick={setToggleCol}
@@ -121,9 +122,9 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
                 style={{ height: toggle ? "60px" : "0px" }}
                 key={step.routedStep.quantity.unit.id.unpack}
               >
-                Depository: {step.routedStep.quantity.unit.depository}
+                Depository: {nameFromParty(step.routedStep.quantity.unit.depository)}
                 <br />
-                Issuer: {step.routedStep.quantity.unit.issuer}
+                Issuer: {nameFromParty(step.routedStep.quantity.unit.issuer)}
               </div>
               <hr></hr>
             </div>
