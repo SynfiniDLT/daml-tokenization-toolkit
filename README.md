@@ -22,7 +22,7 @@ git clone https://github.com/SynfiniDLT/daml-tokenization-lib --recurse-submodul
 
 Before running any of the below commands, you need to install Custom Views first. This is a library that is being used
 to continuosly stream events and contracts from the ledger and store them in a queryable database. In future, this will
-most likely be replaced with the Daml Participant Query Store feature. To install Custom run:
+most likely be replaced with the Daml Participant Query Store feature. To install Custom Views run:
 
 ```bash
 make install-custom-views
