@@ -21,7 +21,7 @@
       "instrumentObservers": [
         {
           "context": "",
-          "parties": ["SynfiniValidator"]
+          "parties": ["SynfiniValidator", "InvestorA"]
         }
       ],
       "holdingObservers": [
@@ -42,7 +42,7 @@
       "instrumentObservers": [
         {
           "context": "",
-          "parties": ["SynfiniValidator"]
+          "parties": ["SynfiniValidator", "InvestorB"]
         }
       ],
       "holdingObservers": [
