@@ -72,6 +72,10 @@ elif [ "$command" = "instrument-factories" ]; then
   ./commands/create-instrument-factories.sh $@
 elif [ "$command" = "accounts-unilateral" ]; then
   ./commands/create-accounts-unilateral.sh $@
+elif [ "$command" = "accounts-open-offer" ]; then
+  ./commands/create-open-account-offer.sh $@
+elif [ "$command" = "accounts-take-open-offer" ]; then
+  ./commands/take-open-account-offer.sh $@
 elif [ "$command" = "create-pbas-unilateral" ]; then
   ./commands/create-pbas-unilateral.sh $@
 elif [ "$command" = "mint-unilateral" ]; then
