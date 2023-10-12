@@ -64,7 +64,6 @@ const MainScreen: React.FC = () => {
   }, [primaryParty]);
 
   const handleClick = () => {
-    console.log("show modal");
     setIsOpen(!isOpen);
   };
 

@@ -62,8 +62,6 @@ const SettlementScreen: React.FC = () => {
     );
   }
 
-  console.log("setllem", settlements);
-
   return (
     <PageLayout>
       <div>

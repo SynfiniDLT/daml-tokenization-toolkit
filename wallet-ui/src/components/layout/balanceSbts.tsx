@@ -6,6 +6,7 @@ import { QuestionCircle } from "react-bootstrap-icons";
 import Modal from "react-modal";
 import { Disclosure } from "@daml.js/daml-finance-interface-util/lib/Daml/Finance/Interface/Util/Disclosure";
 import { Party, Map, emptyMap, Unit, ContractId } from "@daml/types";
+import { wait } from "../Util";
 
 export default function BalanceSbts(props: {
   instruments?: InstrumentSummary[];
@@ -37,11 +38,8 @@ export default function BalanceSbts(props: {
     setCid(instrument.cid);
     setOperation(operation);
   };
-  const wait = (n: number) => new Promise((resolve) => setTimeout(resolve, n));
 
   const handleSendSBT = async () => {
-    console.log("operation", operation);
-    console.log("primary party", ctx.primaryParty);
     const disclosers: Map<Party, Unit> = emptyMap();
     const observers: Map<Party, Unit> = emptyMap();
     if (operation === "add" && cid !== undefined && cid !== '') {

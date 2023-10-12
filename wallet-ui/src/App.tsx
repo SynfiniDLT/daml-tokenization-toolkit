@@ -27,7 +27,6 @@ const App: React.FC = () => {
   const fetchToken = async () => {
     const authToken = await getAccessTokenSilently();
     setToken(authToken)
-    setPrimaryParty(primaryParty);
   };
   
   useEffect(() => {
@@ -43,7 +42,7 @@ const App: React.FC = () => {
   }
   return (
     <AuthContextStore.Provider value={{token: token, setPrimaryParty: setPrimaryParty, primaryParty: primaryParty, readOnly: readOnly}}>
-      <userContext.DamlLedger token={token} party={primaryParty || ''} httpBaseUrl={damlBaseUrl}>
+      <userContext.DamlLedger token={token} party={primaryParty} httpBaseUrl={damlBaseUrl}>
       <Routes>
           {isAuthenticated ? <Route path="/" element={<AuthenticationGuard component={MainScreen} />} /> : <Route path="/" element={<HomeScreen />} />}
           <Route path="/wallet" element={<AuthenticationGuard component={WalletScreen} />} />

@@ -25,3 +25,5 @@ export function formatCurrency(amountString: string, locale: string, currencyCod
 
     return name;
   }
+
+  export const wait = (n: number) => new Promise((resolve) => setTimeout(resolve, n));
