@@ -8,6 +8,9 @@ import { PageLayout } from "../components/PageLayout";
 import Instruments from "../components/layout/instruments";
 
 const DirectoryScreen: React.FC = () => {
+  const sbt_depository = process.env.REACT_APP_LEDGER_INSTRUMENT_DEPOSITORY;
+  const sbt_issuer = process.env.REACT_APP_LEDGER_INSTRUMENT_ISSUER;
+  
   const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}/wallet-views`;
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
@@ -39,8 +42,9 @@ const DirectoryScreen: React.FC = () => {
   };
 
   const fetchInstruments = async () => {
-    if (primaryParty !== "") {
-      const resp = await walletClient.getInstruments({ depository: "", issuer: "", id: {unpack:primaryParty}, version: "1" });
+    if (primaryParty !== "" && sbt_depository!== undefined && sbt_issuer!== undefined) {
+      const resp = await walletClient.getInstruments({ depository: sbt_depository +  "::" +primaryParty.split("::")[1], issuer: sbt_issuer +  "::" +primaryParty.split("::")[1], id: {unpack:"EntityName"}, version: null });
+      setInstruments(resp.instruments.filter(instrument => instrument.pbaView?.owner !== primaryParty))
     }
   };
 
@@ -59,8 +63,6 @@ const DirectoryScreen: React.FC = () => {
       </div>
     );
   }
-
-  console.log("instruments=>", instruments);
 
   return (
     <PageLayout>

@@ -4,8 +4,6 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { userContext } from "../App";
 import AuthContextStore from "../store/AuthContextStore";
 import { WalletViewsClient } from "@synfini/wallet-views";
-import Balances from "../components/layout/balances";
-
 import { PageLayout } from "../components/PageLayout";
 import { AccountDetailsSimple } from "../components/layout/accountDetails";
 import { PageLoader } from "../components/layout/page-loader";
@@ -15,7 +13,7 @@ import {
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import BalanceSbts from "../components/layout/balanceSbts";
 
-const AccountBalanceScreen: React.FC = () => {
+const AccountBalanceSbtScreen: React.FC = () => {
   const { isLoading } = useAuth0();
   const { state } = useLocation();
   const ledger = userContext.useLedger();
@@ -50,7 +48,7 @@ const AccountBalanceScreen: React.FC = () => {
         account: {
           owner: primaryParty,
           custodian: state.account.view.custodian,
-          id: state.account.view.id,
+          id: { unpack: state.account.view.id.unpack },
         },
       });
       setBalances(resp.balances);
@@ -60,11 +58,15 @@ const AccountBalanceScreen: React.FC = () => {
   };
 
   const fetchInstruments = async (balancesIns: Balance[]) => {
-
     let arr_test_instr: InstrumentSummary[] = [];
     for (let index = 0; index < balancesIns.length; index++) {
       const balance = balancesIns[index];
-      const resp_instrument = await walletClient.getInstruments(balance.instrument);
+      const resp_instrument = await walletClient.getInstruments({
+            depository: balance.instrument.depository,
+            issuer: balance.instrument.issuer,
+            id: { unpack: balance.instrument.id.unpack },
+            version: balance.instrument.version,
+      });
       if (resp_instrument.instruments.length > 0) 
         arr_test_instr.push(resp_instrument.instruments[0]);
     }
@@ -100,13 +102,11 @@ const AccountBalanceScreen: React.FC = () => {
         Account Balance
       </h3>
       <AccountDetailsSimple account={state.account}></AccountDetailsSimple>
-      {state.account.view.id.unpack !== "sbt" ? (
-        <Balances balances={balances}></Balances>
-        ) : (
-        <BalanceSbts instruments={instruments} />
+      {state.account.view.id.unpack === "sbt" && (
+        <BalanceSbts instruments={instruments} account={state.account} />
       )}
     </PageLayout>
   );
 };
 
-export default AccountBalanceScreen;
+export default AccountBalanceSbtScreen;

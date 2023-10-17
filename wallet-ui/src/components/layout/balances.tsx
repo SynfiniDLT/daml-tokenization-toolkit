@@ -1,5 +1,7 @@
 import { Balance } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { QuestionCircle } from "react-bootstrap-icons";
+import { formatCurrency } from "../Util";
+
 
 export default function Balances(props: { balances?: Balance[] }) {
 
@@ -34,9 +36,9 @@ export default function Balances(props: { balances?: Balance[] }) {
                   </td>
                   <td>{balance.instrument.depository.substring(0, 30)}...</td>
                   <td>{balance.instrument.issuer.substring(0, 30)}...</td>
-                  <td>{(parseFloat(balance.unlocked)+ parseFloat(balance.locked)).toFixed(2)}</td>
-                  <td>{parseFloat(balance.unlocked).toFixed(2)}</td>
-                  <td>{parseFloat(balance.locked).toFixed(2)}</td>
+                  <td>{formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(),'en-US')}</td>
+                  <td>{formatCurrency(balance.unlocked,'en-US')}</td>
+                  <td>{formatCurrency(balance.locked,'en-US')}</td>
                 </tr>
               ))}
             </tbody>

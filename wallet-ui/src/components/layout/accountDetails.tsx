@@ -22,7 +22,11 @@ export default function AccountDetails(props: AccountDetailsProps) {
   `;
 
   const handleClick = (account: AccountSummary) => {
-    nav("/wallet/account/balance/", { state: { account: account } });
+    if (account.view.id.unpack==='sbt'){
+      nav("/wallet/account/balance/sbt", { state: { account: account } });
+    }else{
+      nav("/wallet/account/balance/", { state: { account: account } });
+    }
   };
 
   return (
