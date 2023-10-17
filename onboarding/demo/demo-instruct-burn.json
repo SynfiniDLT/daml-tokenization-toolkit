@@ -8,7 +8,6 @@
     "sender": "InvestorA",
     "custodian": "SynfiniValidator",
     "senderAccountId": "111",
-    "referenceId": "ghi789",
     "amount": 1500
   }
 }

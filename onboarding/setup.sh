@@ -34,11 +34,35 @@ shift
 export TOKENIZATION_ONBOARDING_DAR=$(pwd)/../.build/tokenization-onboarding.dar
 export TOKENIZATION_UTIL=$(pwd)/util
 
+set +u
+LEDGER_PLAINTEXT=${LEDGER_PLAINTEXT:-false}
+LEDGER_AUTH_ENABLED=${LEDGER_AUTH_ENABLED:-true}
+set -u
+
+host_port_args="--ledger-host ${LEDGER_HOST} --ledger-port ${LEDGER_PORT}"
+tls_args=""
+if [ "$LEDGER_PLAINTEXT" = "false" ]; then
+  tls_args="--tls"
+fi
+auth_args=""
+if [ "$LEDGER_AUTH_ENABLED" = "true" ]; then
+  export TOKENIZATION_ACCESS_TOKEN_FILE="${TOKENIZATION_INTERNAL}/${ACCESS_TOKEN_CLIENT_ID}-token.txt"
+  export TOKENIZATION_ACCESS_TOKEN_EXPIRY_FILE="${TOKENIZATION_INTERNAL}/${ACCESS_TOKEN_CLIENT_ID}-token-expiry.txt"
+  ./jwt/fetch-access-token.sh
+  auth_args="--access-token-file ${TOKENIZATION_ACCESS_TOKEN_FILE}"
+fi
+export TOKENIZATION_CONNECTION_ARGS="${host_port_args} ${tls_args} ${auth_args}"
+
 if [ "$command" = "upload-dar" ]; then
-  daml ledger upload-dar $@ ${TOKENIZATION_ONBOARDING_DAR}
-elif [ "$command" = "parties" ]; then
+  daml ledger upload-dar \
+    --host ${LEDGER_HOST} \
+    --port ${LEDGER_PORT} \
+    ${tls_args} ${auth_args} $@ ${TOKENIZATION_ONBOARDING_DAR}
+elif [ "$command" = "allocate-parties" ]; then
   ./commands/allocate-parties.sh $@
-elif [ "$command" = "users" ]; then
+elif [ "$command" = "import-parties" ]; then
+  ./commands/import-parties.sh $@
+elif [ "$command" = "create-users" ]; then
   ./commands/create-users.sh $@
 elif [ "$command" = "account-factories" ]; then
   ./commands/create-account-factories.sh $@
@@ -50,9 +74,13 @@ elif [ "$command" = "instrument-factories" ]; then
   ./commands/create-instrument-factories.sh $@
 elif [ "$command" = "accounts-unilateral" ]; then
   ./commands/create-accounts-unilateral.sh $@
+elif [ "$command" = "accounts-open-offer" ]; then
+  ./commands/create-open-account-offer.sh $@
+elif [ "$command" = "accounts-take-open-offer" ]; then
+  ./commands/take-open-account-offer.sh $@
 elif [ "$command" = "create-pbas-unilateral" ]; then
   ./commands/create-pbas-unilateral.sh $@
-elif [ "$command" = "mint-unilateral" ]; then
+elif [ "$command" = "create-mint-unilateral" ]; then
   ./commands/create-mint-unilateral.sh $@
 elif [ "$command" = "instruct-mint" ]; then
   ./commands/instruct-mint.sh $@

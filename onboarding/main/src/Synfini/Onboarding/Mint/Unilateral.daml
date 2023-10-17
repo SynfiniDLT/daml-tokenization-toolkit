@@ -4,7 +4,6 @@ import Daml.Script
 import Synfini.Onboarding.Types
 import Synfini.Onboarding.Factory.Settlement
 import Synfini.Mint
-import qualified DA.Optional as O
 import qualified DA.Set as Set
 import Daml.Finance.Interface.Types.Common.Types
 

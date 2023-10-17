@@ -12,23 +12,38 @@ psql -h localhost -p 5432 -U postgres -c 'drop database wallet_views'
 set -e
 psql -h localhost -p 5432 -U postgres -c 'create database wallet_views'
 
-ledger_host=localhost
-ledger_port=6865
-host_port_args="--ledger-host ${ledger_host} --ledger-port ${ledger_port}"
+export LEDGER_HOST=localhost
+export LEDGER_PORT=6865
+export LEDGER_PLAINTEXT=true
+export LEDGER_AUTH_ENABLED=false
+
+nohup daml sandbox &
+sandbox_pid=$!
+sandbox_pg_id=$(ps --pid $sandbox_pid -o "pgid" --no-headers)
+echo $sandbox_pg_id > $tokenization_lib_home/sandbox.pgid
+sleep 20s
+
+nohup daml json-api --http-port 7575 --ledger-host ${LEDGER_HOST} --ledger-port ${LEDGER_PORT} &
+json_api_pid=$!
+json_api_pg_id=$(ps --pid $json_api_pid -o "pgid" --no-headers)
+echo $json_api_pg_id > $tokenization_lib_home/json-api.pgid
 
 cd ${tokenization_lib_home}/onboarding
 rm -rf .setup
 ./setup.sh upload-dar
-./setup.sh parties demo/demo-parties-input.json $host_port_args
-read_as=$(jq -r '.parties[] | select(.name == "SynfiniValidator") | .partyId' .setup/parties.json)
-./setup.sh users demo/demo-users-input.json $host_port_args
+./setup.sh allocate-parties demo/demo-parties-input.json
+read_as=$(jq -r '.parties[] | select(.label == "SynfiniValidator") | .partyId' .setup/parties.json)
+./setup.sh create-users demo/demo-users-input.json
 
 cd ${tokenization_lib_home}/wallet-views/java
-mvn spring-boot:run \
+nohup mvn -Dmaven.test.skip=true spring-boot:run \
   -Dspring-boot.run.arguments=" \
-    --walletviews.ledger-host=${ledger_host} \
-    --walletviews.ledger-port=${ledger_port} \
-    --walletviews.ledger-plaintext=true" > springboot.log &
+    --walletviews.ledger-host=${LEDGER_HOST} \
+    --walletviews.ledger-port=${LEDGER_PORT} \
+    --walletviews.ledger-plaintext=true" > springboot.log 2>&1 &
+spring_pid=$!
+spring_pg_id=$(ps --pid $spring_pid -o "pgid" --no-headers)
+echo $spring_pg_id > $tokenization_lib_home/spring.pgid
 sleep 20s
 
 curl http://localhost:8080/v1/projection/start \
@@ -42,19 +57,20 @@ curl http://localhost:8080/v1/projection/start \
 sleep 20s
 
 cd ${tokenization_lib_home}/onboarding
-./setup.sh account-factories demo/demo-account-factories-input.json $host_port_args
-./setup.sh holding-factories demo/demo-holding-factories-input.json $host_port_args
-./setup.sh accounts-unilateral demo/demo-accounts-input.json $host_port_args
-./setup.sh settlement-factories demo/demo-settlement-factories-input.json $host_port_args
-./setup.sh accounts-unilateral demo/demo-new-account-input.json $host_port_args
-./setup.sh mint-unilateral demo/demo-mint-input.json $host_port_args
-./setup.sh instruct-mint demo/demo-instruct-mint.json $host_port_args
-./setup.sh execute-mint demo/demo-execute-mint-input.json $host_port_args
-./setup.sh instruct-burn demo/demo-instruct-burn.json $host_port_args
-./setup.sh instrument-factories demo/demo-instrument-factories-input.json $host_port_args
-./setup.sh parties demo/demo-sbt-parties-input.json $host_port_args
-./setup.sh accounts-unilateral demo/demo-sbt-accounts-input.json $host_port_args
-./setup.sh create-pbas-unilateral demo/demo-pba-input.json $host_port_args
+./setup.sh account-factories demo/demo-account-factories-input.json
+./setup.sh holding-factories demo/demo-holding-factories-input.json
+./setup.sh accounts-unilateral demo/demo-accounts-input.json
+./setup.sh settlement-factories demo/demo-settlement-factories-input.json
+./setup.sh accounts-unilateral demo/demo-new-account-input.json
+./setup.sh create-mint-unilateral demo/demo-mint-input.json
+instruct_mint_output_file=instruct-mint-output.json
+./setup.sh instruct-mint demo/demo-instruct-mint.json --output-file $instruct_mint_output_file
+./setup.sh execute-mint demo/demo-execute-mint-input.json $instruct_mint_output_file
+./setup.sh instruct-burn demo/demo-instruct-burn.json
+./setup.sh instrument-factories demo/demo-instrument-factories-input.json
+./setup.sh allocate-parties demo/demo-sbt-parties-input.json
+./setup.sh accounts-unilateral demo/demo-sbt-accounts-input.json
+./setup.sh create-pbas-unilateral demo/demo-pba-input.json
 
 cd ${tokenization_lib_home}
 make start-wallet-ui

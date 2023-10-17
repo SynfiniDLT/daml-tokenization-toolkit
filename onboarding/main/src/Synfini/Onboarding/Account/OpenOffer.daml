@@ -1,2 +1,122 @@
 module Synfini.Onboarding.Account.OpenOffer where
 
+import qualified Daml.Finance.Interface.Account.Account as Account
+import qualified Daml.Finance.Interface.Account.Factory as Account
+import qualified Daml.Finance.Interface.Holding.Factory as Holding
+import Daml.Finance.Interface.Types.Common.Types
+import qualified DA.Optional as O
+import qualified DA.Set as Set
+import DA.Set (Set)
+import Synfini.Onboarding.Types
+import Synfini.Onboarding.Factory.Account
+import Synfini.Onboarding.Factory.Holding
+import Daml.Script
+import DA.Foldable (forA_)
+
+template OpenAccountOffer
+  with
+    custodian : Party
+    operators : Account.Controllers
+    ownerIncomingControlled : Bool
+    ownerOutgoingControlled : Bool
+    accountFactoryCid : ContractId Account.F
+    holdingFactoryCid : ContractId Holding.F
+    observers : Set Party
+  where
+    signatory custodian
+
+    observer observers
+
+    nonconsuming choice OpenAccount : ContractId Account.I
+      with
+        owner : Party
+        id : Id
+        description : Text
+        accountObservers : PartiesMap
+      controller owner
+      do
+        let account = AccountKey with custodian, owner, id
+        existingAccount <- lookupByKey @Account.R account
+        assertMsg "Cannot already have an account with same key" (O.isNone existingAccount)
+        let incomingControllers =
+              (if ownerIncomingControlled then Set.fromList [owner] else Set.empty) <> operators.incoming
+            outgoingControllers =
+              (if ownerOutgoingControlled then Set.fromList [owner] else Set.empty) <> operators.outgoing
+        exercise accountFactoryCid Account.Create with
+          account
+          holdingFactoryCid
+          controllers = Account.Controllers with incoming = incomingControllers, outgoing = outgoingControllers
+          description
+          observers = accountObservers
+
+data CreateOpenAccountOfferSettings = CreateOpenAccountOfferSettings
+  with
+    custodian : Text
+    incomingOperators : [Text]
+    outgoingOperators : [Text]
+    ownerIncomingControlled : Bool
+    ownerOutgoingControlled : Bool
+    accountFactory : Text
+    holdingFactory : Text
+    observers : [Text]
+
+data CreateOpenAccountOfferInput = CreateOpenAccountOfferInput
+  with
+    parties : [PartyInfo]
+    accountFactories : [AccountFactory]
+    holdingFactories : [HoldingFactory]
+    offerSettings : CreateOpenAccountOfferSettings
+
+data CreateOpenAccountOfferOutput = CreateOpenAccountOfferOutput
+  with
+    openAccountOffer : OpenAccountOffer
+    openAccountOfferCid : ContractId OpenAccountOffer
+
+createOpenAccountOffer : CreateOpenAccountOfferInput -> Script CreateOpenAccountOfferOutput
+createOpenAccountOffer input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let custodian = p input.offerSettings.custodian
+      operators = Account.Controllers with
+        incoming = Set.fromList (p <$> input.offerSettings.incomingOperators)
+        outgoing = Set.fromList (p <$> input.offerSettings.outgoingOperators)
+      accountFactoryCid = findFactoryContractId input.offerSettings.accountFactory input.accountFactories
+      holdingFactoryCid = findFactoryContractId input.offerSettings.holdingFactory input.holdingFactories
+  let openAccountOffer = OpenAccountOffer with
+        custodian
+        operators
+        ownerIncomingControlled = input.offerSettings.ownerIncomingControlled
+        ownerOutgoingControlled = input.offerSettings.ownerOutgoingControlled
+        accountFactoryCid
+        holdingFactoryCid
+        observers = Set.fromList (p <$> input.offerSettings.observers)
+  openAccountOfferCid <- submit custodian do createCmd openAccountOffer
+  pure CreateOpenAccountOfferOutput with openAccountOffer, openAccountOfferCid
+
+data AccountSettings = AccountSettings
+  with
+    owner : Text
+    id : Text
+    description : Text
+    observers : [Observer]
+
+data OpenAccountsInput = OpenAccountsInput
+  with
+    parties : [PartyInfo]
+    readAs : [Text]
+    openAccountOfferCid : ContractId OpenAccountOffer
+    accountSettings : [AccountSettings]
+
+openAccounts : OpenAccountsInput -> Script ()
+openAccounts input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let readAs = p <$> input.readAs
+  forA_ input.accountSettings \settings -> do
+    let owner = p settings.owner
+    submitMulti [owner] readAs do
+      exerciseCmd input.openAccountOfferCid OpenAccount with
+        owner
+        id = Id settings.id
+        description = settings.description
+        accountObservers = asPartiesMap p settings.observers

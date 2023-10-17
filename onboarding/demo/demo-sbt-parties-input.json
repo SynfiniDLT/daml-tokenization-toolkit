@@ -1,6 +1,14 @@
 {
-    "names": [
-      "SBT_Issuer",
-      "SBT_Depository"
-    ]
-  }
+  "partySettings": [
+    {
+      "label": "SBT_Issuer",
+      "displayName": "SBT_Issuer",
+      "partyIdHint": "SBT_Issuer"
+    },
+    {
+      "label": "SBT_Depository",
+      "displayName": "SBT_Depository",
+      "partyIdHint": "SBT_Depository"
+    }
+  ]
+}

@@ -19,9 +19,6 @@ install-custom-views:
 .build/daml-mint.dar: .lib $(shell ./find-daml-project-files.sh mint/main)
 	cd mint/main && daml build -o ../../.build/daml-mint.dar
 
-.build/daml-mint-demo.dar: .build/daml-mint.dar $(shell ./find-daml-project-files.sh mint/demo)
-	cd mint/demo && daml build -o ../../.build/daml-mint-demo.dar
-
 .PHONY: build-mint
 build-mint: .build/daml-mint.dar
 
@@ -115,7 +112,6 @@ start-wallet-ui: wallet-ui/daml.js wallet-views/typescript-client/lib
 clean:
 	cd mint/main && daml clean
 	cd mint/test && daml clean
-	cd mint/demo && daml clean
 	cd mint/java-example && mvn clean && rm -rf src/generated-main
 	cd onboarding/main && daml clean
 	cd pbt/interface && daml clean

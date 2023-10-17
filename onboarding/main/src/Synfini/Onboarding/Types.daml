@@ -8,14 +8,14 @@ import qualified DA.Optional as O
 
 data PartyInfo = PartyInfo
   with
-    name : Text
+    label : Text
     partyId : Party
 
 partyTable : [PartyInfo] -> Map Text Party
-partyTable parties = Map.fromList $ (\partyInfo -> (partyInfo.name, partyInfo.partyId)) <$> parties
+partyTable parties = Map.fromList $ (\partyInfo -> (partyInfo.label, partyInfo.partyId)) <$> parties
 
 getPartyId : Map Text Party -> Text -> Party
-getPartyId parties name = O.fromSomeNote ("Party not provided: " <> name) $ Map.lookup name parties
+getPartyId parties label = O.fromSomeNote ("Party not provided: " <> label) $ Map.lookup label parties
 
 data Observer = Observer
   with
