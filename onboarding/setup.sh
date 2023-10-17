@@ -46,8 +46,8 @@ if [ "$LEDGER_PLAINTEXT" = "false" ]; then
 fi
 auth_args=""
 if [ "$LEDGER_AUTH_ENABLED" = "true" ]; then
-  export TOKENIZATION_ACCESS_TOKEN_FILE=${TOKENIZATION_INTERNAL}/access-token.txt
-  export TOKENIZATION_ACCESS_TOKEN_EXPIRY_FILE=${TOKENIZATION_INTERNAL}/access-token-expiry.txt
+  export TOKENIZATION_ACCESS_TOKEN_FILE="${TOKENIZATION_INTERNAL}/${ACCESS_TOKEN_CLIENT_ID}-token.txt"
+  export TOKENIZATION_ACCESS_TOKEN_EXPIRY_FILE="${TOKENIZATION_INTERNAL}/${ACCESS_TOKEN_CLIENT_ID}-token-expiry.txt"
   ./jwt/fetch-access-token.sh
   auth_args="--access-token-file ${TOKENIZATION_ACCESS_TOKEN_FILE}"
 fi
