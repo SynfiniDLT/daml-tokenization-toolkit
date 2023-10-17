@@ -36,9 +36,9 @@ export default function Balances(props: { balances?: Balance[] }) {
                   </td>
                   <td>{balance.instrument.depository.substring(0, 30)}...</td>
                   <td>{balance.instrument.issuer.substring(0, 30)}...</td>
-                  <td>{formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(),'en-US','USD')}</td>
-                  <td>{formatCurrency(balance.unlocked,'en-US','USD')}</td>
-                  <td>{formatCurrency(balance.locked,'en-US','USD')}</td>
+                  <td>{formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(),'en-US')}</td>
+                  <td>{formatCurrency(balance.unlocked,'en-US')}</td>
+                  <td>{formatCurrency(balance.locked,'en-US')}</td>
                 </tr>
               ))}
             </tbody>

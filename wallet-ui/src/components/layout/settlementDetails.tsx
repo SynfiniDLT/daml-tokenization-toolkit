@@ -106,7 +106,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
               {nameFromParty(step.routedStep.custodian)}
               <br />
               <Field>Amount: </Field>
-              {formatCurrency(step.routedStep.quantity.amount, 'en-US', 'USD')}
+              {formatCurrency(step.routedStep.quantity.amount, 'en-US')}
               <br />
               <div
                 onClick={setToggleCol}

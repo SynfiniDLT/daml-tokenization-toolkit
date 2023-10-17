@@ -1,4 +1,4 @@
-export function formatCurrency(amountString: string, locale: string, currencyCode: string): string {
+export function formatCurrency(amountString: string, locale: string): string {
     const amount = parseFloat(amountString);
     
     if (isNaN(amount)) {
@@ -6,8 +6,7 @@ export function formatCurrency(amountString: string, locale: string, currencyCod
     }
   
     const formatter = new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: currencyCode,
+      style: 'decimal'
     });
   
     return formatter.format(amount);

@@ -50,7 +50,7 @@ const AccountBalanceScreen: React.FC = () => {
         account: {
           owner: primaryParty,
           custodian: state.account.view.custodian,
-          id: { unpack: state.account.view.id.unpack },
+          id: state.account.view.id,
         },
       });
       setBalances(resp.balances);
@@ -64,12 +64,7 @@ const AccountBalanceScreen: React.FC = () => {
     let arr_test_instr: InstrumentSummary[] = [];
     for (let index = 0; index < balancesIns.length; index++) {
       const balance = balancesIns[index];
-      const resp_instrument = await walletClient.getInstruments({
-            depository: balance.instrument.depository,
-            issuer: balance.instrument.issuer,
-            id: { unpack: balance.instrument.id.unpack },
-            version: balance.instrument.version,
-      });
+      const resp_instrument = await walletClient.getInstruments(balance.instrument);
       if (resp_instrument.instruments.length > 0) 
         arr_test_instr.push(resp_instrument.instruments[0]);
     }
