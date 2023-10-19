@@ -18,3 +18,5 @@ wallet-ui/build
 wallet-ui/package-lock.json
 wallet-views/typescript-client/package-lock.json
 *.log
+*.pgid
+*.out

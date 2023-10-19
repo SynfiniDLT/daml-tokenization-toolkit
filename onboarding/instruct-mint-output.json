@@ -1,0 +1,10 @@
+{
+  "executeMintSettings": {
+    "custodian": "SynfiniValidator::1220eef17cf08c87b06d95f69101cb3c431467c2a799b23b78c81008347a6335c2f4",
+    "instructor": "AUDN_MinterBurner::1220eef17cf08c87b06d95f69101cb3c431467c2a799b23b78c81008347a6335c2f4",
+    "minterBurner": "AUDN_MinterBurner::1220eef17cf08c87b06d95f69101cb3c431467c2a799b23b78c81008347a6335c2f4",
+    "referenceId": {
+      "unpack": "864c45ac-591e-4d11-b812-e57ac70e0343"
+    }
+  }
+}

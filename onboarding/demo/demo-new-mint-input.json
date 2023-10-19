@@ -1,0 +1,13 @@
+{
+  "mintSettings": {
+    "custodian": "SynfiniValidator",
+    "instrumentDepository": "AUDN_Depository",
+    "instrumentIssuer": "AUDN_Issuer",
+    "instrumentId": "AUDN",
+    "instrumentVersion": "1",
+    "minterBurner": "AUDN_MinterBurner",
+    "supplyAccountId": "AUDN_Supply",
+    "settlementFactory": "V1",
+    "observers": ["Synfini_Public"]
+  }
+}

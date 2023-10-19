@@ -58,7 +58,7 @@ const AccountBalanceSbtScreen: React.FC = () => {
   };
 
   const fetchInstruments = async (balancesIns: Balance[]) => {
-    let arr_test_instr: InstrumentSummary[] = [];
+    let arr_instr: InstrumentSummary[] = [];
     for (let index = 0; index < balancesIns.length; index++) {
       const balance = balancesIns[index];
       const resp_instrument = await walletClient.getInstruments({
@@ -68,9 +68,9 @@ const AccountBalanceSbtScreen: React.FC = () => {
             version: balance.instrument.version,
       });
       if (resp_instrument.instruments.length > 0) 
-        arr_test_instr.push(resp_instrument.instruments[0]);
+        arr_instr.push(resp_instrument.instruments[0]);
     }
-    return arr_test_instr;
+    return arr_instr;
     
     
   }
@@ -99,7 +99,7 @@ const AccountBalanceSbtScreen: React.FC = () => {
   return (
     <PageLayout>
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
-        Account Balance
+        SBT Details
       </h3>
       <AccountDetailsSimple account={state.account}></AccountDetailsSimple>
       {state.account.view.id.unpack === "sbt" && (

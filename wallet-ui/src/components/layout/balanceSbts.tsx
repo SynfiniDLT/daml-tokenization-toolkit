@@ -75,8 +75,7 @@ export default function BalanceSbts(props: {
         });
     } 
     if (operation === "remove" && cid !== undefined) {
-      ledger
-        .exercise(Disclosure.RemoveObservers, cid, {
+      ledger.exercise(Disclosure.RemoveObservers, cid, {
           disclosers: { map: disclosers.set(ctx.primaryParty, {}) },
           observersToRemove: {
             _1: partiesInput,
@@ -125,7 +124,7 @@ export default function BalanceSbts(props: {
             {inst.pbaView?.instrument.id.unpack} |{" "}
             {inst.pbaView?.instrument.version}
           </td>
-          <td>{inst.pbaView?.instrument.depository.substring(0, 30)}</td>
+          <td>{"???"}</td>
           <td>{inst.pbaView?.instrument.issuer.substring(0, 30)}</td>
           <td>{Array.from(entity, ([key, value]) => `${key} | ${value}`)}</td>
           <td>
@@ -173,7 +172,7 @@ export default function BalanceSbts(props: {
       ) : (
         <>
           <div style={{ marginTop: "15px" }}>
-            <h5 className="profile__title">SBT Balances</h5>
+            <h5 className="profile__title">SBT</h5>
           </div>
 
           {props.instruments?.length === 0 ? (
@@ -183,11 +182,11 @@ export default function BalanceSbts(props: {
               <thead>
                 <tr>
                   <th>
-                    Instrument | Version
+                    SBT ID
                     <QuestionCircle />
                   </th>
                   <th>
-                    Depository
+                    SBT Name
                     <QuestionCircle />
                   </th>
                   <th>

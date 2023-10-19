@@ -3,12 +3,12 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { userContext } from "../App";
 import AuthContextStore from "../store/AuthContextStore";
 import { PageLoader } from "../components/layout/page-loader";
-import Accounts from "../components/layout/accounts";
+//import Accounts from "../components/layout/accounts";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import Modal from "react-modal";
-import styled from "styled-components";
+import Funds from "../components/layout/funds";
+import { Template } from "@daml/types";
 
 const MainScreen: React.FC = () => {
   const { user, isAuthenticated } = useAuth0();
@@ -18,8 +18,7 @@ const MainScreen: React.FC = () => {
 
   const { isLoading } = useAuth0();
   const [primaryParty, setPrimaryParty] = useState<string>("");
-  const [accounts, setAccounts] = useState<AccountSummary[]>();
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [funds, setFunds] = useState<any[]>();
 
   let walletClient: WalletViewsClient;
 
@@ -48,10 +47,24 @@ const MainScreen: React.FC = () => {
     }
   };
 
-  const fetchAccounts = async () => {
+  const fetchFunds = async () => {
     if (primaryParty !== "") {
       const resp = await walletClient.getAccounts({ owner: primaryParty });
-      setAccounts(resp.accounts);
+      setFunds(resp.accounts);
+      // type Foo = { key: string };
+      // const Foo: Template<Foo, string, "foo-id"> = {
+      //   sdkVersion: "0.0.0-SDKVERSION",
+      //   templateId: "foo-id",
+      //   keyDecoder: jtv.string(),
+      //   keyEncode: (s: string): unknown => s,
+      //   decoder: jtv.object({ key: jtv.string() }),
+      //   encode: o => o,
+      //   // eslint-disable-next-line @typescript-eslint/ban-types
+      //   Archive: {} as unknown as Choice<Foo, {}, {}, string>,
+      // };
+
+      // const funds = ledger.streamQueries(Foo, null);
+      // setFunds(funds);
     }
   };
 
@@ -60,30 +73,13 @@ const MainScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchAccounts();
+    fetchFunds();
   }, [primaryParty]);
 
-  const handleClick = () => {
-    setIsOpen(!isOpen);
-  };
+
+  console.log("funds",funds)
 
 
-  const Info = styled.span`
-    display: flex;
-    flex-direction: column;
-    font-size: 1.5rem;
-    row-gap: 0.5rem;
-    justify-content: left;
-  `;
-
-  const FieldCardModal = styled.div`
-    color: #ffffff;
-    text-align: left;
-    margin-bottom: 0rem;
-    font-weight: normal;
-    font-size: 15px;
-    padding: 10px;
-  `;
 
   if (isLoading) {
     return (
@@ -95,55 +91,10 @@ const MainScreen: React.FC = () => {
 
   return (
     <PageLayout>
-      {isAuthenticated && user !== undefined && (
-      <div className="profile-grid">
-        <div className="profile__header">
-          <img src={user.picture} alt="Profile" className="profile__avatar" />
-          <div className="profile__headline">
-            <h2 className="profile__title">{user.name}</h2>
-            <span className="profile__description">{user.email}</span>
-          </div>
-        </div>
-      </div>
-      )}
-
       <div>
-        <Accounts accounts={accounts} />
+        {/* <Funds funds={funds} /> */}
       </div>
-      <Modal
-        id="shareSbtModal"
-        className="sbtModal"
-        isOpen={isOpen}
-        onRequestClose={handleClick}
-        contentLabel="share SBT"
-      >
-        <>
-          <form>
-            <Info>
-              <table style={{ width: "300px" }}>
-                <tbody>
-                  <tr>
-                    <td>
-                      <FieldCardModal>
-                        Party:{" "}
-                        <input
-                          type="text"
-                          name="partyToShare"
-                          value={""}
-                          style={{ width: "200px" }}
-                        />
-                      </FieldCardModal>
-                    </td>
-                  </tr>
-                </tbody>
-                <button type="button" className="button__login">
-                  Send
-                </button>
-              </table>
-            </Info>
-          </form>
-        </>
-      </Modal>
+
     </PageLayout>
   );
 };
