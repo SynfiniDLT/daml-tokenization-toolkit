@@ -1,0 +1,22 @@
+{
+  "offerSettings": {
+    "fund" : "",
+    "fundManager" : "",
+    "fundCustodian" : "SynfiniValidator",
+    "instrumentVersion" : "0",
+    "instrumentDepository" : "",
+    "instrumentId" : "",
+    "paymentInstrumentIssuer" : "",
+    "paymentInstrumentDepository" : "",
+    "paymentInstrumentVersion" : "",
+    "paymentInstrumentId" : "",
+    "costPerUnit": 42.0,
+    "commission": 0.01,
+    "minInvesment" : 500,
+    "fundPaymentAccountId" : "fundAccount",
+    "fundManagerPaymentAccountId" : "fundManagerAccount",
+    "paymentCustodian" : "SynfiniValidator",
+    "settlementFactory" : "V1",
+    "observers" : ["Synfini_Public"]
+  }
+}
