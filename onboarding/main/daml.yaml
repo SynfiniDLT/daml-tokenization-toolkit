@@ -25,3 +25,4 @@ data-dependencies:
   - ../../.build/daml-mint.dar
   - ../../.build/pbt-interface.dar
   - ../../.build/pbt.dar
+  - ../../.build/fund-tokenization.dar

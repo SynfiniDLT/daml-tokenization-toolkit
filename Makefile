@@ -36,8 +36,16 @@ test-mint: .build/daml-mint.dar
 	cd mint/test && daml test
 ## END mint
 
+## BEGIN fund
+.build/fund-tokenization.dar: .lib $(shell ./find-daml-project-files.sh fund/main)
+	cd fund/main && daml build -o ../../.build/fund-tokenization.dar
+
+.PHONY: build-fund
+build-fund: .build/fund-tokenization.dar
+## END fund
+
 ## BEGIN onboarding
-.build/tokenization-onboarding.dar: .lib .build/daml-mint.dar .build/pbt.dar onboarding/main/daml.yaml $(shell ./find-daml-project-files.sh onboarding/main)
+.build/tokenization-onboarding.dar: .lib .build/daml-mint.dar .build/fund-tokenization.dar .build/pbt.dar $(shell ./find-daml-project-files.sh onboarding/main)
 	cd onboarding/main && daml build -o ../../.build/tokenization-onboarding.dar
 
 .PHONY: build-onboarding
