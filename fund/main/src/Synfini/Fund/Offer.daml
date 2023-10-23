@@ -7,7 +7,6 @@ import DA.Set (Set)
 import qualified DA.Set as Set
 import qualified Daml.Finance.Interface.Holding.Base as Holding
 import qualified Daml.Finance.Interface.Holding.Fungible as Fungible
-import qualified DA.List as L
 import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
 import qualified Daml.Finance.Interface.Settlement.Batch as Batch
 
@@ -36,20 +35,21 @@ template FundOffer
     settlementFactoryCid : ContractId SettlementFactory.I
     observers : Set Party
   where
-    signatory fund, fundCustodian -- In practice these parties may be the same
+    signatory fund, fundCustodian, fundManager -- In practice these parties may be the same
 
     observer fundManager, observers
 
-    ensure commission >= 0.0 && commission <= 1.0 && costPerUnit > 0.0 && minInvesment > 0.0
+    ensure commission > 0.0 && costPerUnit > 0.0 && minInvesment > 0.0
 
     nonconsuming choice InstructPurchase : InstructPurchaseResult
       with
         numUnits : Int
-        paymentCids : [ContractId Fungible.I]
-        investor : Party
+        investorToFundPaymentCid : ContractId Holding.I
+        investorToFundManagerPaymentCid : ContractId Holding.I
+        actors : Set Party
         investorAccountId: Id
         investmentId : Id
-      controller investor, fundManager
+      controller actors
       do
         let numUnitsDecimal = intToDecimal numUnits
         let cost = numUnitsDecimal * costPerUnit
@@ -57,18 +57,27 @@ template FundOffer
 
         assertMsg "Must invest minimum amount" (cost >= minInvesment)
 
-        mergedPaymentCid <-
-          if length paymentCids == 1 then
-            pure (L.head paymentCids)
-          else
-            exercise (L.head paymentCids) Fungible.Merge with fungibleCids = L.tail paymentCids
-        splitResult <- exercise mergedPaymentCid Fungible.Split with amounts = [cost, commissionCost]
-        [investorToFundPaymentCid, investorToFundManagerPaymentCid] <- forA splitResult.splitCids $ \holdingCid -> do
-          let baseCid : ContractId Holding.Base = toInterfaceContractId holdingCid
-          exercise baseCid Holding.Acquire with
-            newLockers = Set.fromList [fund, fundManager, investor]
-            context = "Investment in fund: " <> show investmentId
-            lockType = Holding.Semaphore
+        investorToFundPayment <- view <$> (fetch investorToFundPaymentCid)
+        investorToFundManagerPayment <- view <$> (fetch investorToFundManagerPaymentCid)
+
+        let investor = investorToFundPayment.account.owner
+        assertMsg
+          "Both payments must come from the same investor"
+          (investor == investorToFundManagerPayment.account.owner)
+
+        assertMsg "Actors must include investor" (investor `Set.member` actors)
+        -- mergedPaymentCid <-
+        --   if length paymentCids == 1 then
+        --     pure (L.head paymentCids)
+        --   else
+        --     exercise (L.head paymentCids) Fungible.Merge with fungibleCids = L.tail paymentCids
+        -- splitResult <- exercise mergedPaymentCid Fungible.Split with amounts = [cost, commissionCost]
+        -- [investorToFundPaymentCid, investorToFundManagerPaymentCid] <- forA splitResult.splitCids $ \holdingCid -> do
+        --   let baseCid : ContractId Holding.Base = toInterfaceContractId holdingCid
+        --   exercise baseCid Holding.Acquire with
+        --     newLockers = Set.fromList [fund, fundManager, investor]
+        --     context = "Investment in fund: " <> show investmentId
+        --     lockType = Holding.Semaphore
 
         let investorToFund = RoutedStep with
               sender = investor
@@ -92,9 +101,10 @@ template FundOffer
                 amount = numUnitsDecimal
               custodian = fund
 
+        let instructors = Set.fromList [fund, fundManager] <> actors
         (batchCid, [investorToFundCid, investorToFundManagerCid, fundToInvestorCid]) <- exercise settlementFactoryCid
           SettlementFactory.Instruct with
-            instructors = Set.fromList [fund]
+            instructors
             settlers = Set.fromList [fund]
             id = investmentId
             description = "Purchase by " <> show investor
@@ -104,7 +114,7 @@ template FundOffer
 
         -- Investor to fund
         (investorToFundAllocatedCid, _) <- exercise investorToFundCid Instruction.Allocate with
-          actors = Set.fromList [investor, fund, fundManager]
+          actors
           allocation = Pledge investorToFundPaymentCid
         finalInvestorToFundCid <- exercise investorToFundAllocatedCid Instruction.Approve with
           actors = Set.fromList [fund]
@@ -115,7 +125,7 @@ template FundOffer
 
         -- Investor to fund manager
         (investorToFundManagerAllocatedCid, _) <- exercise investorToFundManagerCid Instruction.Allocate with
-          actors = Set.fromList [investor, fund, fundManager]
+          actors
           allocation = Pledge investorToFundManagerPaymentCid
         finalInvestorToFundManagerCid <- exercise investorToFundManagerAllocatedCid Instruction.Approve with
           actors = Set.fromList [fundManager]
@@ -126,7 +136,7 @@ template FundOffer
 
         -- Fund to investor
         finalFundToInvestorCid <- exercise fundToInvestorCid Instruction.Approve with
-          actors = Set.fromList [investor, fundCustodian]
+          actors = Set.insert fundCustodian actors
           approval = TakeDelivery AccountKey with
             owner = investor
             id = investorAccountId
@@ -137,3 +147,65 @@ template FundOffer
           investorToFundInstructionCid = finalInvestorToFundCid
           investorToFundManagerInstructionCid = finalInvestorToFundManagerCid
           fundToInvestorInstructionCid = finalFundToInvestorCid
+
+-- template FundPurchaseInstruction
+--   with
+--     fund : Party
+--     fundManager : Party
+--     investor : Party
+--     batchCid : ContractId Batch.I
+--   where
+--     signatory fund, fundManager, investor
+
+mergeAndSplitHelper : [ContractId Fungible.I] ->
+                      Decimal ->
+                      Decimal ->
+                      Update (ContractId Fungible.I, ContractId Fungible.I, Optional (ContractId Fungible.I))
+mergeAndSplitHelper holdingCids amount1 amount2 = do
+  mergedHoldingCid <- case holdingCids of
+    [] -> error "Cannot merge/split empty holdings" 
+    [firstHoldingCid] -> pure firstHoldingCid
+    firstHoldingCid :: others -> exercise firstHoldingCid Fungible.Merge with fungibleCids = others
+  splitResult <- exercise mergedHoldingCid Fungible.Split with amounts = [amount1, amount2]
+  let (holdingCid1, holdingCid2) = case splitResult.splitCids of
+        [c1, c2] -> (c1, c2)
+        _ -> error "Unexpected list length"
+  pure (
+      holdingCid1,
+      holdingCid2,
+      splitResult.rest
+    )
+
+template FundInvestor
+  with
+    investor : Party
+    authorisers : Set Party
+    investorAccountId : Id
+  where
+    signatory authorisers
+
+    observer investor
+
+    choice RequestInvestment : InstructPurchaseResult
+      with
+        numUnits : Int
+        paymentCids : [ContractId Fungible.I]
+        offerCid : ContractId FundOffer
+        investmentId : Id
+      controller investor
+      do
+        offer <- fetch offerCid
+
+        let numUnitsDecimal = intToDecimal numUnits
+        (investorToFundPaymentCid, investorToFundManagerPaymentCid, _) <- mergeAndSplitHelper
+          paymentCids
+          (numUnitsDecimal * offer.costPerUnit)
+          (numUnitsDecimal * offer.commission * offer.costPerUnit)
+
+        exercise offerCid InstructPurchase with
+          numUnits
+          investorToFundPaymentCid = toInterfaceContractId investorToFundPaymentCid
+          investorToFundManagerPaymentCid = toInterfaceContractId investorToFundManagerPaymentCid
+          actors = Set.insert investor authorisers
+          investmentId
+          investorAccountId
