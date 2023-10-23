@@ -3,20 +3,14 @@ module Synfini.Fund.Offer where
 import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
 import Daml.Finance.Interface.Settlement.Types
 import Daml.Finance.Interface.Types.Common.Types
+import DA.List ((!!))
 import DA.Set (Set)
 import qualified DA.Set as Set
 import qualified Daml.Finance.Interface.Holding.Base as Holding
 import qualified Daml.Finance.Interface.Holding.Fungible as Fungible
 import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
 import qualified Daml.Finance.Interface.Settlement.Batch as Batch
-
-data InstructPurchaseResult = InstructPurchaseResult
-  with
-    batchCid : ContractId Batch.I
-    investorToFundInstructionCid : ContractId Instruction.I
-    investorToFundManagerInstructionCid : ContractId Instruction.I
-    fundToInvestorInstructionCid : ContractId Instruction.I
-  deriving (Show, Eq)
+import Synfini.Tokenization.Util
 
 template FundOffer
   with
@@ -41,7 +35,14 @@ template FundOffer
 
     ensure commission > 0.0 && costPerUnit > 0.0 && minInvesment > 0.0
 
-    nonconsuming choice InstructPurchase : InstructPurchaseResult
+    nonconsuming choice GetPayload : FundOffer
+      with
+        viewer : Party
+      controller viewer
+      do
+        pure this
+
+    nonconsuming choice InstructPurchase : ContractId FundPurchaseInstruction
       with
         numUnits : Int
         investorToFundPaymentCid : ContractId Holding.I
@@ -66,18 +67,6 @@ template FundOffer
           (investor == investorToFundManagerPayment.account.owner)
 
         assertMsg "Actors must include investor" (investor `Set.member` actors)
-        -- mergedPaymentCid <-
-        --   if length paymentCids == 1 then
-        --     pure (L.head paymentCids)
-        --   else
-        --     exercise (L.head paymentCids) Fungible.Merge with fungibleCids = L.tail paymentCids
-        -- splitResult <- exercise mergedPaymentCid Fungible.Split with amounts = [cost, commissionCost]
-        -- [investorToFundPaymentCid, investorToFundManagerPaymentCid] <- forA splitResult.splitCids $ \holdingCid -> do
-        --   let baseCid : ContractId Holding.Base = toInterfaceContractId holdingCid
-        --   exercise baseCid Holding.Acquire with
-        --     newLockers = Set.fromList [fund, fundManager, investor]
-        --     context = "Investment in fund: " <> show investmentId
-        --     lockType = Holding.Semaphore
 
         let investorToFund = RoutedStep with
               sender = investor
@@ -142,39 +131,70 @@ template FundOffer
             id = investorAccountId
             custodian = fundCustodian
 
-        pure InstructPurchaseResult with
+        create FundPurchaseInstruction with
+          fund
+          fundManager
+          investor
+          instructors
+          numUnits
           batchCid
-          investorToFundInstructionCid = finalInvestorToFundCid
-          investorToFundManagerInstructionCid = finalInvestorToFundManagerCid
           fundToInvestorInstructionCid = finalFundToInvestorCid
 
--- template FundPurchaseInstruction
---   with
---     fund : Party
---     fundManager : Party
---     investor : Party
---     batchCid : ContractId Batch.I
---   where
---     signatory fund, fundManager, investor
+data AcceptPurchaseInstructionResult = AcceptPurchaseInstructionResult
+  with
+    fundHoldingCid : ContractId Holding.I
+    fundManagerHoldingCid : ContractId Holding.I
+    investorHoldingCid : ContractId Holding.I
+  deriving (Show, Eq)
 
-mergeAndSplitHelper : [ContractId Fungible.I] ->
-                      Decimal ->
-                      Decimal ->
-                      Update (ContractId Fungible.I, ContractId Fungible.I, Optional (ContractId Fungible.I))
-mergeAndSplitHelper holdingCids amount1 amount2 = do
-  mergedHoldingCid <- case holdingCids of
-    [] -> error "Cannot merge/split empty holdings" 
-    [firstHoldingCid] -> pure firstHoldingCid
-    firstHoldingCid :: others -> exercise firstHoldingCid Fungible.Merge with fungibleCids = others
-  splitResult <- exercise mergedHoldingCid Fungible.Split with amounts = [amount1, amount2]
-  let (holdingCid1, holdingCid2) = case splitResult.splitCids of
-        [c1, c2] -> (c1, c2)
-        _ -> error "Unexpected list length"
-  pure (
-      holdingCid1,
-      holdingCid2,
-      splitResult.rest
-    )
+template FundPurchaseInstruction
+  with
+    fund : Party
+    fundManager : Party
+    investor : Party
+    instructors : Set Party
+    numUnits : Int
+    batchCid : ContractId Batch.I
+    fundToInvestorInstructionCid : ContractId Instruction.I
+  where
+    signatory instructors
+
+    ensure Set.fromList [fund, fundManager, investor] `Set.isSubsetOf` instructors
+
+    choice RejectPurchaseInstruction : ()
+      controller fund
+      do
+        exercise batchCid Batch.Cancel with actors = instructors
+        pure ()
+
+    choice AcceptPurchaseInstruction : AcceptPurchaseInstructionResult
+      with
+        allocation : Allocation
+      controller fund
+      do
+        exercise fundToInvestorInstructionCid Instruction.Allocate with allocation, actors = instructors
+        [fundHoldingCid, fundManagerHoldingCid, investorHoldingCid] <- exercise
+          batchCid
+          Batch.Settle with actors = instructors
+        pure AcceptPurchaseInstructionResult with fundHoldingCid, fundManagerHoldingCid, investorHoldingCid
+
+template AcceptPurchaseInstructionHelper
+  with
+    acceptor : Party
+  where
+    signatory acceptor
+
+    choice AcceptPurchaseInstructionFromFungibles : AcceptPurchaseInstructionResult
+      with
+        allocationCids : [ContractId Fungible.I]
+        purchaseInstructionCid : ContractId FundPurchaseInstruction
+      controller acceptor
+      do
+        purchaseInstruction <- fetch purchaseInstructionCid
+        batch <- exercise purchaseInstruction.batchCid Batch.GetView with viewer = acceptor
+        (allocationCid, _) <- mergeAndSplitHelper1 allocationCids ((batch.routedSteps !! 2).quantity.amount)
+        exercise purchaseInstructionCid AcceptPurchaseInstruction with
+          allocation = Pledge (toInterfaceContractId allocationCid)
 
 template FundInvestor
   with
@@ -186,7 +206,7 @@ template FundInvestor
 
     observer investor
 
-    choice RequestInvestment : InstructPurchaseResult
+    choice RequestInvestment : ContractId FundPurchaseInstruction
       with
         numUnits : Int
         paymentCids : [ContractId Fungible.I]
@@ -194,10 +214,10 @@ template FundInvestor
         investmentId : Id
       controller investor
       do
-        offer <- fetch offerCid
+        offer <- exercise offerCid GetPayload with viewer = investor
 
         let numUnitsDecimal = intToDecimal numUnits
-        (investorToFundPaymentCid, investorToFundManagerPaymentCid, _) <- mergeAndSplitHelper
+        (investorToFundPaymentCid, investorToFundManagerPaymentCid, _) <- mergeAndSplitHelper2
           paymentCids
           (numUnitsDecimal * offer.costPerUnit)
           (numUnitsDecimal * offer.commission * offer.costPerUnit)

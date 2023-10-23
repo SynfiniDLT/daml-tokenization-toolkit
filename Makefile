@@ -15,8 +15,11 @@ install-custom-views:
 		-Dpackaging=jar \
 		-DgeneratePom=true
 
+.build/tokenization-util.dar: .lib
+	cd util/main && daml build -o ../../.build/tokenization-util.dar
+
 ## BEGIN mint
-.build/daml-mint.dar: .lib $(shell ./find-daml-project-files.sh mint/main)
+.build/daml-mint.dar: .lib .build/tokenization-util.dar $(shell ./find-daml-project-files.sh mint/main)
 	cd mint/main && daml build -o ../../.build/daml-mint.dar
 
 .PHONY: build-mint
@@ -37,11 +40,15 @@ test-mint: .build/daml-mint.dar
 ## END mint
 
 ## BEGIN fund
-.build/fund-tokenization.dar: .lib $(shell ./find-daml-project-files.sh fund/main)
+.build/fund-tokenization.dar: .lib .build/tokenization-util.dar $(shell ./find-daml-project-files.sh fund/main)
 	cd fund/main && daml build -o ../../.build/fund-tokenization.dar
 
 .PHONY: build-fund
 build-fund: .build/fund-tokenization.dar
+
+.PHONY: test-fund
+test-fund: .build/fund-tokenization.dar
+	cd fund/test && daml test
 ## END fund
 
 ## BEGIN onboarding
@@ -118,9 +125,12 @@ start-wallet-ui: wallet-ui/daml.js wallet-views/typescript-client/lib
 
 .PHONY: clean
 clean:
+	cd util/main && daml clean
 	cd mint/main && daml clean
 	cd mint/test && daml clean
 	cd mint/java-example && mvn clean && rm -rf src/generated-main
+	cd fund/main && daml clean
+	cd fund/test && daml clean
 	cd onboarding/main && daml clean
 	cd pbt/interface && daml clean
 	cd pbt/implementation && daml clean

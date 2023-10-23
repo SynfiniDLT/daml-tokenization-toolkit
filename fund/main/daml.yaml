@@ -8,6 +8,8 @@ dependencies:
   - daml-prim
   - daml-stdlib
 data-dependencies:
+  - ../../.build/tokenization-util.dar
+
   - ../../.lib/daml-finance-interface-account.dar
   - ../../.lib/daml-finance-interface-holding.dar
   - ../../.lib/daml-finance-interface-settlement.dar
