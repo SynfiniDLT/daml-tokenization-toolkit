@@ -37,7 +37,7 @@ template FundOffer
   where
     signatory fund, fundCustodian, fundManager -- In practice these parties may be the same
 
-    observer fundManager, observers
+    observer observers
 
     ensure commission > 0.0 && costPerUnit > 0.0 && minInvesment > 0.0
 
@@ -114,10 +114,10 @@ template FundOffer
 
         -- Investor to fund
         (investorToFundAllocatedCid, _) <- exercise investorToFundCid Instruction.Allocate with
-          actors
+          actors = instructors
           allocation = Pledge investorToFundPaymentCid
         finalInvestorToFundCid <- exercise investorToFundAllocatedCid Instruction.Approve with
-          actors = Set.fromList [fund]
+          actors = instructors
           approval = TakeDelivery AccountKey with
             owner = fund
             id = fundPaymentAccountId
@@ -125,10 +125,10 @@ template FundOffer
 
         -- Investor to fund manager
         (investorToFundManagerAllocatedCid, _) <- exercise investorToFundManagerCid Instruction.Allocate with
-          actors
+          actors = instructors
           allocation = Pledge investorToFundManagerPaymentCid
         finalInvestorToFundManagerCid <- exercise investorToFundManagerAllocatedCid Instruction.Approve with
-          actors = Set.fromList [fundManager]
+          actors = instructors
           approval = TakeDelivery AccountKey with
             owner = fundManager
             id = fundManagerPaymentAccountId
@@ -136,7 +136,7 @@ template FundOffer
 
         -- Fund to investor
         finalFundToInvestorCid <- exercise fundToInvestorCid Instruction.Approve with
-          actors = Set.insert fundCustodian actors
+          actors = instructors
           approval = TakeDelivery AccountKey with
             owner = investor
             id = investorAccountId
