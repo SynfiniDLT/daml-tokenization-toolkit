@@ -99,9 +99,9 @@ template FundOffer
               quantity = Quantity with
                 unit = unitsInstrument
                 amount = numUnitsDecimal
-              custodian = fund
+              custodian = fundCustodian
 
-        let instructors = Set.fromList [fund, fundManager] <> actors
+        let instructors = Set.fromList [fund, fundManager, fundCustodian] <> actors
         (batchCid, [investorToFundCid, investorToFundManagerCid, fundToInvestorCid]) <- exercise settlementFactoryCid
           SettlementFactory.Instruct with
             instructors
