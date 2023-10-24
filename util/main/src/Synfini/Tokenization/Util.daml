@@ -1,0 +1,38 @@
+module Synfini.Tokenization.Util where
+
+import qualified Daml.Finance.Interface.Holding.Fungible as Fungible
+import qualified DA.List.Total as List
+import qualified DA.Optional as O
+
+mergeAndSplitHelper : [ContractId Fungible.I] -> [Decimal] -> Update Fungible.SplitResult
+mergeAndSplitHelper holdingCids amounts = do
+  mergedHoldingCid <- case holdingCids of
+    [] -> error "Cannot merge/split empty holdings" 
+    [firstHoldingCid] -> pure firstHoldingCid
+    firstHoldingCid :: others -> exercise firstHoldingCid Fungible.Merge with fungibleCids = others
+  exercise mergedHoldingCid Fungible.Split with amounts
+
+mergeAndSplitHelper1 : [ContractId Fungible.I] ->
+                       Decimal ->
+                       Update (ContractId Fungible.I, Optional (ContractId Fungible.I))
+mergeAndSplitHelper1 holdingCids amount = do
+  splitResult <- mergeAndSplitHelper holdingCids [amount]
+  pure (
+      O.fromSomeNote "Internal error: unexpected empty split result" (List.head splitResult.splitCids),
+      splitResult.rest
+    )
+
+mergeAndSplitHelper2 : [ContractId Fungible.I] ->
+                       Decimal ->
+                       Decimal ->
+                       Update (ContractId Fungible.I, ContractId Fungible.I, Optional (ContractId Fungible.I))
+mergeAndSplitHelper2 holdingCids amount1 amount2 = do
+  splitResult <- mergeAndSplitHelper holdingCids [amount1, amount2]
+  let (holdingCid1, holdingCid2) = case splitResult.splitCids of
+        [c1, c2] -> (c1, c2)
+        _ -> error "Internal error: unexpected list length"
+  pure (
+      holdingCid1,
+      holdingCid2,
+      splitResult.rest
+    )
