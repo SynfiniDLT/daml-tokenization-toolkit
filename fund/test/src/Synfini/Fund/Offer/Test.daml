@@ -1,0 +1,197 @@
+module Synfini.Fund.Offer.Test where
+
+import Daml.Script
+import qualified Daml.Finance.Account.Account as AccountImpl
+import qualified Daml.Finance.Settlement.Factory as SettlementImpl
+import qualified Daml.Finance.Interface.Account.Account as Account
+import qualified Daml.Finance.Interface.Holding.Base as Holding
+import qualified Daml.Finance.Interface.Holding.Factory as Holding
+import Daml.Finance.Interface.Types.Common.Types (InstrumentKey(..), AccountKey(..), Id(..), Quantity(..))
+import qualified Daml.Finance.Interface.Account.Factory as Account
+import qualified DA.Set as Set
+import DA.Set (Set)
+import qualified DA.Map as Map
+import qualified Daml.Finance.Holding.Fungible as Fungible
+import Synfini.Fund.Offer
+import qualified DA.Optional as O
+
+setupParty : Text -> Script Party
+setupParty name = do
+  party <- allocatePartyWithHint name (PartyIdHint name)
+  userId <- validateUserId name
+  createUser (User userId (Some party)) [CanActAs party]
+  pure party
+
+createAccount : ContractId Account.F ->
+                AccountKey ->
+                ContractId Holding.F ->
+                Text ->
+                Set Party ->
+                Script (ContractId Account.I)
+createAccount accountFactoryCid account holdingFactoryCid description observers = do
+  submitMulti [account.owner, account.custodian] [] do
+    exerciseCmd accountFactoryCid Account.Create with
+      account
+      controllers = Account.Controllers with
+        outgoing = Set.fromList [account.owner]
+        incoming = Set.fromList [account.owner]
+      description
+      holdingFactoryCid
+      observers = Map.fromList [("initialObservers", observers)]
+
+setup : Script ()
+setup = do
+  fund <- setupParty "Fund"
+  fundManager <- setupParty "FundManager"
+  investor <- setupParty "Investor"
+  stableCoinIssuer <- setupParty "StablecoinIssuer"
+  public <- setupParty "Public"
+
+  let investmentAccount = AccountKey with
+        owner = investor
+        custodian = fund
+        id = Id "Investor@Fund"
+      investorStableCoinAccount = AccountKey with
+        owner = investor
+        custodian = stableCoinIssuer
+        id = Id "Investor@StableCoinIssuer"
+      fundPreAllocateAccount = AccountKey with
+        owner = fund
+        custodian = fund
+        id = Id "Fund@Fund"
+      fundStableCoinAccount = AccountKey with
+        owner = fund
+        custodian = stableCoinIssuer
+        id = Id "Fund@StableCoinIssuer"
+      fundManagerStableCoinAccount = AccountKey with
+        owner = fundManager
+        custodian = stableCoinIssuer
+        id = Id "FundManager@StableCoinIssuer"
+
+  fundUnitsFactoryCid <- submit fund do
+    createCmd Fungible.Factory with
+      provider = fund
+      observers = Map.fromList [("observers", Set.fromList [fundManager, investor])]
+
+  fundAccountFactoryCid <- submit fund do
+    createCmd AccountImpl.Factory with
+      provider = fund
+      observers = Map.empty
+
+  createAccount
+    (toInterfaceContractId fundAccountFactoryCid)
+    investmentAccount
+    (toInterfaceContractId fundUnitsFactoryCid)
+    "Investor's account for unit holdings"
+    Set.empty
+  
+  fundPreAllocateAccountCid <- createAccount
+    (toInterfaceContractId fundAccountFactoryCid)
+    fundPreAllocateAccount
+    (toInterfaceContractId fundUnitsFactoryCid)
+    "Fund's own account using which they pre-allocate units"
+    Set.empty
+
+  stableCoinFactoryCid <- submit stableCoinIssuer do
+    createCmd Fungible.Factory with
+      provider = stableCoinIssuer
+      observers = Map.fromList [("observers", Set.fromList [fund, fundManager, investor])]
+
+  stableCoinAccountFactoryCid <- submit stableCoinIssuer do
+    createCmd AccountImpl.Factory with
+      provider = stableCoinIssuer
+      observers = Map.empty
+
+  investorStableCoinAccountCid <- createAccount
+    (toInterfaceContractId stableCoinAccountFactoryCid)
+    investorStableCoinAccount
+    (toInterfaceContractId stableCoinFactoryCid)
+    "Investors's account for stablecoins"
+    Set.empty
+
+  createAccount
+    (toInterfaceContractId stableCoinAccountFactoryCid)
+    fundStableCoinAccount
+    (toInterfaceContractId stableCoinFactoryCid)
+    "Fund's account for stablecoins"
+    (Set.fromList [investor])
+
+  createAccount
+    (toInterfaceContractId stableCoinAccountFactoryCid)
+    fundManagerStableCoinAccount
+    (toInterfaceContractId stableCoinFactoryCid)
+    "FundManagers's account for stablecoins"
+    (Set.fromList [investor])
+
+  let unitsInstrument = InstrumentKey with
+        issuer = fund
+        depository = fund
+        id = Id "FundUnits"
+        version = "1"
+      stableCoinInstrument = InstrumentKey with
+        issuer = stableCoinIssuer
+        depository = stableCoinIssuer
+        id = Id "AussieStable"
+        version = "1"
+  let investorInitialStableCoinBalance = 100_000.0
+  investorHoldingCid <- submitMulti [stableCoinIssuer, investor] [] do
+    exerciseCmd investorStableCoinAccountCid Account.Credit with
+      quantity = Quantity with unit = stableCoinInstrument, amount = investorInitialStableCoinBalance
+  fundPreAllocatedHoldingCid <- submitMulti [fund] [public] do
+    exerciseCmd fundPreAllocateAccountCid Account.Credit with
+      quantity = Quantity with unit = unitsInstrument, amount = 50_000.0
+
+  settlementFactoryCid <- submit fund do
+    createCmd SettlementImpl.Factory with provider = fund, observers = Set.fromList [fundManager, investor]
+
+  let costPerUnit = 1.0
+      commission = 0.05
+  offerCid <- submitMulti [fund, fundManager] [] do
+    createCmd FundOffer with
+      fund
+      fundManager
+      fundCustodian = fund
+      unitsInstrument
+      paymentInstrument = stableCoinInstrument
+      costPerUnit
+      commission
+      minInvesment = 1000.0
+      fundPaymentAccountId = fundStableCoinAccount.id
+      fundManagerPaymentAccountId = fundManagerStableCoinAccount.id
+      paymentCustodian = stableCoinIssuer
+      settlementFactoryCid = toInterfaceContractId settlementFactoryCid
+      observers = Set.fromList [public]
+
+  let numUnits = 10_000
+  purchaseInstructionCid <- submitMulti [investor] [public] do
+    createAndExerciseCmd
+      (FundInvestor investor (Set.fromList [investor]) investmentAccount.id)
+      RequestInvestment with
+        numUnits
+        paymentCids = [coerceInterfaceContractId investorHoldingCid]
+        offerCid
+        investmentId = Id "1"
+  submitMulti [fund] [public] do
+    createAndExerciseCmd
+      (AcceptPurchaseInstructionHelper fund)
+      AcceptPurchaseInstructionFromFungibles with
+        allocationCids = [coerceInterfaceContractId fundPreAllocatedHoldingCid]
+        purchaseInstructionCid
+  investorHoldings <- O.mapOptional snd <$> queryInterface @Holding.I investor
+  let [investorFundUnit] = filter (\v -> v.instrument == unitsInstrument) investorHoldings
+  assertMsg "Investor must have expected number of units" (investorFundUnit.amount == intToDecimal numUnits)
+  let [investorStableCoin] = filter (\v -> v.instrument == stableCoinInstrument) investorHoldings
+  assertMsg
+    "Investor must have expected stablecoin holdings"
+    (investorStableCoin.amount == investorInitialStableCoinBalance - (costPerUnit + commission) * intToDecimal numUnits)
+
+  fundHoldings <- O.mapOptional snd <$> queryInterface @Holding.I fund
+  let [fundStableCoin] = filter (\v -> v.instrument == stableCoinInstrument) fundHoldings
+  assertMsg "Fund must receive expected payment" (fundStableCoin.amount == costPerUnit * intToDecimal numUnits)
+
+  fundManagerHoldings <- O.mapOptional snd <$> queryInterface @Holding.I fundManager
+  let [fundManagerStableCoin] = filter (\v -> v.instrument == stableCoinInstrument) fundManagerHoldings
+  assertMsg
+    "Fund manager must receive expected payment"
+    (fundManagerStableCoin.amount == commission * intToDecimal numUnits)
+  pure ()

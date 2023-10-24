@@ -9,6 +9,7 @@ import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
 import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
 import Daml.Finance.Interface.Settlement.Types (Allocation(..), Approval(..), RoutedStep(..))
 import Daml.Finance.Interface.Types.Common.Types
+import Synfini.Tokenization.Util
 import qualified DA.List.Total as List
 import qualified DA.Optional as O
 import DA.Set (Set)
@@ -217,7 +218,7 @@ template InstructBurnHelper
         description : Text
       controller instructor
       do
-        (holdingCidToBurn, remainingHoldingCid) <- mergeAndSplitHelper holdingCids amount
+        (holdingCidToBurn, remainingHoldingCid) <- mergeAndSplitHelper1 holdingCids amount
         holdingToBurn <- fetch holdingCidToBurn
         burnInstructionCid <- exerciseByKey @Mint (Holding.getInstrument holdingToBurn) InstructBurn with
           instructor
@@ -300,26 +301,12 @@ template AllocateBurnSupplyHelper
       controller minterBurner
       do
         burnInstruction <- fetch burnInstructionCid
-        (holdingCidToAllocate, remainingHoldingCid) <- mergeAndSplitHelper holdingCids burnInstruction.quantity.amount
+        (holdingCidToAllocate, remainingHoldingCid) <- mergeAndSplitHelper1 holdingCids burnInstruction.quantity.amount
         burnInstructionCid' <- exercise burnInstructionCid AllocateBurnSupply with
           holdingCid = toInterfaceContractId holdingCidToAllocate
         pure AllocateBurnSupplyFromFungiblesResult with
           burnInstructionCid = burnInstructionCid'
           remainingHoldingCid
-
-mergeAndSplitHelper : [ContractId Fungible.I] ->
-                      Decimal ->
-                      Update (ContractId Fungible.I, Optional (ContractId Fungible.I))
-mergeAndSplitHelper holdingCids amount = do
-  mergedHoldingCid <- case holdingCids of
-    [] -> errorPrefixed "Cannot merge/split empty holdings" 
-    [firstHoldingCid] -> pure firstHoldingCid
-    firstHoldingCid :: others -> exercise firstHoldingCid Fungible.Merge with fungibleCids = others
-  splitResult <- exercise mergedHoldingCid Fungible.Split with amounts = [amount]
-  pure (
-      O.fromSomeNote "Internal error: unexpected empty split result" (List.head splitResult.splitCids),
-      splitResult.rest
-    )
 
 msgPrefix : Text
 msgPrefix = "Mint: "
