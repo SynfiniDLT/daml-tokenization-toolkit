@@ -105,7 +105,7 @@ build-wallet-views-client: wallet-views/typescript-client/lib
 
 ## BEGIN wallet ui
 wallet-ui/daml.js: .lib .build/fund-tokenization.dar
-	daml codegen js .lib/daml-finance-interface-util.dar .build/fund-tokenization.dar -o wallet-ui/daml.js
+	daml codegen js .lib/daml-finance-interface-util.dar .build/fund-tokenization.dar .lib/daml-finance-interface-holding.dar -o wallet-ui/daml.js
 
 .PHONY: build-wallet-ui
 build-wallet-ui: wallet-ui/daml.js wallet-views/typescript-client/lib $(shell ./find-ts-project-files.sh wallet-ui)
