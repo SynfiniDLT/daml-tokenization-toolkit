@@ -1,0 +1,14 @@
+{
+  "partySettings": [
+    {
+      "label": "FundA",
+      "displayName": "Fund A",
+      "partyIdHint": "FundA"
+    },
+    {
+      "label": "FundManagerA",
+      "displayName": "Fund Manager A",
+      "partyIdHint": "FundManagerA"
+    }
+  ]
+}

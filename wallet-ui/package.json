@@ -17,9 +17,10 @@
   "license": "ISC",
   "dependencies": {
     "@auth0/auth0-react": "^2.0.1",
-    "@daml.js/synfini-wallet-views-types": "file:../wallet-views/typescript-client/daml.js/daml-wallet-views-types-0.0.1",
-    "@daml.js/fund-tokenization": "file:daml.js/fund-tokenization-0.0.1",
+    "@daml.js/daml-finance-interface-holding": "file:daml.js/daml-finance-interface-holding-2.0.0",
     "@daml.js/daml-finance-interface-util": "file:daml.js/daml-finance-interface-util-2.0.0",
+    "@daml.js/fund-tokenization": "file:daml.js/fund-tokenization-0.0.1",
+    "@daml.js/synfini-wallet-views-types": "file:../wallet-views/typescript-client/daml.js/daml-wallet-views-types-0.0.1",
     "@daml/ledger": "2.6.3",
     "@daml/react": "2.6.3",
     "@daml/types": "2.6.3",
@@ -33,13 +34,15 @@
     "react-router-dom": "^6.3.0",
     "semantic-ui-css": "^2.4.1",
     "semantic-ui-react": "^2.0.0",
-    "styled-components": "^5.3.11"
+    "styled-components": "^5.3.11",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/dotenv": "^8.2.0",
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
     "@types/react-modal": "^3.16.1",
+    "@types/uuid": "^9.0.6",
     "cross-env": "^7.0.3",
     "http-proxy-middleware": "^1.0.4",
     "prettier": "^2.7.1",

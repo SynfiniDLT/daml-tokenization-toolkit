@@ -14,6 +14,8 @@ import HomeScreen from "./pages/HomeScreen";
 import AccountBalanceSbtScreen from "./pages/AccountBalanceSbtScreen";
 import PeerToPeerScreen from "./pages/PeerToPeerScreen";
 import NewWalletScreen from "./pages/NewWalletScreen";
+import { FundSubscribeFormScreen } from "./pages/FundSubscribeFormScreen";
+import BalanceRedeemFormScreen from "./pages/BalanceRedeemFormScreen";
 
 // Context for the party of the user.
 export const userContext = createLedgerContext();
@@ -53,6 +55,8 @@ const App: React.FC = () => {
           <Route path="/dvp" element={<AuthenticationGuard component={PeerToPeerScreen} />} />
           <Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />
           <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
+          <Route path="/fund/subscribe" element={<AuthenticationGuard component={FundSubscribeFormScreen} />} />
+          <Route path="/wallet/account/balance/redeem" element={<AuthenticationGuard component={BalanceRedeemFormScreen} />} />
       </Routes>
       </userContext.DamlLedger>
       </AuthContextStore.Provider>

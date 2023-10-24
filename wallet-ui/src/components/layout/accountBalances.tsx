@@ -14,6 +14,12 @@ export default function AccountBalances(props: { accountBalances?: any }) {
     nav("/wallet/account/balance/sbt", { state: { account: account } });
   };
 
+  const handleRedeem = (balance: any) => {
+    console.log("balance action",balance)
+    nav("/wallet/account/balance/redeem", { state: { balance: balance } });
+  };
+  
+
   let trAssets: any = [];
   let trSbts: any = [];
   entries.forEach((entry: any) => {
@@ -34,6 +40,11 @@ export default function AccountBalances(props: { accountBalances?: any }) {
             </td>
             <td>{formatCurrency(balance.unlocked, "en-US")}</td>
             <td>{formatCurrency(balance.locked, "en-US")}</td>
+            <td>
+              <button onClick={() => handleRedeem(balance)}>
+                Redeem
+              </button>
+            </td>
 
           </tr>
         );
@@ -76,6 +87,7 @@ export default function AccountBalances(props: { accountBalances?: any }) {
               <th>Balance</th>
               <th>Balance Unlocked</th>
               <th>Balance locked</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>{trAssets}</tbody>

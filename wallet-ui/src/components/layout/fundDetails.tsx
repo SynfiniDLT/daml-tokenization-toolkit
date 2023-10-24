@@ -1,42 +1,38 @@
 import { useNavigate } from "react-router-dom";
-import { QuestionCircle } from "react-bootstrap-icons";
-import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { CardContainer } from "./general.styled";
+import { nameFromParty } from "../Util";
+import { CreateEvent } from "@daml/ledger";
+import { FundOffer } from "@daml.js/fund-tokenization/lib/Synfini/Fund/Offer";
 
-interface AccountDetailsProps {
-  account: AccountSummary;
+interface FundDetailsProps {
+  fund: CreateEvent<FundOffer, undefined, string>
 }
 
-export default function FundDetails(props: AccountDetailsProps) {
+export default function FundDetails(props: FundDetailsProps) {
   const nav = useNavigate();
   
 
 
-  const handleClick = (account: AccountSummary) => {
-    if (account.view.id.unpack==='sbt'){
-      nav("/wallet/account/balance/sbt", { state: { account: account } });
-    }else{
-      nav("/wallet/account/balance/", { state: { account: account } });
-    }
+  const handleClick = (fund: any) => {
+    nav("/fund/subscribe", { state: { fund: fund } });
   };
 
   return (
     <CardContainer>
-      <div onClick={() => handleClick(props.account)} key={props.account.cid}>
-        <p>Id: {props.account.view.id.unpack}</p>
-        <p>Description: {props.account.view.description}</p>
-        <div className="tooltip">
-            Custodian:
-            <QuestionCircle />
-            <span className="tooltiptext">Custodian is responsible to look after digital assets on behalf of an investor or client.</span>
-        </div>
-          <br /> {props.account.view.custodian}
-        <p>
-          <br/>
-          Contract ID:
-          <br />
-          {props.account.cid.substring(0, 30)}...
-        </p>
+      <div>
+        <p>Name: {nameFromParty(props.fund.payload.fund)}</p>
+        <p>Fund Manager: {nameFromParty(props.fund.payload.fundManager)}</p>
+        <p>Cost Per Unit: {props.fund.payload.costPerUnit} {props.fund.payload.paymentInstrument.id.unpack}</p>
+        <p>Minimal Investment: {props.fund.payload.minInvesment}</p>
+        <p>Comission: {props.fund.payload.commission}</p>
+        <button
+              type="button"
+              className="button__login"
+              style={{ width: "100px" }}
+              onClick={() => handleClick(props.fund)}
+            >
+              Subscribe
+            </button>
       </div>
     </CardContainer>
   );

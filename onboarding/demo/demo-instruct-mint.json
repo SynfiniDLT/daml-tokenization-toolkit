@@ -5,10 +5,10 @@
     "instrumentDepository": "AUDN_Depository",
     "instrumentIssuer": "AUDN_Issuer",
     "instrumentId": "AUDN",
-    "instrumentVersion": "1",
+    "instrumentVersion": "0",
     "instructor": "AUDN_MinterBurner",
     "receiver": "InvestorA",
     "receiverAccountId": "111",
-    "amount": 1e4
+    "amount": 1e7
   }
 }

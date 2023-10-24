@@ -50,7 +50,7 @@ createFundOffer input = do
       paymentCustodian = p input.offerSettings.paymentCustodian
       observers = Set.fromList (p <$> input.offerSettings.observers)
       settlementFactoryCid = findFactoryContractId input.offerSettings.settlementFactory input.settlementFactories
-  submitMulti [fund, fundCustodian] [] do
+  submitMulti [fund, fundManager, fundCustodian] [] do
     createCmd FundOffer with
       fund
       fundManager

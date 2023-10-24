@@ -10,9 +10,9 @@ export default function Funds(props: { funds?: any[] }) {
       <div style={{ margin: "10px", padding: "10px" }}>
         {props.funds !== undefined && (
           <>
-            {props.funds.map((account: AccountSummary, index: number) => (
+            {props.funds.map((fund: any, index: number) => (
               <div key={index}>
-                <FundDetails account={account} key={account.cid}></FundDetails>
+                <FundDetails fund={fund} key={fund.contractId}></FundDetails>
               </div>
             ))}
           </>
