@@ -168,7 +168,7 @@ template FundPurchaseInstruction
 
     ensure Set.fromList [fund, fundManager, investor] `Set.isSubsetOf` instructors
 
-    choice GetFundPurchaseInstructionPayload : FundPurchaseInstruction
+    nonconsuming choice GetFundPurchaseInstructionPayload : FundPurchaseInstruction
       with
         viewer : Party
       controller viewer
