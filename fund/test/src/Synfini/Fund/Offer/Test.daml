@@ -163,6 +163,7 @@ setup = do
       observers = Set.fromList [public]
 
   let numUnits = 10_000
+      investmentId = Id "1"
   purchaseInstructionCid <- submitMulti [investor] [public] do
     createAndExerciseCmd
       (FundInvestor investor (Set.fromList [investor]) investmentAccount.id)
@@ -170,13 +171,13 @@ setup = do
         numUnits
         paymentCids = [coerceInterfaceContractId investorHoldingCid]
         offerCid
-        investmentId = Id "1"
+        investmentId
   submitMulti [fund] [public] do
     createAndExerciseCmd
       (AcceptPurchaseInstructionHelper fund)
       AcceptPurchaseInstructionFromFungibles with
         allocationCids = [coerceInterfaceContractId fundPreAllocatedHoldingCid]
-        purchaseInstructionCid
+        investmentId
   investorHoldings <- O.mapOptional snd <$> queryInterface @Holding.I investor
   let [investorFundUnit] = filter (\v -> v.instrument == unitsInstrument) investorHoldings
   assertMsg "Investor must have expected number of units" (investorFundUnit.amount == intToDecimal numUnits)
