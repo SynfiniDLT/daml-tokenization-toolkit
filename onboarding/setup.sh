@@ -90,6 +90,8 @@ elif [ "$command" = "instruct-burn" ]; then
   ./commands/instruct-burn.sh $@
 elif [ "$command" = "create-fund-offer" ]; then
   ./commands/create-fund-offer.sh $@
+elif [ "$command" = "accept-fund-purchase" ]; then
+  ./commands/accept-fund-purchase.sh $@
 else
   echo "Unsupported command"
   exit 1

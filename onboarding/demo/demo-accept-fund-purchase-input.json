@@ -1,0 +1,9 @@
+{
+  "readAs": ["Synfini_Public"],
+  "acceptPurchaseSettings": {
+    "fund" : "FundA",
+    "fundCustodian" : "SynfiniValidator",
+    "fundAccountId" : "TODO",
+    "investmentId" : "TODO"
+  }
+}

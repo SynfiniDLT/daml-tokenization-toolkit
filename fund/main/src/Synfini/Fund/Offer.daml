@@ -35,7 +35,7 @@ template FundOffer
 
     ensure commission > 0.0 && costPerUnit > 0.0 && minInvesment > 0.0
 
-    nonconsuming choice GetPayload : FundOffer
+    nonconsuming choice GetFundOfferPayload : FundOffer
       with
         viewer : Party
       controller viewer
@@ -135,7 +135,9 @@ template FundOffer
           fund
           fundManager
           investor
+          investmentId
           instructors
+          unitsInstrument
           numUnits
           batchCid
           fundToInvestorInstructionCid = finalFundToInvestorCid
@@ -152,14 +154,26 @@ template FundPurchaseInstruction
     fund : Party
     fundManager : Party
     investor : Party
+    investmentId : Id
     instructors : Set Party
+    unitsInstrument : InstrumentKey
     numUnits : Int
     batchCid : ContractId Batch.I
     fundToInvestorInstructionCid : ContractId Instruction.I
   where
     signatory instructors
 
+    key (fund, investmentId) : (Party, Id)
+    maintainer key._1
+
     ensure Set.fromList [fund, fundManager, investor] `Set.isSubsetOf` instructors
+
+    choice GetFundPurchaseInstructionPayload : FundPurchaseInstruction
+      with
+        viewer : Party
+      controller viewer
+      do
+        pure this
 
     choice RejectPurchaseInstruction : ()
       controller fund
@@ -180,20 +194,21 @@ template FundPurchaseInstruction
 
 template AcceptPurchaseInstructionHelper
   with
-    acceptor : Party
+    fund : Party
   where
-    signatory acceptor
+    signatory fund
 
     choice AcceptPurchaseInstructionFromFungibles : AcceptPurchaseInstructionResult
       with
         allocationCids : [ContractId Fungible.I]
-        purchaseInstructionCid : ContractId FundPurchaseInstruction
-      controller acceptor
+        investmentId : Id
+      controller fund
       do
-        purchaseInstruction <- fetch purchaseInstructionCid
-        batch <- exercise purchaseInstruction.batchCid Batch.GetView with viewer = acceptor
+        let instructionKey = (fund, investmentId)
+        (_, purchaseInstruction) <- fetchByKey @FundPurchaseInstruction (fund, investmentId)
+        batch <- exercise purchaseInstruction.batchCid Batch.GetView with viewer = fund
         (allocationCid, _) <- mergeAndSplitHelper1 allocationCids ((batch.routedSteps !! 2).quantity.amount)
-        exercise purchaseInstructionCid AcceptPurchaseInstruction with
+        exerciseByKey @FundPurchaseInstruction instructionKey AcceptPurchaseInstruction with
           allocation = Pledge (toInterfaceContractId allocationCid)
 
 template FundInvestor
@@ -214,7 +229,7 @@ template FundInvestor
         investmentId : Id
       controller investor
       do
-        offer <- exercise offerCid GetPayload with viewer = investor
+        offer <- exercise offerCid GetFundOfferPayload with viewer = investor
 
         let numUnitsDecimal = intToDecimal numUnits
         (investorToFundPaymentCid, investorToFundManagerPaymentCid, _) <- mergeAndSplitHelper2
