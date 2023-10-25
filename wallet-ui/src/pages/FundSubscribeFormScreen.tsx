@@ -15,7 +15,6 @@ import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/li
 import { FundInvestor } from "@daml.js/fund-tokenization/lib/Synfini/Fund/Offer";
 import { v4 as uuid } from "uuid";
 
-
 export const FundSubscribeFormScreen: React.FC = () => {
   const { state } = useLocation();
   const ledger = userContext.useLedger();
@@ -26,9 +25,9 @@ export const FundSubscribeFormScreen: React.FC = () => {
   const [primaryParty, setPrimaryParty] = useState<string>("");
   const [accounts, setAccounts] = useState<AccountSummary[]>();
   const [inputQtd, setInputQtd] = useState(0);
+  const [referenceId, setReferenceId] = useState<string>("");
   const [total, setTotal] = useState(0);
   const [error, setError] = useState("");
-  //   const [result, setResult] = useState(null);
 
   let walletClient: WalletViewsClient;
 
@@ -110,31 +109,29 @@ export const FundSubscribeFormScreen: React.FC = () => {
             .emptyMap<damlTypes.Party, {}>()
             .set(ctx.primaryParty, {}),
         },
-        investorAccountId: { unpack:  accounts[2].view.id.unpack},
+        investorAccountId: { unpack: accounts[2].view.id.unpack },
       };
 
       if (holdingUnlockedCidArr.length > 0) {
+        let referenceIdUUID = uuid();
         try {
-            let subscribeResponse = await ledger.createAndExercise(
-                FundInvestor.RequestInvestment,
-                fundInvestorPayload,
-                {
-                  numUnits: inputQtd.toString(),
-                  paymentCids: holdingUnlockedCidArr,
-                  offerCid: state.fund.contractId,
-                  investmentId: { unpack: uuid() },
-                }
-              );
-      
-              console.log("subscr", subscribeResponse);
-
+          let subscribeResponse = await ledger.createAndExercise(
+            FundInvestor.RequestInvestment,
+            fundInvestorPayload,
+            {
+              numUnits: inputQtd.toString(),
+              paymentCids: holdingUnlockedCidArr,
+              offerCid: state.fund.contractId,
+              investmentId: { unpack: uuid() },
+            }
+          );
+          setReferenceId(referenceIdUUID);
+          console.log("subscr", subscribeResponse);
         } catch (e) {
           setError("Try caatch error: {" + e + "}");
         }
-
       }
     }
-
   };
 
   //console.dir(state.fund);
@@ -144,38 +141,52 @@ export const FundSubscribeFormScreen: React.FC = () => {
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
         Subscribe to {nameFromParty(state.fund.payload.fund)}
       </h3>
-      <form onSubmit={handleSubmit}>
-        <p>Name: {nameFromParty(state.fund.payload.fund)}</p>
-        <p>Fund Manager: {nameFromParty(state.fund.payload.fundManager)}</p>
-        <p>
-          Cost Per Unit: {state.fund.payload.costPerUnit}{" "}
-          {state.fund.payload.paymentInstrument.id.unpack}
-        </p>
-        <p>Minimal Investment: {state.fund.payload.minInvesment}</p>
-        <p>Comission: {state.fund.payload.commission}</p>
-        <span></span>
-        Quantity:{" "}
-        <input
-          type="number"
-          id="qtd"
-          name="qtd"
-          step={1}
-          min="0"
-          value={inputQtd}
-          onChange={handleChangeInputQtd}
-          style={{ width: "200px" }}
-        />
-        <p>Total: {total}</p>
-        {total >= parseFloat(state.fund.payload.minInvesment) && (
-          <button
-            type="submit"
-            className={"button__login"}
+      {referenceId === "" && (
+        <form onSubmit={handleSubmit}>
+          <p>Name: {nameFromParty(state.fund.payload.fund)}</p>
+          <p>Fund Manager: {nameFromParty(state.fund.payload.fundManager)}</p>
+          <p>
+            Cost Per Unit: {state.fund.payload.costPerUnit}{" "}
+            {state.fund.payload.paymentInstrument.id.unpack}
+          </p>
+          <p>Minimal Investment: {state.fund.payload.minInvesment}</p>
+          <p>Comission: {state.fund.payload.commission}</p>
+          <span></span>
+          Quantity:{" "}
+          <input
+            type="number"
+            id="qtd"
+            name="qtd"
+            step={1}
+            min="0"
+            value={inputQtd}
+            onChange={handleChangeInputQtd}
             style={{ width: "200px" }}
-          >
-            Submit
-          </button>
+          />
+          <p>Total: {total}</p>
+          {total >= parseFloat(state.fund.payload.minInvesment) && (
+            <button
+              type="submit"
+              className={"button__login"}
+              style={{ width: "200px" }}
+            >
+              Submit
+            </button>
+          )}
+        </form>
+      )}
+      <div>
+        {referenceId !== "" && (
+          <>
+            <p><br/><br/><br/></p>
+            <p>Reference Id: {referenceId}</p>
+            <p>Quantity: {inputQtd}</p>
+            <p>Total: {total}</p>
+          </>
+        
         )}
-      </form>
+
+      </div>
     </PageLayout>
   );
 };

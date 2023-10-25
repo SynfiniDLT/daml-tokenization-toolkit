@@ -73,4 +73,4 @@ instruct_mint_output_file=instruct-mint-output.json
 ./setup.sh create-pbas-unilateral demo/demo-pba-input.json
 
 cd ${tokenization_lib_home}
-make start-wallet-ui
+

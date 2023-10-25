@@ -1,10 +1,10 @@
 {
   "executeMintSettings": {
-    "custodian": "SynfiniValidator::12208cc1d0a7e4b19bbd4a5c8cf9b0d6db249299a06fec0d44a43fe820117ee00e7f",
-    "instructor": "AUDN_MinterBurner::12208cc1d0a7e4b19bbd4a5c8cf9b0d6db249299a06fec0d44a43fe820117ee00e7f",
-    "minterBurner": "AUDN_MinterBurner::12208cc1d0a7e4b19bbd4a5c8cf9b0d6db249299a06fec0d44a43fe820117ee00e7f",
+    "custodian": "SynfiniValidator::12204ad2f06796a1736b08b38dfd485800edbccd808b1a042ef223bf594b3b0413f7",
+    "instructor": "AUDN_MinterBurner::12204ad2f06796a1736b08b38dfd485800edbccd808b1a042ef223bf594b3b0413f7",
+    "minterBurner": "AUDN_MinterBurner::12204ad2f06796a1736b08b38dfd485800edbccd808b1a042ef223bf594b3b0413f7",
     "referenceId": {
-      "unpack": "4c6392b8-11e8-4fe1-8206-6c9777bc3626"
+      "unpack": "06dbfcf5-d6ce-4a3a-96f0-39004c979d72"
     }
   }
 }

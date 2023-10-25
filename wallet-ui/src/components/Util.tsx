@@ -6,7 +6,9 @@ export function formatCurrency(amountString: string, locale: string): string {
     }
   
     const formatter = new Intl.NumberFormat(locale, {
-      style: 'decimal'
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     });
   
     return formatter.format(amount);

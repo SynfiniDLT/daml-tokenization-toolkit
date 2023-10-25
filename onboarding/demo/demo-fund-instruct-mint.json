@@ -1,0 +1,14 @@
+
+{
+  "readAs": ["Synfini_Public"],
+  "instructMintSettings": {
+    "instrumentDepository": "FundA",
+    "instrumentIssuer": "FundA",
+    "instrumentId": "FundA",
+    "instrumentVersion": "0",
+    "instructor": "FundA",
+    "receiver": "FundA",
+    "receiverAccountId": "FundAUnallocated",
+    "amount": 1000
+  }
+}
