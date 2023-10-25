@@ -122,7 +122,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
               numUnits: inputQtd.toString(),
               paymentCids: holdingUnlockedCidArr,
               offerCid: state.fund.contractId,
-              investmentId: { unpack: uuid() },
+              investmentId: { unpack: referenceIdUUID },
             }
           );
           setReferenceId(referenceIdUUID);

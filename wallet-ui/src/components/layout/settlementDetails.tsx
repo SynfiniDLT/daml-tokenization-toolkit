@@ -58,16 +58,15 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
     currency: 'USD', 
   });
   
-
   // TODO may need to adjust formatting of `step.routedStep.quantity.amount`?
   return (
     <SettlementDetailsContainer>
       <div key={props.settlement.batchCid}>
         <div>
-          {/* <Field>Batch ID:</Field>
-          {props.settlement.batchId.unpack}  */}
+          <Field>Batch ID:</Field>
+          {props.settlement.batchId.unpack} 
           {/* | <Field> Description:</Field>
-          {props.settlement.description}  */}
+          {props.settlement.batchId}  */}
           <br />
           <Field>Batch Status:</Field>
           {props.settlement.execution === null ? (

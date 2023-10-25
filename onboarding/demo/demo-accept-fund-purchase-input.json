@@ -3,7 +3,7 @@
   "acceptPurchaseSettings": {
     "fund" : "FundA",
     "fundCustodian" : "SynfiniValidator",
-    "fundAccountId" : "TODO",
-    "investmentId" : "TODO"
+    "fundAccountId" : "FundAUnallocated",
+    "investmentId" : "168c17d4-d5d8-41bd-b81f-311c6ec63444"
   }
 }

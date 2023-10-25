@@ -41,9 +41,9 @@ export default function AccountBalances(props: { accountBalances?: any }) {
             <td>{formatCurrency(balance.unlocked, "en-US")}</td>
             <td>{formatCurrency(balance.locked, "en-US")}</td>
             <td>
-              <button onClick={() => handleRedeem(balance)}>
-                Redeem
-              </button>
+              {balance.instrument.id.unpack === 'AUDN' && 
+                <button onClick={() => handleRedeem(balance)}>Redeem</button>
+              }
             </td>
 
           </tr>

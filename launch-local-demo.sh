@@ -72,5 +72,16 @@ instruct_mint_output_file=instruct-mint-output.json
 ./setup.sh accounts-unilateral demo/demo-sbt-accounts-input.json
 ./setup.sh create-pbas-unilateral demo/demo-pba-input.json
 
+# Fund onboarding
+./setup.sh allocate-parties demo/demo-fund-parties-input.json
+./setup.sh accounts-unilateral demo/demo-fund-account-input.json 
+./setup.sh accounts-unilateral demo/demo-fund-investor-account-input.json 
+./setup.sh create-fund-offer demo/demo-fund-offer-input.json
+./setup.sh accounts-unilateral demo/demo-fund-units-accounts-input.json
+./setup.sh create-mint-unilateral demo/demo-fund-unit-mint-input.json
+./setup.sh instruct-mint demo/demo-fund-instruct-mint.json --output-file fund-mint-output.json
+./setup.sh execute-mint demo/demo-execute-fund-mint-input.json fund-mint-output.json
+
+
 cd ${tokenization_lib_home}
 
