@@ -37,6 +37,8 @@ To stop the demo, press control-C and then run `./kill-local-demo-processes.sh`.
 
 ## Build process
 
+Build has been tested with Java version 17, Maven 3.6.3 and npm 8.19.
+
 All DAR files are saved as part of the build under: `.build`.
 
 To build wallet backend:
