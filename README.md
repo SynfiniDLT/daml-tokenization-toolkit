@@ -37,6 +37,28 @@ To stop the demo, press control-C and then run `./kill-local-demo-processes.sh`.
 
 ## Build process
 
-The build process relies on bash scripts and a Makefile so will not work on Windows systems.
+All DAR files are saved as part of the build under: `.build`.
 
-TODO add more detail on the build process
+To build wallet backend:
+
+```bash
+make build-wallet-views
+```
+
+To test the wallet backend:
+
+```bash
+make test-wallet-views
+```
+
+For front end:
+
+```bash
+make build-wallet-ui
+```
+
+To clean the build state:
+
+```bash
+make clean
+```
