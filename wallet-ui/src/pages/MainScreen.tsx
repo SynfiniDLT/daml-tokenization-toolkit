@@ -8,13 +8,15 @@ import { PageLayout } from "../components/PageLayout";
 import Funds from "../components/layout/funds";
 import { FundOffer } from "@daml.js/fund-tokenization/lib/Synfini/Fund/Offer";
 import { CreateEvent } from "@daml/ledger";
+import { useNavigate } from "react-router-dom";
 
 const MainScreen: React.FC = () => {
+  const nav = useNavigate();
   const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}/wallet-views`;
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 
-  const { isLoading } = useAuth0();
+  const { isLoading, user } = useAuth0();
   const [primaryParty, setPrimaryParty] = useState<string>("");
   const [funds, setFunds] = useState<CreateEvent<FundOffer, undefined, string>[]>();
 
@@ -70,10 +72,17 @@ const MainScreen: React.FC = () => {
     );
   }
 
+  if (user?.name?.toLowerCase().includes("employee") || user?.name?.toLowerCase().includes("fund")){
+    nav("/wallet");
+  }
+
   return (
     <PageLayout>
       <div>
-        <Funds funds={funds} />
+        {!user?.name?.toLowerCase().includes("employee") && 
+        
+          <Funds funds={funds} />
+        }
       </div>
 
     </PageLayout>

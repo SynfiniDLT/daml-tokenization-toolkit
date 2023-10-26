@@ -73,7 +73,6 @@ instruct_mint_output_file=instruct-mint-output.json
 ./setup.sh create-pbas-unilateral demo/demo-pba-input.json
 
 # Fund onboarding
-./setup.sh allocate-parties demo/demo-fund-parties-input.json
 ./setup.sh accounts-unilateral demo/demo-fund-account-input.json 
 ./setup.sh accounts-unilateral demo/demo-fund-investor-account-input.json 
 ./setup.sh create-fund-offer demo/demo-fund-offer-input.json

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlTypes from "@daml/types";
-import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { PlusCircleFill, DashCircleFill } from "react-bootstrap-icons";
 import { formatCurrency, nameFromParty } from "../Util";
@@ -65,8 +64,8 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
         <div>
           <Field>Batch ID:</Field>
           {props.settlement.batchId.unpack} 
-          {/* | <Field> Description:</Field>
-          {props.settlement.batchId}  */}
+          | <Field> Description:</Field>
+          {props.settlement.description} 
           <br />
           <Field>Batch Status:</Field>
           {props.settlement.execution === null ? (

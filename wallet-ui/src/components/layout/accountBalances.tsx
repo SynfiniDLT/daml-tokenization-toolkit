@@ -1,14 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { formatCurrency } from "../Util";
+import { useAuth0 } from "@auth0/auth0-react";
 
 export default function AccountBalances(props: { accountBalances?: any }) {
+  const { user } = useAuth0();
   const nav = useNavigate();
   const entries = Array.from(props.accountBalances.entries());
-
-  // entries.forEach((entry: any) => {
-  //   console.log("entry", entry);
-  // });
 
   const handleSeeDetails = (account: AccountSummary) => {
     nav("/wallet/account/balance/sbt", { state: { account: account } });
@@ -41,7 +39,7 @@ export default function AccountBalances(props: { accountBalances?: any }) {
             <td>{formatCurrency(balance.unlocked, "en-US")}</td>
             <td>{formatCurrency(balance.locked, "en-US")}</td>
             <td>
-              {balance.instrument.id.unpack === 'AUDN' && 
+              {balance.instrument.id.unpack === 'AUDN' && !user?.name?.toLowerCase().includes("employee") &&
                 <button onClick={() => handleRedeem(balance)}>Redeem</button>
               }
             </td>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
 import AuthContextStore from "../store/AuthContextStore";
 import { PageLayout } from "../components/PageLayout";
@@ -9,19 +9,18 @@ import {
   HoldingSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { WalletViewsClient } from "@synfini/wallet-views";
-import { useAuth0 } from "@auth0/auth0-react";
 import * as damlTypes from "@daml/types";
 import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
 import { FundInvestor } from "@daml.js/fund-tokenization/lib/Synfini/Fund/Offer";
 import { v4 as uuid } from "uuid";
+import { DivRoundContainer } from "../components/layout/general.styled";
 
 export const FundSubscribeFormScreen: React.FC = () => {
+  const nav = useNavigate();
   const { state } = useLocation();
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
-  const { user, isAuthenticated, isLoading } = useAuth0();
   const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}/wallet-views`;
-
   const [primaryParty, setPrimaryParty] = useState<string>("");
   const [accounts, setAccounts] = useState<AccountSummary[]>();
   const [inputQtd, setInputQtd] = useState(0);
@@ -60,6 +59,10 @@ export const FundSubscribeFormScreen: React.FC = () => {
     if (primaryParty !== "") {
       const resp = await walletClient.getAccounts({ owner: primaryParty });
       setAccounts(resp.accounts);
+      let isFundAccount = resp.accounts?.find(account => account.view.id.unpack.toLowerCase() ==='funds')
+      if (isFundAccount== undefined){
+        setError("Your Fund Account is not yet prepared for use. Kindly get in touch with the administrator.")
+      }
       return resp.accounts;
     }
   };
@@ -83,14 +86,16 @@ export const FundSubscribeFormScreen: React.FC = () => {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    console.log("submit");
+    const accountFund = accounts?.find(account => account.view.id.unpack.toLowerCase() ==='funds');
+    const accountAUDN = accounts?.find(account => account.view.id.unpack.toLowerCase() !=='funds' && account.view.id.unpack.toLowerCase() !=='sbt');
     let holdings: HoldingSummary[] = [];
-    let holdingUnlockedCidArr: damlTypes.ContractId<damlHoldingFungible.Fungible>[] =
-      [];
-    if (accounts !== undefined && accounts?.length > 0) {
+    let holdingUnlockedCidArr: damlTypes.ContractId<damlHoldingFungible.Fungible>[] = [];
+
+
+    if (accountFund !== undefined && accountAUDN !== undefined) {
       holdings = (
         await walletClient.getHoldings({
-          account: accounts[1].view,
+          account: accountAUDN.view,
           instrument: state.fund.payload.paymentInstrument,
         })
       ).holdings;
@@ -109,7 +114,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
             .emptyMap<damlTypes.Party, {}>()
             .set(ctx.primaryParty, {}),
         },
-        investorAccountId: { unpack: accounts[2].view.id.unpack },
+        investorAccountId: { unpack: accountFund.view.id.unpack },
       };
 
       if (holdingUnlockedCidArr.length > 0) {
@@ -134,47 +139,59 @@ export const FundSubscribeFormScreen: React.FC = () => {
     }
   };
 
-  //console.dir(state.fund);
+
+
+
+  
 
   return (
     <PageLayout>
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
         Subscribe to {nameFromParty(state.fund.payload.fund)}
       </h3>
-      {referenceId === "" && (
-        <form onSubmit={handleSubmit}>
-          <p>Name: {nameFromParty(state.fund.payload.fund)}</p>
-          <p>Fund Manager: {nameFromParty(state.fund.payload.fundManager)}</p>
-          <p>
-            Cost Per Unit: {state.fund.payload.costPerUnit}{" "}
-            {state.fund.payload.paymentInstrument.id.unpack}
-          </p>
-          <p>Minimal Investment: {state.fund.payload.minInvesment}</p>
-          <p>Comission: {state.fund.payload.commission}</p>
-          <span></span>
-          Quantity:{" "}
-          <input
-            type="number"
-            id="qtd"
-            name="qtd"
-            step={1}
-            min="0"
-            value={inputQtd}
-            onChange={handleChangeInputQtd}
-            style={{ width: "200px" }}
-          />
-          <p>Total: {total}</p>
-          {total >= parseFloat(state.fund.payload.minInvesment) && (
-            <button
-              type="submit"
-              className={"button__login"}
+      {referenceId === "" && error === "" ? (
+        <DivRoundContainer>
+          <form onSubmit={handleSubmit}>
+            <p>Name: {nameFromParty(state.fund.payload.fund)}</p>
+            <p>Fund Manager: {nameFromParty(state.fund.payload.fundManager)}</p>
+            <p>
+              Cost Per Unit: {state.fund.payload.costPerUnit}{" "}
+              {state.fund.payload.paymentInstrument.id.unpack}
+            </p>
+            <p>Minimal Investment: {state.fund.payload.minInvesment}</p>
+            <p>Comission: {state.fund.payload.commission}</p>
+            <span></span>
+            Quantity:{" "}
+            <input
+              type="number"
+              id="qtd"
+              name="qtd"
+              step={1}
+              min="0"
+              value={inputQtd}
+              onChange={handleChangeInputQtd}
               style={{ width: "200px" }}
-            >
-              Submit
-            </button>
-          )}
-        </form>
-      )}
+            />
+            <p>Total: {total}</p>
+            {total >= parseFloat(state.fund.payload.minInvesment) && (
+              <button
+                type="submit"
+                className={"button__login"}
+                style={{ width: "200px" }}
+              >
+                Submit
+              </button>
+            )}
+          </form>
+        </DivRoundContainer>
+      ): 
+      <>
+        <p></p>
+        <div style={{ color: "red", whiteSpace: "pre-line" }}>{error}</div>
+        <p></p>
+        <button style={{width: "200px"}} onClick={() => nav("/")}>Back</button >
+      </>
+      }
       <div>
         {referenceId !== "" && (
           <>

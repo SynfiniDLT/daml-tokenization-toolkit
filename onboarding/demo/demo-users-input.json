@@ -23,6 +23,12 @@
         "primaryParty": "AUDN_MinterBurner",
         "actAs": [],
         "readAs": ["AUDN_MinterBurner","Synfini_Public"]
+      },
+      {
+        "userId": "auth0|6539e1a7025cc8f4268a128b",
+        "primaryParty": "FundA",
+        "actAs": ["FundA"],
+        "readAs": ["Synfini_Public"]
       }
     ]
   }
