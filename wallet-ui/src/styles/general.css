@@ -601,3 +601,31 @@ input {
     z-index: "auto"
     
   }
+
+  .sbtMessageModal{  
+      display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    -ms-flex-align: center;
+    -ms-flex-pack: center;
+    -webkit-box-align: center;
+    border-radius: 15px;
+    -webkit-box-pack: center;
+    justify-content: center;
+    padding-top: 10px;
+    padding-bottom: 0px;
+    padding-left: 10px;
+    padding-right: 50px;
+    background-color: rgb(86, 97, 100);
+    color : white;
+    font-family: "Glober SemiBold";
+    font-size: 20px;
+    width: 65%;
+    text-align: -webkit-center;
+    margin-top: 150px;
+    margin-left: auto;
+    margin-right:auto;
+    z-index: "auto"
+    
+  }
