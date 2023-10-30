@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
 import AuthContextStore from "../store/AuthContextStore";
 import { PageLayout } from "../components/PageLayout";
-import { nameFromParty } from "../components/Util";
+import { formatCurrency, nameFromParty } from "../components/Util";
 import {
   AccountSummary,
   HoldingSummary,
@@ -172,7 +172,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
               onChange={handleChangeInputQtd}
               style={{ width: "200px" }}
             />
-            <p>Total: {total}</p>
+            <p>Total: {formatCurrency(total.toString(),"en-US")}</p>
             {total >= parseFloat(state.fund.payload.minInvesment) && (
               <button
                 type="submit"
@@ -198,7 +198,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
             <p><br/><br/><br/></p>
             <p>Reference Id: {referenceId}</p>
             <p>Quantity: {inputQtd}</p>
-            <p>Total: {total}</p>
+            <p>Total: {formatCurrency(total.toString(),"en-US")}</p>
           </>
         
         )}
