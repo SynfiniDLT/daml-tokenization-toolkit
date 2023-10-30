@@ -31,7 +31,7 @@ export  const CardContainer = styled.div`
 `;
 
 
-export const DivRoundContainer = styled.div `
+export const DivBorderRoundContainer = styled.div `
   border: 2px solid white; 
   border-radius: 10px;
   width: 30vw;

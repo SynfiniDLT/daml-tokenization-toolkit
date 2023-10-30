@@ -13,7 +13,7 @@ import * as damlTypes from "@daml/types";
 import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
 import { FundInvestor } from "@daml.js/fund-tokenization/lib/Synfini/Fund/Offer";
 import { v4 as uuid } from "uuid";
-import { DivRoundContainer } from "../components/layout/general.styled";
+import { DivBorderRoundContainer } from "../components/layout/general.styled";
 
 export const FundSubscribeFormScreen: React.FC = () => {
   const nav = useNavigate();
@@ -150,7 +150,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
         Subscribe to {nameFromParty(state.fund.payload.fund)}
       </h3>
       {referenceId === "" && error === "" ? (
-        <DivRoundContainer>
+        <DivBorderRoundContainer>
           <form onSubmit={handleSubmit}>
             <p>Name: {nameFromParty(state.fund.payload.fund)}</p>
             <p>Fund Manager: {nameFromParty(state.fund.payload.fundManager)}</p>
@@ -183,7 +183,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
               </button>
             )}
           </form>
-        </DivRoundContainer>
+        </DivBorderRoundContainer>
       ): 
       <>
         <p></p>

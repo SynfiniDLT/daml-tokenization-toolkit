@@ -10,7 +10,8 @@ import { InstructBurnHelper } from "@daml.js/daml-mint/lib/Synfini/Mint";
 import { HoldingSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
 import { WalletViewsClient } from "@synfini/wallet-views";
-import { DivRoundContainer } from "../components/layout/general.styled";
+import { DivBorderRoundContainer } from "../components/layout/general.styled";
+import Modal from "react-modal";
 
 const BalanceRedeemFormScreen: React.FC = () => {
   const { state } = useLocation();
@@ -22,7 +23,8 @@ const BalanceRedeemFormScreen: React.FC = () => {
   const [primaryParty, setPrimaryParty] = useState<string>("");
   const [amountInput, setAmountInput] = useState("");
   const [error, setError] = useState("");
-  const [result, setResult] = useState("");
+  const [message, setMessage] = useState("");
+  const [isMessageOpen, setIsMessageOpen] = useState<boolean>(false);
 
   let walletClient: WalletViewsClient;
 
@@ -60,6 +62,11 @@ const BalanceRedeemFormScreen: React.FC = () => {
     return value;
   };
 
+  const handleCloseMessageModal = (path: string) => {
+    setIsMessageOpen(!isMessageOpen);
+    if (path!== '')  nav("/" + path);
+  };
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     let holdings: HoldingSummary[] = [];
@@ -81,7 +88,7 @@ const BalanceRedeemFormScreen: React.FC = () => {
 
     try {
       let referenceIdUUID = uuid();
-      let instructBurnFromFungiblesResponse = await ledger.createAndExercise(
+      await ledger.createAndExercise(
         InstructBurnHelper.InstructBurnFromFungibles,
         { instructor: primaryParty },
         {
@@ -90,22 +97,19 @@ const BalanceRedeemFormScreen: React.FC = () => {
           id: { unpack: referenceIdUUID },
           description: "Redeem for fiat",
         }
-      );
-      console.log("response exec", instructBurnFromFungiblesResponse);
-      if (instructBurnFromFungiblesResponse.length > 1) {
-        setResult(
-          "Your redeem was completed with sucess. \nTransaction id: " +
+      ).then( res => {
+        setMessage(
+          "Your request has been successfully completed. \nTransaction id: " +
             referenceIdUUID
         );
-      }
-    } catch (e) {
-      setError("Try caatch error: {" + e + "}");
+        
+      }).catch(e => {
+        setError("Error " + e.errors[0].toString());
+      });
+      setIsMessageOpen(true);
+    } catch (e: any) {
+      setError("Error " + e.toString());
     }
-  };
-
-  const handleClick = (path: string) => {
-    console.log("here")
-    nav("/" + path);
   };
 
 
@@ -118,21 +122,9 @@ const BalanceRedeemFormScreen: React.FC = () => {
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
         Redeem Balance
       </h3>
-      {result !== "" ? (
-        <>
-          <p></p>
-          <div style={{ color: "green", whiteSpace: "pre-line" }}>{result}</div>
-          <div>
-            <button onClick={() => handleClick("wallet")}>
-                Wallet
-            </button>
-            <button onClick={() => handleClick("settlements")}>
-                Transactions
-            </button>
-          </div>
-        </>
-      ) : (
-        <DivRoundContainer>
+
+
+        <DivBorderRoundContainer>
           <form onSubmit={handleSubmit}>
             <p>Account: {state.balance.account.id.unpack}</p>
             <p>Instrument: {state.balance.instrument.id.unpack}</p>
@@ -160,10 +152,77 @@ const BalanceRedeemFormScreen: React.FC = () => {
               >
                 Redeem
               </button>
-            )}
+            )} 
           </form>
-        </DivRoundContainer>
-      )}
+        </DivBorderRoundContainer>
+
+
+      <Modal
+        id="handleCloseMessageModal"
+        className="MessageModal"
+        isOpen={isMessageOpen}
+        onRequestClose={() => handleCloseMessageModal}
+        contentLabel="share SBT"
+      >
+        <>
+          <div>
+            {message !== "" ? (
+              <>
+                <span
+                  style={{
+                    color: "#66FF99",
+                    fontSize: "1.5rem",
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {message}
+                </span>
+              </>
+            ) : (
+              <>
+                <span
+                  style={{
+                    color: "#FF6699",
+                    fontSize: "1.5rem",
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {error}
+                </span>
+              </>
+            )}
+          </div>
+          <p></p>
+          <div className="containerButton">
+            
+              <div >
+                <button
+                  type="button"
+                  className="button__login"
+                  style={{width: '150px'}}
+                  onClick={()=>handleCloseMessageModal('settlements')}
+                >
+                  See Transactions
+                </button>
+              </div>
+              
+              <div> &nbsp;&nbsp;&nbsp;&nbsp;</div>
+            
+              <div>
+                <button
+                  type="button"
+                  className="button__login"
+                  style={{width: '150px'}}
+                  onClick={()=> handleCloseMessageModal('wallet')}
+                >
+                  See Wallet
+                </button>
+              </div>
+            
+          </div>
+          <p></p>
+        </>
+      </Modal>
     </PageLayout>
   );
 };

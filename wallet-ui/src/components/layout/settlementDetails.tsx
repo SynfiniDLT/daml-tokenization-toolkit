@@ -3,7 +3,7 @@ import { SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views
 import * as damlTypes from "@daml/types";
 import styled from "styled-components";
 import { PlusCircleFill, DashCircleFill } from "react-bootstrap-icons";
-import { formatCurrency, nameFromParty } from "../Util";
+import { formatCurrency, nameFromParty, toDateTimeString } from "../Util";
 
 interface SettlementDetailsProps {
   settlement: SettlementSummary;
@@ -39,25 +39,8 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
   const FieldPending = styled.span`
     color: yellow;
   `;
-
-  const toDateTimeString = (inputDate: damlTypes.Time) => {
-    return new Date(inputDate).toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      fractionalSecondDigits: 3,
-    });
-  };
-
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD', 
-  });
   
-  // TODO may need to adjust formatting of `step.routedStep.quantity.amount`?
+
   return (
     <SettlementDetailsContainer>
       <div key={props.settlement.batchCid}>
@@ -104,7 +87,15 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
               {nameFromParty(step.routedStep.custodian)}
               <br />
               <Field>Amount: </Field>
-              {formatCurrency(step.routedStep.quantity.amount, 'en-US')}
+              {step.routedStep.quantity.unit.id.unpack === 'AUDN' ?
+                <>
+                  {formatCurrency(step.routedStep.quantity.amount, 'en-US')}
+                </>
+                :
+                <>
+                  {Number(step.routedStep.quantity.amount)}
+                </>
+              }
               <br />
               <div
                 onClick={setToggleCol}

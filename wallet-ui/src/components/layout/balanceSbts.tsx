@@ -18,13 +18,13 @@ export default function BalanceSbts(props: {
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [isMessageOpen, setIsMessageOpen] = useState<boolean>(false);
   const [cid, setCid] = useState<ContractId<any>>();
   const [operation, setOperation] = useState<string>("");
   const [partiesInput, setPartiesInput] = useState<string>("");
-  const [error, setError] = useState<string>("");
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isMessageOpen, setIsMessageOpen] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
   const handlePartiesInput = (event: any) => {
     setPartiesInput(event.target.value);
@@ -209,7 +209,7 @@ export default function BalanceSbts(props: {
       )}
       <Modal
         id="shareSbtModal"
-        className="sbtModal"
+        className="simpleModal"
         isOpen={isOpen}
         onRequestClose={handleCloseModal}
         contentLabel="share SBT"
@@ -250,7 +250,7 @@ export default function BalanceSbts(props: {
       </Modal>
       <Modal
         id="handleCloseMessageModal"
-        className="sbtMessageModal"
+        className="MessageModal"
         isOpen={isMessageOpen}
         onRequestClose={handleCloseMessageModal}
         contentLabel="share SBT"
