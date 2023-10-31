@@ -9,11 +9,13 @@ import { QuestionCircle } from "react-bootstrap-icons";
 import Modal from "react-modal";
 import { Disclosure } from "@daml.js/daml-finance-interface-util/lib/Daml/Finance/Interface/Util/Disclosure";
 import { Party, Map, emptyMap, Unit, ContractId } from "@daml/types";
-import { wait } from "../Util";
+import { nameFromParty, wait } from "../Util";
+import {Instrument as PartyBoundAttributes}  from "@daml.js/daml-pbt/lib/Synfini/Interface/Instrument/PartyBoundAttributes/Instrument";
 
 export default function BalanceSbts(props: {
   instruments?: InstrumentSummary[];
   account?: AccountSummary;
+  partyBoundAttributes?: any[];
 }) {
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
@@ -139,8 +141,22 @@ export default function BalanceSbts(props: {
   let trBalances;
 
   if (props.instruments !== undefined) {
-    props.instruments?.forEach((inst: InstrumentSummary) => {
+    props.instruments?.forEach((inst: InstrumentSummary, index) => {
       let entity: any = inst.pbaView?.attributes.entriesArray();
+      let partiesSharedWith: string = "";
+      if (props.partyBoundAttributes!== undefined && props.partyBoundAttributes.length > 0){
+
+        props.partyBoundAttributes[index].observers.forEach((el: string) => {
+          if (el !== ctx.primaryParty && !el.toLowerCase().includes("validator")){
+            if (partiesSharedWith===""){
+              partiesSharedWith = partiesSharedWith.concat(nameFromParty(el));
+            }else{
+              partiesSharedWith = partiesSharedWith.concat("\n").concat(nameFromParty(el));
+            }
+          }
+        });
+      }
+
       trBalances = (
         <tr>
           <td>
@@ -150,6 +166,7 @@ export default function BalanceSbts(props: {
           <td>{"???"}</td>
           <td>{inst.pbaView?.instrument.issuer.substring(0, 30)}</td>
           <td>{Array.from(entity, ([key, value]) => `${key} | ${value}`)}</td>
+          <td style={{ whiteSpace: "pre-line"}}>{partiesSharedWith}</td>
           <td>
             <button
               type="button"
@@ -200,6 +217,9 @@ export default function BalanceSbts(props: {
               </th>
               <th>
                 Attributes <QuestionCircle />
+              </th>
+              <th>
+                Parties shared with
               </th>
               <th>#</th>
             </tr>

@@ -14,6 +14,7 @@ import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/li
 import { FundInvestor } from "@daml.js/fund-tokenization/lib/Synfini/Fund/Offer";
 import { v4 as uuid } from "uuid";
 import { DivBorderRoundContainer } from "../components/layout/general.styled";
+import Modal from "react-modal";
 
 export const FundSubscribeFormScreen: React.FC = () => {
   const nav = useNavigate();
@@ -27,6 +28,8 @@ export const FundSubscribeFormScreen: React.FC = () => {
   const [referenceId, setReferenceId] = useState<string>("");
   const [total, setTotal] = useState(0);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [isMessageOpen, setIsMessageOpen] = useState<boolean>(false);
 
   let walletClient: WalletViewsClient;
 
@@ -149,7 +152,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
         Subscribe to {nameFromParty(state.fund.payload.fund)}
       </h3>
-      {referenceId === "" && error === "" ? (
+      {referenceId === "" && error === "" && (
         <DivBorderRoundContainer>
           <form onSubmit={handleSubmit}>
             <p>Name: {nameFromParty(state.fund.payload.fund)}</p>
@@ -184,14 +187,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
             )}
           </form>
         </DivBorderRoundContainer>
-      ): 
-      <>
-        <p></p>
-        <div style={{ color: "red", whiteSpace: "pre-line" }}>{error}</div>
-        <p></p>
-        <button style={{width: "200px"}} onClick={() => nav("/")}>Back</button >
-      </>
-      }
+      )}
       <div>
         {referenceId !== "" && (
           <>
@@ -199,7 +195,11 @@ export const FundSubscribeFormScreen: React.FC = () => {
             <p>Reference Id: {referenceId}</p>
             <p>Quantity: {inputQtd}</p>
             <p>Total: {formatCurrency(total.toString(),"en-US")}</p>
-          </>
+          <p></p>
+          <div style={{ color: "red", whiteSpace: "pre-line" }}>{error}</div>
+          <p></p>
+          <button className="button__login" style={{width: "200px"}} onClick={() => nav("/wallet")}>Back</button >
+        </>
         
         )}
 

@@ -14,10 +14,10 @@ import { DivBorderRoundContainer } from "../components/layout/general.styled";
 import Modal from "react-modal";
 
 const BalanceRedeemFormScreen: React.FC = () => {
+  const nav = useNavigate();
   const { state } = useLocation();
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
-  const nav = useNavigate();
   const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}/wallet-views`;
 
   const [primaryParty, setPrimaryParty] = useState<string>("");

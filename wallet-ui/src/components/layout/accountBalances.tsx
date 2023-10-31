@@ -28,7 +28,10 @@ export default function AccountBalances(props: { accountBalances?: any }) {
             <td>account {balance.account.id.unpack} </td>
             <td>{balance.instrument.id.unpack} </td>
             <td>{entry[0].view.description} </td>
-            <td>
+            
+            {balance.instrument.id.unpack === 'AUDN' ?
+              <>
+              <td>
               {formatCurrency(
                 (
                   parseFloat(balance.unlocked) + parseFloat(balance.locked)
@@ -36,8 +39,16 @@ export default function AccountBalances(props: { accountBalances?: any }) {
                 "en-US"
               )}
             </td>
-            <td>{formatCurrency(balance.unlocked, "en-US")}</td>
-            <td>{formatCurrency(balance.locked, "en-US")}</td>
+                <td>{formatCurrency(balance.unlocked, "en-US")}</td>
+                <td>{formatCurrency(balance.locked, "en-US")}</td>
+              </>
+            : 
+              <>
+                <td>{Number(balance.unlocked)}</td>
+                <td>{Number(balance.unlocked)}</td>
+                <td>-</td>
+              </>
+            }
             <td>
               {balance.instrument.id.unpack === 'AUDN' && !user?.name?.toLowerCase().includes("employee") &&
                 <button onClick={() => handleRedeem(balance)}>Redeem</button>
@@ -103,7 +114,7 @@ export default function AccountBalances(props: { accountBalances?: any }) {
                 <tr>
                   <th>SBT ID</th>
                   <th>Issuer</th>
-                  <th>#</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>{trSbts}</tbody>
