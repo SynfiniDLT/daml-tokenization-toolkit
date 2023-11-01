@@ -88,6 +88,8 @@ elif [ "$command" = "execute-mint" ]; then
   ./commands/execute-mint.sh $@
 elif [ "$command" = "instruct-burn" ]; then
   ./commands/instruct-burn.sh $@
+elif [ "$command" = "execute-burn" ]; then
+  ./commands/execute-burn.sh $@
 elif [ "$command" = "create-fund-offer" ]; then
   ./commands/create-fund-offer.sh $@
 elif [ "$command" = "accept-fund-purchase" ]; then

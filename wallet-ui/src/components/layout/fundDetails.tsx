@@ -20,7 +20,7 @@ export default function FundDetails(props: FundDetailsProps) {
   return (
     <CardContainer>
       <div>
-        <p>Name: {nameFromParty(props.fund.payload.fund)}</p>
+        <p>Name: {nameFromParty(props.fund.payload.unitsInstrument.issuer)}</p>
         <p>Fund Manager: {nameFromParty(props.fund.payload.fundManager)}</p>
         <p>Cost Per Unit: {props.fund.payload.costPerUnit} {props.fund.payload.paymentInstrument.id.unpack}</p>
         <p>Minimal Investment: {props.fund.payload.minInvesment}</p>
