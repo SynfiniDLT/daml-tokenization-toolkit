@@ -14,7 +14,6 @@ import Synfini.Tokenization.Util
 
 template FundOffer
   with
-    fund : Party
     fundManager : Party
     fundCustodian : Party -- Custodian at which fund units are held (can also be the fund)
     unitsInstrument : InstrumentKey
@@ -29,11 +28,13 @@ template FundOffer
     settlementFactoryCid : ContractId SettlementFactory.I
     observers : Set Party
   where
-    signatory fund, fundCustodian, fundManager -- In practice these parties may be the same
+    signatory fund, unitsInstrument.depository, fundCustodian, fundManager
 
     observer observers
 
     ensure commission > 0.0 && costPerUnit > 0.0 && minInvesment > 0.0
+
+    let fund = unitsInstrument.issuer
 
     nonconsuming choice GetFundOfferPayload : FundOffer
       with
@@ -90,7 +91,7 @@ template FundOffer
                 amount = numUnitsDecimal
               custodian = fundCustodian
 
-        let instructors = Set.fromList [fund, fundManager, fundCustodian] <> actors
+        let instructors = Set.fromList (signatory this) <> actors
         (batchCid, [investorToFundCid, investorToFundManagerCid, fundToInvestorCid]) <- exercise settlementFactoryCid
           SettlementFactory.Instruct with
             instructors
@@ -132,7 +133,6 @@ template FundOffer
             custodian = fundCustodian
 
         create FundPurchaseInstruction with
-          fund
           fundManager
           investor
           investmentId
@@ -151,7 +151,6 @@ data AcceptPurchaseInstructionResult = AcceptPurchaseInstructionResult
 
 template FundPurchaseInstruction
   with
-    fund : Party
     fundManager : Party
     investor : Party
     investmentId : Id
@@ -163,10 +162,12 @@ template FundPurchaseInstruction
   where
     signatory instructors
 
+    let fund = unitsInstrument.issuer
+
     key (fund, investmentId) : (Party, Id)
     maintainer key._1
 
-    ensure Set.fromList [fund, fundManager, investor] `Set.isSubsetOf` instructors
+    ensure Set.fromList [fund, unitsInstrument.depository, fundManager, investor] `Set.isSubsetOf` instructors
 
     nonconsuming choice GetFundPurchaseInstructionPayload : FundPurchaseInstruction
       with

@@ -10,7 +10,6 @@ import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
 import Daml.Finance.Interface.Settlement.Types (Allocation(..), Approval(..), RoutedStep(..))
 import Daml.Finance.Interface.Types.Common.Types
 import Synfini.Tokenization.Util
-import qualified DA.List.Total as List
 import qualified DA.Optional as O
 import DA.Set (Set)
 import qualified DA.Set as Set
@@ -25,7 +24,7 @@ template Mint
     settlementFactoryCid : ContractId SettlementFactory.I
     observers : Set Party
   where
-    signatory custodian, minterBurner, instrument.issuer, receiverAuthorisers
+    signatory custodian, minterBurner, instrument.issuer, instrument.depository, receiverAuthorisers
 
     observer observers
 
@@ -46,7 +45,7 @@ template Mint
           "Mint instructor must be owner or minter/burner"
           (instructor == receiver || instructor == minterBurner)
 
-        let allActors = Set.fromList [custodian, instructor] <> receiverAuthorisers
+        let allActors = Set.insert instructor (Set.fromList (signatory this))
             onlyCustodian = Set.fromList [custodian]
             quantity = Quantity with unit = instrument, amount
         let custodianToOwner = RoutedStep with
@@ -59,8 +58,8 @@ template Mint
               sender = custodian
               receiver = minterBurner
               quantity
-        existingInstructionCid <- lookupByKey @MintInstruction (allActors, id)
-        assertMsg "Instructiona already exists for this ID" (O.isNone existingInstructionCid)
+        existingInstructionCid <- lookupByKey @MintInstruction (instrument.issuer, id)
+        assertMsg "Instruction already exists for this ID" (O.isNone existingInstructionCid)
         (batchCid, [custodianToOwnerCid, custodianToMbCid]) <- exercise
           settlementFactoryCid
           SettlementFactory.Instruct with
@@ -73,17 +72,17 @@ template Mint
             settlementTime = None
 
         (allocatedCustodianToOwnerCid, _) <- exercise custodianToOwnerCid Instruction.Allocate with
-          actors = onlyCustodian
+          actors = allActors
           allocation = CreditReceiver
         approvedCustodianToOwnerCid <- exercise allocatedCustodianToOwnerCid Instruction.Approve with
-          actors = onlyCustodian <> receiverAuthorisers
+          actors = allActors
           approval = TakeDelivery (AccountKey with custodian, owner = receiver, id = receiverAccountId)
 
         (allocatedCustodianToMbCid, _) <- exercise custodianToMbCid Instruction.Allocate with
-          actors = onlyCustodian
+          actors = allActors
           allocation = CreditReceiver
         exercise allocatedCustodianToMbCid Instruction.Approve with
-          actors = Set.fromList [custodian, minterBurner]
+          actors = allActors
           approval = TakeDelivery (AccountKey with custodian, owner = minterBurner, id = supplyAccountId)
 
         create MintInstruction with
@@ -109,7 +108,7 @@ template Mint
         assertMsgPrefixed "Holding to be burned must have expected custodian" (holdingView.account.custodian == custodian)
         assertMsgPrefixed "Holding to be burned cannot already be locked" (O.isNone holdingView.lock)
 
-        let allActors = Set.fromList [custodian, instructor] <> receiverAuthorisers
+        let allActors = Set.insert instructor (Set.fromList (signatory this))
             onlyCustodian = Set.fromList [custodian]
             quantity = Quantity with unit = holdingView.instrument, amount = holdingView.amount
         let ownerToCustodian = RoutedStep with
@@ -147,16 +146,17 @@ template Mint
         -- assertMsgPrefixed "Holding must be locked by custodian" (Set.member custodian lock.lockers)
 
         approvedOwnerToCustodianCid <- exercise allocatedOwnerToCustodianCid Instruction.Approve with
-          actors = onlyCustodian
+          actors = allActors
           approval = DebitSender
 
         approvedMbToCustodianCid <- exercise mbToCustodianCid Instruction.Approve with
-          actors = onlyCustodian
+          actors = allActors
           approval = DebitSender
 
         create BurnInstruction with
           custodian
           minterBurner
+          id
           supplyAccountId
           quantity = Quantity with unit = instrument, amount = holdingView.amount
           requestors = allActors
@@ -180,16 +180,19 @@ template MintInstruction
     quantity : Quantity InstrumentKey Decimal
     batchCid : ContractId Batch.I
   where
-    signatory custodian, minterBurner, requestors
+    signatory requestors
 
-    key (requestors, id) : (Set Party, Id)
+    ensure
+      Set.fromList [quantity.unit.issuer, quantity.unit.depository, custodian, minterBurner] `Set.isSubsetOf` requestors
+
+    key (quantity.unit.issuer, id) : (Party, Id)
     maintainer key._1
 
     choice ExecuteMint : ExecuteMintResult
       controller minterBurner
       do
         [receiverHoldingCid, supplyHoldingCid] <- exercise batchCid Batch.Settle with
-          actors = Set.fromList [minterBurner]
+          actors = requestors
         pure ExecuteMintResult with receiverHoldingCid, supplyHoldingCid
 
     choice RejectMint : ()
@@ -238,6 +241,7 @@ template BurnInstruction
     custodian : Party
     minterBurner : Party
     requestors : Set Party
+    id : Id
     supplyAccountId : Id
     quantity : Quantity InstrumentKey Decimal
     ownerHoldingCid : ContractId Holding.I
@@ -245,12 +249,18 @@ template BurnInstruction
     supplyInstructionCid : ContractId Instruction.I
     isAllocated : Bool
   where
-    signatory custodian, minterBurner, requestors
+    signatory requestors
+
+    ensure
+      Set.fromList [quantity.unit.issuer, quantity.unit.depository, custodian, minterBurner] `Set.isSubsetOf` requestors
+
+    key (quantity.unit.issuer, id) : (Party, Id)
+    maintainer key._1
 
     choice ExecuteBurn : ()
       controller minterBurner
       do
-        exercise batchCid Batch.Settle with actors = Set.fromList [minterBurner]
+        exercise batchCid Batch.Settle with actors = requestors
         pure ()
 
     choice AllocateBurnSupply : ContractId BurnInstruction
@@ -268,7 +278,7 @@ template BurnInstruction
         assertMsgPrefixed "Burn supply cannot already be locked" (O.isNone holdingView.lock)
 
         (newSupplyInstructionCid, _) <- exercise supplyInstructionCid Instruction.Allocate with
-          actors = Set.fromList [custodian, minterBurner]
+          actors = requestors
           allocation = Pledge holdingCid
         create this with supplyInstructionCid = newSupplyInstructionCid, isAllocated = True
 

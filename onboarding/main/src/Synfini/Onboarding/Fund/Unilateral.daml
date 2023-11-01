@@ -4,8 +4,6 @@ import Synfini.Fund.Offer
 import Synfini.Onboarding.Types
 import Synfini.Onboarding.Factory.Settlement
 import Daml.Finance.Interface.Types.Common.Types
-import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
-import DA.Set (Set)
 import Daml.Script
 import qualified DA.Set as Set
 
@@ -50,9 +48,8 @@ createFundOffer input = do
       paymentCustodian = p input.offerSettings.paymentCustodian
       observers = Set.fromList (p <$> input.offerSettings.observers)
       settlementFactoryCid = findFactoryContractId input.offerSettings.settlementFactory input.settlementFactories
-  submitMulti [fund, fundManager, fundCustodian] [] do
+  submitMulti [fund, instrumentDepository, fundManager, fundCustodian] [] do
     createCmd FundOffer with
-      fund
       fundManager
       fundCustodian
       unitsInstrument = InstrumentKey with

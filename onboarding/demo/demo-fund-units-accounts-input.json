@@ -7,15 +7,10 @@
         "custodian": "SynfiniValidator",
         "id": "FundAUnallocated",
         "description": "Fund A unallocated account",
-        "incomingControllers": [],
+        "incomingControllers": ["FundA"],
         "outgoingControllers": ["FundA"],
         "holdingFactory": "FungibleV1",
-        "observers": [
-          {
-            "context": "o",
-            "parties": ["Synfini_Public"]
-          }
-        ]
+        "observers": []
       },
       {
         "owner": "FundA",

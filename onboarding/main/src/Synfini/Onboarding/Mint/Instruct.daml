@@ -1,3 +1,5 @@
+{-# LANGUAGE ApplicativeDo #-}
+
 module Synfini.Onboarding.Mint.Instruct where
 
 import qualified Daml.Finance.Interface.Holding.Util as Holding
@@ -31,8 +33,7 @@ data InstructMintInput = InstructMintInput
 
 data ExecuteMintSettings = ExecuteMintSettings
   with
-    custodian : Party
-    instructor : Party
+    issuer : Party
     minterBurner : Party
     referenceId : Id
 
@@ -40,18 +41,8 @@ data InstructMintOutput = InstructMintOutput
   with
     executeMintSettings : ExecuteMintSettings
 
-template FetchInstructionHelper
-  with
-    fetcher : Party
-  where
-    signatory fetcher
-
-    choice FetchInstruction : MintInstruction
-      with
-        instructionCid : ContractId MintInstruction
-      controller fetcher
-      do
-        fetch instructionCid
+displayInstrument : InstrumentKey -> Text
+displayInstrument instrument = show instrument.id
 
 instructMint : InstructMintInput -> Script InstructMintOutput
 instructMint input = do
@@ -71,13 +62,11 @@ instructMint input = do
       receiverAccountId = Id input.instructMintSettings.receiverAccountId
       id = Id input.instructMintSettings.referenceId
       amount = input.instructMintSettings.amount
-      description = "Delivery of " <> show instrument <> " requested by " <> show instructor
-  instruction <- submitMulti [instructor] readAs do
-    createAndExerciseCmd (FetchInstructionHelper instructor) (FetchInstruction with instructionCid)
+      description = "Delivery of " <> displayInstrument instrument <> " requested by " <> show instructor
+  Some instruction <- queryContractId instructor instructionCid
   pure InstructMintOutput with
     executeMintSettings = ExecuteMintSettings with
-      custodian = instruction.custodian
-      instructor
+      issuer
       minterBurner = instruction.minterBurner
       referenceId = instruction.id
 
@@ -96,7 +85,7 @@ executeMint input = do
     exerciseByKeyCmd
       @MintInstruction
       (
-        Set.fromList [input.executeMintSettings.custodian, input.executeMintSettings.instructor],
+        input.executeMintSettings.issuer,
         input.executeMintSettings.referenceId
       )
       ExecuteMint
@@ -143,6 +132,47 @@ instructBurn input = do
           holdingCids = coerceInterfaceContractId . fst <$> relevantHoldings
           id = Id input.instructBurnSettings.referenceId
           amount = input.instructBurnSettings.amount
-          description = "Redemption of " <> show instrument <> " requested by " <> show sender
+          description = "Redemption of " <> displayInstrument instrument <> " requested by " <> show sender
       )
   pure ()
+
+data ExecuteBurnSettings = ExecuteBurnSettings
+  with
+    issuer : Text
+    minterBurner : Text
+    referenceId : Text
+
+data ExecuteBurnInput = ExecuteBurnInput
+  with
+    parties : [PartyInfo]
+    readAs : [Text]
+    executeBurnSettings : ExecuteBurnSettings
+
+executeBurn : ExecuteBurnInput -> Script ()
+executeBurn input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let issuer = p input.executeBurnSettings.issuer
+      minterBurner = p input.executeBurnSettings.minterBurner
+      readAs = p <$> input.readAs
+      referenceId = Id input.executeBurnSettings.referenceId
+  let burnInstructionKey = (issuer, referenceId)
+  Some (burnInstructionCid, instruction) <- queryContractKey @BurnInstruction minterBurner burnInstructionKey
+  let instrument = instruction.quantity.unit
+      supplyAccount = AccountKey with
+            custodian = instruction.custodian
+            owner = minterBurner
+            id = instruction.supplyAccountId
+  holdings <- queryInterface @Holding.I minterBurner
+  let relevantHoldings = filter
+        (\(_, Some v) -> v.account == supplyAccount && v.instrument == instrument && O.isNone v.lock)
+        holdings
+  submitMulti [minterBurner] readAs do
+    createAndExerciseCmd (AllocateBurnSupplyHelper minterBurner)
+      (
+        AllocateBurnSupplyFromFungibles with
+          holdingCids = coerceInterfaceContractId . fst <$> relevantHoldings
+          burnInstructionCid
+      )
+    exerciseByKeyCmd @BurnInstruction burnInstructionKey ExecuteBurn
+    pure ()
