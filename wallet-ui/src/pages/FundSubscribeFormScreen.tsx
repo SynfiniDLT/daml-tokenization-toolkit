@@ -48,7 +48,6 @@ export const FundSubscribeFormScreen: React.FC = () => {
       if (user.primaryParty !== undefined) {
         setPrimaryParty(user.primaryParty);
         ctx.setPrimaryParty(user.primaryParty);
-      } else {
       }
     } catch (err) {
       console.log("error when fetching primary party", err);

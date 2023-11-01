@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import styled from "styled-components";
-import { PlusCircleFill, DashCircleFill, Clipboard, ClipboardCheck } from "react-bootstrap-icons";
 import { formatCurrency, nameFromParty, toDateTimeString } from "../Util";
+import { PlusCircleFill, DashCircleFill, Clipboard, ClipboardCheck } from "react-bootstrap-icons";
+import styled from "styled-components";
 import { Field, FieldPending, FieldSettled } from "./general.styled";
 
 interface SettlementDetailsProps {
@@ -33,13 +33,12 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
   `;
 
 
-
   return (
     <SettlementDetailsContainer>
       <div key={props.settlement.batchCid}>
         <div>
           <div onClick={() => copyContentClipboard(props.settlement.batchId.unpack)}>
-            <Field>Batch ID:</Field><span id="myInput">{props.settlement.batchId.unpack} </span>
+            <Field>Transaction ID:</Field><span id="myInput">{props.settlement.batchId.unpack} </span>
             &nbsp; 
             {!toggleClipboard ? <Clipboard /> : <><ClipboardCheck /><span> copied!</span></>}
           </div>

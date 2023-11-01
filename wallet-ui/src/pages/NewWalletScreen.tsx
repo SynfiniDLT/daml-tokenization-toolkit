@@ -8,7 +8,6 @@ import { PageLayout } from "../components/PageLayout";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import AccountBalances from "../components/layout/accountBalances";
 
-
 const NewWalletScreen: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
   const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}/wallet-views`;
@@ -17,7 +16,7 @@ const NewWalletScreen: React.FC = () => {
 
   const [primaryParty, setPrimaryParty] = useState<string>("");
   const [accounts, setAccounts] = useState<AccountSummary[]>();
-  const [accountBalances, setAccountBalances] = useState(new Map<any, any>);
+  const [accountBalancesMap, setAccountBalancesMap] = useState(new Map<any, any>());
 
   let walletClient: WalletViewsClient;
 
@@ -30,16 +29,12 @@ const NewWalletScreen: React.FC = () => {
     try {
       const user = await ledger.getUser();
       const rights = await ledger.listUserRights();
-      const found = rights.find(
-        (right) =>
-          right.type === "CanActAs" && right.party === user.primaryParty
-      );
+      const found = rights.find((right) => right.type === "CanActAs" && right.party === user.primaryParty);
       ctx.readOnly = found === undefined;
 
       if (user.primaryParty !== undefined) {
         setPrimaryParty(user.primaryParty);
         ctx.setPrimaryParty(user.primaryParty);
-      } else {
       }
     } catch (err) {
       console.log("error when fetching primary party", err);
@@ -79,19 +74,18 @@ const NewWalletScreen: React.FC = () => {
           return { account, balances: res_balances };
         });
       });
-  
+
       if (promises) {
         Promise.all(promises).then((results) => {
-          const updatedMap = new Map(accountBalances);
+          const accBalancesMap = new Map(accountBalancesMap);
           results.forEach(({ account, balances }) => {
-            updatedMap.set(account, balances);
+            accBalancesMap.set(account, balances);
           });
-          setAccountBalances(updatedMap);
+          setAccountBalancesMap(accBalancesMap);
         });
       }
     });
   }, [primaryParty]);
-
 
   if (isLoading) {
     return (
@@ -104,19 +98,19 @@ const NewWalletScreen: React.FC = () => {
   return (
     <PageLayout>
       {isAuthenticated && user !== undefined && (
-      <div className="profile-grid">
-        <div className="profile__header">
-          <img src={user.picture} alt="Profile" className="profile__avatar" />
-          <div className="profile__headline">
-            <h2 className="profile__title">{user.name}</h2>
-            <span className="profile__description">{user.email}</span>
+        <div className="profile-grid">
+          <div className="profile__header">
+            <img src={user.picture} alt="Profile" className="profile__avatar" />
+            <div className="profile__headline">
+              <h2 className="profile__title">{user.name}</h2>
+              <span className="profile__description">{user.email}</span>
+            </div>
           </div>
         </div>
-      </div>
       )}
 
       <div>
-        <AccountBalances accountBalances={accountBalances} />
+        <AccountBalances accountBalancesMap={accountBalancesMap} />
       </div>
     </PageLayout>
   );

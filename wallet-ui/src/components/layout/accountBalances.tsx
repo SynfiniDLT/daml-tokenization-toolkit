@@ -4,10 +4,10 @@ import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/
 import { formatCurrency } from "../Util";
 import { Coin } from "react-bootstrap-icons";
 
-export default function AccountBalances(props: { accountBalances?: any }) {
+export default function AccountBalances(props: { accountBalancesMap?: any }) {
   const { user } = useAuth0();
   const nav = useNavigate();
-  const entries = Array.from(props.accountBalances.entries());
+  const accountBalanceEntries = Array.from(props.accountBalancesMap.entries());
 
   const handleSeeDetails = (account: AccountSummary) => {
     nav("/wallet/account/balance/sbt", { state: { account: account } });
@@ -16,60 +16,54 @@ export default function AccountBalances(props: { accountBalances?: any }) {
   const handleRedeem = (balance: any) => {
     nav("/wallet/account/balance/redeem", { state: { balance: balance } });
   };
-  
 
   let trAssets: any = [];
   let trSbts: any = [];
-  entries.forEach((entry: any) => {
-    if (entry[0].view.id.unpack !== "sbt") {
-      entry[1].forEach((balance: any) => {
+  accountBalanceEntries.forEach((accountBalanceEntry: any) => {
+    if (accountBalanceEntry[0].view.id.unpack !== "sbt") {
+      accountBalanceEntry[1].forEach((balance: any) => {
         const trAsset = (
           <tr key={balance.account.id.unpack}>
             <td>account {balance.account.id.unpack} </td>
             <td>
-              {balance.instrument.id.unpack === 'AUDN' &&  
-               <>
-                <Coin />&nbsp;&nbsp;
-               </>
-              }
-              {balance.instrument.id.unpack} 
-            </td>
-            <td>{entry[0].view.description} </td>
-            
-            {balance.instrument.id.unpack === 'AUDN' ?
-              <>
-              <td>
-              {formatCurrency(
-                (
-                  parseFloat(balance.unlocked) + parseFloat(balance.locked)
-                ).toString(),
-                "en-US"
+              {balance.instrument.id.unpack === "AUDN" && (
+                <>
+                  <Coin />
+                  &nbsp;&nbsp;
+                </>
               )}
+              {balance.instrument.id.unpack}
             </td>
+            <td>{accountBalanceEntry[0].view.description} </td>
+
+            {balance.instrument.id.unpack === "AUDN" ? (
+              <>
+                <td>
+                  {formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")}
+                </td>
                 <td>{formatCurrency(balance.unlocked, "en-US")}</td>
                 <td>{formatCurrency(balance.locked, "en-US")}</td>
               </>
-            : 
+            ) : (
               <>
                 <td>{Number(balance.unlocked)}</td>
                 <td>{Number(balance.unlocked)}</td>
                 <td>-</td>
               </>
-            }
+            )}
             <td>
-              {balance.instrument.id.unpack === 'AUDN' && !user?.name?.toLowerCase().includes("employee") &&
+              {balance.instrument.id.unpack === "AUDN" && !user?.name?.toLowerCase().includes("employee") && (
                 <button onClick={() => handleRedeem(balance)}>Redeem</button>
-              }
+              )}
             </td>
-
           </tr>
         );
         trAssets.push(trAsset);
       });
     }
 
-    if (entry[0].view.id.unpack === "sbt") {
-      entry[1].forEach((balance: any) => {
+    if (accountBalanceEntry[0].view.id.unpack === "sbt") {
+      accountBalanceEntry[1].forEach((balance: any) => {
         const trSbt = (
           <tr key={balance.instrument.id.unpack}>
             <td>
@@ -77,9 +71,7 @@ export default function AccountBalances(props: { accountBalances?: any }) {
             </td>
             <td>{balance.instrument.issuer.substring(0, 30)} </td>
             <td>
-              <button onClick={() => handleSeeDetails(entry[0])}>
-                See Details
-              </button>
+              <button onClick={() => handleSeeDetails(accountBalanceEntry[0])}>See Details</button>
             </td>
           </tr>
         );

@@ -1,14 +1,13 @@
 import styled from "styled-components";
 
-
 export const ProposalContainer = styled.div`
-background-color: #696975;
-padding: 5px;
-margin: 5px;
-box-shadow: 1px 2px 2px hsl(0deg 0% 0% / 0.22);
-border-radius: 5px;
-width: 90%;
-height: 240px;
+  background-color: #696975;
+  padding: 5px;
+  margin: 5px;
+  box-shadow: 1px 2px 2px hsl(0deg 0% 0% / 0.22);
+  border-radius: 5px;
+  width: 90%;
+  height: 240px;
 `;
 
 export const ButtonContainer = styled.div`
@@ -19,7 +18,7 @@ export const ButtonContainer = styled.div`
   height: 40px;
 `;
 
-export  const CardContainer = styled.div`
+export const CardContainer = styled.div`
   border-radius: 12px;
   margin: 15px;
   padding: 10px;
@@ -30,25 +29,22 @@ export  const CardContainer = styled.div`
     0 0.9px 1.5px hsla(0, 0%, 0%, 0.045), 0 3.5px 6px hsla(0, 0%, 0%, 0.09);
 `;
 
-
-export const DivBorderRoundContainer = styled.div `
-  border: 2px solid white; 
+export const DivBorderRoundContainer = styled.div`
+  border: 2px solid white;
   border-radius: 10px;
   width: 30vw;
   margin: 10px;
-
 `;
 
-
 export const Field = styled.span`
-padding: 10px;
-font-weight: 700;
+  padding: 10px;
+  font-weight: 700;
 `;
 
 export const FieldSettled = styled.span`
-color: green;
+  color: green;
 `;
 
 export const FieldPending = styled.span`
-color: yellow;
+  color: yellow;
 `;

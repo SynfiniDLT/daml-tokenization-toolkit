@@ -6,7 +6,6 @@ import { AuthenticationGuard } from "./components/authentication-guard";
 import { PageLoader } from "./components/layout/page-loader";
 import AuthContextStore from "./store/AuthContextStore";
 import MainScreen from "./pages/MainScreen";
-import WalletScreen from "./pages/WalletScreen";
 import AccountBalanceScreen from "./pages/AccountBalanceScreen";
 import SettlementScreen from "./pages/SettlementScreen";
 import DirectoryScreen from "./pages/DirectoryScreen";

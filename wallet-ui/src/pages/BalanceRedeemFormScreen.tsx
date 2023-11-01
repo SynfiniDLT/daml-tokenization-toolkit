@@ -37,16 +37,12 @@ const BalanceRedeemFormScreen: React.FC = () => {
     try {
       const user = await ledger.getUser();
       const rights = await ledger.listUserRights();
-      const found = rights.find(
-        (right) =>
-          right.type === "CanActAs" && right.party === user.primaryParty
-      );
+      const found = rights.find((right) => right.type === "CanActAs" && right.party === user.primaryParty);
       ctx.readOnly = found === undefined;
 
       if (user.primaryParty !== undefined) {
         setPrimaryParty(user.primaryParty);
         ctx.setPrimaryParty(user.primaryParty);
-      } else {
       }
     } catch (err) {
       console.log("error when fetching primary party", err);
@@ -64,14 +60,13 @@ const BalanceRedeemFormScreen: React.FC = () => {
 
   const handleCloseMessageModal = (path: string) => {
     setIsMessageOpen(!isMessageOpen);
-    if (path!== '')  nav("/" + path);
+    if (path !== "") nav("/" + path);
   };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     let holdings: HoldingSummary[] = [];
-    let holdingUnlockedCidArr: damlTypes.ContractId<damlHoldingFungible.Fungible>[] =
-      [];
+    let holdingUnlockedCidArr: damlTypes.ContractId<damlHoldingFungible.Fungible>[] = [];
     holdings = (
       await walletClient.getHoldings({
         account: state.balance.account,
@@ -88,30 +83,28 @@ const BalanceRedeemFormScreen: React.FC = () => {
 
     try {
       let referenceIdUUID = uuid();
-      await ledger.createAndExercise(
-        InstructBurnHelper.InstructBurnFromFungibles,
-        { instructor: primaryParty },
-        {
-          amount: amountInput,
-          holdingCids: holdingUnlockedCidArr,
-          id: { unpack: referenceIdUUID },
-          description: "Redeem for fiat",
-        }
-      ).then( res => {
-        setMessage(
-          "Your request has been successfully completed. \nTransaction id: " +
-            referenceIdUUID
-        );
-        
-      }).catch(e => {
-        setError("Error " + e.errors[0].toString());
-      });
+      await ledger
+        .createAndExercise(
+          InstructBurnHelper.InstructBurnFromFungibles,
+          { instructor: primaryParty },
+          {
+            amount: amountInput,
+            holdingCids: holdingUnlockedCidArr,
+            id: { unpack: referenceIdUUID },
+            description: "Redeem for fiat",
+          }
+        )
+        .then((res) => {
+          setMessage("Your request has been successfully completed. \nTransaction id: " + referenceIdUUID);
+        })
+        .catch((e) => {
+          setError("Error " + e.errors[0].toString());
+        });
       setIsMessageOpen(true);
     } catch (e: any) {
       setError("Error " + e.toString());
     }
   };
-
 
   useEffect(() => {
     fetchUserLedger();
@@ -123,39 +116,30 @@ const BalanceRedeemFormScreen: React.FC = () => {
         Redeem Balance
       </h3>
 
-
-        <DivBorderRoundContainer>
-          <form onSubmit={handleSubmit}>
-            <p>Account: {state.balance.account.id.unpack}</p>
-            <p>Instrument: {state.balance.instrument.id.unpack}</p>
-            <p>
-              Balance unlocked to redeem:{" "}
-              {formatCurrency(state.balance.unlocked, "en-US")}
-            </p>
-            <span>Amount:</span>
-            <span>
-              <input
-                type="string"
-                id="amount"
-                name="amount"
-                value={amountInput}
-                onChange={handleChangeAmount}
-                style={{ width: "200px" }}
-                onInput={formatCurrencyInput}
-              />
-            </span>
-            {parseFloat(state.balance.unlocked) >= parseFloat(amountInput) && (
-              <button
-                type="submit"
-                className="button__login"
-                style={{ width: "200px" }}
-              >
-                Redeem
-              </button>
-            )} 
-          </form>
-        </DivBorderRoundContainer>
-
+      <DivBorderRoundContainer>
+        <form onSubmit={handleSubmit}>
+          <p>Account: {state.balance.account.id.unpack}</p>
+          <p>Instrument: {state.balance.instrument.id.unpack}</p>
+          <p>Balance unlocked to redeem: {formatCurrency(state.balance.unlocked, "en-US")}</p>
+          <span>Amount:</span>
+          <span>
+            <input
+              type="string"
+              id="amount"
+              name="amount"
+              value={amountInput}
+              onChange={handleChangeAmount}
+              style={{ width: "200px" }}
+              onInput={formatCurrencyInput}
+            />
+          </span>
+          {parseFloat(state.balance.unlocked) >= parseFloat(amountInput) && (
+            <button type="submit" className="button__login" style={{ width: "200px" }}>
+              Redeem
+            </button>
+          )}
+        </form>
+      </DivBorderRoundContainer>
 
       <Modal
         id="handleCloseMessageModal"
@@ -167,58 +151,34 @@ const BalanceRedeemFormScreen: React.FC = () => {
         <>
           <div>
             {message !== "" ? (
-              <>
-                <span
-                  style={{
-                    color: "#66FF99",
-                    fontSize: "1.5rem",
-                    whiteSpace: "pre-line",
-                  }}
-                >
-                  {message}
-                </span>
-              </>
+              <span style={{ color: "#66FF99", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{message}</span>
             ) : (
-              <>
-                <span
-                  style={{
-                    color: "#FF6699",
-                    fontSize: "1.5rem",
-                    whiteSpace: "pre-line",
-                  }}
-                >
-                  {error}
-                </span>
-              </>
+              <span style={{ color: "#FF6699", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{error}</span>
             )}
           </div>
           <p></p>
           <div className="containerButton">
-            
-              <div >
-                <button
-                  type="button"
-                  className="button__login"
-                  style={{width: '150px'}}
-                  onClick={()=>handleCloseMessageModal('settlements')}
-                >
-                  See Transactions
-                </button>
-              </div>
-              
-              <div> &nbsp;&nbsp;&nbsp;&nbsp;</div>
-            
-              <div>
-                <button
-                  type="button"
-                  className="button__login"
-                  style={{width: '150px'}}
-                  onClick={()=> handleCloseMessageModal('wallet')}
-                >
-                  See Wallet
-                </button>
-              </div>
-            
+            <div>
+              <button
+                type="button"
+                className="button__login"
+                style={{ width: "150px" }}
+                onClick={() => handleCloseMessageModal("settlements")}
+              >
+                See Transactions
+              </button>
+            </div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;</div>
+            <div>
+              <button
+                type="button"
+                className="button__login"
+                style={{ width: "150px" }}
+                onClick={() => handleCloseMessageModal("wallet")}
+              >
+                See Wallet
+              </button>
+            </div>
           </div>
           <p></p>
         </>
