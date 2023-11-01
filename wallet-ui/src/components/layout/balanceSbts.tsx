@@ -10,7 +10,6 @@ import Modal from "react-modal";
 import { Disclosure } from "@daml.js/daml-finance-interface-util/lib/Daml/Finance/Interface/Util/Disclosure";
 import { Party, Map, emptyMap, Unit, ContractId } from "@daml/types";
 import { nameFromParty, wait } from "../Util";
-import {Instrument as PartyBoundAttributes}  from "@daml.js/daml-pbt/lib/Synfini/Interface/Instrument/PartyBoundAttributes/Instrument";
 
 export default function BalanceSbts(props: {
   instruments?: InstrumentSummary[];

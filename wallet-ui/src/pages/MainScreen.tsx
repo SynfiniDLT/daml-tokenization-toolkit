@@ -1,18 +1,16 @@
 import React, { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { userContext } from "../App";
 import AuthContextStore from "../store/AuthContextStore";
 import { PageLoader } from "../components/layout/page-loader";
-import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
 import Funds from "../components/layout/funds";
 import { FundOffer } from "@daml.js/fund-tokenization/lib/Synfini/Fund/Offer";
 import { CreateEvent } from "@daml/ledger";
-import { useNavigate } from "react-router-dom";
 
 const MainScreen: React.FC = () => {
   const nav = useNavigate();
-  const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}/wallet-views`;
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 
@@ -20,12 +18,6 @@ const MainScreen: React.FC = () => {
   const [primaryParty, setPrimaryParty] = useState<string>("");
   const [funds, setFunds] = useState<CreateEvent<FundOffer, undefined, string>[]>();
 
-  let walletClient: WalletViewsClient;
-
-  walletClient = new WalletViewsClient({
-    baseUrl: walletViewsBaseUrl,
-    token: ctx.token,
-  });
 
   const fetchUserLedger = async () => {
     try {

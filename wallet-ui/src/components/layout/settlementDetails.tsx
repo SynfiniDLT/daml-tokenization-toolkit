@@ -1,22 +1,28 @@
 import React, { useState } from "react";
 import { SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import * as damlTypes from "@daml/types";
 import styled from "styled-components";
-import { PlusCircleFill, DashCircleFill } from "react-bootstrap-icons";
+import { PlusCircleFill, DashCircleFill, Clipboard, ClipboardCheck } from "react-bootstrap-icons";
 import { formatCurrency, nameFromParty, toDateTimeString } from "../Util";
+import { Field, FieldPending, FieldSettled } from "./general.styled";
 
 interface SettlementDetailsProps {
   settlement: SettlementSummary;
 }
 
 export default function SettlementDetails(props: SettlementDetailsProps) {
-  const [toggle, setToggle] = useState(false);
+  const [toggleSteps, setToggleSteps] = useState(false);
+  const [toggleClipboard, setToggleClipboard] = useState(false);
 
   const setToggleCol = () => {
-    setToggle((prev) => {
+    setToggleSteps((prev) => {
       return !prev;
     });
   };
+
+  const copyContentClipboard = (batchId: string) => {
+    navigator.clipboard.writeText(batchId)
+    setToggleClipboard(!toggleClipboard);
+  }
 
   const SettlementDetailsContainer = styled.div`
     border-radius: 12px;
@@ -27,27 +33,18 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
   `;
 
 
-  const Field = styled.span`
-    padding: 10px;
-    font-weight: 700;
-  `;
-
-  const FieldSettled = styled.span`
-    color: green;
-  `;
-
-  const FieldPending = styled.span`
-    color: yellow;
-  `;
-  
 
   return (
     <SettlementDetailsContainer>
       <div key={props.settlement.batchCid}>
         <div>
-          <Field>Batch ID:</Field>
-          {props.settlement.batchId.unpack} 
-          | <Field> Description:</Field>
+          <div onClick={() => copyContentClipboard(props.settlement.batchId.unpack)}>
+            <Field>Batch ID:</Field><span id="myInput">{props.settlement.batchId.unpack} </span>
+            &nbsp; 
+            {!toggleClipboard ? <Clipboard /> : <><ClipboardCheck /><span> copied!</span></>}
+          </div>
+          <br />
+          <Field>Description:</Field>
           {props.settlement.description} 
           <br />
           <Field>Batch Status:</Field>
@@ -67,7 +64,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
           )}
           {props.settlement.execution !== null &&
             toDateTimeString(props.settlement.execution.effectiveTime)}
-          {props.settlement.execution !== null && <>| Offset: </>}
+          {props.settlement.execution !== null && <> | Offset: </>}
           {props.settlement.execution !== null &&
             props.settlement.execution.offset}
         </div>
@@ -104,11 +101,11 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
               >
                 <Field>Instrument:</Field>{step.routedStep.quantity.unit.id.unpack}
                 <Field>Version:</Field>{step.routedStep.quantity.unit.version} <br />
-                {toggle ? <DashCircleFill /> : <PlusCircleFill />}
+                {toggleSteps ? <DashCircleFill /> : <PlusCircleFill />}
               </div>
               <div
                 className="settlement-content"
-                style={{ height: toggle ? "60px" : "0px" }}
+                style={{ height: toggleSteps ? "60px" : "0px" }}
                 key={step.routedStep.quantity.unit.id.unpack}
               >
                 Depository: {nameFromParty(step.routedStep.quantity.unit.depository)}

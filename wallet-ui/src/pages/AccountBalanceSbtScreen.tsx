@@ -80,7 +80,6 @@ const AccountBalanceSbtScreen: React.FC = () => {
     for (let index = 0; index < instruments.length; index++) {
       const instrument = instruments[index];
       const partiesShared = await ledger.fetch(PartyBoundAttributes, instrument.cid );
-      console.log("shared with", partiesShared);
       arr_partiesShared.push(partiesShared)
     }
     return arr_partiesShared;

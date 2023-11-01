@@ -3,12 +3,10 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { userContext } from "../App";
 import AuthContextStore from "../store/AuthContextStore";
 import { PageLoader } from "../components/layout/page-loader";
-import Accounts from "../components/layout/accounts";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import AccountBalances from "../components/layout/accountBalances";
-
 
 
 const NewWalletScreen: React.FC = () => {

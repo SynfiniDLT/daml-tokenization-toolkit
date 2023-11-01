@@ -14,7 +14,6 @@ import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/li
 import { FundInvestor } from "@daml.js/fund-tokenization/lib/Synfini/Fund/Offer";
 import { v4 as uuid } from "uuid";
 import { DivBorderRoundContainer } from "../components/layout/general.styled";
-import Modal from "react-modal";
 
 export const FundSubscribeFormScreen: React.FC = () => {
   const nav = useNavigate();
@@ -28,8 +27,6 @@ export const FundSubscribeFormScreen: React.FC = () => {
   const [referenceId, setReferenceId] = useState<string>("");
   const [total, setTotal] = useState(0);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [isMessageOpen, setIsMessageOpen] = useState<boolean>(false);
 
   let walletClient: WalletViewsClient;
 
@@ -123,7 +120,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
       if (holdingUnlockedCidArr.length > 0) {
         let referenceIdUUID = uuid();
         try {
-          let subscribeResponse = await ledger.createAndExercise(
+          ledger.createAndExercise(
             FundInvestor.RequestInvestment,
             fundInvestorPayload,
             {
@@ -134,7 +131,6 @@ export const FundSubscribeFormScreen: React.FC = () => {
             }
           );
           setReferenceId(referenceIdUUID);
-          console.log("subscr", subscribeResponse);
         } catch (e) {
           setError("Try caatch error: {" + e + "}");
         }
@@ -142,10 +138,6 @@ export const FundSubscribeFormScreen: React.FC = () => {
     }
   };
 
-
-
-
-  
 
   return (
     <PageLayout>
@@ -195,14 +187,12 @@ export const FundSubscribeFormScreen: React.FC = () => {
             <p>Reference Id: {referenceId}</p>
             <p>Quantity: {inputQtd}</p>
             <p>Total: {formatCurrency(total.toString(),"en-US")}</p>
-          <p></p>
-          <div style={{ color: "red", whiteSpace: "pre-line" }}>{error}</div>
-          <p></p>
-          <button className="button__login" style={{width: "200px"}} onClick={() => nav("/wallet")}>Back</button >
-        </>
-        
+            <p></p>
+            <div style={{ color: "red", whiteSpace: "pre-line" }}>{error}</div>
+            <p></p>
+            <button className="button__login" style={{width: "200px"}} onClick={() => nav("/wallet")}>Back</button >
+          </>
         )}
-
       </div>
     </PageLayout>
   );

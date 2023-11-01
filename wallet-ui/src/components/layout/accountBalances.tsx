@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { formatCurrency } from "../Util";
-import { useAuth0 } from "@auth0/auth0-react";
+import { Coin } from "react-bootstrap-icons";
 
 export default function AccountBalances(props: { accountBalances?: any }) {
   const { user } = useAuth0();
@@ -13,7 +14,6 @@ export default function AccountBalances(props: { accountBalances?: any }) {
   };
 
   const handleRedeem = (balance: any) => {
-    console.log("balance action",balance)
     nav("/wallet/account/balance/redeem", { state: { balance: balance } });
   };
   
@@ -26,7 +26,14 @@ export default function AccountBalances(props: { accountBalances?: any }) {
         const trAsset = (
           <tr key={balance.account.id.unpack}>
             <td>account {balance.account.id.unpack} </td>
-            <td>{balance.instrument.id.unpack} </td>
+            <td>
+              {balance.instrument.id.unpack === 'AUDN' &&  
+               <>
+                <Coin />&nbsp;&nbsp;
+               </>
+              }
+              {balance.instrument.id.unpack} 
+            </td>
             <td>{entry[0].view.description} </td>
             
             {balance.instrument.id.unpack === 'AUDN' ?

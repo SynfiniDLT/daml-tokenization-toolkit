@@ -38,3 +38,17 @@ export const DivBorderRoundContainer = styled.div `
   margin: 10px;
 
 `;
+
+
+export const Field = styled.span`
+padding: 10px;
+font-weight: 700;
+`;
+
+export const FieldSettled = styled.span`
+color: green;
+`;
+
+export const FieldPending = styled.span`
+color: yellow;
+`;
