@@ -17,14 +17,13 @@ import qualified DA.Set as Set
 template Mint
   with
     custodian : Party
-    receiverAuthorisers : Set Party
     minterBurner : Party
     supplyAccountId : Id
     instrument : InstrumentKey
     settlementFactoryCid : ContractId SettlementFactory.I
     observers : Set Party
   where
-    signatory custodian, minterBurner, instrument.issuer, instrument.depository, receiverAuthorisers
+    signatory custodian, minterBurner, instrument.issuer, instrument.depository
 
     observer observers
 
@@ -33,19 +32,20 @@ template Mint
 
     nonconsuming choice InstructMint : ContractId MintInstruction
       with
-        instructor : Party
+        instructors : Set Party
         receiver : Party
         receiverAccountId : Id
         amount : Decimal
         id : Id
         description : Text
-      controller instructor
+      controller instructors
       do
         assertMsgPrefixed
           "Mint instructor must be owner or minter/burner"
-          (instructor == receiver || instructor == minterBurner)
+          (receiver `Set.member` instructors || minterBurner `Set.member` instructors)
+        assertMsgPrefixed "Cannot mint to the supply account" (receiverAccountId /= supplyAccountId)
 
-        let allActors = Set.insert instructor (Set.fromList (signatory this))
+        let allActors = Set.union instructors (Set.fromList (signatory this))
             onlyCustodian = Set.fromList [custodian]
             quantity = Quantity with unit = instrument, amount
         let custodianToOwner = RoutedStep with
@@ -95,20 +95,21 @@ template Mint
 
     nonconsuming choice InstructBurn : ContractId BurnInstruction
       with
-        instructor : Party
+        instructors : Set Party
         holdingCid : ContractId Holding.I
         id : Id
         description : Text
-      controller instructor
+      controller instructors
       do
         holding <- fetch holdingCid
         let holdingView = view holding
-        assertMsgPrefixed "Burn instructor must be the owner" (holdingView.account.owner == instructor)
+        assertMsgPrefixed "Burn instructor must be the owner" (holdingView.account.owner `Set.member` instructors)
         assertMsgPrefixed "Holding to be burned must have expected instrument" (holdingView.instrument == instrument)
         assertMsgPrefixed "Holding to be burned must have expected custodian" (holdingView.account.custodian == custodian)
         assertMsgPrefixed "Holding to be burned cannot already be locked" (O.isNone holdingView.lock)
+        assertMsgPrefixed "Cannot burn from supply account" (holdingView.account.id /= supplyAccountId)
 
-        let allActors = Set.insert instructor (Set.fromList (signatory this))
+        let allActors = Set.union instructors (Set.fromList (signatory this))
             onlyCustodian = Set.fromList [custodian]
             quantity = Quantity with unit = holdingView.instrument, amount = holdingView.amount
         let ownerToCustodian = RoutedStep with
@@ -138,7 +139,7 @@ template Mint
 
         -- TODO is the holding lock check needed?
         Pledge ownerHoldingCid <- (.allocation) <$> exercise allocatedOwnerToCustodianCid Instruction.GetView with
-          viewer = instructor
+          viewer = holdingView.account.owner
         -- lockedHolding <- exercise lockedHoldingCid Holding.GetView with viewer = instructor
         -- let lockOpt = lockedHolding.lock
         -- assertMsgPrefixed "Holding must have lock" (isSome lockOpt)
@@ -209,9 +210,9 @@ data InstructBurnFromFungiblesResult = InstructBurnFromFungiblesResult
 
 template InstructBurnHelper
   with
-    instructor : Party
+    instructors : Set Party
   where
-    signatory instructor
+    signatory instructors
 
     choice InstructBurnFromFungibles : InstructBurnFromFungiblesResult
       with
@@ -219,12 +220,12 @@ template InstructBurnHelper
         holdingCids : [ContractId Fungible.I]
         id : Id
         description : Text
-      controller instructor
+      controller instructors
       do
         (holdingCidToBurn, remainingHoldingCid) <- mergeAndSplitHelper1 holdingCids amount
         holdingToBurn <- fetch holdingCidToBurn
         burnInstructionCid <- exerciseByKey @Mint (Holding.getInstrument holdingToBurn) InstructBurn with
-          instructor
+          instructors
           holdingCid = toInterfaceContractId holdingCidToBurn
           id
           description

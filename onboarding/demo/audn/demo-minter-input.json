@@ -1,0 +1,12 @@
+{
+  "minterSettings": [
+    {
+      "operators" : ["WalletOperator"],
+      "minter" : "AUDN_MinterBurner",
+      "instrumentIssuer" : "AUDN_Issuer",
+      "instrumentDepository" : "AUDN_Depository",
+      "instrumentId" : "AUDN",
+      "instrumentVersion" : "0"
+    }
+  ]
+}

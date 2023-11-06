@@ -1,0 +1,24 @@
+{
+  "mintReceiverSettings": [
+    {
+      "operators" : ["WalletOperator"],
+      "receiver" : "InvestorA",
+      "custodian" : "SynfiniValidator",
+      "accountId" : "111",
+      "instrumentIssuer" : "AUDN_Issuer",
+      "instrumentDepository" : "AUDN_Depository",
+      "instrumentId" : "AUDN",
+      "instrumentVersion" : "0"
+    },
+    {
+      "operators" : ["WalletOperator"],
+      "receiver" : "InvestorB",
+      "custodian" : "SynfiniValidator",
+      "accountId" : "222",
+      "instrumentIssuer" : "AUDN_Issuer",
+      "instrumentDepository" : "AUDN_Depository",
+      "instrumentId" : "AUDN",
+      "instrumentVersion" : "0"
+    }
+  ]
+}

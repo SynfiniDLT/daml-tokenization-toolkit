@@ -27,6 +27,10 @@ export TOKENIZATION_INSTRUMENT_FACTORIES_FILE=${TOKENIZATION_INTERNAL}/instrumen
 if [ ! -f "${TOKENIZATION_INSTRUMENT_FACTORIES_FILE}" ]; then
   echo '{"instrumentFactories": []}' > "${TOKENIZATION_INSTRUMENT_FACTORIES_FILE}"
 fi
+export TOKENIZATION_ACCOUNT_OPEN_OFFERS_FILE=${TOKENIZATION_INTERNAL}/account-open-offers.json
+if [ ! -f "${TOKENIZATION_ACCOUNT_OPEN_OFFERS_FILE}" ]; then
+  echo '{"accountOpenOffers": []}' > "${TOKENIZATION_ACCOUNT_OPEN_OFFERS_FILE}"
+fi
 
 command=$1
 shift
@@ -37,6 +41,7 @@ export TOKENIZATION_UTIL=$(pwd)/util
 set +u
 LEDGER_PLAINTEXT=${LEDGER_PLAINTEXT:-false}
 LEDGER_AUTH_ENABLED=${LEDGER_AUTH_ENABLED:-true}
+LEDGER_USE_JSON_API=${LEDGER_USE_JSON_API:-false}
 set -u
 
 host_port_args="--ledger-host ${LEDGER_HOST} --ledger-port ${LEDGER_PORT}"
@@ -51,13 +56,17 @@ if [ "$LEDGER_AUTH_ENABLED" = "true" ]; then
   ./jwt/fetch-access-token.sh
   auth_args="--access-token-file ${TOKENIZATION_ACCESS_TOKEN_FILE}"
 fi
-export TOKENIZATION_CONNECTION_ARGS="${host_port_args} ${tls_args} ${auth_args}"
+json_api_args=""
+if [ "$LEDGER_USE_JSON_API" = "true" ]; then
+  json_api_args="--json-api"
+fi
+export TOKENIZATION_CONNECTION_ARGS="${host_port_args} ${tls_args} ${auth_args} ${json_api_args}"
 
 if [ "$command" = "upload-dar" ]; then
   daml ledger upload-dar \
     --host ${LEDGER_HOST} \
     --port ${LEDGER_PORT} \
-    ${tls_args} ${auth_args} $@ ${TOKENIZATION_ONBOARDING_DAR}
+    ${tls_args} ${auth_args} ${json_api_args} $@ ${TOKENIZATION_ONBOARDING_DAR}
 elif [ "$command" = "allocate-parties" ]; then
   ./commands/allocate-parties.sh $@
 elif [ "$command" = "import-parties" ]; then
@@ -82,6 +91,10 @@ elif [ "$command" = "create-pbas-unilateral" ]; then
   ./commands/create-pbas-unilateral.sh $@
 elif [ "$command" = "create-mint-unilateral" ]; then
   ./commands/create-mint-unilateral.sh $@
+elif [ "$command" = "mint-receivers" ]; then
+  ./commands/create-mint-receivers.sh $@
+elif [ "$command" = "minters" ]; then
+  ./commands/create-minters.sh $@
 elif [ "$command" = "instruct-mint" ]; then
   ./commands/instruct-mint.sh $@
 elif [ "$command" = "execute-mint" ]; then
@@ -92,6 +105,8 @@ elif [ "$command" = "execute-burn" ]; then
   ./commands/execute-burn.sh $@
 elif [ "$command" = "create-fund-offer" ]; then
   ./commands/create-fund-offer.sh $@
+elif [ "$command" = "create-fund-investor" ]; then
+  ./commands/create-fund-investor.sh $@
 elif [ "$command" = "accept-fund-purchase" ]; then
   ./commands/accept-fund-purchase.sh $@
 else

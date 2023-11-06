@@ -1,6 +1,7 @@
 {
   "readAs": ["Synfini_Public"],
   "instructBurnSettings": {
+    "operators": ["WalletOperator"],
     "instrumentDepository": "AUDN_Depository",
     "instrumentIssuer": "AUDN_Issuer",
     "instrumentId": "AUDN",

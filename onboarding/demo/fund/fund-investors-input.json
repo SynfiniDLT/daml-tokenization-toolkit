@@ -1,0 +1,14 @@
+{
+  "investorSettings": [
+    {
+      "investor": "InvestorA",
+      "investmentAccountCustodian": "SynfiniValidator",
+      "investmentAccountId": "Funds",
+      "fund": "FundA",
+      "fundDepository": "FundA",
+      "fundInstrumentId": "FundA",
+      "fundInstrumentVersion": "0",
+      "operators": ["WalletOperator"]
+    }
+  ]
+}

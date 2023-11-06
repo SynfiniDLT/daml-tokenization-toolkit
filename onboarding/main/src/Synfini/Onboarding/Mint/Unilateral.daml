@@ -38,7 +38,6 @@ createMint input = do
   submitMulti [issuer, depository, minterBurner, custodian] [] do
     createCmd Mint with
       custodian
-      receiverAuthorisers = Set.empty
       minterBurner
       supplyAccountId = Id input.mintSettings.supplyAccountId
       instrument = InstrumentKey with

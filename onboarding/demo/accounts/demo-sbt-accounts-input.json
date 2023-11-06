@@ -1,0 +1,50 @@
+{
+  "readAs": [
+    "Synfini_Public"
+  ],
+  "accountFactory": "v1",
+  "accountSettings": [
+    {
+      "owner": "InvestorA",
+      "custodian": "SBT_Issuer",
+      "id": "sbt",
+      "description": "sbt account",
+      "incomingControllers": [
+        "InvestorA"
+      ],
+      "outgoingControllers": [
+        "SBT_Issuer"
+      ],
+      "holdingFactory": "NonTransferableV1",
+      "observers": [
+        {
+          "context": "o",
+          "parties": [
+            "SynfiniValidator", "WalletOperator"
+          ]
+        }
+      ]
+    },
+    {
+      "owner": "InvestorB",
+      "custodian": "SBT_Issuer",
+      "id": "sbt",
+      "description": "sbt account",
+      "incomingControllers": [
+        "InvestorB"
+      ],
+      "outgoingControllers": [
+        "SBT_Issuer"
+      ],
+      "holdingFactory": "NonTransferableV1",
+      "observers": [
+        {
+          "context": "o",
+          "parties": [
+            "SynfiniValidator", "WalletOperator"
+          ]
+        }
+      ]
+    }
+  ]
+}

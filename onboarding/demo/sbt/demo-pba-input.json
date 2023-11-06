@@ -21,13 +21,13 @@
       "instrumentObservers": [
         {
           "context": "",
-          "parties": ["SynfiniValidator", "InvestorA"]
+          "parties": ["SynfiniValidator", "InvestorA", "WalletOperator"]
         }
       ],
       "holdingObservers": [
         {
           "context": "",
-          "parties": ["SynfiniValidator"]
+          "parties": ["SynfiniValidator", "WalletOperator"]
         }
       ]
     },
@@ -42,13 +42,13 @@
       "instrumentObservers": [
         {
           "context": "",
-          "parties": ["SynfiniValidator", "InvestorB"]
+          "parties": ["SynfiniValidator", "InvestorB", "WalletOperator"]
         }
       ],
       "holdingObservers": [
         {
           "context": "",
-          "parties": ["SynfiniValidator"]
+          "parties": ["SynfiniValidator", "WalletOperator"]
         }
       ]
     }

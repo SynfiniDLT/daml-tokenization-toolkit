@@ -26,9 +26,19 @@
       "partyIdHint": "AUDN_MinterBurner"
     },
     {
-      "label": "AUDN_Operator",
-      "displayName": "AUDN_Operator",
-      "partyIdHint": "AUDN_Operator"
+      "label": "SBT_Issuer",
+      "displayName": "SBT_Issuer",
+      "partyIdHint": "SBT_Issuer"
+    },
+    {
+      "label": "SBT_Depository",
+      "displayName": "SBT_Depository",
+      "partyIdHint": "SBT_Depository"
+    },
+    {
+      "label": "WalletOperator",
+      "displayName": "WalletOperator",
+      "partyIdHint": "WalletOperator"
     },
     {
       "label": "InvestorA",

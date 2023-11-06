@@ -1,0 +1,46 @@
+{
+  "readAs": [
+    "Synfini_Public"
+  ],
+  "accountFactory": "v1",
+  "accountSettings": [
+    {
+      "owner": "FundA",
+      "custodian": "SynfiniValidator",
+      "id": "Fund_AUDN",
+      "description": "Receiving payments for investment in Fund A",
+      "incomingControllers": ["WalletOperator"],
+      "outgoingControllers": [
+        "FundA", "WalletOperator"
+      ],
+      "holdingFactory": "FungibleV1",
+      "observers": [
+        {
+          "context": "",
+          "parties": [
+            "Synfini_Public", "WalletOperator"
+          ]
+        }
+      ]
+    },
+    {
+      "owner": "FundManagerA",
+      "custodian": "SynfiniValidator",
+      "id": "Fund_Manager_AUDN",
+      "description": "Receiving comission payments",
+      "incomingControllers": ["WalletOperator"],
+      "outgoingControllers": [
+        "FundManagerA", "WalletOperator"
+      ],
+      "holdingFactory": "FungibleV1",
+      "observers": [
+        {
+          "context": "",
+          "parties": [
+            "Synfini_Public", "WalletOperator"
+          ]
+        }
+      ]
+    }
+  ]
+}

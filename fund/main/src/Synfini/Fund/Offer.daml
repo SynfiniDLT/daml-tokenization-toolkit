@@ -211,37 +211,3 @@ template AcceptPurchaseInstructionHelper
         (allocationCid, _) <- mergeAndSplitHelper1 allocationCids ((batch.routedSteps !! 2).quantity.amount)
         exerciseByKey @FundPurchaseInstruction instructionKey AcceptPurchaseInstruction with
           allocation = Pledge (toInterfaceContractId allocationCid)
-
-template FundInvestor
-  with
-    investor : Party
-    authorisers : Set Party
-    investorAccountId : Id
-  where
-    signatory authorisers
-
-    observer investor
-
-    choice RequestInvestment : ContractId FundPurchaseInstruction
-      with
-        numUnits : Int
-        paymentCids : [ContractId Fungible.I]
-        offerCid : ContractId FundOffer
-        investmentId : Id
-      controller investor
-      do
-        offer <- exercise offerCid GetFundOfferPayload with viewer = investor
-
-        let numUnitsDecimal = intToDecimal numUnits
-        (investorToFundPaymentCid, investorToFundManagerPaymentCid, _) <- mergeAndSplitHelper2
-          paymentCids
-          (numUnitsDecimal * offer.costPerUnit)
-          (numUnitsDecimal * offer.commission * offer.costPerUnit)
-
-        exercise offerCid InstructPurchase with
-          numUnits
-          investorToFundPaymentCid = toInterfaceContractId investorToFundPaymentCid
-          investorToFundManagerPaymentCid = toInterfaceContractId investorToFundManagerPaymentCid
-          actors = Set.insert investor authorisers
-          investmentId
-          investorAccountId
