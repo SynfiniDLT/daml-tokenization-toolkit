@@ -42,11 +42,11 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
             &nbsp; 
             {!toggleClipboard ? <Clipboard /> : <><ClipboardCheck /><span> copied!</span></>}
           </div>
-          <br />
+          
           <Field>Description:</Field>
           {props.settlement.description} 
           <br />
-          <Field>Batch Status:</Field>
+          <Field>Transaction Status:</Field>
           {props.settlement.execution === null ? (
             <FieldPending>Pending</FieldPending>
           ) : (

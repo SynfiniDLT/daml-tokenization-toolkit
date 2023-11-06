@@ -15,7 +15,6 @@ const NewWalletScreen: React.FC = () => {
   const ledger = userContext.useLedger();
 
   const [primaryParty, setPrimaryParty] = useState<string>("");
-  const [accounts, setAccounts] = useState<AccountSummary[]>();
   const [accountBalancesMap, setAccountBalancesMap] = useState(new Map<any, any>());
 
   let walletClient: WalletViewsClient;
@@ -44,7 +43,6 @@ const NewWalletScreen: React.FC = () => {
   const fetchAccounts = async () => {
     if (primaryParty !== "") {
       const resp = await walletClient.getAccounts({ owner: primaryParty });
-      setAccounts(resp.accounts);
       return resp.accounts;
     }
   };

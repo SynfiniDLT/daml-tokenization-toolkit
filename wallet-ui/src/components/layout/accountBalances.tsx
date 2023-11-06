@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { formatCurrency } from "../Util";
+import { formatCurrency, nameFromParty } from "../Util";
 import { Coin } from "react-bootstrap-icons";
 
 export default function AccountBalances(props: { accountBalancesMap?: any }) {
@@ -21,9 +21,10 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
   let trSbts: any = [];
   accountBalanceEntries.forEach((accountBalanceEntry: any) => {
     const keyAccount = accountBalanceEntry[0];
-    const valueAccount = accountBalanceEntry[1];
+    const valueBalance = accountBalanceEntry[1];
+    console.log("=>",valueBalance)
     if (keyAccount.view.id.unpack !== "sbt") {
-      valueAccount.forEach((balance: any) => {
+      valueBalance.forEach((balance: any) => {
         const trAsset = (
           <tr key={balance.account.id.unpack}>
             <td>account {balance.account.id.unpack} </td>
@@ -37,6 +38,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
               {balance.instrument.id.unpack}
             </td>
             <td>{keyAccount.view.description} </td>
+            <td>{nameFromParty(balance.instrument.issuer)}</td>
 
             {balance.instrument.id.unpack === "AUDN" ? (
               <>
@@ -65,7 +67,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
     }
 
     if (keyAccount.view.id.unpack === "sbt") {
-      valueAccount.forEach((balance: any) => {
+      valueBalance.forEach((balance: any) => {
         const trSbt = (
           <tr key={balance.instrument.id.unpack}>
             <td>
@@ -92,8 +94,9 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
           <thead>
             <tr>
               <th>Account ID</th>
-              <th>Asset Type</th>
+              <th>Asset Name</th>
               <th>Description</th>
+              <th>Issuer</th>
               <th>Balance</th>
               <th>Balance Unlocked</th>
               <th>Balance locked</th>
