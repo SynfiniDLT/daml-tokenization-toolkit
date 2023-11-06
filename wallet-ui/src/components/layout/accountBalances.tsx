@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { formatCurrency } from "../Util";
+import { formatCurrency, nameFromParty } from "../Util";
 import { Coin } from "react-bootstrap-icons";
 
 export default function AccountBalances(props: { accountBalancesMap?: any }) {
@@ -20,8 +20,11 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
   let trAssets: any = [];
   let trSbts: any = [];
   accountBalanceEntries.forEach((accountBalanceEntry: any) => {
-    if (accountBalanceEntry[0].view.id.unpack !== "sbt") {
-      accountBalanceEntry[1].forEach((balance: any) => {
+    const keyAccount = accountBalanceEntry[0];
+    const valueBalance = accountBalanceEntry[1];
+    console.log("=>",valueBalance)
+    if (keyAccount.view.id.unpack !== "sbt") {
+      valueBalance.forEach((balance: any) => {
         const trAsset = (
           <tr key={balance.account.id.unpack}>
             <td>account {balance.account.id.unpack} </td>
@@ -34,7 +37,8 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
               )}
               {balance.instrument.id.unpack}
             </td>
-            <td>{accountBalanceEntry[0].view.description} </td>
+            <td>{keyAccount.view.description} </td>
+            <td>{nameFromParty(balance.instrument.issuer)}</td>
 
             {balance.instrument.id.unpack === "AUDN" ? (
               <>
@@ -62,8 +66,8 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
       });
     }
 
-    if (accountBalanceEntry[0].view.id.unpack === "sbt") {
-      accountBalanceEntry[1].forEach((balance: any) => {
+    if (keyAccount.view.id.unpack === "sbt") {
+      valueBalance.forEach((balance: any) => {
         const trSbt = (
           <tr key={balance.instrument.id.unpack}>
             <td>
@@ -71,7 +75,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
             </td>
             <td>{balance.instrument.issuer.substring(0, 30)} </td>
             <td>
-              <button onClick={() => handleSeeDetails(accountBalanceEntry[0])}>See Details</button>
+              <button onClick={() => handleSeeDetails(keyAccount)}>See Details</button>
             </td>
           </tr>
         );
@@ -90,8 +94,9 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
           <thead>
             <tr>
               <th>Account ID</th>
-              <th>Asset Type</th>
+              <th>Asset Name</th>
               <th>Description</th>
+              <th>Issuer</th>
               <th>Balance</th>
               <th>Balance Unlocked</th>
               <th>Balance locked</th>

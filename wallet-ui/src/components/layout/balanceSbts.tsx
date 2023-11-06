@@ -148,9 +148,9 @@ export default function BalanceSbts(props: {
         props.partyBoundAttributes[index].observers.forEach((el: string) => {
           if (el !== ctx.primaryParty && !el.toLowerCase().includes("validator")){
             if (partiesSharedWith===""){
-              partiesSharedWith = partiesSharedWith.concat(nameFromParty(el));
+              partiesSharedWith = partiesSharedWith.concat("- " + nameFromParty(el));
             }else{
-              partiesSharedWith = partiesSharedWith.concat("\n").concat(nameFromParty(el));
+              partiesSharedWith = partiesSharedWith.concat("\n- ").concat(nameFromParty(el));
             }
           }
         });
@@ -218,7 +218,7 @@ export default function BalanceSbts(props: {
                 Attributes <QuestionCircle />
               </th>
               <th>
-                Parties shared with
+                Organizations shared with
               </th>
               <th>#</th>
             </tr>
