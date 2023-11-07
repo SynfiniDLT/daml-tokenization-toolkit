@@ -107,9 +107,11 @@ export const FundSubscribeFormScreen: React.FC = () => {
         });
 
       if (holdingUnlockedCidArr.length > 0) {
+        console.log("accountAUDN", accountAUDN);
         const operators = {
           map: accountAUDN.view.controllers.outgoing.map.delete(accountAUDN.view.owner)
-        }; // Bug here, operators should contain one party -- the wallet operator -- but it seems to be empty
+        };
+        console.log("operators", operators);
         let referenceIdUUID = uuid();
         try {
           await ledger.exerciseByKey(
@@ -164,7 +166,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
               style={{ width: "200px" }}
             />
             <p>Total: {formatCurrency(total.toString(),"en-US")}</p>
-            {total >= parseFloat(state.fund.payload.minInvesment) && (
+            {/* {total >= parseFloat(state.fund.payload.minInvesment) && ( */}
               <button
                 type="submit"
                 className={"button__login"}
@@ -172,7 +174,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
               >
                 Submit
               </button>
-            )}
+            {/* )} */}
           </form>
         </DivBorderRoundContainer>
       )}

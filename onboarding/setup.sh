@@ -105,8 +105,8 @@ elif [ "$command" = "execute-burn" ]; then
   ./commands/execute-burn.sh $@
 elif [ "$command" = "create-fund-offer" ]; then
   ./commands/create-fund-offer.sh $@
-elif [ "$command" = "create-fund-investor" ]; then
-  ./commands/create-fund-investor.sh $@
+elif [ "$command" = "create-fund-investors" ]; then
+  ./commands/create-fund-investors.sh $@
 elif [ "$command" = "accept-fund-purchase" ]; then
   ./commands/accept-fund-purchase.sh $@
 else
