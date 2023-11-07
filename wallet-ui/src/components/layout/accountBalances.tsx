@@ -13,8 +13,8 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
     nav("/wallet/account/balance/sbt", { state: { account: account } });
   };
 
-  const handleRedeem = (balance: any) => {
-    nav("/wallet/account/balance/redeem", { state: { balance: balance } });
+  const handleRedeem = (balance: any, account: any) => {
+    nav("/wallet/account/balance/redeem", { state: { balance: balance, account: account } });
   };
 
   let trAssets: any = [];
@@ -57,7 +57,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
             )}
             <td>
               {balance.instrument.id.unpack === "AUDN" && !user?.name?.toLowerCase().includes("employee") && (
-                <button onClick={() => handleRedeem(balance)}>Redeem</button>
+                <button onClick={() => handleRedeem(balance, keyAccount)}>Redeem</button>
               )}
             </td>
           </tr>
