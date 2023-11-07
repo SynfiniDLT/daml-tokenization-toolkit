@@ -11,7 +11,8 @@
             "Synfini_Public"
           ]
         }
-      ]
+      ],
+      "holdingTrackers": ["WalletOperator"]
     },
     {
       "label": "NonTransferableV1",

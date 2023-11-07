@@ -15,8 +15,11 @@ install-custom-views:
 		-Dpackaging=jar \
 		-DgeneratePom=true
 
-.build/tokenization-util.dar: .lib
+.build/tokenization-util.dar: .lib $(shell ./find-daml-project-files.sh util/main)
 	cd util/main && daml build -o ../../.build/tokenization-util.dar
+
+.build/trackable-holding.dar: .lib $(shell ./find-daml-project-files.sh trackable-holding/main)
+	cd trackable-holding/main && daml build -o ../../.build/trackable-holding.dar
 
 ## BEGIN mint
 .build/daml-mint.dar: .lib .build/tokenization-util.dar $(shell ./find-daml-project-files.sh mint/main)
@@ -52,7 +55,7 @@ test-fund: .build/fund-tokenization.dar
 ## END fund
 
 ## BEGIN onboarding
-.build/tokenization-onboarding.dar: .lib .build/daml-mint.dar .build/fund-tokenization.dar .build/pbt.dar $(shell ./find-daml-project-files.sh onboarding/main)
+.build/tokenization-onboarding.dar: .lib .build/trackable-holding.dar .build/daml-mint.dar .build/fund-tokenization.dar .build/pbt.dar $(shell ./find-daml-project-files.sh onboarding/main)
 	cd onboarding/main && daml build -o ../../.build/tokenization-onboarding.dar
 
 .PHONY: build-onboarding

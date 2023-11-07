@@ -7,6 +7,7 @@ import { formatCurrency } from "../components/Util";
 import { v4 as uuid } from "uuid";
 import * as damlTypes from "@daml/types";
 import { InstructBurnHelper } from "@daml.js/daml-mint/lib/Synfini/Mint";
+import { MintReceiver } from "@daml.js/daml-mint/lib/Synfini/Mint/Delegation";
 import { HoldingSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
 import { WalletViewsClient } from "@synfini/wallet-views";
@@ -15,7 +16,7 @@ import Modal from "react-modal";
 
 const BalanceRedeemFormScreen: React.FC = () => {
   const nav = useNavigate();
-  const { state } = useLocation();
+  const { state } = useLocation(); // TODO use strongly typed state instead of `any`
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
   const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}/wallet-views`;
@@ -83,10 +84,15 @@ const BalanceRedeemFormScreen: React.FC = () => {
 
     try {
       let referenceIdUUID = uuid();
+      const operators = { map: state.balance.account.controllers.outgoing.map.delete(state.balance.account.owner) };
       await ledger
-        .createAndExercise(
-          InstructBurnHelper.InstructBurnFromFungibles,
-          { instructor: primaryParty },
+        .exerciseByKey(
+          MintReceiver.ReceiverInstructBurn,
+          {
+            operators: operators,
+            receiverAccount: state.balance.account,
+            instrument: state.balance.instrument
+          },
           {
             amount: amountInput,
             holdingCids: holdingUnlockedCidArr,

@@ -3,7 +3,6 @@
   "acceptPurchaseSettings": {
     "fund" : "FundA",
     "fundCustodian" : "SynfiniValidator",
-    "fundAccountId" : "FundAUnallocated",
-    "investmentId" : "42ef272b-e0fc-41cb-8192-cbdc5501daad"
+    "fundAccountId" : "FundAUnallocated"
   }
 }

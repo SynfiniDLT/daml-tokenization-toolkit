@@ -11,7 +11,7 @@ import {
 import { WalletViewsClient } from "@synfini/wallet-views";
 import * as damlTypes from "@daml/types";
 import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
-import { FundInvestor } from "@daml.js/fund-tokenization/lib/Synfini/Fund/Offer";
+import { FundInvestor } from "@daml.js/fund-tokenization/lib/Synfini/Fund/Offer/Delegation";
 import { v4 as uuid } from "uuid";
 import { DivBorderRoundContainer } from "../components/layout/general.styled";
 
@@ -106,22 +106,19 @@ export const FundSubscribeFormScreen: React.FC = () => {
           );
         });
 
-      let fundInvestorPayload: FundInvestor = {
-        investor: primaryParty,
-        authorisers: {
-          map: damlTypes
-            .emptyMap<damlTypes.Party, {}>()
-            .set(ctx.primaryParty, {}),
-        },
-        investorAccountId: { unpack: accountFund.view.id.unpack },
-      };
-
       if (holdingUnlockedCidArr.length > 0) {
+        const operators = {
+          map: accountAUDN.view.controllers.outgoing.map.delete(accountAUDN.view.owner)
+        }; // Bug here, operators should contain one party -- the wallet operator -- but it seems to be empty
         let referenceIdUUID = uuid();
         try {
-          ledger.createAndExercise(
+          await ledger.exerciseByKey(
             FundInvestor.RequestInvestment,
-            fundInvestorPayload,
+            {
+              investorAccount: accountFund.view,
+              unitsInstrument: state.fund.payload.unitsInstrument,
+              operators: operators
+            },
             {
               numUnits: inputQtd.toString(),
               paymentCids: holdingUnlockedCidArr,
