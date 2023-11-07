@@ -65,6 +65,7 @@ const BalanceRedeemFormScreen: React.FC = () => {
   };
 
   const handleSubmit = async (e: any) => {
+    console.log("submit");
     e.preventDefault();
     let holdings: HoldingSummary[] = [];
     let holdingUnlockedCidArr: damlTypes.ContractId<damlHoldingFungible.Fungible>[] = [];
@@ -82,8 +83,10 @@ const BalanceRedeemFormScreen: React.FC = () => {
         );
       });
 
+    console.log("About to exercise");
     try {
       let referenceIdUUID = uuid();
+      console.log("state", state);
       const operators = { map: state.balance.account.controllers.outgoing.map.delete(state.balance.account.owner) };
       await ledger
         .exerciseByKey(
@@ -101,13 +104,17 @@ const BalanceRedeemFormScreen: React.FC = () => {
           }
         )
         .then((res) => {
+          console.log('res', res);
           setMessage("Your request has been successfully completed. \nTransaction id: " + referenceIdUUID);
         })
         .catch((e) => {
+          console.log("error", e)
           setError("Error " + e.errors[0].toString());
         });
       setIsMessageOpen(true);
     } catch (e: any) {
+      setIsMessageOpen(true);
+      console.log("Caught error", e);
       setError("Error " + e.toString());
     }
   };
