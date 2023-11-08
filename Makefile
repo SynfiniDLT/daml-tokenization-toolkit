@@ -130,6 +130,7 @@ start-wallet-ui: wallet-ui/daml.js wallet-views/typescript-client/lib
 .PHONY: clean
 clean:
 	cd util/main && daml clean
+	cd trackable-holding/main && daml clean
 	cd mint/main && daml clean
 	cd mint/test && daml clean
 	cd mint/java-example && mvn clean && rm -rf src/generated-main

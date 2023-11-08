@@ -1120,10 +1120,10 @@ public class IntegrationTest {
     delayForProjectionToStart();
 
     final var instr = instrument1();
-    final var owner = investor2;
+    final var owner = investor1;
     final var desc = "description";
     final var validAsOf = Instant.EPOCH;
-    final var obs = Collections.singletonMap("o", arrayToSet(investor1));
+    final var obs = Collections.singletonMap("o", arrayToSet(owner));
     final var attributes = Map.of(
       "attr1", "val1",
       "attr2", "val2"
