@@ -4,7 +4,7 @@ set -eu
 
 tokenization_lib_home=$(pwd)
 
-make build-wallet-views
+make compile-wallet-views
 make build-onboarding
 
 set +e

@@ -91,9 +91,13 @@ wallet-views/java/src/generated-test/java: .lib .build/pbt.dar
 		.lib/daml-finance-instrument-token.dar \
 		.build/pbt.dar
 
+.PHONY: compile-wallet-views
+compile-wallet-views: wallet-views/java/src/generated-main/java
+	cd wallet-views/java && mvn compile
+
 .PHONY: build-wallet-views
 build-wallet-views: wallet-views/java/src/generated-main/java
-	cd wallet-views/java && mvn compile
+	cd wallet-views/java && mvn install -Dmaven.test.skip=true
 
 .PHONY: test-wallet-views
 test-wallet-views: wallet-views/java/src/generated-main/java wallet-views/java/src/generated-test/java
