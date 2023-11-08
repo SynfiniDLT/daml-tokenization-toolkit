@@ -69,7 +69,20 @@ const NewWalletScreen: React.FC = () => {
     fetchAccounts().then((res) => {
       const promises = res?.map((account: AccountSummary) => {
         return fetchBalances(account).then((res_balances) => {
-          return { account, balances: res_balances };
+          return {
+            account: {
+              ...account,
+              operatorsArray: account
+                .view
+                .controllers
+                .outgoing
+                .map
+                .delete(account.view.owner)
+                .entriesArray()
+                .map(e => e[0])
+            },
+            balances: res_balances
+          };
         });
       });
 

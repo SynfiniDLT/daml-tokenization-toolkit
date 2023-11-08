@@ -111,6 +111,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
         const operators = {
           map: accountAUDN.view.controllers.outgoing.map.delete(accountAUDN.view.owner)
         };
+        console.log("map type in subscr", typeof(accountAUDN.view.controllers.outgoing.map));
         console.log("operators", operators);
         let referenceIdUUID = uuid();
         try {

@@ -86,13 +86,28 @@ const BalanceRedeemFormScreen: React.FC = () => {
     console.log("About to exercise");
     try {
       let referenceIdUUID = uuid();
-      console.log("state", state);
-      const operators = { map: state.balance.account.controllers.outgoing.map.delete(state.balance.account.owner) };
+      console.log('state', state);
+      let operators = state
+          .account
+          .operatorsArray
+          .reduce(
+            (mp: damlTypes.Map<damlTypes.Party, {}>, o: damlTypes.Party) => mp.set(o, {}),
+            damlTypes.emptyMap<damlTypes.Party, {}>()
+          );
+      console.log("key", {
+        operators: {
+          map: operators
+        },
+        receiverAccount: state.balance.account,
+        instrument: state.balance.instrument
+      });
       await ledger
         .exerciseByKey(
           MintReceiver.ReceiverInstructBurn,
           {
-            operators: operators,
+            operators: {
+              map: operators
+            },
             receiverAccount: state.balance.account,
             instrument: state.balance.instrument
           },
