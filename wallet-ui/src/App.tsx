@@ -11,7 +11,6 @@ import SettlementScreen from "./pages/SettlementScreen";
 import DirectoryScreen from "./pages/DirectoryScreen";
 import HomeScreen from "./pages/HomeScreen";
 import AccountBalanceSbtScreen from "./pages/AccountBalanceSbtScreen";
-import PeerToPeerScreen from "./pages/PeerToPeerScreen";
 import NewWalletScreen from "./pages/NewWalletScreen";
 import { FundSubscribeFormScreen } from "./pages/FundSubscribeFormScreen";
 import BalanceRedeemFormScreen from "./pages/BalanceRedeemFormScreen";
@@ -51,7 +50,6 @@ const App: React.FC = () => {
           <Route path="/wallet" element={<AuthenticationGuard component={NewWalletScreen} />} />
           <Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />
           <Route path="/wallet/account/balance/sbt" element={<AuthenticationGuard component={AccountBalanceSbtScreen} />} />
-          <Route path="/dvp" element={<AuthenticationGuard component={PeerToPeerScreen} />} />
           <Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />
           <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
           <Route path="/fund/subscribe" element={<AuthenticationGuard component={FundSubscribeFormScreen} />} />
