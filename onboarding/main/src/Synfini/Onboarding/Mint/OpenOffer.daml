@@ -2,12 +2,15 @@ module Synfini.Onboarding.Mint.OpenOffer where
 
 import Synfini.Mint
 import Synfini.Onboarding.Types
+import Synfini.Onboarding.Factory.Settlement
 import DA.Set (Set)
 import qualified DA.Set as Set
 import Daml.Finance.Interface.Types.Common.Types
 import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
 import qualified Daml.Finance.Interface.Account.Account as Account
 import Daml.Script
+import qualified DA.Map as Map
+import qualified DA.Optional as O
 
 template OpenMintOffer
   with
@@ -87,4 +90,45 @@ createOpenMintOffers input = do
     pure LabelledOpenMintOffer with label = settings.label, cid
   pure CreateOpenMintOffersOutput with openMintOffers
 
-data
+data MintSettings = MintSettings
+  with
+    offer : Text
+    issuer : Text
+    instrumentId : Text
+    instrumentVersion : Text
+    minterBurner : Text
+    supplyAccountId : Text
+    settlementFactory : Text
+    observers : [Text]
+
+data CreateMintInput = CreateMintInput
+  with
+    readAs : [Text]
+    parties : [PartyInfo]
+    settlementFactories : [SettlementFactory]
+    openMintOffers : [LabelledOpenMintOffer]
+    mintSettings : MintSettings
+
+createMint : CreateMintInput -> Script ()
+createMint input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let offer = O.fromSomeNote "Could not find mint offer" $
+        find (\offer -> offer.label == input.mintSettings.offer) input.openMintOffers
+      issuer = p input.mintSettings.issuer
+      instrumentId = Id input.mintSettings.instrumentId
+      minterBurner = p input.mintSettings.minterBurner
+      supplyAccountId = Id input.mintSettings.supplyAccountId
+      settlementFactoryCid = findFactoryContractId input.mintSettings.settlementFactory input.settlementFactories
+      observers = Set.fromList (p <$> input.readAs)
+      readAs = p <$> input.readAs
+  submitMulti [issuer, minterBurner] readAs do
+    exerciseCmd offer.cid CreateMint with
+      issuer
+      instrumentId
+      instrumentVersion = input.mintSettings.instrumentVersion
+      minterBurner
+      supplyAccountId
+      settlementFactoryCid
+      observers
+  pure ()
