@@ -31,7 +31,8 @@ make install-custom-views
 ### Start the demo on local sandbox
 
 1. Start a local postgres DB by running: `cd wallet-views/java && docker compose up -d db && cd ../..`
-1. Finally run: `./launch-local-demo.sh`
+1. Run: `./launch-local-demo.sh`.
+1. Start the UI using `make start-wallet-ui`
 
 To stop the demo, press control-C and then run `./kill-local-demo-processes.sh`.
 

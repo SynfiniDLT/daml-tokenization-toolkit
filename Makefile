@@ -15,8 +15,14 @@ install-custom-views:
 		-Dpackaging=jar \
 		-DgeneratePom=true
 
+.build/tokenization-util.dar: .lib $(shell ./find-daml-project-files.sh util/main)
+	cd util/main && daml build -o ../../.build/tokenization-util.dar
+
+.build/trackable-holding.dar: .lib $(shell ./find-daml-project-files.sh trackable-holding/main)
+	cd trackable-holding/main && daml build -o ../../.build/trackable-holding.dar
+
 ## BEGIN mint
-.build/daml-mint.dar: .lib $(shell ./find-daml-project-files.sh mint/main)
+.build/daml-mint.dar: .lib .build/tokenization-util.dar $(shell ./find-daml-project-files.sh mint/main)
 	cd mint/main && daml build -o ../../.build/daml-mint.dar
 
 .PHONY: build-mint
@@ -36,8 +42,20 @@ test-mint: .build/daml-mint.dar
 	cd mint/test && daml test
 ## END mint
 
+## BEGIN fund
+.build/fund-tokenization.dar: .lib .build/tokenization-util.dar $(shell ./find-daml-project-files.sh fund/main)
+	cd fund/main && daml build -o ../../.build/fund-tokenization.dar
+
+.PHONY: build-fund
+build-fund: .build/fund-tokenization.dar
+
+.PHONY: test-fund
+test-fund: .build/fund-tokenization.dar
+	cd fund/test && daml test
+## END fund
+
 ## BEGIN onboarding
-.build/tokenization-onboarding.dar: .lib .build/daml-mint.dar .build/pbt.dar onboarding/main/daml.yaml $(shell ./find-daml-project-files.sh onboarding/main)
+.build/tokenization-onboarding.dar: .lib .build/trackable-holding.dar .build/daml-mint.dar .build/fund-tokenization.dar .build/pbt.dar $(shell ./find-daml-project-files.sh onboarding/main)
 	cd onboarding/main && daml build -o ../../.build/tokenization-onboarding.dar
 
 .PHONY: build-onboarding
@@ -73,9 +91,13 @@ wallet-views/java/src/generated-test/java: .lib .build/pbt.dar
 		.lib/daml-finance-instrument-token.dar \
 		.build/pbt.dar
 
+.PHONY: compile-wallet-views
+compile-wallet-views: wallet-views/java/src/generated-main/java
+	cd wallet-views/java && mvn compile
+
 .PHONY: build-wallet-views
 build-wallet-views: wallet-views/java/src/generated-main/java
-	cd wallet-views/java && mvn compile
+	cd wallet-views/java && mvn install -Dmaven.test.skip=true
 
 .PHONY: test-wallet-views
 test-wallet-views: wallet-views/java/src/generated-main/java wallet-views/java/src/generated-test/java
@@ -96,8 +118,9 @@ build-wallet-views-client: wallet-views/typescript-client/lib
 ## END wallet-views
 
 ## BEGIN wallet ui
-wallet-ui/daml.js: .lib
-	daml codegen js .lib/daml-finance-interface-util.dar -o wallet-ui/daml.js
+wallet-ui/daml.js: .lib .build/fund-tokenization.dar .build/daml-mint.dar .build/pbt-interface.dar 
+	rm -rf wallet-ui/daml.js
+	daml codegen js .lib/daml-finance-interface-util.dar .build/fund-tokenization.dar .lib/daml-finance-interface-holding.dar .build/daml-mint.dar .build/pbt-interface.dar -o wallet-ui/daml.js
 
 .PHONY: build-wallet-ui
 build-wallet-ui: wallet-ui/daml.js wallet-views/typescript-client/lib $(shell ./find-ts-project-files.sh wallet-ui)
@@ -110,9 +133,13 @@ start-wallet-ui: wallet-ui/daml.js wallet-views/typescript-client/lib
 
 .PHONY: clean
 clean:
+	cd util/main && daml clean
+	cd trackable-holding/main && daml clean
 	cd mint/main && daml clean
 	cd mint/test && daml clean
 	cd mint/java-example && mvn clean && rm -rf src/generated-main
+	cd fund/main && daml clean
+	cd fund/test && daml clean
 	cd onboarding/main && daml clean
 	cd pbt/interface && daml clean
 	cd pbt/implementation && daml clean

@@ -1,0 +1,85 @@
+module Synfini.TrackableHolding.Fungible where
+
+import qualified Daml.Finance.Holding.Fungible as FungibleImpl
+import qualified Daml.Finance.Holding.Util as ImplUtil
+import qualified Daml.Finance.Util.Disclosure as ImplUtil
+import qualified Daml.Finance.Interface.Holding.Fungible as Fungible
+import qualified Daml.Finance.Interface.Holding.Transferable as Transferable
+import qualified Daml.Finance.Interface.Holding.Factory as HoldingFactory
+import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
+import Daml.Finance.Interface.Types.Common.Types
+import qualified Daml.Finance.Interface.Holding.Base as Base
+
+template Fungible
+  with
+    instrument : InstrumentKey
+      -- ^ The instrument of which units are held.
+    account : AccountKey
+      -- ^ The account at which the holding is held. Defines the holding's owner and custodian.
+    amount : Decimal
+      -- ^ Number of units.
+    lock : Optional Base.Lock
+      -- ^ An optional lock of a holding.
+    observers : PartiesMap
+      -- ^ Observers.
+    trackers : Parties
+      -- ^ Additional observers which cannot be removed from the contract.
+  where
+    signatory (signatory defaultFungible)
+    observer (observer defaultFungible), trackers
+
+    ensure (ensure defaultFungible)
+
+    let defaultFungible = FungibleImpl.Fungible with ..
+
+    interface instance Disclosure.I for Fungible where
+      view = view ((toInterface defaultFungible) : Disclosure.I)
+      setObservers = ImplUtil.setObserversImpl @_ @Disclosure.I this None
+      addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
+      removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
+
+    interface instance Base.I for Fungible where
+      view = view ((toInterface defaultFungible) : Base.I)
+      acquire = ImplUtil.acquireImpl this.lock (\lock -> this with lock)
+      release = ImplUtil.releaseImpl this.lock (\lock -> this with lock)
+
+    interface instance Transferable.I for Fungible where
+      view = view ((toInterface defaultFungible) : Transferable.I)
+      transfer = ImplUtil.transferImpl $ toInterface this
+
+    interface instance Fungible.I for Fungible where
+      view = view ((toInterface defaultFungible) : Fungible.I)
+      split = ImplUtil.splitImpl amount (\amount -> this with amount)
+      merge arg@(Fungible.Merge{fungibleCids}) = do
+        fungibles : [Fungible] <- mapA (fetch . coerceContractId) fungibleCids
+        assertMsg
+          "Can only merge with holdings that use the same trackers"
+          (all (\fungible -> fungible.trackers == trackers) fungibles)
+        ImplUtil.mergeImpl amount (.amount) (\amount -> this with amount) arg
+
+template Factory
+  with
+    provider : Party
+      -- ^ The factory's provider.
+    observers : PartiesMap
+      -- ^ The factory's observers.
+    holdingTrackers : Parties
+      -- ^ Parties which are always added as observers onto any Holdings created with this factory.
+  where
+    signatory (signatory defaultFactory)
+    observer (observer defaultFactory)
+
+    let defaultFactory = FungibleImpl.Factory with ..
+
+    interface instance HoldingFactory.F for Factory
+      where
+        view = view ((toInterface defaultFactory) : HoldingFactory.F)
+        create' HoldingFactory.Create{instrument; account; amount; observers} = do
+          toInterfaceContractId <$>
+            create Fungible with instrument, account, amount, observers, trackers = holdingTrackers, lock = None
+
+    interface instance Disclosure.I for Factory where
+      view = view ((toInterface defaultFactory) : Disclosure.I)
+      setObservers = ImplUtil.setObserversImpl @Factory @Disclosure.I this None
+      addObservers = ImplUtil.addObserversImpl @Factory @Disclosure.I this None
+      removeObservers = ImplUtil.removeObserversImpl @Factory @Disclosure.I this None

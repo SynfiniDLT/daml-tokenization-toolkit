@@ -26,20 +26,18 @@ const filter = function(expectedPath, target) {
 module.exports = function (app) {
   app.use(
     createProxyMiddleware(
-      filter("^/daml/v1", damlHttpJsonDevUrl),
+      filter("^/wallet-views", walletViewsHttpJsonDevUrl),
       {
-        target: damlHttpJsonDevUrl,
-        ws: true, //Proxy websockets
-        pathRewrite: {"^/daml/v1": "/v1"}
+        target: walletViewsHttpJsonDevUrl
       }
     )
   );
   app.use(
     createProxyMiddleware(
-      filter("^/wallet-views/v1", walletViewsHttpJsonDevUrl),
+      filter("^/v1", damlHttpJsonDevUrl),
       {
-        target: walletViewsHttpJsonDevUrl,
-        pathRewrite: {"^/wallet-views/v1": "/v1"}
+        target: damlHttpJsonDevUrl,
+        ws: true, //Proxy websockets
       }
     )
   );

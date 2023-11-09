@@ -1,23 +1,28 @@
 import React, { useState } from "react";
 import { SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import * as damlTypes from "@daml/types";
-import { useNavigate } from "react-router-dom";
+import { formatCurrency, nameFromParty, toDateTimeString } from "../Util";
+import { PlusCircleFill, DashCircleFill, Clipboard, ClipboardCheck } from "react-bootstrap-icons";
 import styled from "styled-components";
-import { PlusCircleFill, DashCircleFill } from "react-bootstrap-icons";
-import { formatCurrency, nameFromParty } from "../Util";
+import { Field, FieldPending, FieldSettled } from "./general.styled";
 
 interface SettlementDetailsProps {
   settlement: SettlementSummary;
 }
 
 export default function SettlementDetails(props: SettlementDetailsProps) {
-  const [toggle, setToggle] = useState(false);
+  const [toggleSteps, setToggleSteps] = useState(false);
+  const [toggleClipboard, setToggleClipboard] = useState(false);
 
   const setToggleCol = () => {
-    setToggle((prev) => {
+    setToggleSteps((prev) => {
       return !prev;
     });
   };
+
+  const copyContentClipboard = (batchId: string) => {
+    navigator.clipboard.writeText(batchId)
+    setToggleClipboard(!toggleClipboard);
+  }
 
   const SettlementDetailsContainer = styled.div`
     border-radius: 12px;
@@ -28,48 +33,20 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
   `;
 
 
-  const Field = styled.span`
-    padding: 10px;
-    font-weight: 700;
-  `;
-
-  const FieldSettled = styled.span`
-    color: green;
-  `;
-
-  const FieldPending = styled.span`
-    color: yellow;
-  `;
-
-  const toDateTimeString = (inputDate: damlTypes.Time) => {
-    return new Date(inputDate).toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      fractionalSecondDigits: 3,
-    });
-  };
-
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD', 
-  });
-  
-
-  // TODO may need to adjust formatting of `step.routedStep.quantity.amount`?
   return (
     <SettlementDetailsContainer>
       <div key={props.settlement.batchCid}>
         <div>
-          {/* <Field>Batch ID:</Field>
-          {props.settlement.batchId.unpack}  */}
-          {/* | <Field> Description:</Field>
-          {props.settlement.description}  */}
+          <div onClick={() => copyContentClipboard(props.settlement.batchId.unpack)}>
+            <Field>Transaction ID:</Field><span id="myInput">{props.settlement.batchId.unpack} </span>
+            &nbsp; 
+            {!toggleClipboard ? <Clipboard /> : <><ClipboardCheck /><span> copied!</span></>}
+          </div>
+          
+          <Field>Description:</Field>
+          {props.settlement.description} 
           <br />
-          <Field>Batch Status:</Field>
+          <Field>Transaction Status:</Field>
           {props.settlement.execution === null ? (
             <FieldPending>Pending</FieldPending>
           ) : (
@@ -86,7 +63,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
           )}
           {props.settlement.execution !== null &&
             toDateTimeString(props.settlement.execution.effectiveTime)}
-          {props.settlement.execution !== null && <>| Offset: </>}
+          {props.settlement.execution !== null && <> | Offset: </>}
           {props.settlement.execution !== null &&
             props.settlement.execution.offset}
         </div>
@@ -106,7 +83,15 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
               {nameFromParty(step.routedStep.custodian)}
               <br />
               <Field>Amount: </Field>
-              {formatCurrency(step.routedStep.quantity.amount, 'en-US')}
+              {step.routedStep.quantity.unit.id.unpack === 'AUDN' ?
+                <>
+                  {formatCurrency(step.routedStep.quantity.amount, 'en-US')}
+                </>
+                :
+                <>
+                  {Number(step.routedStep.quantity.amount)}
+                </>
+              }
               <br />
               <div
                 onClick={setToggleCol}
@@ -115,11 +100,11 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
               >
                 <Field>Instrument:</Field>{step.routedStep.quantity.unit.id.unpack}
                 <Field>Version:</Field>{step.routedStep.quantity.unit.version} <br />
-                {toggle ? <DashCircleFill /> : <PlusCircleFill />}
+                {toggleSteps ? <DashCircleFill /> : <PlusCircleFill />}
               </div>
               <div
                 className="settlement-content"
-                style={{ height: toggle ? "60px" : "0px" }}
+                style={{ height: toggleSteps ? "60px" : "0px" }}
                 key={step.routedStep.quantity.unit.id.unpack}
               >
                 Depository: {nameFromParty(step.routedStep.quantity.unit.depository)}

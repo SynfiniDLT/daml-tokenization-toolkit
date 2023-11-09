@@ -1,26 +1,31 @@
 import { useState, useContext } from "react";
 import AuthContextStore from "../../store/AuthContextStore";
 import { userContext } from "../../App";
-import {  InstrumentSummary,  AccountSummary} from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import {
+  InstrumentSummary,
+  AccountSummary,
+} from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { QuestionCircle } from "react-bootstrap-icons";
 import Modal from "react-modal";
 import { Disclosure } from "@daml.js/daml-finance-interface-util/lib/Daml/Finance/Interface/Util/Disclosure";
 import { Party, Map, emptyMap, Unit, ContractId } from "@daml/types";
-import { wait } from "../Util";
+import { nameFromParty, wait } from "../Util";
 
 export default function BalanceSbts(props: {
   instruments?: InstrumentSummary[];
   account?: AccountSummary;
+  partyBoundAttributes?: any[];
 }) {
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 
-  const [isOpen, setIsOpen] = useState<boolean>(false);
   const [cid, setCid] = useState<ContractId<any>>();
   const [operation, setOperation] = useState<string>("");
   const [partiesInput, setPartiesInput] = useState<string>("");
-  const [error, setError] = useState<string>("");
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isMessageOpen, setIsMessageOpen] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
   const handlePartiesInput = (event: any) => {
     setPartiesInput(event.target.value);
@@ -30,6 +35,18 @@ export default function BalanceSbts(props: {
     setPartiesInput("");
     setIsOpen(!isOpen);
     setOperation("");
+  };
+
+  const handleCloseMessageModal = () => {
+    setPartiesInput("");
+    setIsMessageOpen(!isMessageOpen);
+    setOperation("");
+  };
+
+  const handleClickOk = async () => {
+    ctx.setPrimaryParty("");
+    await wait(4000);
+    setIsMessageOpen(!isMessageOpen);
   };
 
   const handleShareSBT = (instrument: InstrumentSummary, operation: string) => {
@@ -42,7 +59,14 @@ export default function BalanceSbts(props: {
   const handleSendSBT = async () => {
     const disclosers: Map<Party, Unit> = emptyMap();
     const observers: Map<Party, Unit> = emptyMap();
-    if (operation === "add" && cid !== undefined && cid !== '') {
+    if (partiesInput === "")
+      setError("You are required to provide the Party ID.");
+    if (
+      operation === "add" &&
+      cid !== undefined &&
+      cid !== "" &&
+      partiesInput !== ""
+    ) {
       ledger
         .exercise(Disclosure.AddObservers, cid, {
           disclosers: { map: disclosers.set(ctx.primaryParty, {}) },
@@ -73,7 +97,7 @@ export default function BalanceSbts(props: {
               JSON.stringify(err.errors[0])
           );
         });
-    } 
+    }
     if (operation === "remove" && cid !== undefined) {
       ledger
         .exercise(Disclosure.RemoveObservers, cid, {
@@ -110,24 +134,38 @@ export default function BalanceSbts(props: {
           );
         });
     }
-    await wait(4000);
-    ctx.setPrimaryParty("");
+    setIsMessageOpen(true);
   };
 
   let trBalances;
 
   if (props.instruments !== undefined) {
-    props.instruments?.forEach((inst: InstrumentSummary) => {
+    props.instruments?.forEach((inst: InstrumentSummary, index) => {
       let entity: any = inst.pbaView?.attributes.entriesArray();
+      let partiesSharedWith: string = "";
+      if (props.partyBoundAttributes!== undefined && props.partyBoundAttributes.length > 0){
+
+        props.partyBoundAttributes[index].observers.forEach((el: string) => {
+          if (el !== ctx.primaryParty && !el.toLowerCase().includes("validator")){
+            if (partiesSharedWith===""){
+              partiesSharedWith = partiesSharedWith.concat("- " + nameFromParty(el));
+            }else{
+              partiesSharedWith = partiesSharedWith.concat("\n- ").concat(nameFromParty(el));
+            }
+          }
+        });
+      }
+
       trBalances = (
         <tr>
           <td>
             {inst.pbaView?.instrument.id.unpack} |{" "}
             {inst.pbaView?.instrument.version}
           </td>
-          <td>{inst.pbaView?.instrument.depository.substring(0, 30)}</td>
+          <td>{"???"}</td>
           <td>{inst.pbaView?.instrument.issuer.substring(0, 30)}</td>
           <td>{Array.from(entity, ([key, value]) => `${key} | ${value}`)}</td>
+          <td style={{ whiteSpace: "pre-line"}}>{partiesSharedWith}</td>
           <td>
             <button
               type="button"
@@ -154,61 +192,43 @@ export default function BalanceSbts(props: {
 
   return (
     <>
-      {error !== "" || message !== "" ? (
-        <>
-          {error !== "" ? (
-            <>
-              <div style={{ color: "red", whiteSpace: "pre-line" }}>
-                {error}
-              </div>
-            </>
-          ) : (
-            <>
-              <div style={{ color: "green", whiteSpace: "pre-line" }}>
-                {message}
-              </div>
-            </>
-          )}
-        </>
+      <div style={{ marginTop: "15px" }}>
+        <h5 className="profile__title">SBT</h5>
+      </div>
+
+      {props.instruments?.length === 0 ? (
+        <p>There is no balance for this account.</p>
       ) : (
-        <>
-          <div style={{ marginTop: "15px" }}>
-            <h5 className="profile__title">SBT Balances</h5>
-          </div>
-
-          {props.instruments?.length === 0 ? (
-            <p>There is no balance for this account.</p>
-          ) : (
-            <table id="customers">
-              <thead>
-                <tr>
-                  <th>
-                    Instrument | Version
-                    <QuestionCircle />
-                  </th>
-                  <th>
-                    Depository
-                    <QuestionCircle />
-                  </th>
-                  <th>
-                    Issuer
-                    <QuestionCircle />
-                  </th>
-                  <th>
-                    Attributes <QuestionCircle />
-                  </th>
-                  <th>#</th>
-                </tr>
-              </thead>
-              <tbody>{trBalances}</tbody>
-            </table>
-          )}
-        </>
+        <table id="customers">
+          <thead>
+            <tr>
+              <th>
+                SBT ID
+                <QuestionCircle />
+              </th>
+              <th>
+                SBT Name
+                <QuestionCircle />
+              </th>
+              <th>
+                Issuer
+                <QuestionCircle />
+              </th>
+              <th>
+                Attributes <QuestionCircle />
+              </th>
+              <th>
+                Organizations shared with
+              </th>
+              <th>#</th>
+            </tr>
+          </thead>
+          <tbody>{trBalances}</tbody>
+        </table>
       )}
-
       <Modal
         id="shareSbtModal"
-        className="sbtModal"
+        className="simpleModal"
         isOpen={isOpen}
         onRequestClose={handleCloseModal}
         contentLabel="share SBT"
@@ -245,6 +265,56 @@ export default function BalanceSbts(props: {
               Send
             </button>
           </form>
+        </>
+      </Modal>
+      <Modal
+        id="handleCloseMessageModal"
+        className="MessageModal"
+        isOpen={isMessageOpen}
+        onRequestClose={handleCloseMessageModal}
+        contentLabel="share SBT"
+      >
+        <>
+          <div>
+            {message !== "" ? (
+              <>
+                <span
+                  style={{
+                    color: "#66FF99",
+                    fontSize: "1.5rem",
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {message}
+                </span>
+              </>
+            ) : (
+              <>
+                <span
+                  style={{
+                    color: "#FF6699",
+                    fontSize: "1.5rem",
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {error}
+                </span>
+              </>
+            )}
+          </div>
+          <p></p>
+          <p>
+            <div>
+              <button
+                type="button"
+                className="button__login"
+                onClick={handleClickOk}
+              >
+                Ok
+              </button>
+            </div>
+          </p>
+          <p></p>
         </>
       </Modal>
     </>

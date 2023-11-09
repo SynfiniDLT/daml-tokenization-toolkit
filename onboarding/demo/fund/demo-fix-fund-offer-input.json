@@ -1,0 +1,22 @@
+{
+  "offerSettings": {
+    "fund" : "FundA",
+    "fundManager" : "FundManagerA",
+    "fundCustodian" : "SynfiniValidator",
+    "instrumentVersion" : "0",
+    "instrumentDepository" : "FundA",
+    "instrumentId" : "FundA",
+    "paymentInstrumentIssuer" : "AUDN_Issuer",
+    "paymentInstrumentDepository" : "AUDN_Depository",
+    "paymentInstrumentVersion" : "0",
+    "paymentInstrumentId" : "AUDN",
+    "costPerUnit": 99.0,
+    "commission": 0.01,
+    "minInvesment" : 100,
+    "fundPaymentAccountId" : "Fund_AUDN",
+    "fundManagerPaymentAccountId" : "Fund_Manager_AUDN",
+    "paymentCustodian" : "SynfiniValidator",
+    "settlementFactory" : "V1",
+    "observers" : ["Synfini_Public","InvestorA"]
+  }
+}

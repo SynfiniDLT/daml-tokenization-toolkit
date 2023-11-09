@@ -1,0 +1,16 @@
+
+{
+  "readAs": ["Synfini_Public"],
+  "instructMintSettings": {
+    "custodian": "SynfiniValidator",
+    "operators": ["WalletOperator"],
+    "instrumentDepository": "FundA",
+    "instrumentIssuer": "FundA",
+    "instrumentId": "FundA",
+    "instrumentVersion": "0",
+    "instructor": "FundA",
+    "receiver": "FundA",
+    "receiverAccountId": "FundAUnallocated",
+    "amount": 1000
+  }
+}

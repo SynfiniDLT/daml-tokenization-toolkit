@@ -1,0 +1,102 @@
+module Synfini.Mint.Delegation where
+
+import qualified Daml.Finance.Interface.Holding.Fungible as Fungible
+import Daml.Finance.Interface.Types.Common.Types
+
+import DA.Set (Set)
+import qualified DA.Set as Set
+import Synfini.Mint
+import qualified Daml.Finance.Interface.Holding.Base as Holding
+import DA.Foldable (forA_)
+
+data MintReceiverKey = MintReceiverKey
+  with
+    operators : Set Party
+    instrument : InstrumentKey
+    receiverAccount : AccountKey
+  deriving (Show, Eq, Ord)
+
+template MintReceiver
+  with
+    operators : Set Party
+    receiverAccount : AccountKey
+    instrument : InstrumentKey
+  where
+    signatory operators
+
+    observer receiverAccount.owner, receiverAccount.custodian
+
+    key MintReceiverKey with operators, receiverAccount, instrument : MintReceiverKey
+    maintainer key.operators
+
+    nonconsuming choice ReceiverInstructMint : ContractId MintInstruction
+      with
+        amount : Decimal
+        id : Id
+        description : Text
+      controller receiverAccount.owner
+      do
+        exerciseByKey @Mint instrument InstructMint with
+          instructors = Set.insert receiverAccount.owner operators
+          receiver = receiverAccount.owner
+          receiverAccountId = receiverAccount.id
+          amount
+          id
+          description
+
+    nonconsuming choice ReceiverInstructBurn : InstructBurnFromFungiblesResult
+      with
+        amount : Decimal
+        holdingCids : [ContractId Fungible.I]
+        id : Id
+        description : Text
+      controller receiverAccount.owner
+      do
+        let instructors = Set.insert receiverAccount.owner operators
+        forA_ holdingCids $ \fungibleCid -> do
+          let holdingCid : ContractId Holding.I = toInterfaceContractId fungibleCid
+          holding <- exercise holdingCid Holding.GetView with viewer = receiverAccount.owner
+          assertMsg "Must have expected account" (holding.account == receiverAccount)
+          assertMsg "Must have expected instrument" (holding.instrument == instrument)
+        createAndExercise (InstructBurnHelper instructors) InstructBurnFromFungibles with
+          amount
+          holdingCids
+          id
+          description
+
+data MinterKey = MinterKey
+  with
+    operators : Set Party
+    minter : Party
+    instrument : InstrumentKey
+  deriving (Show, Eq, Ord)
+
+template Minter
+  with
+    operators : Set Party
+    minter : Party
+    instrument : InstrumentKey
+  where
+    signatory operators
+
+    observer minter
+
+    key MinterKey with operators, minter, instrument : MinterKey
+    maintainer key.operators
+
+    nonconsuming choice MinterInstructMint : ContractId MintInstruction
+      with
+        receiver : Party
+        receiverAccountId : Id
+        amount : Decimal
+        id : Id
+        description : Text
+      controller minter
+      do
+        exerciseByKey @Mint instrument InstructMint with
+          instructors = Set.insert minter operators
+          receiver
+          receiverAccountId
+          amount
+          id
+          description

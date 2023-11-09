@@ -18,7 +18,7 @@ import java.util.concurrent.*;
 
 // TODO need to add authentication to these endpoints. Could do this using `WalletAuth` utilities
 @RestController
-@RequestMapping("v1")
+@RequestMapping("wallet-views/v1")
 public class ProjectionController {
   private static final Logger logger = LoggerFactory.getLogger(ProjectionController.class);
 

@@ -4,8 +4,10 @@ import qualified Daml.Finance.Holding.Fungible as FungibleImpl
 import qualified Daml.Finance.Holding.NonFungible as NonFungibleImpl
 import qualified Daml.Finance.Holding.NonTransferable as NonTranferableImpl
 import qualified Daml.Finance.Interface.Holding.Factory as Holding
+import qualified Synfini.TrackableHolding.Fungible as TrackableFungibleImpl
 import Daml.Script
 import Synfini.Onboarding.Types
+import qualified DA.Set as Set
 
 data HoldingFactorySettings = HoldingFactorySettings
   with
@@ -13,6 +15,7 @@ data HoldingFactorySettings = HoldingFactorySettings
     holdingType : Text
     provider : Text
     observers : [Observer]
+    holdingTrackers : Optional [Text]
 
 data CreateHoldingFactoriesInput = CreateHoldingFactoriesInput
   with
@@ -35,12 +38,15 @@ createHoldingFactories CreateHoldingFactoriesInput { parties, holdingFactorySett
   holdingFactories <- forA holdingFactorySettings $ \settings -> do
     let observers = asPartiesMap p settings.observers
     let provider = p settings.provider
-    cid <- case settings.holdingType of
-      "Fungible" -> toInterfaceContractId <$> submit provider do
+    let holdingTrackers = (Set.fromList . fmap p) <$> settings.holdingTrackers
+    cid <- case (settings.holdingType, holdingTrackers) of
+      ("Fungible", None) -> toInterfaceContractId <$> submit provider do
         createCmd FungibleImpl.Factory with provider, observers
-      "NonFungible" -> toInterfaceContractId <$> submit provider do
+      ("Fungible", Some t) -> toInterfaceContractId <$> submit provider do
+        createCmd TrackableFungibleImpl.Factory with provider, observers, holdingTrackers = t
+      ("NonFungible", None) -> toInterfaceContractId <$> submit provider do
         createCmd NonFungibleImpl.Factory with provider, observers
-      "NonTransferable" -> toInterfaceContractId <$> submit provider do
+      ("NonTransferable", None) -> toInterfaceContractId <$> submit provider do
         createCmd NonTranferableImpl.Factory with provider, observers
       other -> error ("Unsupported holding type: " <> show other)
     pure HoldingFactory with label = settings.label, cid

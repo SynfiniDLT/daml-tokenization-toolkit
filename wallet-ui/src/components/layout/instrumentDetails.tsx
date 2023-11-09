@@ -1,5 +1,6 @@
 import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import styled from "styled-components";
+import { Field } from "./general.styled";
 
 interface InstrumentDetailsProps {
   instrument: InstrumentSummary;
@@ -20,13 +21,8 @@ export default function instrumentDetails(props: InstrumentDetailsProps) {
     box-shadow: 6.8px 13.6px 13.6px hsl(0deg 0% 0% / 0.29);
   `;
 
-  const Field = styled.span`
-    padding: 0px;
-    font-weight: 700;
-  `;
-
   const FieldValue = styled.span`
-    padding: 5px;
+    padding: 15px;
   `;
 
   return (

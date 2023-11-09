@@ -100,7 +100,7 @@ doSetup = do
     description = "Alice's account"
     observers = Map.fromList [("Issuer", Set.fromList [minterBurner])]
 
-  mintCid <- submitMulti [custodian, issuer, minterBurner, serviceProvider] [] $ createCmd Mint with
+  mintCid <- submitMulti [custodian, issuer, depository, minterBurner, serviceProvider] [] $ createCmd Mint with
     custodian
     minterBurner = minterBurner
     receiverAuthorisers = Set.fromList [serviceProvider]
@@ -117,10 +117,11 @@ withSetup test = do
   test s
   pure ()
 
-instructMint : Setup -> Party -> Party -> Id -> Decimal -> Id -> Script (ContractId MintInstruction)
-instructMint setup instructor receiver receiverAccountId amount id = do
-  submitMulti [instructor] [setup.public] $ exerciseCmd setup.mintCid InstructMint with
-    instructor
+instructMint : IsParties p => Setup -> p -> Party -> Id -> Decimal -> Id -> Script (ContractId MintInstruction)
+instructMint setup instructors receiver receiverAccountId amount id = do
+  let instructorsList = toParties instructors
+  submitMulti instructorsList [setup.public] $ exerciseCmd setup.mintCid InstructMint with
+    instructors = Set.fromList instructorsList
     receiver
     receiverAccountId
     amount
@@ -159,7 +160,7 @@ test_rejectBurn = withSetup $ \setup -> do
   mintInstructionCid <- instructMint setup setup.alice setup.alice aliceAccountId 99.9 (Id "ref1")
   mintResult <- submitMulti [setup.minterBurner] [setup.public] $ exerciseCmd mintInstructionCid ExecuteMint
   burnInstructionCid <- submitMulti [setup.alice] [setup.public] $ exerciseCmd setup.mintCid InstructBurn with
-    instructor = setup.alice
+    instructors = Set.fromList [setup.alice]
     holdingCid = mintResult.receiverHoldingCid
     id = Id "ref2"
     description = "Burn"
@@ -183,7 +184,7 @@ test_attemptBurnWithBadHoldingTemplate = withSetup $ \setup -> do
       observers = Map.fromList [("obs", Set.fromList [setup.minterBurner])]
 
   burnInstructionCid <- submitMulti [setup.alice] [setup.public] $ exerciseCmd setup.mintCid InstructBurn with
-    instructor = setup.alice
+    instructors = Set.fromList [setup.alice]
     holdingCid = toInterfaceContractId nonFungibleCid
     id = Id "ref2"
     description = "Burn"
@@ -200,7 +201,7 @@ test_attemptBurnAndChangeAllocation = withSetup $ \setup -> do
     submit setup.alice (exerciseCmd aliceFungibleCid Fungible.Split with amounts = [mintAmount, mintAmount])
 
   burnInstructionCid <- submitMulti [setup.alice] [setup.public] $ exerciseCmd setup.mintCid InstructBurn with
-    instructor = setup.alice
+    instructors = Set.fromList [setup.alice]
     holdingCid = toInterfaceContractId holdingCid
     id = Id "ref2"
     description = "Burn"

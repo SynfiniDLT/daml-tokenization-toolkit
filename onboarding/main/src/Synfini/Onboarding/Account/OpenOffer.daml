@@ -12,6 +12,7 @@ import Synfini.Onboarding.Factory.Account
 import Synfini.Onboarding.Factory.Holding
 import Daml.Script
 import DA.Foldable (forA_)
+import qualified DA.Map as Map
 
 template OpenAccountOffer
   with
@@ -51,6 +52,7 @@ template OpenAccountOffer
 
 data CreateOpenAccountOfferSettings = CreateOpenAccountOfferSettings
   with
+    label : Text
     custodian : Text
     incomingOperators : [Text]
     outgoingOperators : [Text]
@@ -65,36 +67,43 @@ data CreateOpenAccountOfferInput = CreateOpenAccountOfferInput
     parties : [PartyInfo]
     accountFactories : [AccountFactory]
     holdingFactories : [HoldingFactory]
-    offerSettings : CreateOpenAccountOfferSettings
+    offerSettings : [CreateOpenAccountOfferSettings]
+
+data LabelledOpenAccountOffer = LabelledOpenAccountOffer
+  with
+    label : Text
+    cid : ContractId OpenAccountOffer
 
 data CreateOpenAccountOfferOutput = CreateOpenAccountOfferOutput
   with
-    openAccountOffer : OpenAccountOffer
-    openAccountOfferCid : ContractId OpenAccountOffer
+    accountOpenOffers : [LabelledOpenAccountOffer]
 
 createOpenAccountOffer : CreateOpenAccountOfferInput -> Script CreateOpenAccountOfferOutput
 createOpenAccountOffer input = do
   let pm = partyTable input.parties
   let p = getPartyId pm
-  let custodian = p input.offerSettings.custodian
-      operators = Account.Controllers with
-        incoming = Set.fromList (p <$> input.offerSettings.incomingOperators)
-        outgoing = Set.fromList (p <$> input.offerSettings.outgoingOperators)
-      accountFactoryCid = findFactoryContractId input.offerSettings.accountFactory input.accountFactories
-      holdingFactoryCid = findFactoryContractId input.offerSettings.holdingFactory input.holdingFactories
-  let openAccountOffer = OpenAccountOffer with
-        custodian
-        operators
-        ownerIncomingControlled = input.offerSettings.ownerIncomingControlled
-        ownerOutgoingControlled = input.offerSettings.ownerOutgoingControlled
-        accountFactoryCid
-        holdingFactoryCid
-        observers = Set.fromList (p <$> input.offerSettings.observers)
-  openAccountOfferCid <- submit custodian do createCmd openAccountOffer
-  pure CreateOpenAccountOfferOutput with openAccountOffer, openAccountOfferCid
+  accountOpenOffers <- forA input.offerSettings $ \offerSetting -> do
+    let custodian = p offerSetting.custodian
+        operators = Account.Controllers with
+          incoming = Set.fromList (p <$> offerSetting.incomingOperators)
+          outgoing = Set.fromList (p <$> offerSetting.outgoingOperators)
+        accountFactoryCid = findFactoryContractId offerSetting.accountFactory input.accountFactories
+        holdingFactoryCid = findFactoryContractId offerSetting.holdingFactory input.holdingFactories
+    let openAccountOffer = OpenAccountOffer with
+          custodian
+          operators
+          ownerIncomingControlled = offerSetting.ownerIncomingControlled
+          ownerOutgoingControlled = offerSetting.ownerOutgoingControlled
+          accountFactoryCid
+          holdingFactoryCid
+          observers = Set.fromList (p <$> offerSetting.observers)
+    cid <- submit custodian do createCmd openAccountOffer
+    pure LabelledOpenAccountOffer with label = offerSetting.label, cid
+  pure CreateOpenAccountOfferOutput with accountOpenOffers
 
 data AccountSettings = AccountSettings
   with
+    offer : Text
     owner : Text
     id : Text
     description : Text
@@ -103,8 +112,8 @@ data AccountSettings = AccountSettings
 data OpenAccountsInput = OpenAccountsInput
   with
     parties : [PartyInfo]
+    accountOpenOffers : [LabelledOpenAccountOffer]
     readAs : [Text]
-    openAccountOfferCid : ContractId OpenAccountOffer
     accountSettings : [AccountSettings]
 
 openAccounts : OpenAccountsInput -> Script ()
@@ -112,10 +121,14 @@ openAccounts input = do
   let pm = partyTable input.parties
   let p = getPartyId pm
   let readAs = p <$> input.readAs
+  let offersMap = Map.fromList $ (\o -> (o.label, o.cid)) <$> input.accountOpenOffers
   forA_ input.accountSettings \settings -> do
     let owner = p settings.owner
+        openAccountOfferCid = O.fromSomeNote
+          ("Offer not found: " <> settings.offer)
+          (Map.lookup settings.offer offersMap)
     submitMulti [owner] readAs do
-      exerciseCmd input.openAccountOfferCid OpenAccount with
+      exerciseCmd openAccountOfferCid OpenAccount with
         owner
         id = Id settings.id
         description = settings.description

@@ -1,0 +1,15 @@
+{
+  "readAs": ["Synfini_Public"],
+  "instructMintSettings": {
+    "custodian": "SynfiniValidator",
+    "operators": ["WalletOperator"],
+    "instrumentDepository": "AUDN_Depository",
+    "instrumentIssuer": "AUDN_Issuer",
+    "instrumentId": "AUDN",
+    "instrumentVersion": "0",
+    "instructor": "AUDN_MinterBurner",
+    "receiver": "InvestorA",
+    "receiverAccountId": "111",
+    "amount": 1e7
+  }
+}

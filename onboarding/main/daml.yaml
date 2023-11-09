@@ -22,6 +22,8 @@ data-dependencies:
   - ../../.lib/daml-finance-instrument-token.dar
   - ../../.lib/daml-finance-settlement.dar
 
+  - ../../.build/trackable-holding.dar
   - ../../.build/daml-mint.dar
   - ../../.build/pbt-interface.dar
   - ../../.build/pbt.dar
+  - ../../.build/fund-tokenization.dar

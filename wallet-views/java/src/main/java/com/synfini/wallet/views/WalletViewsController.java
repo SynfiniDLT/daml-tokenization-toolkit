@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @RestController
-@RequestMapping("v1")
+@RequestMapping("wallet-views/v1")
 public class WalletViewsController {
   private final WalletRepository walletRepository;
   private final WalletViewsApiConfig walletViewsApiConfig;

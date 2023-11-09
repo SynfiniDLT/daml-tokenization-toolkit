@@ -1,6 +1,7 @@
+import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import InstrumentDetails from "./instrumentDetails";
 
-export default function Instruments(props: { instruments?: any[] }) {
+export default function Instruments(props: { instruments?: InstrumentSummary[] }) {
   return (
     <>
       <div style={{ marginTop: "15px" }}>
@@ -12,12 +13,12 @@ export default function Instruments(props: { instruments?: any[] }) {
           {props.instruments.length ===0 &&
             <span style={{color:"white"}}>This user doesn't have any SBT contests.</span>
           }
-            {props.instruments.map((instrument: any, index: number) => (
+            {props.instruments.map((instrument: InstrumentSummary, index: number) => (
               <div key={index}>
                 <h5 className="profile__title"></h5>
                 <InstrumentDetails
                   instrument={instrument}
-                  key={instrument}
+                  key={instrument.cid}
                 ></InstrumentDetails>
               </div>
             ))}

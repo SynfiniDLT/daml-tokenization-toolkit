@@ -12,17 +12,19 @@ import {
   InstrumentSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import BalanceSbts from "../components/layout/balanceSbts";
+import {Instrument as PartyBoundAttributes}  from "@daml.js/daml-pbt/lib/Synfini/Interface/Instrument/PartyBoundAttributes/Instrument";
 
 const AccountBalanceSbtScreen: React.FC = () => {
   const { isLoading } = useAuth0();
   const { state } = useLocation();
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
-  const walletViewsBaseUrl: string = `${window.location.protocol}//${window.location.host}/wallet-views`;
+  const walletViewsBaseUrl: string = `${window.location.protocol}//${window.location.host}`;
 
   const [balances, setBalances] = useState<Balance[]>([]);
   const [primaryParty, setPrimaryParty] = useState<string>("");
   const [instruments, setInstruments] = useState<InstrumentSummary[]>();
+  const [partyBoundAttributes, setPartyBoundAttributes] = useState<PartyBoundAttributes[]>();
 
   let walletClient: WalletViewsClient;
   walletClient = new WalletViewsClient({
@@ -58,7 +60,7 @@ const AccountBalanceSbtScreen: React.FC = () => {
   };
 
   const fetchInstruments = async (balancesIns: Balance[]) => {
-    let arr_test_instr: InstrumentSummary[] = [];
+    let arr_instruments: InstrumentSummary[] = [];
     for (let index = 0; index < balancesIns.length; index++) {
       const balance = balancesIns[index];
       const resp_instrument = await walletClient.getInstruments({
@@ -68,11 +70,19 @@ const AccountBalanceSbtScreen: React.FC = () => {
             version: balance.instrument.version,
       });
       if (resp_instrument.instruments.length > 0) 
-        arr_test_instr.push(resp_instrument.instruments[0]);
+        arr_instruments.push(resp_instrument.instruments[0]);
     }
-    return arr_test_instr;
-    
-    
+    return arr_instruments;
+  }
+
+  const fetchPartiesSharedWith = async (instruments: any[]) => {
+    let arr_partiesShared: any[] = [];
+    for (let index = 0; index < instruments.length; index++) {
+      const instrument = instruments[index];
+      const partiesShared = await ledger.fetch(PartyBoundAttributes, instrument.cid );
+      arr_partiesShared.push(partiesShared)
+    }
+    return arr_partiesShared;
   }
   
   useEffect(() => {
@@ -85,7 +95,13 @@ const AccountBalanceSbtScreen: React.FC = () => {
 
   useEffect(() => {
     fetchInstruments(balances)
-    .then((res => setInstruments(res)));
+      .then(res_instruments => {
+        setInstruments(res_instruments)
+        fetchPartiesSharedWith(res_instruments)
+        .then(res_partiesShared => {
+          setPartyBoundAttributes(res_partiesShared);
+        })
+    });
   },[primaryParty, balances])
 
   if (isLoading) {
@@ -99,11 +115,11 @@ const AccountBalanceSbtScreen: React.FC = () => {
   return (
     <PageLayout>
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
-        Account Balance
+        SBT Details
       </h3>
       <AccountDetailsSimple account={state.account}></AccountDetailsSimple>
       {state.account.view.id.unpack === "sbt" && (
-        <BalanceSbts instruments={instruments} account={state.account} />
+        <BalanceSbts instruments={instruments} account={state.account} partyBoundAttributes={partyBoundAttributes} />
       )}
     </PageLayout>
   );

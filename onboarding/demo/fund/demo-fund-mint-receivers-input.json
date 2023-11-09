@@ -1,0 +1,14 @@
+{
+  "mintReceiverSettings": [
+    {
+      "operators" : ["WalletOperator"],
+      "receiver" : "FundA",
+      "custodian" : "SynfiniValidator",
+      "accountId" : "FundAUnallocated",
+      "instrumentIssuer" : "FundA",
+      "instrumentDepository" : "FundA",
+      "instrumentId" : "FundA",
+      "instrumentVersion" : "0"
+    }
+  ]
+}
