@@ -31,6 +31,10 @@ export TOKENIZATION_ACCOUNT_OPEN_OFFERS_FILE=${TOKENIZATION_INTERNAL}/account-op
 if [ ! -f "${TOKENIZATION_ACCOUNT_OPEN_OFFERS_FILE}" ]; then
   echo '{"accountOpenOffers": []}' > "${TOKENIZATION_ACCOUNT_OPEN_OFFERS_FILE}"
 fi
+export TOKENIZATION_MINT_OPEN_OFFERS_FILE=${TOKENIZATION_INTERNAL}/mint-open-offers.json
+if [ ! -f "${TOKENIZATION_MINT_OPEN_OFFERS_FILE}" ]; then
+  echo '{"mintOpenOffers": []}' > "${TOKENIZATION_MINT_OPEN_OFFERS_FILE}"
+fi
 
 command=$1
 shift
@@ -91,6 +95,8 @@ elif [ "$command" = "create-pbas-unilateral" ]; then
   ./commands/create-pbas-unilateral.sh $@
 elif [ "$command" = "create-mint-unilateral" ]; then
   ./commands/create-mint-unilateral.sh $@
+elif [ "$command" = "mint-open-offer" ]; then
+  ./commands/create-open-mint-offer.sh $@
 elif [ "$command" = "mint-receivers" ]; then
   ./commands/create-mint-receivers.sh $@
 elif [ "$command" = "minters" ]; then

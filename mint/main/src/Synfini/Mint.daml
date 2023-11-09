@@ -46,7 +46,6 @@ template Mint
         assertMsgPrefixed "Cannot mint to the supply account" (receiverAccountId /= supplyAccountId)
 
         let allActors = Set.union instructors (Set.fromList (signatory this))
-            onlyCustodian = Set.fromList [custodian]
             quantity = Quantity with unit = instrument, amount
         let custodianToOwner = RoutedStep with
               custodian

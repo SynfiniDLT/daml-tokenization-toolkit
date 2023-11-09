@@ -1,0 +1,90 @@
+module Synfini.Onboarding.Mint.OpenOffer where
+
+import Synfini.Mint
+import Synfini.Onboarding.Types
+import DA.Set (Set)
+import qualified DA.Set as Set
+import Daml.Finance.Interface.Types.Common.Types
+import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
+import qualified Daml.Finance.Interface.Account.Account as Account
+import Daml.Script
+
+template OpenMintOffer
+  with
+    custodian : Party
+    depository : Party
+    observers : Set Party
+  where
+    signatory custodian, depository
+
+    observer observers
+
+    nonconsuming choice CreateMint : ContractId Mint
+      with
+        issuer : Party
+        instrumentId : Id
+        instrumentVersion : Text
+        minterBurner : Party
+        supplyAccountId : Id
+        settlementFactoryCid : ContractId SettlementFactory.I
+        observers : Set Party
+      controller issuer, minterBurner
+      do
+        let supplyAccount = AccountKey with owner = minterBurner, custodian, id = supplyAccountId
+        supplyAccountView <- Account.exerciseInterfaceByKey
+          @Account.I
+          supplyAccount
+          minterBurner
+          Account.GetView with viewer = minterBurner
+        assertMsg
+          "Must include custodian as incoming controller"
+          (custodian `Set.member` supplyAccountView.controllers.incoming)
+        assertMsg
+          "Must include custodian as outgoing controller"
+          (custodian `Set.member` supplyAccountView.controllers.outgoing)
+        create Mint with
+          custodian
+          minterBurner
+          supplyAccountId
+          instrument = InstrumentKey with issuer, depository, id = instrumentId, version = instrumentVersion
+          settlementFactoryCid
+          observers
+
+data OfferSettings = OfferSettings
+  with
+    label : Text
+    custodian : Text
+    depository : Text
+    observers : [Text]
+
+data CreateOpenMintOffersInput = CreateOpenMintOffersInput
+  with
+    parties : [PartyInfo]
+    offerSettings : [OfferSettings]
+
+data LabelledOpenMintOffer = LabelledOpenMintOffer
+  with
+    label : Text
+    cid : ContractId OpenMintOffer
+
+data CreateOpenMintOffersOutput = CreateOpenMintOffersOutput
+  with
+    openMintOffers : [LabelledOpenMintOffer]
+
+createOpenMintOffers : CreateOpenMintOffersInput -> Script CreateOpenMintOffersOutput
+createOpenMintOffers input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  openMintOffers <- forA input.offerSettings $ \settings -> do
+    let custodian = p settings.custodian
+        depository = p settings.depository
+        observers = Set.fromList (p <$> settings.observers)
+    cid <- submitMulti [custodian, depository] [] do
+      createCmd OpenMintOffer with
+        custodian
+        depository
+        observers
+    pure LabelledOpenMintOffer with label = settings.label, cid
+  pure CreateOpenMintOffersOutput with openMintOffers
+
+data
