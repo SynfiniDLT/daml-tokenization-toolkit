@@ -10,7 +10,7 @@ import AccountBalances from "../components/layout/accountBalances";
 
 const NewWalletScreen: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
-  const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}/wallet-views`;
+  const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 

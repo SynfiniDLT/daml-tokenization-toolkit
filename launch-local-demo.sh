@@ -46,7 +46,7 @@ spring_pg_id=$(ps --pid $spring_pid -o "pgid" --no-headers)
 echo $spring_pg_id > $tokenization_lib_home/spring.pgid
 sleep 20s
 
-curl http://localhost:8080/v1/projection/start \
+curl http://localhost:8080/wallet-views/v1/projection/start \
   -H 'Content-Type: application/json' \
   -d "
     {

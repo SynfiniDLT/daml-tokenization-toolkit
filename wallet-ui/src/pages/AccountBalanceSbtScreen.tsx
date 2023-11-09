@@ -19,7 +19,7 @@ const AccountBalanceSbtScreen: React.FC = () => {
   const { state } = useLocation();
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
-  const walletViewsBaseUrl: string = `${window.location.protocol}//${window.location.host}/wallet-views`;
+  const walletViewsBaseUrl: string = `${window.location.protocol}//${window.location.host}`;
 
   const [balances, setBalances] = useState<Balance[]>([]);
   const [primaryParty, setPrimaryParty] = useState<string>("");

@@ -9,7 +9,7 @@ import { PageLayout } from "../components/PageLayout";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 
 const WalletScreen: React.FC = () => {
-  const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}/wallet-views`;
+  const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 

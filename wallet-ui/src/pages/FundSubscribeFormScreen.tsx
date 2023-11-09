@@ -20,7 +20,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
   const { state } = useLocation();
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
-  const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}/wallet-views`;
+  const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
   const [primaryParty, setPrimaryParty] = useState<string>("");
   const [accounts, setAccounts] = useState<AccountSummary[]>();
   const [inputQtd, setInputQtd] = useState(0);

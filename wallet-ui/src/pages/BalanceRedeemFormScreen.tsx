@@ -19,7 +19,7 @@ const BalanceRedeemFormScreen: React.FC = () => {
   const { state } = useLocation(); // TODO use strongly typed state instead of `any`
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
-  const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}/wallet-views`;
+  const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
 
   const [primaryParty, setPrimaryParty] = useState<string>("");
   const [amountInput, setAmountInput] = useState("");

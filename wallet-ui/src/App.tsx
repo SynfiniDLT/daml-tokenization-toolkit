@@ -22,7 +22,7 @@ export const userContext = createLedgerContext();
 const App: React.FC = () => {
   const { isLoading, getAccessTokenSilently, isAuthenticated } = useAuth0();
 
-  const damlBaseUrl = `${window.location.protocol}//${window.location.host}/daml/`;
+  const damlBaseUrl = `${window.location.protocol}//${window.location.host}/`;
   const [token, setToken] = useState<string>("");
   const [primaryParty, setPrimaryParty] = useState<string>('');
   const [readOnly, setReadOnly] = useState<boolean>(false);
