@@ -21,7 +21,6 @@ export const userContext = createLedgerContext();
 const App: React.FC = () => {
   const { isLoading, getAccessTokenSilently, isAuthenticated } = useAuth0();
 
-  const damlBaseUrl = `${window.location.protocol}//${window.location.host}/`;
   const [token, setToken] = useState<string>("");
   const [primaryParty, setPrimaryParty] = useState<string>('');
   const [readOnly, setReadOnly] = useState<boolean>(false);
@@ -44,7 +43,7 @@ const App: React.FC = () => {
   }
   return (
     <AuthContextStore.Provider value={{token: token, setPrimaryParty: setPrimaryParty, primaryParty: primaryParty, readOnly: readOnly}}>
-      <userContext.DamlLedger token={token} party={primaryParty} httpBaseUrl={damlBaseUrl}>
+      <userContext.DamlLedger token={token} party={primaryParty} >
       <Routes>
           {isAuthenticated ? <Route path="/" element={<AuthenticationGuard component={MainScreen} />} /> : <Route path="/" element={<HomeScreen />} />}
           <Route path="/wallet" element={<AuthenticationGuard component={NewWalletScreen} />} />
