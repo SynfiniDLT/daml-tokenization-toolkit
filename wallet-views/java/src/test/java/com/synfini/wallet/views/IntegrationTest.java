@@ -1,6 +1,9 @@
 package com.synfini.wallet.views;
 
-import com.daml.ledger.api.v1.admin.*;
+import com.daml.ledger.api.v1.admin.PackageManagementServiceGrpc;
+import com.daml.ledger.api.v1.admin.PackageManagementServiceOuterClass;
+import com.daml.ledger.api.v1.admin.PartyManagementServiceGrpc;
+import com.daml.ledger.api.v1.admin.PartyManagementServiceOuterClass;
 import com.daml.ledger.javaapi.data.*;
 import com.daml.ledger.javaapi.data.codegen.DefinedDataType;
 import com.daml.ledger.javaapi.data.codegen.HasCommands;
@@ -14,7 +17,11 @@ import com.google.protobuf.ByteString;
 import da.set.types.Set;
 import daml.finance.interface$.account.account.Account;
 import daml.finance.interface$.account.account.Controllers;
+import daml.finance.interface$.account.account.Credit;
 import daml.finance.interface$.holding.base.Base;
+import daml.finance.interface$.holding.base.Lock;
+import daml.finance.interface$.holding.base.LockType;
+import daml.finance.interface$.holding.base.View;
 import daml.finance.interface$.holding.fungible.Fungible;
 import daml.finance.interface$.holding.fungible.SplitResult;
 import daml.finance.interface$.instrument.token.types.Token;
@@ -26,33 +33,26 @@ import daml.finance.interface$.settlement.types.Approval;
 import daml.finance.interface$.settlement.types.RoutedStep;
 import daml.finance.interface$.settlement.types.allocation.Pledge;
 import daml.finance.interface$.settlement.types.approval.TakeDelivery;
-import io.grpc.*;
-import io.grpc.MethodDescriptor;
-import kong.unirest.*;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.test.context.ActiveProfiles;
-import synfini.wallet.api.types.*;
-import daml.finance.interface$.account.account.Credit;
-import daml.finance.interface$.holding.base.Lock;
-import daml.finance.interface$.holding.base.LockType;
-import daml.finance.interface$.holding.base.View;
 import daml.finance.interface$.types.common.types.AccountKey;
 import daml.finance.interface$.types.common.types.Id;
 import daml.finance.interface$.types.common.types.InstrumentKey;
 import daml.finance.interface$.types.common.types.Quantity;
+import io.grpc.MethodDescriptor;
+import io.grpc.*;
 import io.grpc.netty.NettyChannelBuilder;
+import kong.unirest.*;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import synfini.wallet.api.types.*;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -67,7 +67,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -78,6 +78,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
   classes = SpringApplication.class)
 @AutoConfigureMockMvc
 public class IntegrationTest {
+  private static final String walletViewsBasePath = "/wallet-views/v1/";
   private static final Logger logger = LoggerFactory.getLogger(IntegrationTest.class);
   private static final String mockTokenUrl = "https://myauth.com/token";
   private static MockClient mockTokenClient;
@@ -301,7 +302,7 @@ public class IntegrationTest {
     mvc
       .perform(
         MockMvcRequestBuilders
-          .post("/v1/projection/clear")
+          .post(walletViewsBasePath + "projection/clear")
       )
       .andExpect(status().isOk());
 
@@ -1439,21 +1440,21 @@ public class IntegrationTest {
 
   private static MockHttpServletRequestBuilder getAccountsBuilder(String owner) {
     return MockMvcRequestBuilders
-      .post("/v1/accounts")
+      .post(walletViewsBasePath + "accounts")
       .content(toJson(new AccountFilter(owner)))
       .contentType(MediaType.APPLICATION_JSON);
   }
 
   private static MockHttpServletRequestBuilder getBalanceByAccountBuilder(AccountKey account) {
     return MockMvcRequestBuilders
-      .post("/v1/balance")
+      .post(walletViewsBasePath + "balance")
       .content(toJson(new BalanceFilter(account)))
       .contentType(MediaType.APPLICATION_JSON);
   }
 
   private static MockHttpServletRequestBuilder getHoldingsBuilder(AccountKey account, InstrumentKey instrument) {
     return MockMvcRequestBuilders
-      .post("/v1/holdings")
+      .post(walletViewsBasePath + "holdings")
       .content(toJson(new HoldingFilter(account, instrument)))
       .contentType(MediaType.APPLICATION_JSON);
   }
@@ -1465,7 +1466,7 @@ public class IntegrationTest {
     Optional<String> version
   ) {
     return MockMvcRequestBuilders
-      .post("/v1/instruments")
+      .post(walletViewsBasePath + "instruments")
       .content(toJson(new InstrumentsFilter(dep, iss, id, version)))
       .contentType(MediaType.APPLICATION_JSON);
   }
@@ -1475,7 +1476,7 @@ public class IntegrationTest {
     Optional<Long> limit
   ) {
     return MockMvcRequestBuilders
-      .post("/v1/settlements")
+      .post(walletViewsBasePath + "settlements")
       .content(toJson(new SettlementsFilter(before, limit)))
       .contentType(MediaType.APPLICATION_JSON);
   }
@@ -1621,7 +1622,7 @@ public class IntegrationTest {
     mvc
       .perform(
         MockMvcRequestBuilders
-          .post("/v1/projection/start")
+          .post(walletViewsBasePath + "projection/start")
           .content(new Gson().toJson(startBody))
           .contentType(MediaType.APPLICATION_JSON)
       )
