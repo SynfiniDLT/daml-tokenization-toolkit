@@ -139,10 +139,14 @@ public class IntegrationTest {
     ).directory(new File(sandboxDir))
      .redirectOutput(new File(sandboxDir + "/sandbox-output.log"))
      .redirectError(new File(sandboxDir + "/sandbox-error.log"));
+    final var startTime = System.currentTimeMillis() / 1000L;
     sandboxProcess = pb.start();
 
-    final var lastAttempt = 20;
-    for (int attempt = 1; attempt <= lastAttempt; attempt++) {
+    final var sandboxTimeoutSeconds = Long.valueOf(
+      Optional.ofNullable(System.getProperty("walletviews.test.sandbox-start-timeout-seconds")).orElse("180")
+    );
+    logger.info("Waiting for sandbox to start with timeout set to " + sandboxTimeoutSeconds + " seconds");
+    while (true) {
       if (!sandboxProcess.isAlive()) {
         throw new Exception("sandbox process has terminated. Please check logs under " + sandboxDir);
       }
@@ -168,9 +172,9 @@ public class IntegrationTest {
       } catch (StatusRuntimeException statusRuntimeException) {
         final var isUnavailable = statusRuntimeException.getStatus().getCode().equals(Status.UNAVAILABLE.getCode()) ||
           statusRuntimeException.getMessage().contains("PARTY_ALLOCATION_WITHOUT_CONNECTED_DOMAIN");
-        if (!isUnavailable || attempt == lastAttempt) {
+        if (!isUnavailable || (System.currentTimeMillis() / 1000L) - startTime > sandboxTimeoutSeconds) {
           logger.error(
-            "Failed to connect to sandbox after " + attempt + " attempts. Please check logs under " + sandboxDir
+            "Failed to connect to sandbox. Please check logs under " + sandboxDir
           );
           throw statusRuntimeException;
         } else {
