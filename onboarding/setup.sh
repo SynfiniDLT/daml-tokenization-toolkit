@@ -77,29 +77,31 @@ elif [ "$command" = "import-parties" ]; then
   ./commands/import-parties.sh $@
 elif [ "$command" = "create-users" ]; then
   ./commands/create-users.sh $@
-elif [ "$command" = "account-factories" ]; then
+elif [ "$command" = "create-account-factories" ]; then
   ./commands/create-account-factories.sh $@
-elif [ "$command" = "holding-factories" ]; then
+elif [ "$command" = "create-holding-factories" ]; then
   ./commands/create-holding-factories.sh $@
-elif [ "$command" = "settlement-factories" ]; then
+elif [ "$command" = "create-settlement-factories" ]; then
   ./commands/create-settlement-factories.sh $@
-elif [ "$command" = "instrument-factories" ]; then
+elif [ "$command" = "create-instrument-factories" ]; then
   ./commands/create-instrument-factories.sh $@
-elif [ "$command" = "accounts-unilateral" ]; then
+elif [ "$command" = "create-accounts-unilateral" ]; then
   ./commands/create-accounts-unilateral.sh $@
-elif [ "$command" = "accounts-open-offer" ]; then
+elif [ "$command" = "create-account-open-offers" ]; then
   ./commands/create-open-account-offer.sh $@
-elif [ "$command" = "accounts-take-open-offer" ]; then
+elif [ "$command" = "take-account-open-offers" ]; then
   ./commands/take-open-account-offer.sh $@
 elif [ "$command" = "create-pbas-unilateral" ]; then
   ./commands/create-pbas-unilateral.sh $@
 elif [ "$command" = "create-mint-unilateral" ]; then
   ./commands/create-mint-unilateral.sh $@
-elif [ "$command" = "mint-open-offer" ]; then
+elif [ "$command" = "create-mint-open-offers" ]; then
   ./commands/create-open-mint-offer.sh $@
-elif [ "$command" = "mint-receivers" ]; then
+elif [ "$command" = "take-mint-open-offer" ]; then
+  ./commands/take-open-mint-offer.sh $@
+elif [ "$command" = "create-mint-receivers" ]; then
   ./commands/create-mint-receivers.sh $@
-elif [ "$command" = "minters" ]; then
+elif [ "$command" = "create-minters" ]; then
   ./commands/create-minters.sh $@
 elif [ "$command" = "instruct-mint" ]; then
   ./commands/instruct-mint.sh $@
