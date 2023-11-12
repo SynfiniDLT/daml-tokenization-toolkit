@@ -111,8 +111,12 @@ elif [ "$command" = "instruct-burn" ]; then
   ./commands/instruct-burn.sh $@
 elif [ "$command" = "execute-burn" ]; then
   ./commands/execute-burn.sh $@
-elif [ "$command" = "create-fund-offer" ]; then
+elif [ "$command" = "create-fund-offer-unilateral" ]; then
   ./commands/create-fund-offer.sh $@
+elif [ "$command" = "create-fund-issuer-open-offers" ]; then
+  ./commands/create-fund-issuer-open-offers.sh $@
+elif [ "$command" = "take-fund-issuer-open-offer" ]; then
+  ./commands/take-fund-issuer-open-offer.sh $@
 elif [ "$command" = "create-fund-investors" ]; then
   ./commands/create-fund-investors.sh $@
 elif [ "$command" = "accept-fund-purchase" ]; then
