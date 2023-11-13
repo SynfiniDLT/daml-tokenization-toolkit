@@ -71,13 +71,13 @@ data LabelledOpenMintOffer = LabelledOpenMintOffer
 
 data CreateOpenMintOffersOutput = CreateOpenMintOffersOutput
   with
-    openMintOffers : [LabelledOpenMintOffer]
+    mintOpenOffers : [LabelledOpenMintOffer]
 
 createOpenMintOffers : CreateOpenMintOffersInput -> Script CreateOpenMintOffersOutput
 createOpenMintOffers input = do
   let pm = partyTable input.parties
   let p = getPartyId pm
-  openMintOffers <- forA input.offerSettings $ \settings -> do
+  mintOpenOffers <- forA input.offerSettings $ \settings -> do
     let custodian = p settings.custodian
         depository = p settings.depository
         observers = Set.fromList (p <$> settings.observers)
@@ -87,7 +87,7 @@ createOpenMintOffers input = do
         depository
         observers
     pure LabelledOpenMintOffer with label = settings.label, cid
-  pure CreateOpenMintOffersOutput with openMintOffers
+  pure CreateOpenMintOffersOutput with mintOpenOffers
 
 data MintSettings = MintSettings
   with
@@ -105,7 +105,7 @@ data CreateMintInput = CreateMintInput
     readAs : [Text]
     parties : [PartyInfo]
     settlementFactories : [SettlementFactory]
-    openMintOffers : [LabelledOpenMintOffer]
+    mintOpenOffers : [LabelledOpenMintOffer]
     mintSettings : MintSettings
 
 createMint : CreateMintInput -> Script ()
@@ -113,13 +113,13 @@ createMint input = do
   let pm = partyTable input.parties
   let p = getPartyId pm
   let offer = O.fromSomeNote "Could not find mint offer" $
-        find (\offer -> offer.label == input.mintSettings.offer) input.openMintOffers
+        find (\offer -> offer.label == input.mintSettings.offer) input.mintOpenOffers
       issuer = p input.mintSettings.issuer
       instrumentId = Id input.mintSettings.instrumentId
       minterBurner = p input.mintSettings.minterBurner
       supplyAccountId = Id input.mintSettings.supplyAccountId
       settlementFactoryCid = findFactoryContractId input.mintSettings.settlementFactory input.settlementFactories
-      observers = Set.fromList (p <$> input.readAs)
+      observers = Set.fromList (p <$> input.mintSettings.observers)
       readAs = p <$> input.readAs
   submitMulti [issuer, minterBurner] readAs do
     exerciseCmd offer.cid CreateMint with

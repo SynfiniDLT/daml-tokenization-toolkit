@@ -2,4 +2,4 @@
 
 set -eu
 
-daml script ${TOKENIZATION_CONNECTION_ARGS} $@
+daml script ${DOPS_CONNECTION_ARGS} $@
