@@ -121,7 +121,7 @@ elif [ "$command" = "create-fund-offer-unilateral" ]; then
 elif [ "$command" = "create-fund-issuer-open-offers" ]; then
   ${dops_commands}/create-fund-issuer-open-offers.sh $@
 elif [ "$command" = "take-fund-issuer-open-offer" ]; then
-  ${dops_commands}/take-fund-issuer-open-offer.sh $@
+  ${dops_commands}/take-open-fund-issuer-offer.sh $@
 elif [ "$command" = "create-fund-investors" ]; then
   ${dops_commands}/create-fund-investors.sh $@
 elif [ "$command" = "accept-fund-purchase" ]; then

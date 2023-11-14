@@ -74,13 +74,13 @@ data LabelledFundIssuerOpenOffer = LabelledFundIssuerOpenOffer
 
 data CreateFundIssuerOpenOffersOutput = CreateFundIssuerOpenOffersOutput
   with
-    openFundIssuerOffers : [LabelledFundIssuerOpenOffer]
+    fundIssuerOpenOffers : [LabelledFundIssuerOpenOffer]
 
 createFundIssuerOpenOffers : CreateFundIssuerOpenOffersInput -> Script CreateFundIssuerOpenOffersOutput
 createFundIssuerOpenOffers input = do
   let pm = partyTable input.parties
   let p = getPartyId pm
-  openFundIssuerOffers <- forA input.offerSettings $ \settings -> do
+  fundIssuerOpenOffers <- forA input.offerSettings $ \settings -> do
     let fundCustodian = p settings.fundCustodian
         fundDepository = p settings.fundDepository
         fund = p settings.fund
@@ -92,7 +92,7 @@ createFundIssuerOpenOffers input = do
         fund
         fundManager
     pure LabelledFundIssuerOpenOffer with label = settings.label, cid
-  pure CreateFundIssuerOpenOffersOutput with openFundIssuerOffers
+  pure CreateFundIssuerOpenOffersOutput with fundIssuerOpenOffers
 
 data FundOfferSettings = FundOfferSettings
   with
