@@ -4,7 +4,7 @@ log
 navigator.log
 .lib
 .build
-.setup
+.dops
 target
 .idea
 *.iml

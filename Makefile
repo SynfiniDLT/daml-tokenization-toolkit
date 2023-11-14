@@ -60,6 +60,10 @@ test-fund: .build/fund-tokenization.dar
 
 .PHONY: build-onboarding
 build-onboarding: .build/tokenization-onboarding.dar
+
+.PHONY: install-onboarding
+install-onboarding: .build/tokenization-onboarding.dar
+	export DOPS_DAR=../.build/tokenization-onboarding.dar && cd onboarding && ./install.sh
 ## END onboarding
 
 ## BEGIN pbt
