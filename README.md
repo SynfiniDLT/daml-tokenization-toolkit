@@ -65,3 +65,12 @@ To clean the build state:
 ```bash
 make clean
 ```
+
+## dops CLI
+
+The dops CLI can be used for various operations on the ledger:
+
+```
+echo "export DOPS_HOME=${DOPS_HOME}" >> ~/.bashrc
+echo "export PATH=\$PATH:${DOPS_HOME}/bin" >> ~/.bashrc
+```
