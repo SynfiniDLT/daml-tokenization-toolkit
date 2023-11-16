@@ -52,6 +52,9 @@ public class WalletAuth {
     boolean result = false;
     com.daml.ledger.javaapi.data.ListUserRightsResponse userRights;
     try {
+      logger.info("LedgerHost=", ledgerApiConfig.ledgerHost);
+      logger.info("LedgerPort=", ledgerApiConfig.ledgerPort);
+      logger.info("token=", token);
       final DamlLedgerClient.Builder clientBuilder = DamlLedgerClient
         .newBuilder(ledgerApiConfig.ledgerHost, ledgerApiConfig.ledgerPort)
         .withAccessToken(token);
