@@ -1,0 +1,27 @@
+version: '3.9'
+
+services:
+  wallet-backend:
+    image: 115676289457.dkr.ecr.ap-southeast-2.amazonaws.com/synfini-wallet-be:latest
+    container_name: wallet-backend
+    restart: always
+    tty: true
+    environment:
+      - TZ=Australia/Sydney
+      - ENV=${ENV}
+    ports:
+      - "9091:8091"
+    volumes:
+      - ./:/synfini-wallet-backend
+  wallet-frontend:
+    image: 115676289457.dkr.ecr.ap-southeast-2.amazonaws.com/synfini-wallet-fe:latest
+    container_name: wallet-frontend
+    restart: always
+    tty: true
+    environment:
+      - TZ=Australia/Sydney
+      - ENV=${ENV}
+    ports:
+      - "9090:8090"
+    volumes:
+      - ./:/synfini-wallet-frontend

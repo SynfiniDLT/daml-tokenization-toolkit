@@ -1,0 +1,9 @@
+FROM amazoncorretto:17
+
+WORKDIR /synfini-wallet-frontend
+
+RUN cd wallet-ui && npm install
+
+COPY . .
+
+ENTRYPOINT ["npm", "start"]

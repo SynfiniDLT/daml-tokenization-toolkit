@@ -1,0 +1,7 @@
+FROM amazoncorretto:17
+
+WORKDIR /synfini-wallet-backend
+
+COPY wallet-views/java/target/wallet-views-0.0.1.jar .
+
+ENTRYPOINT  ["java", "-jar", "wallet-views-0.0.1.jar"]
