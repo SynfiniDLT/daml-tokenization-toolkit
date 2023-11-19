@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   wallet-backend:
-    image: 115676289457.dkr.ecr.ap-southeast-2.amazonaws.com/synfini-wallet-be:latest
+    image: 115676289457.dkr.ecr.ap-southeast-2.amazonaws.com/synfini-wallet-be:0.0.1
     container_name: wallet-backend
     restart: always
     tty: true
@@ -14,7 +14,7 @@ services:
     volumes:
       - ./:/synfini-wallet-backend
   wallet-frontend:
-    image: 115676289457.dkr.ecr.ap-southeast-2.amazonaws.com/synfini-wallet-fe:latest
+    image: 115676289457.dkr.ecr.ap-southeast-2.amazonaws.com/synfini-wallet-fe:0.0.1
     container_name: wallet-frontend
     restart: always
     tty: true
