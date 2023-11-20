@@ -2,7 +2,7 @@ FROM adoptopenjdk/openjdk11:alpine
 
 WORKDIR /app
 
-ARG JAR_FILE=/target/wallet-views-0.0.1.jar
+ARG JAR_FILE=/wallet-views/java/target/wallet-views-0.0.1.jar
 
 COPY ${JAR_FILE} wallet-views.jar
 
