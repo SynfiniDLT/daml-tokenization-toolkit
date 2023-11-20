@@ -6,9 +6,5 @@ files:
 hooks:
   BeforeInstall:
     - location: generate-configs.sh
-      timeout: 120
-      runas: root
   ApplicationStart:
     - location: start-containers.sh
-      timeout: 120
-      runas: root
