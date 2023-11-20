@@ -2,7 +2,7 @@ FROM amazoncorretto:17
 
 WORKDIR /synfini-wallet-frontend
 
-RUN cd wallet-ui && npm install
+#RUN cd wallet-ui && npm install
 
 COPY . .
 
