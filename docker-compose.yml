@@ -8,7 +8,6 @@ services:
     tty: true
     environment:
       - TZ=Australia/Sydney
-      - ENV=${ENV}
     ports:
       - "9091:8091"
     volumes:
@@ -20,7 +19,6 @@ services:
     tty: true
     environment:
       - TZ=Australia/Sydney
-      - ENV=${ENV}
     ports:
       - "9090:8090"
     volumes:

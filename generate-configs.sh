@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+echo "Installing docker-compose"
+sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+docker-compose version
+echo "Done."
+
+
 echo "Generating config file for environment: $DEPLOYMENT_GROUP_NAME"
 
 rm -f application.properties
