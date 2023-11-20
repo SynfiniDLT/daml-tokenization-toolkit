@@ -9,6 +9,6 @@ hooks:
       timeout: 120
       runas: root
   ApplicationStart:
-    - location: start_containers.sh
+    - location: start-containers.sh
       timeout: 120
       runas: root
