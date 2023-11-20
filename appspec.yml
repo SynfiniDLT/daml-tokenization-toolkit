@@ -1,0 +1,11 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /home/ec2-user/wallet-app-deploy/
+hooks:
+  BeforeInstall:
+    - location: generate-configs.sh
+  ApplicationStart:
+    - location: start-containers.sh
+
