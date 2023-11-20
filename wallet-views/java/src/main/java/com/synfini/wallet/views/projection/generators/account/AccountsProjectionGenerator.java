@@ -36,7 +36,7 @@ public class AccountsProjectionGenerator implements ProjectionGenerator<Event, A
   @Override
   public Projection<Event> projection() {
     return Projection.create(
-      new ProjectionId("holdings-projection-for-" + readAs),
+      new ProjectionId("accounts-projection-for-" + readAs),
       ProjectionFilter.singleContractType(Set.of(readAs), Account.INTERFACE)
     );
   }
