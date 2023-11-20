@@ -17,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import io.grpc.netty.GrpcSslContexts;
 
 public class WalletAuth {
   private static final Logger logger = LoggerFactory.getLogger(WalletAuth.class);
@@ -59,7 +60,7 @@ public class WalletAuth {
         .newBuilder(ledgerApiConfig.ledgerHost, ledgerApiConfig.ledgerPort)
         .withAccessToken(token);
       if (!Optional.ofNullable(ledgerApiConfig.ledgerPlaintext).orElse(false)) {
-        clientBuilder.withSslContext(SslContextBuilder.forClient().build());
+	clientBuilder.withSslContext(GrpcSslContexts.forClient().build());
       }
       client = clientBuilder.build();
       client.connect();
