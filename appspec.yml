@@ -5,7 +5,7 @@ files:
     destination: /home/ec2-user/alfred/synfini-wallet-app-deploy
 hooks:
   BeforeInstall:
-    - location: generate-configs.sh dev
+    - location: generate-configs.sh
       timeout: 120
       runas: root
   ApplicationStart:
