@@ -73,7 +73,7 @@ createPbas input = do
             unit = instrument
             amount = 1.0
         batchId = Id (TX.sha256 $ show instrument <> show t)
-    (batchCid, [instructionCid]) <- submitMulti [custodian] readAs do
+    (batchCid, [instructionCid]) <- submitMulti [custodian, owner] readAs do
       exerciseCmd settlementFactoryCid SettlementFactory.Instruct with
         instructors = Set.fromList [custodian]
         id = batchId
@@ -82,11 +82,13 @@ createPbas input = do
         contextId = None
         routedSteps = [step]
         settlementTime = None
-    (instructionCid, _) <- submit custodian do
-      exerciseCmd instructionCid Instruction.Allocate with actors = Set.fromList [custodian], allocation = CreditReceiver
-    submit owner do
-      exerciseCmd instructionCid Instruction.Approve with actors = Set.fromList [owner], approval = TakeDelivery account
-    [pbaHoldingCid] <- submitMulti [custodian, issuer, depository] readAs do
+    (instructionCid, _) <- submitMulti [custodian, owner] readAs do
+      exerciseCmd instructionCid Instruction.Allocate with
+        actors = Set.fromList [custodian, owner], allocation = CreditReceiver
+    submitMulti [custodian, owner] readAs do
+      exerciseCmd instructionCid Instruction.Approve with
+        actors = Set.fromList [custodian, owner], approval = TakeDelivery account
+    [pbaHoldingCid] <- submitMulti [custodian, issuer, depository, owner] readAs do
       exerciseCmd instrumentFactoryCid Pba.Create with
         instrument
         description = input.pbaInstrument.description
