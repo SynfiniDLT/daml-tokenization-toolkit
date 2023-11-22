@@ -73,7 +73,7 @@ createPbas input = do
             unit = instrument
             amount = 1.0
         batchId = Id (TX.sha256 $ show instrument <> show t)
-    (batchCid, [instructionCid]) <- submitMulti [custodian, owner] readAs do
+    (batchCid, [instructionCid]) <- submitMulti [custodian] readAs do
       exerciseCmd settlementFactoryCid SettlementFactory.Instruct with
         instructors = Set.fromList [custodian]
         id = batchId
@@ -82,13 +82,13 @@ createPbas input = do
         contextId = None
         routedSteps = [step]
         settlementTime = None
-    (instructionCid, _) <- submitMulti [custodian, owner] readAs do
+    (instructionCid, _) <- submitMulti [custodian] readAs do
       exerciseCmd instructionCid Instruction.Allocate with
-        actors = Set.fromList [custodian, owner], allocation = CreditReceiver
-    submitMulti [custodian, owner] readAs do
+        actors = Set.fromList [custodian], allocation = CreditReceiver
+    submitMulti [custodian] readAs do
       exerciseCmd instructionCid Instruction.Approve with
-        actors = Set.fromList [custodian, owner], approval = TakeDelivery account
-    [pbaHoldingCid] <- submitMulti [custodian, issuer, depository, owner] readAs do
+        actors = Set.fromList [custodian], approval = TakeDelivery account
+    [pbaHoldingCid] <- submitMulti [custodian, issuer, depository] readAs do
       exerciseCmd instrumentFactoryCid Pba.Create with
         instrument
         description = input.pbaInstrument.description
@@ -99,8 +99,8 @@ createPbas input = do
       cids <- exerciseCmd batchCid Batch.Settle with actors = Set.fromList [custodian]
       pure cids
     let disclosableHoldingCid : ContractId Disclosure.I = toInterfaceContractId pbaHoldingCid
-    submit owner do
+    submit custodian do
       exerciseCmd disclosableHoldingCid Disclosure.SetObservers with
-        disclosers = Set.fromList [owner]
+        disclosers = Set.fromList [custodian]
         newObservers = asPartiesMap p pba.holdingObservers
     pure ()
