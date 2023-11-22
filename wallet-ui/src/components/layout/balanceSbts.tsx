@@ -164,9 +164,9 @@ export default function BalanceSbts(props: {
           </td>
          
           <td>{inst.pbaView?.instrument.issuer.substring(0, 30)}</td>
-          <td>{Array.from(entity, ([key, value]) => `${key} | ${value}`)}</td>
-          <td style={{ whiteSpace: "pre-line"}}>{partiesSharedWith}</td>
-          <td>
+          <td style={{width: "200px"}}>{Array.from(entity, ([key, value]) => `${key} | ${value}`)}</td>
+          <td style={{ whiteSpace: "pre-line", width: "350px"}}>{partiesSharedWith}</td>
+          <td style={{width: "300px"}}>
             <button
               type="button"
               className="button__login"
@@ -204,14 +204,15 @@ export default function BalanceSbts(props: {
             <tr>
               <th>
                 SBT ID
-                <QuestionCircle />
+                {/* <QuestionCircle /> */}
               </th>
               <th>
                 Issuer
-                <QuestionCircle />
+                {/* <QuestionCircle /> */}
               </th>
               <th>
-                Attributes <QuestionCircle />
+                Attributes 
+                {/* <QuestionCircle /> */}
               </th>
               <th>
                 Organizations shared with

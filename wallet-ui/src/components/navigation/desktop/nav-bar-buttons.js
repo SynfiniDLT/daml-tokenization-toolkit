@@ -17,7 +17,7 @@ export const NavBarButtons = () => {
       )}
       {isAuthenticated && (
         <>
-          <div style={{ position: "absolute", right: "20%", bottom: "15%" }}>
+          <div style={{ position: "relative", right: "20%", bottom: "15%" }}>
             {user !== undefined && user.email} <br />
             {ctx.primaryParty !== '' && (
               ctx.primaryParty.substring(0,30) + "..."
