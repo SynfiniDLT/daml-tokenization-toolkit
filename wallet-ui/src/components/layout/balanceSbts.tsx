@@ -146,7 +146,7 @@ export default function BalanceSbts(props: {
       if (props.partyBoundAttributes!== undefined && props.partyBoundAttributes.length > 0){
 
         props.partyBoundAttributes[index].observers.forEach((el: string) => {
-          if (el !== ctx.primaryParty && !el.toLowerCase().includes("validator")){
+          if (el !== ctx.primaryParty && !el.toLowerCase().includes("validator") &&  !el.toLowerCase().includes("operator")){
             if (partiesSharedWith===""){
               partiesSharedWith = partiesSharedWith.concat("- " + nameFromParty(el));
             }else{
@@ -162,7 +162,7 @@ export default function BalanceSbts(props: {
             {inst.pbaView?.instrument.id.unpack} |{" "}
             {inst.pbaView?.instrument.version}
           </td>
-          <td>{"???"}</td>
+         
           <td>{inst.pbaView?.instrument.issuer.substring(0, 30)}</td>
           <td>{Array.from(entity, ([key, value]) => `${key} | ${value}`)}</td>
           <td style={{ whiteSpace: "pre-line"}}>{partiesSharedWith}</td>
@@ -204,10 +204,6 @@ export default function BalanceSbts(props: {
             <tr>
               <th>
                 SBT ID
-                <QuestionCircle />
-              </th>
-              <th>
-                SBT Name
                 <QuestionCircle />
               </th>
               <th>
