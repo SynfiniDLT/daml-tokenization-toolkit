@@ -145,7 +145,7 @@ export default function BalanceSbts(props: {
       let entity: any = inst.pbaView?.attributes.entriesArray();
       let partiesSharedWith: string = "";
       if (props.partyBoundAttributes!== undefined && props.partyBoundAttributes.length > 0){
-        
+console.log("->",props.partyBoundAttributes[index]);        
         if (props.partyBoundAttributes[index]!== null && props.partyBoundAttributes[index].observers !== null){
           props.partyBoundAttributes[index].observers.forEach((el: string) => {
             if (el !== ctx.primaryParty && !el.toLowerCase().includes("validator") &&  !el.toLowerCase().includes("operator")){
