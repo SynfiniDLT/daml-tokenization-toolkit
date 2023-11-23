@@ -10,6 +10,7 @@ import Modal from "react-modal";
 import { Disclosure } from "@daml.js/daml-finance-interface-util/lib/Daml/Finance/Interface/Util/Disclosure";
 import { Party, Map, emptyMap, Unit, ContractId } from "@daml/types";
 import { nameFromParty, wait } from "../Util";
+import HoverPopUp from "./hoverPopUp";
 
 export default function BalanceSbts(props: {
   instruments?: InstrumentSummary[];
@@ -163,7 +164,12 @@ export default function BalanceSbts(props: {
             {inst.pbaView?.instrument.version}
           </td>
          
-          <td>{inst.pbaView?.instrument.issuer.substring(0, 30)}</td>
+          <td>
+            <HoverPopUp 
+              triggerText={inst.pbaView?.instrument.issuer.substring(0, 30) + "..."} 
+              popUpContent={inst.pbaView?.instrument.issuer} 
+            />
+          </td>
           <td style={{width: "200px"}}>{Array.from(entity, ([key, value]) => `${key} | ${value}`)}</td>
           <td style={{ whiteSpace: "pre-line", width: "350px"}}>{partiesSharedWith}</td>
           <td style={{width: "300px"}}>
@@ -204,15 +210,12 @@ export default function BalanceSbts(props: {
             <tr>
               <th>
                 SBT ID
-                {/* <QuestionCircle /> */}
               </th>
               <th>
                 Issuer
-                {/* <QuestionCircle /> */}
               </th>
               <th>
                 Attributes 
-                {/* <QuestionCircle /> */}
               </th>
               <th>
                 Organizations shared with

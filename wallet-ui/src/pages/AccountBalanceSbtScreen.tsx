@@ -117,7 +117,6 @@ const AccountBalanceSbtScreen: React.FC = () => {
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
         SBT Details
       </h3>
-      <AccountDetailsSimple account={state.account}></AccountDetailsSimple>
       {state.account.view.id.unpack === "sbt" && (
         <BalanceSbts instruments={instruments} account={state.account} partyBoundAttributes={partyBoundAttributes} />
       )}

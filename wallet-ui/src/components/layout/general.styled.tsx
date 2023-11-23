@@ -29,10 +29,34 @@ export const CardContainer = styled.div`
     0 0.9px 1.5px hsla(0, 0%, 0%, 0.045), 0 3.5px 6px hsla(0, 0%, 0%, 0.09);
 `;
 
+export const ContainerDiv = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 300px; /* Adjust the width as needed */
+`;
+
+export const ContainerColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+`;
+
+export const ContainerColumnKey = styled.p`
+  margin-bottom: 5px;
+`;
+
+export const ContainerColumnValue = styled.p`
+  margin-bottom: 5px;
+  justify-content: space-between;
+  margin-left: 10px;
+`;
+
+
 export const DivBorderRoundContainer = styled.div`
   border: 2px solid white;
   border-radius: 10px;
-  width: 30vw;
+  width: 60vw;
   margin: 10px;
 `;
 

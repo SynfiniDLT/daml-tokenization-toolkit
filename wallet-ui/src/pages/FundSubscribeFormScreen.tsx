@@ -3,17 +3,21 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
 import AuthContextStore from "../store/AuthContextStore";
 import { PageLayout } from "../components/PageLayout";
-import { formatCurrency, nameFromParty } from "../components/Util";
-import {
-  AccountSummary,
-  HoldingSummary,
-} from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { formatCurrency, formatPercentage, nameFromParty } from "../components/Util";
+import { AccountSummary, HoldingSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import * as damlTypes from "@daml/types";
 import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
 import { FundInvestor } from "@daml.js/fund-tokenization/lib/Synfini/Fund/Offer/Delegation";
 import { v4 as uuid } from "uuid";
-import { DivBorderRoundContainer } from "../components/layout/general.styled";
+import {
+  ContainerColumn,
+  ContainerDiv,
+  ContainerColumnKey,
+  DivBorderRoundContainer,
+  ContainerColumnValue,
+} from "../components/layout/general.styled";
+import { Coin, BoxArrowUpRight } from "react-bootstrap-icons";
 
 export const FundSubscribeFormScreen: React.FC = () => {
   const nav = useNavigate();
@@ -111,8 +115,6 @@ export const FundSubscribeFormScreen: React.FC = () => {
         const operators = {
           map: accountAUDN.view.controllers.outgoing.map.delete(accountAUDN.view.owner)
         };
-        console.log("map type in subscr", typeof(accountAUDN.view.controllers.outgoing.map));
-        console.log("operators", operators);
         let referenceIdUUID = uuid();
         try {
           await ledger.exerciseByKey(
@@ -146,50 +148,84 @@ export const FundSubscribeFormScreen: React.FC = () => {
       {referenceId === "" && error === "" && (
         <DivBorderRoundContainer>
           <form onSubmit={handleSubmit}>
-            <p>Name: {nameFromParty(state.fund.payload.fund)}</p>
-            <p>Fund Manager: {nameFromParty(state.fund.payload.fundManager)}</p>
-            <p>
-              Cost Per Unit: {state.fund.payload.costPerUnit}{" "}
-              {state.fund.payload.paymentInstrument.id.unpack}
-            </p>
-            <p>Minimal Investment: {state.fund.payload.minInvesment}</p>
-            <p>Comission: {state.fund.payload.commission}</p>
-            <span></span>
-            Quantity:{" "}
-            <input
-              type="number"
-              id="qtd"
-              name="qtd"
-              step={1}
-              min="0"
-              value={inputQtd}
-              onChange={handleChangeInputQtd}
-              style={{ width: "200px" }}
-            />
-            <p>Total: {formatCurrency(total.toString(),"en-US")}</p>
-            {/* {total >= parseFloat(state.fund.payload.minInvesment) && ( */}
-              <button
-                type="submit"
-                className={"button__login"}
-                style={{ width: "200px" }}
-              >
-                Submit
-              </button>
-            {/* )} */}
+            <ContainerDiv>
+              <ContainerColumn>
+                <ContainerColumnKey>Issuer:</ContainerColumnKey>
+                <ContainerColumnKey>Fund Manager:</ContainerColumnKey>
+                <ContainerColumnKey>Cost Per Unit:</ContainerColumnKey>
+                <ContainerColumnKey>Minimal Investment:</ContainerColumnKey>
+                <ContainerColumnKey>Commission:</ContainerColumnKey>
+                <ContainerColumnKey>Quantity:</ContainerColumnKey>
+                <ContainerColumnKey></ContainerColumnKey>
+                <p><br/></p>
+                
+                <ContainerColumnKey>Total:</ContainerColumnKey>
+              </ContainerColumn>
+              <ContainerColumn>
+                <ContainerColumnValue>{state.fund.payload.unitsInstrument.issuer}</ContainerColumnValue>
+                <ContainerColumnValue>{state.fund.payload.fundManager}</ContainerColumnValue>
+                <ContainerColumnValue>
+                  {state.fund.payload.costPerUnit} {state.fund.payload.paymentInstrument.id.unpack} <Coin />
+                </ContainerColumnValue>
+                <ContainerColumnValue>{formatCurrency(state.fund.payload.minInvesment, "en-US")}</ContainerColumnValue>
+                <ContainerColumnValue>{formatPercentage(state.fund.payload.commission)}</ContainerColumnValue>
+                <ContainerColumnValue>
+                  <input
+                    type="number"
+                    id="qtd"
+                    name="qtd"
+                    step={1}
+                    min="0"
+                    value={inputQtd}
+                    onChange={handleChangeInputQtd}
+                    style={{ width: "50px", height: "25px" }}
+                  />
+                </ContainerColumnValue>
+                <p><br/></p>
+                <ContainerColumnValue style={{verticalAlign:"-10px"}}>{formatCurrency(total.toString(), "en-US")}</ContainerColumnValue>
+              </ContainerColumn>
+            </ContainerDiv>
+            
+            {/* <p>Total: {formatCurrency(total.toString(), "en-US")}</p> */}
+            <button type="submit" className={"button__login"} style={{ width: "200px" }}>
+              Submit
+            </button>
           </form>
         </DivBorderRoundContainer>
       )}
       <div>
         {referenceId !== "" && (
           <>
-            <p><br/><br/><br/></p>
-            <p>Reference Id: {referenceId}</p>
-            <p>Quantity: {inputQtd}</p>
-            <p>Total: {formatCurrency(total.toString(),"en-US")}</p>
-            <p></p>
-            <div style={{ color: "red", whiteSpace: "pre-line" }}>{error}</div>
-            <p></p>
-            <button className="button__login" style={{width: "200px"}} onClick={() => nav("/wallet")}>Back</button >
+            <p><br/></p>
+          <ContainerDiv>
+
+            <ContainerColumn>
+            <ContainerColumnKey>Transaction Id:</ContainerColumnKey>
+            <ContainerColumnKey>Quantity:</ContainerColumnKey>
+            <ContainerColumnKey>Total:</ContainerColumnKey>
+            <ContainerColumnKey></ContainerColumnKey>
+            <ContainerColumnKey></ContainerColumnKey>
+            <ContainerColumnKey></ContainerColumnKey>
+            <ContainerColumnKey><button className="button__login" style={{ width: "200px" }} onClick={() => nav("/wallet")}>
+                  Back
+                </button></ContainerColumnKey>
+            </ContainerColumn>
+
+            <ContainerColumn style={{minWidth: "400px"}}>
+              <ContainerColumnValue>
+                <a href={`http://${window.location.host}/settlements#${referenceId}`} style={{color: "#66FF99"}}>
+                  {referenceId} {"    "}<BoxArrowUpRight />
+                </a>
+              </ContainerColumnValue>
+              <ContainerColumnValue> {inputQtd}</ContainerColumnValue>
+              <ContainerColumnValue>{formatCurrency(total.toString(), "en-US")}</ContainerColumnValue>
+              <ContainerColumnValue>
+                
+              </ContainerColumnValue>
+            </ContainerColumn>
+            
+
+          </ContainerDiv>
           </>
         )}
       </div>

@@ -11,8 +11,9 @@ import { MintReceiver } from "@daml.js/daml-mint/lib/Synfini/Mint/Delegation";
 import { HoldingSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
 import { WalletViewsClient } from "@synfini/wallet-views";
-import { DivBorderRoundContainer } from "../components/layout/general.styled";
+import { ContainerColumn, ContainerDiv, ContainerColumnKey, DivBorderRoundContainer, ContainerColumnValue } from "../components/layout/general.styled";
 import Modal from "react-modal";
+import { Coin } from "react-bootstrap-icons";
 
 const BalanceRedeemFormScreen: React.FC = () => {
   const nav = useNavigate();
@@ -141,26 +142,37 @@ const BalanceRedeemFormScreen: React.FC = () => {
   return (
     <PageLayout>
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
-        Redeem Balance
+        AUDN Redemption
       </h3>
 
       <DivBorderRoundContainer>
         <form onSubmit={handleSubmit}>
-          <p>Account: {state.balance.account.id.unpack}</p>
-          <p>Instrument: {state.balance.instrument.id.unpack}</p>
-          <p>Balance unlocked to redeem: {formatCurrency(state.balance.unlocked, "en-US")}</p>
-          <span>Amount:</span>
-          <span>
-            <input
-              type="string"
-              id="amount"
-              name="amount"
-              value={amountInput}
-              onChange={handleChangeAmount}
-              style={{ width: "200px" }}
-              onInput={formatCurrencyInput}
-            />
-          </span>
+          <ContainerDiv>
+          <ContainerColumn>
+            <ContainerColumnKey>Account:</ContainerColumnKey>
+            <ContainerColumnKey>Instrument:</ContainerColumnKey>
+            <ContainerColumnKey>Balance Available:</ContainerColumnKey>
+            <ContainerColumnKey>Amount:</ContainerColumnKey>
+          </ContainerColumn>
+
+          <ContainerColumn>
+            <ContainerColumnValue>{state.balance.account.id.unpack}</ContainerColumnValue>
+            <ContainerColumnValue>{state.balance.instrument.id.unpack} <Coin /></ContainerColumnValue>
+            <ContainerColumnValue>{formatCurrency(state.balance.unlocked, "en-US")} <Coin /></ContainerColumnValue>
+            <ContainerColumnValue>
+              <input
+                type="string"
+                id="amount"
+                name="amount"
+                value={amountInput}
+                onChange={handleChangeAmount}
+                style={{ width: "200px" }}
+                onInput={formatCurrencyInput}
+              />
+            </ContainerColumnValue>
+          </ContainerColumn>
+          </ContainerDiv>
+          <p><br/></p>
           {parseFloat(state.balance.unlocked) >= parseFloat(amountInput) && (
             <button type="submit" className="button__login" style={{ width: "200px" }}>
               Redeem

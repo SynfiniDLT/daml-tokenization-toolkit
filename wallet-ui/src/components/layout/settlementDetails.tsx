@@ -1,17 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation } from 'react-router-dom';
 import { SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { formatCurrency, nameFromParty, toDateTimeString } from "../Util";
-import { PlusCircleFill, DashCircleFill, Clipboard, ClipboardCheck } from "react-bootstrap-icons";
+import { PlusCircleFill, DashCircleFill } from "react-bootstrap-icons";
 import styled from "styled-components";
 import { Field, FieldPending, FieldSettled } from "./general.styled";
+import CopyToClipboard from "./copyToClipboard";
 
 interface SettlementDetailsProps {
   settlement: SettlementSummary;
 }
 
 export default function SettlementDetails(props: SettlementDetailsProps) {
+  const location = useLocation();
   const [toggleSteps, setToggleSteps] = useState(false);
-  const [toggleClipboard, setToggleClipboard] = useState(false);
 
   const setToggleCol = () => {
     setToggleSteps((prev) => {
@@ -19,10 +21,6 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
     });
   };
 
-  const copyContentClipboard = (batchId: string) => {
-    navigator.clipboard.writeText(batchId)
-    setToggleClipboard(!toggleClipboard);
-  }
 
   const SettlementDetailsContainer = styled.div`
     border-radius: 12px;
@@ -32,15 +30,32 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
     box-shadow: 6.8px 13.6px 13.6px hsl(0deg 0% 0% / 0.29);
   `;
 
+  useEffect(() => {
+    const { hash } = location;
+    if (hash) {
+      const targetElement = document.getElementById(hash.slice(1));
+      if (targetElement) {
+        const offset = -100;
+        const topPosition = targetElement.offsetTop + offset;
+        window.scrollTo({
+          top: topPosition,
+          behavior: 'smooth',
+        });
+      }
+    }
+  }, [location]);
+
+
 
   return (
     <SettlementDetailsContainer>
-      <div key={props.settlement.batchCid}>
+
+      <div key={props.settlement.batchCid} id={props.settlement.batchId.unpack}>
         <div>
-          <div onClick={() => copyContentClipboard(props.settlement.batchId.unpack)}>
-            <Field>Transaction ID:</Field><span id="myInput">{props.settlement.batchId.unpack} </span>
-            &nbsp; 
-            {!toggleClipboard ? <Clipboard /> : <><ClipboardCheck /><span> copied!</span></>}
+          <div>
+            <Field>Transaction ID:</Field>
+            <CopyToClipboard paramToCopy={props.settlement.batchId.unpack}  paramToShow={props.settlement.batchId.unpack}   />
+            <br />
           </div>
           
           <Field>Description:</Field>

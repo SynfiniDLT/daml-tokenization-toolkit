@@ -3,6 +3,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { formatCurrency, nameFromParty } from "../Util";
 import { Coin } from "react-bootstrap-icons";
+import HoverPopUp from "./hoverPopUp";
 
 export default function AccountBalances(props: { accountBalancesMap?: any }) {
   const { user } = useAuth0();
@@ -22,7 +23,6 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
   accountBalanceEntries.forEach((accountBalanceEntry: any) => {
     const keyAccount = accountBalanceEntry[0];
     const valueBalance = accountBalanceEntry[1];
-    console.log("=>",valueBalance)
     if (keyAccount.view.id.unpack !== "sbt") {
       valueBalance.forEach((balance: any) => {
         const trAsset = (
@@ -38,15 +38,15 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
               {balance.instrument.id.unpack}
             </td>
             <td>{keyAccount.view.description} </td>
-            <td>{nameFromParty(balance.instrument.issuer)}</td>
+            <td><HoverPopUp triggerText={nameFromParty(balance.instrument.issuer)} popUpContent={balance.instrument.issuer} /></td>
 
             {balance.instrument.id.unpack === "AUDN" ? (
               <>
                 <td>
-                  {formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")}
+                  {formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")} <Coin />
                 </td>
-                <td>{formatCurrency(balance.unlocked, "en-US")}</td>
-                <td>{formatCurrency(balance.locked, "en-US")}</td>
+                <td>{formatCurrency(balance.unlocked, "en-US")} <Coin /></td>
+                <td>{formatCurrency(balance.locked, "en-US")} <Coin /></td>
               </>
             ) : (
               <>
@@ -73,7 +73,9 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
             <td>
               {balance.instrument.id.unpack} | {balance.instrument.version}
             </td>
-            <td>{balance.instrument.issuer.substring(0, 30)} </td>
+            <td>
+              <HoverPopUp triggerText={balance.instrument.issuer.substring(0, 30) + "..."} popUpContent={balance.instrument.issuer} />
+            </td>
             <td>
               <button onClick={() => handleSeeDetails(keyAccount)}>See Details</button>
             </td>
