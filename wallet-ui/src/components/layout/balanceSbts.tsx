@@ -145,16 +145,18 @@ export default function BalanceSbts(props: {
       let entity: any = inst.pbaView?.attributes.entriesArray();
       let partiesSharedWith: string = "";
       if (props.partyBoundAttributes!== undefined && props.partyBoundAttributes.length > 0){
-
-        props.partyBoundAttributes[index].observers.forEach((el: string) => {
-          if (el !== ctx.primaryParty && !el.toLowerCase().includes("validator") &&  !el.toLowerCase().includes("operator")){
-            if (partiesSharedWith===""){
-              partiesSharedWith = partiesSharedWith.concat("- " + nameFromParty(el));
-            }else{
-              partiesSharedWith = partiesSharedWith.concat("\n- ").concat(nameFromParty(el));
+        
+        if (props.partyBoundAttributes[index]!== null && props.partyBoundAttributes[index].observers !== null){
+          props.partyBoundAttributes[index].observers.forEach((el: string) => {
+            if (el !== ctx.primaryParty && !el.toLowerCase().includes("validator") &&  !el.toLowerCase().includes("operator")){
+              if (partiesSharedWith===""){
+                partiesSharedWith = partiesSharedWith.concat("- " + nameFromParty(el));
+              }else{
+                partiesSharedWith = partiesSharedWith.concat("\n- ").concat(nameFromParty(el));
+              }
             }
-          }
-        });
+          });
+        }
       }
 
       trBalances = (

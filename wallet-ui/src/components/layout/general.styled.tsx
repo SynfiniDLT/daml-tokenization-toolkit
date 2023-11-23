@@ -56,7 +56,7 @@ export const ContainerColumnValue = styled.p`
 export const DivBorderRoundContainer = styled.div`
   border: 2px solid white;
   border-radius: 10px;
-  width: 60vw;
+  width: 90%;
   margin: 10px;
 `;
 
