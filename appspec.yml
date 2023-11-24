@@ -8,4 +8,5 @@ hooks:
     - location: generate-configs.sh
   ApplicationStart:
     - location: start-containers.sh
-
+  ValidateService:
+    - location: start-projection-runner.sh
