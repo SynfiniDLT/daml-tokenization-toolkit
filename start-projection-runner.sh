@@ -41,4 +41,5 @@ then
     echo "Projection Runner started successfully!"
 else
     echo "ERROR while starting Projection Runner!"
+    exit 1
 fi
