@@ -21,6 +21,8 @@ audience=$(echo $token_secret_val | jq -r '.audience')
 # echo "client_secret=${client_secret}"
 # echo "audience=${audience}"
 
+curl -V
+
 cmd="
     curl -w \"%{http_code}\" \
         --location \"${projection_url}\" \
