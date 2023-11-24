@@ -50,6 +50,7 @@ export const ContainerColumnValue = styled.p`
   margin-bottom: 5px;
   justify-content: space-between;
   margin-left: 10px;
+  white-space: nowrap;
 `;
 
 

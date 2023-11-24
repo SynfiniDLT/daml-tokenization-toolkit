@@ -362,25 +362,20 @@ ul.form-stepper li a .form-stepper-circle {
 
 
 
-#customers {
+#assets {
   font-family: Arial, Helvetica, sans-serif;
   border-collapse: collapse;
   width: 100%;
 }
 
-#customers td, #customers th {
+#assets td, #assets th {
   border: 1px solid #ddd;
   padding: 8px;
 }
 
-/* #customers tr:nth-child(even){
-  background-color: #d6d1d1;
-  color: rgb(5, 3, 3);  
-} */
+/* #assets tr:hover {background-color: #b6b2b2;} */
 
-#customers tr:hover {background-color: #b6b2b2;}
-
-#customers th {
+#assets th {
   padding-top: 12px;
   padding-bottom: 12px;
   text-align: left;

@@ -16,7 +16,7 @@ export default function Balances(props: { balances?: Balance[] }) {
       )}
 
       {props.balances !== undefined && props.balances?.length >0 && (
-          <table id="customers">
+          <table id="assets">
             <thead>
               <tr>
                 <th>Instrument | Version<QuestionCircle /></th>

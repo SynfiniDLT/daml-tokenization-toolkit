@@ -132,8 +132,8 @@ export const FundSubscribeFormScreen: React.FC = () => {
             }
           );
           setReferenceId(referenceIdUUID);
-        } catch (e) {
-          setError("Try caatch error: {" + e + "}");
+        } catch (e: any) {
+          setError("{" + e.errors[0] + "}");
         }
       }
     }
@@ -143,8 +143,25 @@ export const FundSubscribeFormScreen: React.FC = () => {
   return (
     <PageLayout>
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
-        Subscribe to {nameFromParty(state.fund.payload.fund)}
+        Subscribe to {nameFromParty(state.fund.payload.unitsInstrument.issuer)}
       </h3>
+      {error !== "" && 
+        <>
+          <span
+            style={{
+              color: "#FF6699",
+              fontSize: "1.5rem",
+              whiteSpace: "pre-line",
+            }}
+            >
+            {error}
+          </span>
+          <p></p>
+          <button className="button__login" style={{ width: "200px" }} onClick={() => nav("/")}>
+            Back
+          </button>
+        </>
+      }
       {referenceId === "" && error === "" && (
         <DivBorderRoundContainer>
           <form onSubmit={handleSubmit}>

@@ -158,9 +158,9 @@ const BalanceRedeemFormScreen: React.FC = () => {
           <ContainerColumn>
             <ContainerColumnValue>{state.balance.account.id.unpack}</ContainerColumnValue>
             <ContainerColumnValue>{state.balance.instrument.id.unpack} <Coin /></ContainerColumnValue>
-            <ContainerColumnValue>{formatCurrency(state.balance.unlocked, "en-US")} <Coin /></ContainerColumnValue>
+            <ContainerColumnValue>${formatCurrency(state.balance.unlocked, "en-US")} <Coin /></ContainerColumnValue>
             <ContainerColumnValue>
-              <input
+              ${" "}<input
                 type="string"
                 id="amount"
                 name="amount"

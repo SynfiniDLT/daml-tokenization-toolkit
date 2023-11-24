@@ -43,10 +43,10 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
             {balance.instrument.id.unpack === "AUDN" ? (
               <>
                 <td>
-                  {formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")} <Coin />
+                  ${formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")} <Coin />
                 </td>
-                <td>{formatCurrency(balance.unlocked, "en-US")} <Coin /></td>
-                <td>{formatCurrency(balance.locked, "en-US")} <Coin /></td>
+                <td>${formatCurrency(balance.unlocked, "en-US")} <Coin /></td>
+                <td>${formatCurrency(balance.locked, "en-US")} <Coin /></td>
               </>
             ) : (
               <>
@@ -92,7 +92,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
         <h4 className="profile__title">Assets</h4>
       </div>
       <div style={{ margin: "10px", padding: "10px" }}>
-        <table id="customers">
+        <table id="assets">
           <thead>
             <tr>
               <th>Account ID</th>
@@ -115,7 +115,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
             <h4 className="profile__title">SBTs</h4>
           </div>
           <div style={{ margin: "10px", padding: "10px" }}>
-            <table id="customers">
+            <table id="assets">
               <thead>
                 <tr>
                   <th>SBT ID</th>

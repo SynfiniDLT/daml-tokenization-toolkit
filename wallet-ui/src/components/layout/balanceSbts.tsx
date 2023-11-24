@@ -143,17 +143,12 @@ export default function BalanceSbts(props: {
   if (props.instruments !== undefined) {
     props.instruments?.forEach((inst: InstrumentSummary, index) => {
       let entity: any = inst.pbaView?.attributes.entriesArray();
-      let partiesSharedWith: string = "";
+      let partiesSharedWith: string[] = [];
       if (props.partyBoundAttributes!== undefined && props.partyBoundAttributes.length > 0){
-console.log("->",props.partyBoundAttributes[index]);        
         if (props.partyBoundAttributes[index]!== null && props.partyBoundAttributes[index].observers !== null){
           props.partyBoundAttributes[index].observers.forEach((el: string) => {
             if (el !== ctx.primaryParty && !el.toLowerCase().includes("validator") &&  !el.toLowerCase().includes("operator")){
-              if (partiesSharedWith===""){
-                partiesSharedWith = partiesSharedWith.concat("- " + nameFromParty(el));
-              }else{
-                partiesSharedWith = partiesSharedWith.concat("\n- ").concat(nameFromParty(el));
-              }
+              partiesSharedWith.push(el);
             }
           });
         }
@@ -162,10 +157,8 @@ console.log("->",props.partyBoundAttributes[index]);
       trBalances = (
         <tr>
           <td>
-            {inst.pbaView?.instrument.id.unpack} |{" "}
-            {inst.pbaView?.instrument.version}
+            {inst.pbaView?.instrument.id.unpack} |{" "}{inst.pbaView?.instrument.version}
           </td>
-         
           <td>
             <HoverPopUp 
               triggerText={inst.pbaView?.instrument.issuer.substring(0, 30) + "..."} 
@@ -173,7 +166,13 @@ console.log("->",props.partyBoundAttributes[index]);
             />
           </td>
           <td style={{width: "200px"}}>{Array.from(entity, ([key, value]) => `${key} | ${value}`)}</td>
-          <td style={{ whiteSpace: "pre-line", width: "350px"}}>{partiesSharedWith}</td>
+          <td style={{ whiteSpace: "pre-line", width: "350px"}}>
+            {partiesSharedWith.map((party, index) => (
+              <div key={index} style={{margin: "10px"}}>
+                - <HoverPopUp triggerText={party.substring(0,30)+ "..."} popUpContent={party} />
+              </div>
+            ))}
+          </td>
           <td style={{width: "300px"}}>
             <button
               type="button"
@@ -207,7 +206,7 @@ console.log("->",props.partyBoundAttributes[index]);
       {props.instruments?.length === 0 ? (
         <p>There is no balance for this account.</p>
       ) : (
-        <table id="customers">
+        <table id="assets">
           <thead>
             <tr>
               <th>
