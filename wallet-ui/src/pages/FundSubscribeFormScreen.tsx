@@ -230,7 +230,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
 
             <ContainerColumn style={{minWidth: "400px"}}>
               <ContainerColumnValue>
-                <a href={`http://${window.location.host}/settlements#${referenceId}`} style={{color: "#66FF99"}}>
+                <a href={`http://${window.location.host}/settlements#${referenceId}`} style={{color: "#66FF99", textDecoration: "underline"}}>
                   {referenceId} {"    "}<BoxArrowUpRight />
                 </a>
               </ContainerColumnValue>
