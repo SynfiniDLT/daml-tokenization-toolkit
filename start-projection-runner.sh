@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 DEPLOYMENT_GROUP_NAME="dev"
 if [ "$DEPLOYMENT_GROUP_NAME" == "dev" ]
@@ -22,7 +22,7 @@ audience=$(echo $token_secret_val | jq -r '.audience')
 # echo "audience=${audience}"
 
 cmd="
-    curl -so /dev/null -w \"%{http_code}\" \
+    curl -w \"%{http_code}\" \
         --location \"${projection_url}\" \
         --header \"Content-Type: application/json\" \
         --data '{
@@ -36,10 +36,11 @@ cmd="
 echo ${cmd}
 response_code=$(eval "${cmd}")
 echo "response_code=${response_code}"
-if [ ${response_code} == "200" ]
-then
-    echo "Projection Runner started successfully!"
-else
-    echo "ERROR while starting Projection Runner!"
-    exit 1
-fi
+exit 1
+# if [ ${response_code} == "200" ]
+# then
+#     echo "Projection Runner started successfully!"
+# else
+#     echo "ERROR while starting Projection Runner!"
+#     exit 1
+# fi
