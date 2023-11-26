@@ -3,7 +3,7 @@
 DEPLOYMENT_GROUP_NAME="dev"
 if [ "$DEPLOYMENT_GROUP_NAME" == "dev" ]
 then
-    projection_url="http://localhost:8091/wallet-views/v1/projection/start"
+    projection_url="http://100.64.95.77:8091/wallet-views/v1/projection/start"
     token_url="https://asx-dev.au.auth0.com/oauth/token"
     secret_name="Dev_Auth0_dlt02_wallet_operator"
     party_wallet_operator="WalletServiceProvider_Wallet_Operator_v1::12205d4208edf13d0cfc27a8f0cf05ff3cb18d8b437ab70c36c8d7a12e51a06b781d"
@@ -38,6 +38,9 @@ cmd="
 echo ${cmd}
 response_code=$(eval "${cmd}")
 echo "response_code=${response_code}"
+
+telnet 100.64.95.77 8091
+
 exit 1
 # if [ ${response_code} == "200" ]
 # then
