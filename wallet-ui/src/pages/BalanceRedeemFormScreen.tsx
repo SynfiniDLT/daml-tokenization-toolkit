@@ -160,7 +160,7 @@ const BalanceRedeemFormScreen: React.FC = () => {
             <ContainerColumnValue>{state.balance.instrument.id.unpack} <Coin /></ContainerColumnValue>
             <ContainerColumnValue>${formatCurrency(state.balance.unlocked, "en-US")} <Coin /></ContainerColumnValue>
             <ContainerColumnValue>
-              ${" "}<input
+                {" "}<input
                 type="string"
                 id="amount"
                 name="amount"
@@ -169,6 +169,7 @@ const BalanceRedeemFormScreen: React.FC = () => {
                 style={{ width: "200px" }}
                 onInput={formatCurrencyInput}
               />
+               {" "}<Coin />
             </ContainerColumnValue>
           </ContainerColumn>
           </ContainerDiv>

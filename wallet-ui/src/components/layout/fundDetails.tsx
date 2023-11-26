@@ -43,7 +43,7 @@ export default function FundDetails(props: FundDetailsProps) {
           <ContainerColumnValue>
             {props.fund.payload.costPerUnit} {props.fund.payload.paymentInstrument.id.unpack} <Coin />
           </ContainerColumnValue>
-          <ContainerColumnValue>{formatCurrency(props.fund.payload.minInvesment, "en-US")}</ContainerColumnValue>
+          <ContainerColumnValue>{formatCurrency(props.fund.payload.minInvesment, "en-US")} {props.fund.payload.paymentInstrument.id.unpack}</ContainerColumnValue>
           <ContainerColumnValue>{formatPercentage(props.fund.payload.commission)}</ContainerColumnValue>
         </ContainerColumn>
       </ContainerDiv>

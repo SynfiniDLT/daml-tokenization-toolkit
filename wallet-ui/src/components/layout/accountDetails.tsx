@@ -65,7 +65,7 @@ export function AccountDetailsSimple(props: AccountDetailsProps) {
   `;
 
   const handleClick = (account: AccountSummary) => {
-    nav("/wallet");
+    nav("/");
   };
 
   return (

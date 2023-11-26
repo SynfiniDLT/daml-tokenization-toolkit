@@ -6,10 +6,9 @@ export const NavBarTabs = () => {
 
   const walletTab = (
     <>
-      <NavBarTab path="/wallet" label="Wallet" />
+      <NavBarTab path="/fund" label="Funds" />
       <NavBarTab path="/settlements" label="Transactions" />
       <NavBarTab path="/directory" label="Directory" />
-      {/* <NavBarTab path="/dvp" label="Peer to Peer" /> */}
     </>
   );
 
@@ -17,7 +16,7 @@ export const NavBarTabs = () => {
 
   return (
     <div className="nav-bar__tabs">
-      <NavBarTab path="/" label="Home" />
+      <NavBarTab path="/" label="Invest" />
       {returnTab}
     </div>
   );

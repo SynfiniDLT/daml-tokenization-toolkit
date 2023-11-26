@@ -43,10 +43,10 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
             {balance.instrument.id.unpack === "AUDN" ? (
               <>
                 <td>
-                  ${formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")} <Coin />
+                  {formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")} <Coin />
                 </td>
-                <td>${formatCurrency(balance.unlocked, "en-US")} <Coin /></td>
-                <td>${formatCurrency(balance.locked, "en-US")} <Coin /></td>
+                <td>{formatCurrency(balance.unlocked, "en-US")} <Coin /></td>
+                <td>{formatCurrency(balance.locked, "en-US")} <Coin /></td>
               </>
             ) : (
               <>

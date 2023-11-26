@@ -21,6 +21,7 @@ export const userContext = createLedgerContext();
 const App: React.FC = () => {
   const { isLoading, getAccessTokenSilently, isAuthenticated } = useAuth0();
 
+  const damlBaseUrl = `${window.location.protocol}//${window.location.host}/`;
   const [token, setToken] = useState<string>("");
   const [primaryParty, setPrimaryParty] = useState<string>('');
   const [readOnly, setReadOnly] = useState<boolean>(false);
@@ -45,14 +46,17 @@ const App: React.FC = () => {
     <AuthContextStore.Provider value={{token: token, setPrimaryParty: setPrimaryParty, primaryParty: primaryParty, readOnly: readOnly}}>
       <userContext.DamlLedger token={token} party={primaryParty} >
       <Routes>
-          {isAuthenticated ? <Route path="/" element={<AuthenticationGuard component={MainScreen} />} /> : <Route path="/" element={<HomeScreen />} />}
+          {isAuthenticated ? <Route path="/" element={<AuthenticationGuard component={NewWalletScreen} />} /> : <Route path="/" element={<HomeScreen />} />}
+          
           <Route path="/wallet" element={<AuthenticationGuard component={NewWalletScreen} />} />
           <Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />
           <Route path="/wallet/account/balance/sbt" element={<AuthenticationGuard component={AccountBalanceSbtScreen} />} />
+          <Route path="/wallet/account/balance/redeem" element={<AuthenticationGuard component={BalanceRedeemFormScreen} />} />
           <Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />
           <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
+          <Route path="/fund" element={<AuthenticationGuard component={MainScreen} />} />
           <Route path="/fund/subscribe" element={<AuthenticationGuard component={FundSubscribeFormScreen} />} />
-          <Route path="/wallet/account/balance/redeem" element={<AuthenticationGuard component={BalanceRedeemFormScreen} />} />
+          
       </Routes>
       </userContext.DamlLedger>
       </AuthContextStore.Provider>

@@ -157,7 +157,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
             {error}
           </span>
           <p></p>
-          <button className="button__login" style={{ width: "200px" }} onClick={() => nav("/")}>
+          <button className="button__login" style={{ width: "200px" }} onClick={() => nav("/fund")}>
             Back
           </button>
         </>

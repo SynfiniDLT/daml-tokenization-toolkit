@@ -64,7 +64,7 @@ const MainScreen: React.FC = () => {
   }
 
   if (user?.name?.toLowerCase().includes("employee") || user?.name?.toLowerCase().includes("fund")){
-    nav("/wallet");
+    nav("/");
   }
 
   return (
