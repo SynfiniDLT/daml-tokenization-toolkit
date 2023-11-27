@@ -27,7 +27,7 @@ export default function instrumentDetails(props: InstrumentDetailsProps) {
 
   return (
     <InstrumentDetailsContainer>
-      <div key={props.instrument.cid}>
+      <div key={props.instrument.cid} id={props.instrument.pbaView?.owner}>
         <Field>SBT Holder ID</Field>
         <br />
         <FieldValue>{props.instrument.pbaView?.owner}</FieldValue>

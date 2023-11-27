@@ -184,7 +184,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
                 <ContainerColumnValue>
                   {state.fund.payload.costPerUnit} {state.fund.payload.paymentInstrument.id.unpack} <Coin />
                 </ContainerColumnValue>
-                <ContainerColumnValue>{formatCurrency(state.fund.payload.minInvesment, "en-US")}</ContainerColumnValue>
+                <ContainerColumnValue>{formatCurrency(state.fund.payload.minInvesment, "en-US")} {state.fund.payload.paymentInstrument.id.unpack} <Coin /></ContainerColumnValue>
                 <ContainerColumnValue>{formatPercentage(state.fund.payload.commission)}</ContainerColumnValue>
                 <ContainerColumnValue>
                   <input
@@ -199,7 +199,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
                   />
                 </ContainerColumnValue>
                 <p><br/></p>
-                <ContainerColumnValue style={{verticalAlign:"-10px"}}>{formatCurrency(total.toString(), "en-US")}</ContainerColumnValue>
+                <ContainerColumnValue style={{verticalAlign:"-10px"}}>{formatCurrency(total.toString(), "en-US")} {state.fund.payload.paymentInstrument.id.unpack}  <Coin /></ContainerColumnValue>
               </ContainerColumn>
             </ContainerDiv>
             
@@ -235,7 +235,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
                 </a>
               </ContainerColumnValue>
               <ContainerColumnValue> {inputQtd}</ContainerColumnValue>
-              <ContainerColumnValue>{formatCurrency(total.toString(), "en-US")}</ContainerColumnValue>
+              <ContainerColumnValue>{formatCurrency(total.toString(), "en-US")} {state.fund.payload.paymentInstrument.id.unpack}  <Coin /></ContainerColumnValue>
               <ContainerColumnValue>
                 
               </ContainerColumnValue>

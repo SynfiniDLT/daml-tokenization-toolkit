@@ -165,7 +165,7 @@ export default function BalanceSbts(props: {
               popUpContent={inst.pbaView?.instrument.issuer} 
             />
           </td>
-          <td style={{width: "200px"}}>{Array.from(entity, ([key, value]) => `${key} | ${value}`)}</td>
+          <td style={{width: "200px"}}>{Array.from(entity, ([key, value]) => `${key} | ${value} \n`)}</td>
           <td style={{ whiteSpace: "pre-line", width: "350px"}}>
             {partiesSharedWith.map((party, index) => (
               <div key={index} style={{margin: "10px"}}>
