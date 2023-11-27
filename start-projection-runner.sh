@@ -3,7 +3,8 @@
 # sleep for 30s to wait for server fully started
 sleep 30s
 
-DEPLOYMENT_GROUP_NAME="dev"
+echo "DEPLOYMENT_GROUP_NAME = $DEPLOYMENT_GROUP_NAME"
+
 if [ "$DEPLOYMENT_GROUP_NAME" == "dev" ]
 then
     projection_url="http://localhost:8091/wallet-views/v1/projection/start"
@@ -25,7 +26,7 @@ audience=$(echo $token_secret_val | jq -r '.audience')
 # echo "audience=${audience}"
 
 cmd="
-    curl -vw \"%{http_code}\" \
+    curl -so /dev/null -w \"%{http_code}\" \
         --location \"${projection_url}\" \
         --header \"Content-Type: application/json\" \
         --data '{
@@ -36,15 +37,14 @@ cmd="
           \"audience\": \"${audience}\"
         }'
 "
-echo ${cmd}
+# echo ${cmd}
 response_code=$(eval "${cmd}")
-echo "response=${response_code}"
+echo "Response Code of cURL command to start ProjectionRunner = ${response_code}"
 
-exit 1
-# if [ ${response_code} == "200" ]
-# then
-#     echo "Projection Runner started successfully!"
-# else
-#     echo "ERROR while starting Projection Runner!"
-#     exit 1
-# fi
+if [ ${response_code} == "200" ]
+then
+    echo "Projection Runner started successfully!"
+else
+    echo "ERROR while starting Projection Runner!"
+    exit 1
+fi
