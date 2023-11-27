@@ -11,7 +11,7 @@ export default function Instruments(props: { instruments?: InstrumentSummary[] }
         {props.instruments !== undefined && (
           <>
           {props.instruments.length ===0 &&
-            <span style={{color:"white"}}>This user doesn't have any SBT contents.</span>
+            <span style={{color:"white"}}>No SBT contents have been shared with this user.</span>
           }
             {props.instruments.map((instrument: InstrumentSummary, index: number) => (
               <div key={index}>
