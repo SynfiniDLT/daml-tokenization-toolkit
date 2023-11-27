@@ -9,7 +9,7 @@ import Funds from "../components/layout/funds";
 import { FundOffer } from "@daml.js/fund-tokenization/lib/Synfini/Fund/Offer";
 import { CreateEvent } from "@daml/ledger";
 
-const MainScreen: React.FC = () => {
+const FundScreen: React.FC = () => {
   const nav = useNavigate();
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
@@ -80,4 +80,4 @@ const MainScreen: React.FC = () => {
   );
 };
 
-export default MainScreen;
+export default FundScreen;

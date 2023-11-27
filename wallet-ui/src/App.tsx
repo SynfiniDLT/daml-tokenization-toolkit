@@ -5,7 +5,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { AuthenticationGuard } from "./components/authentication-guard";
 import { PageLoader } from "./components/layout/page-loader";
 import AuthContextStore from "./store/AuthContextStore";
-import MainScreen from "./pages/MainScreen";
+import FundScreen from "./pages/FundScreen";
 import AccountBalanceScreen from "./pages/AccountBalanceScreen";
 import SettlementScreen from "./pages/SettlementScreen";
 import DirectoryScreen from "./pages/DirectoryScreen";
@@ -46,7 +46,7 @@ const App: React.FC = () => {
     <AuthContextStore.Provider value={{token: token, setPrimaryParty: setPrimaryParty, primaryParty: primaryParty, readOnly: readOnly}}>
       <userContext.DamlLedger token={token} party={primaryParty} >
       <Routes>
-          {isAuthenticated ? <Route path="/" element={<AuthenticationGuard component={NewWalletScreen} />} /> : <Route path="/" element={<HomeScreen />} />}
+          {isAuthenticated ? <Route path="/" element={<AuthenticationGuard component={FundScreen} />} /> : <Route path="/" element={<HomeScreen />} />}
           
           <Route path="/wallet" element={<AuthenticationGuard component={NewWalletScreen} />} />
           <Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />
@@ -54,7 +54,7 @@ const App: React.FC = () => {
           <Route path="/wallet/account/balance/redeem" element={<AuthenticationGuard component={BalanceRedeemFormScreen} />} />
           <Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />
           <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
-          <Route path="/fund" element={<AuthenticationGuard component={MainScreen} />} />
+          <Route path="/fund" element={<AuthenticationGuard component={FundScreen} />} />
           <Route path="/fund/subscribe" element={<AuthenticationGuard component={FundSubscribeFormScreen} />} />
           
       </Routes>
