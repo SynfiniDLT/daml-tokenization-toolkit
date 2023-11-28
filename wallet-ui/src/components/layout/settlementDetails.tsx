@@ -88,16 +88,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
           <div key={index}>
             <h5 className="profile__title">Step {index + 1}</h5>
             <div style={{ margin: "15px" }}>
-              <Field>Sender: </Field>
-              {nameFromParty(step.routedStep.sender)}
-              <br />
-              <Field>Receiver: </Field>
-              {nameFromParty(step.routedStep.receiver)}
-              <br />
-              <Field>Custodian: </Field>
-              {nameFromParty(step.routedStep.custodian)}
-              <br />
-              <Field>Amount: </Field>
+            <Field>Amount: </Field>
               {step.routedStep.quantity.unit.id.unpack === 'AUDN' ?
                 <>
                   {formatCurrency(step.routedStep.quantity.amount, 'en-US')}
@@ -115,6 +106,16 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
               >
                 <Field>Instrument:</Field>{step.routedStep.quantity.unit.id.unpack}
                 <Field>Version:</Field>{step.routedStep.quantity.unit.version} <br />
+              <Field>Sender: </Field>
+              {nameFromParty(step.routedStep.sender)}
+              <br />
+              <Field>Receiver: </Field>
+              {nameFromParty(step.routedStep.receiver)}
+              <br />
+              <Field>Custodian: </Field>
+              {nameFromParty(step.routedStep.custodian)}
+              <br />
+
                 {toggleSteps ? <DashCircleFill /> : <PlusCircleFill />}
               </div>
               <div

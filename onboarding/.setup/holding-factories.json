@@ -1,0 +1,12 @@
+{
+  "holdingFactories": [
+    {
+      "label": "FungibleV1",
+      "cid": "0074bd29b4782dc3f9b26c490aa8169c6880572a47a754cdde9a630acfb616da86ca011220767f0dbc9d9c46abec5804ae4ec33b16ac3f02585c1971712a33ba5986742ed5"
+    },
+    {
+      "label": "NonTransferableV1",
+      "cid": "00dee67def893f04850f2225196846b8b0fd5bed495d8f642607e1b6e34d0d2f20ca01122076f5250698dc3a514e4b0da473e31d3f1605f399258b374dc6559cf54de6e892"
+    }
+  ]
+}
