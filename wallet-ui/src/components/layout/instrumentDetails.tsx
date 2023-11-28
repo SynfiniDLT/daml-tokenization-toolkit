@@ -1,5 +1,3 @@
-import React, { useEffect } from "react";
-import { useLocation } from 'react-router-dom';
 import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import styled from "styled-components";
 import { Field } from "./general.styled";
@@ -8,8 +6,7 @@ interface InstrumentDetailsProps {
   instrument: InstrumentSummary;
 }
 
-export default function InstrumentDetails(props: InstrumentDetailsProps) {
-  const location = useLocation();
+export default function instrumentDetails(props: InstrumentDetailsProps) {
   let entity: [string, string][] = [];
 
   if (props.instrument.pbaView?.attributes.entriesArray()) {
@@ -27,21 +24,6 @@ export default function InstrumentDetails(props: InstrumentDetailsProps) {
   const FieldValue = styled.span`
     padding: 15px;
   `;
-
-  useEffect(() => {
-    const { hash } = location;
-    if (hash) {
-      const targetElement = document.getElementById(hash.slice(1));
-      if (targetElement) {
-        const offset = -100;
-        const topPosition = targetElement.offsetTop + offset;
-        window.scrollTo({
-          top: topPosition,
-          behavior: 'smooth',
-        });
-      }
-    }
-  }, [location]);
 
   return (
     <InstrumentDetailsContainer>

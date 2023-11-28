@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { CardContainer, ContainerColumn, ContainerColumnKey, ContainerDiv, ContainerColumnValue } from "./general.styled";
 import { formatCurrency, formatPercentage, nameFromParty } from "../Util";
@@ -17,7 +18,20 @@ export default function FundDetails(props: FundDetailsProps) {
     nav("/fund/subscribe", { state: { fund: fund } });
   };
 
-
+  useEffect(() => {
+    const { hash } = location;
+    if (hash) {
+      const targetElement = document.getElementById(hash.slice(1));
+      if (targetElement) {
+        const offset = -100;
+        const topPosition = targetElement.offsetTop + offset;
+        window.scrollTo({
+          top: topPosition,
+          behavior: 'smooth',
+        });
+      }
+    }
+  }, [location]);
 
   return (
     <CardContainer>
