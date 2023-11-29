@@ -45,7 +45,7 @@ const App: React.FC = () => {
     <AuthContextStore.Provider value={{token: token, setPrimaryParty: setPrimaryParty, primaryParty: primaryParty, readOnly: readOnly}}>
       <userContext.DamlLedger token={token} party={primaryParty} >
       <Routes>
-          {isAuthenticated ? <Route path="/" element={<AuthenticationGuard component={FundScreen} />} /> : <Route path="/" element={<HomeScreen />} />}
+          {isAuthenticated ? <Route path="/" element={<AuthenticationGuard component={WalletScreen} />} /> : <Route path="/" element={<HomeScreen />} />}
           
           <Route path="/wallet" element={<AuthenticationGuard component={WalletScreen} />} />
           <Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />
