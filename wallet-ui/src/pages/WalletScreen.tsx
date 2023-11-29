@@ -7,14 +7,14 @@ import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import AccountBalances from "../components/layout/accountBalances";
+import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
-const NewWalletScreen: React.FC = () => {
+const WalletScreen: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
   const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 
-  const [primaryParty, setPrimaryParty] = useState<string>("");
   const [accountBalancesMap, setAccountBalancesMap] = useState(new Map<any, any>());
 
   let walletClient: WalletViewsClient;
@@ -24,34 +24,18 @@ const NewWalletScreen: React.FC = () => {
     token: ctx.token,
   });
 
-  const fetchUserLedger = async () => {
-    try {
-      const user = await ledger.getUser();
-      const rights = await ledger.listUserRights();
-      const found = rights.find((right) => right.type === "CanActAs" && right.party === user.primaryParty);
-      ctx.readOnly = found === undefined;
-
-      if (user.primaryParty !== undefined) {
-        setPrimaryParty(user.primaryParty);
-        ctx.setPrimaryParty(user.primaryParty);
-      }
-    } catch (err) {
-      console.log("error when fetching primary party", err);
-    }
-  };
-
   const fetchAccounts = async () => {
-    if (primaryParty !== "") {
-      const resp = await walletClient.getAccounts({ owner: primaryParty });
+    if (ctx.primaryParty !== "") {
+      const resp = await walletClient.getAccounts({ owner: ctx.primaryParty });
       return resp.accounts;
     }
   };
 
   const fetchBalances = async (account: AccountSummary) => {
-    if (primaryParty !== "") {
+    if (ctx.primaryParty !== "") {
       const resp = await walletClient.getBalance({
         account: {
-          owner: primaryParty,
+          owner: ctx.primaryParty,
           custodian: account.view.custodian,
           id: account.view.id,
         },
@@ -62,8 +46,8 @@ const NewWalletScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchUserLedger();
-  }, []);
+    fetchDataForUserLedger(ctx, ledger);
+  }, [ctx, ledger]);
 
   useEffect(() => {
     fetchAccounts().then((res) => {
@@ -96,7 +80,7 @@ const NewWalletScreen: React.FC = () => {
         });
       }
     });
-  }, [primaryParty]);
+  }, [ctx.primaryParty]);
 
   if (isLoading) {
     return (
@@ -127,4 +111,4 @@ const NewWalletScreen: React.FC = () => {
   );
 };
 
-export default NewWalletScreen;
+export default WalletScreen;

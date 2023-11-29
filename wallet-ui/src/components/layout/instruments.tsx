@@ -15,7 +15,6 @@ export default function Instruments(props: { instruments?: InstrumentSummary[] }
           }
             {props.instruments.map((instrument: InstrumentSummary, index: number) => (
               <div key={index}>
-                <h5 className="profile__title"></h5>
                 <InstrumentDetails
                   instrument={instrument}
                   key={instrument.cid}

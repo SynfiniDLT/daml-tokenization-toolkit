@@ -5,7 +5,6 @@ import { userContext } from "../App";
 import AuthContextStore from "../store/AuthContextStore";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
-import { AccountDetailsSimple } from "../components/layout/accountDetails";
 import { PageLoader } from "../components/layout/page-loader";
 import {
   Balance,
@@ -13,6 +12,7 @@ import {
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import BalanceSbts from "../components/layout/balanceSbts";
 import {Instrument as PartyBoundAttributes}  from "@daml.js/daml-pbt/lib/Synfini/Interface/Instrument/PartyBoundAttributes/Instrument";
+import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
 const AccountBalanceSbtScreen: React.FC = () => {
   const { isLoading } = useAuth0();
@@ -22,7 +22,6 @@ const AccountBalanceSbtScreen: React.FC = () => {
   const walletViewsBaseUrl: string = `${window.location.protocol}//${window.location.host}`;
 
   const [balances, setBalances] = useState<Balance[]>([]);
-  const [primaryParty, setPrimaryParty] = useState<string>("");
   const [instruments, setInstruments] = useState<InstrumentSummary[]>();
   const [partyBoundAttributes, setPartyBoundAttributes] = useState<PartyBoundAttributes[]>();
 
@@ -32,23 +31,11 @@ const AccountBalanceSbtScreen: React.FC = () => {
     token: ctx.token,
   });
 
-  const fetchUserLedger = async () => {
-    try {
-      const user = await ledger.getUser();
-      if (user.primaryParty !== undefined) {
-        setPrimaryParty(user.primaryParty);
-        ctx.setPrimaryParty(user.primaryParty);
-      }
-    } catch (err) {
-      console.log("error when fetching primary party", err);
-    }
-  };
-
   const fetchBalances = async () => {
-    if (primaryParty !== "") {
+    if (ctx.primaryParty !== "") {
       const resp = await walletClient.getBalance({
         account: {
-          owner: primaryParty,
+          owner: ctx.primaryParty,
           custodian: state.account.view.custodian,
           id: { unpack: state.account.view.id.unpack },
         },
@@ -86,12 +73,12 @@ const AccountBalanceSbtScreen: React.FC = () => {
   }
   
   useEffect(() => {
-    fetchUserLedger();
-  }, []);
+    fetchDataForUserLedger(ctx, ledger);
+  }, [ctx, ledger]);
 
   useEffect(() => {
     fetchBalances()
-  }, [primaryParty]);
+  }, [ctx.primaryParty, state]);
 
   useEffect(() => {
     fetchInstruments(balances)
@@ -102,7 +89,7 @@ const AccountBalanceSbtScreen: React.FC = () => {
           setPartyBoundAttributes(res_partiesShared);
         })
     });
-  },[primaryParty, balances])
+  },[ctx.primaryParty, balances])
 
   if (isLoading) {
     return (

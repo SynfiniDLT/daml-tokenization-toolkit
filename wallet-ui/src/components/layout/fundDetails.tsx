@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { CardContainer, ContainerColumn, ContainerColumnKey, ContainerDiv, ContainerColumnValue } from "./general.styled";
-import { formatCurrency, formatPercentage, nameFromParty } from "../Util";
+import { formatCurrency, formatPercentage } from "../Util";
 import { CreateEvent } from "@daml/ledger";
 import { FundOffer } from "@daml.js/fund-tokenization/lib/Synfini/Fund/Offer";
 import { Coin } from "react-bootstrap-icons";

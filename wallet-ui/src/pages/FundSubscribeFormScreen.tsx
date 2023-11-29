@@ -18,6 +18,7 @@ import {
   ContainerColumnValue,
 } from "../components/layout/general.styled";
 import { Coin, BoxArrowUpRight } from "react-bootstrap-icons";
+import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
 export const FundSubscribeFormScreen: React.FC = () => {
   const nav = useNavigate();
@@ -25,7 +26,6 @@ export const FundSubscribeFormScreen: React.FC = () => {
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
   const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
-  const [primaryParty, setPrimaryParty] = useState<string>("");
   const [accounts, setAccounts] = useState<AccountSummary[]>();
   const [inputQtd, setInputQtd] = useState(0);
   const [referenceId, setReferenceId] = useState<string>("");
@@ -39,31 +39,12 @@ export const FundSubscribeFormScreen: React.FC = () => {
     token: ctx.token,
   });
 
-  const fetchUserLedger = async () => {
-    try {
-      const user = await ledger.getUser();
-      const rights = await ledger.listUserRights();
-      const found = rights.find(
-        (right) =>
-          right.type === "CanActAs" && right.party === user.primaryParty
-      );
-      ctx.readOnly = found === undefined;
-
-      if (user.primaryParty !== undefined) {
-        setPrimaryParty(user.primaryParty);
-        ctx.setPrimaryParty(user.primaryParty);
-      }
-    } catch (err) {
-      console.log("error when fetching primary party", err);
-    }
-  };
-
   const fetchAccounts = async () => {
-    if (primaryParty !== "") {
-      const resp = await walletClient.getAccounts({ owner: primaryParty });
+    if (ctx.primaryParty !== "") {
+      const resp = await walletClient.getAccounts({ owner: ctx.primaryParty });
       setAccounts(resp.accounts);
       let isFundAccount = resp.accounts?.find(account => account.view.id.unpack.toLowerCase() ==='funds')
-      if (isFundAccount== undefined){
+      if (isFundAccount === undefined){
         setError("Your Fund Account is not yet prepared for use. Kindly get in touch with the administrator.")
       }
       return resp.accounts;
@@ -80,12 +61,12 @@ export const FundSubscribeFormScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchUserLedger();
-  }, []);
+    fetchDataForUserLedger(ctx, ledger);
+  }, [ctx, ledger]);
 
   useEffect(() => {
     fetchAccounts();
-  }, [primaryParty]);
+  }, [ctx.primaryParty]);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -203,7 +184,6 @@ export const FundSubscribeFormScreen: React.FC = () => {
               </ContainerColumn>
             </ContainerDiv>
             
-            {/* <p>Total: {formatCurrency(total.toString(), "en-US")}</p> */}
             <button type="submit" className={"button__login"} style={{ width: "200px" }}>
               Submit
             </button>
@@ -240,8 +220,6 @@ export const FundSubscribeFormScreen: React.FC = () => {
                 
               </ContainerColumnValue>
             </ContainerColumn>
-            
-
           </ContainerDiv>
           </>
         )}

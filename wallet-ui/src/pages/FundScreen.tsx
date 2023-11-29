@@ -8,6 +8,7 @@ import { PageLayout } from "../components/PageLayout";
 import Funds from "../components/layout/funds";
 import { FundOffer } from "@daml.js/fund-tokenization/lib/Synfini/Fund/Offer";
 import { CreateEvent } from "@daml/ledger";
+import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
 const FundScreen: React.FC = () => {
   const nav = useNavigate();
@@ -15,31 +16,10 @@ const FundScreen: React.FC = () => {
   const ledger = userContext.useLedger();
 
   const { isLoading, user } = useAuth0();
-  const [primaryParty, setPrimaryParty] = useState<string>("");
   const [funds, setFunds] = useState<CreateEvent<FundOffer, undefined, string>[]>();
 
-
-  const fetchUserLedger = async () => {
-    try {
-      const user = await ledger.getUser();
-      const rights = await ledger.listUserRights();
-      const found = rights.find(
-        (right) =>
-          right.type === "CanActAs" && right.party === user.primaryParty
-      );
-      ctx.readOnly = found === undefined;
-
-      if (user.primaryParty !== undefined) {
-        setPrimaryParty(user.primaryParty);
-        ctx.setPrimaryParty(user.primaryParty);
-      }
-    } catch (err) {
-      console.log("error when fetching primary party", err);
-    }
-  };
-
   const fetchFunds = async () => {
-    if (primaryParty !== "") {
+    if (ctx.primaryParty !== "") {
       const resp = await ledger.query(FundOffer);
       setFunds(resp);
       
@@ -47,12 +27,12 @@ const FundScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchUserLedger();
-  }, []);
+    fetchDataForUserLedger(ctx, ledger);
+  }, [ctx, ledger]);
 
   useEffect(() => {
     fetchFunds();
-  }, [primaryParty]);
+  }, [ctx.primaryParty]);
 
 
   if (isLoading) {

@@ -7,14 +7,14 @@ import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
 import Settlements from "../components/layout/settlements";
 import { SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
 const SettlementScreen: React.FC = () => {
   const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 
-  const { isAuthenticated, isLoading } = useAuth0();
-  const [primaryParty, setPrimaryParty] = useState<string>();
+  const { isLoading } = useAuth0();
   const [settlements, setSettlements] = useState<SettlementSummary[]>();
 
   let walletClient: WalletViewsClient;
@@ -24,35 +24,20 @@ const SettlementScreen: React.FC = () => {
     token: ctx.token,
   });
 
-  const fetchUserLedger = async () => {
-    if (isAuthenticated && !isLoading) {
-      try {
-        const user = await ledger.getUser();
-        if (user.primaryParty !== undefined) {
-          setPrimaryParty(user.primaryParty);
-          ctx.setPrimaryParty(user.primaryParty);
-        } else {
-        }
-      } catch (err) {
-        console.log("error when fetching primary party", err);
-      }
-    }
-  };
-
   const fetchSettlements = async () => {
-    if (primaryParty !== "") {
+    if (ctx.primaryParty !== "") {
       const resp = await walletClient.getSettlements({ before: null, limit:null });
       setSettlements(resp.settlements);
     }
   };
 
   useEffect(() => {
-    fetchUserLedger();
-  }, []);
+    fetchDataForUserLedger(ctx, ledger);
+  }, [ctx, ledger]);
 
   useEffect(() => {
     fetchSettlements();
-  }, [primaryParty]);
+  }, [ctx.primaryParty]);
 
   if (isLoading) {
     return (

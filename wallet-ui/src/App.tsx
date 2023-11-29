@@ -11,7 +11,7 @@ import SettlementScreen from "./pages/SettlementScreen";
 import DirectoryScreen from "./pages/DirectoryScreen";
 import HomeScreen from "./pages/HomeScreen";
 import AccountBalanceSbtScreen from "./pages/AccountBalanceSbtScreen";
-import NewWalletScreen from "./pages/NewWalletScreen";
+import WalletScreen from "./pages/WalletScreen";
 import { FundSubscribeFormScreen } from "./pages/FundSubscribeFormScreen";
 import BalanceRedeemFormScreen from "./pages/BalanceRedeemFormScreen";
 
@@ -21,7 +21,6 @@ export const userContext = createLedgerContext();
 const App: React.FC = () => {
   const { isLoading, getAccessTokenSilently, isAuthenticated } = useAuth0();
 
-  const damlBaseUrl = `${window.location.protocol}//${window.location.host}/`;
   const [token, setToken] = useState<string>("");
   const [primaryParty, setPrimaryParty] = useState<string>('');
   const [readOnly, setReadOnly] = useState<boolean>(false);
@@ -33,7 +32,7 @@ const App: React.FC = () => {
   
   useEffect(() => {
     fetchToken();
-  }, []);
+  });
 
   if (isLoading) {
     return (
@@ -48,7 +47,7 @@ const App: React.FC = () => {
       <Routes>
           {isAuthenticated ? <Route path="/" element={<AuthenticationGuard component={FundScreen} />} /> : <Route path="/" element={<HomeScreen />} />}
           
-          <Route path="/wallet" element={<AuthenticationGuard component={NewWalletScreen} />} />
+          <Route path="/wallet" element={<AuthenticationGuard component={WalletScreen} />} />
           <Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />
           <Route path="/wallet/account/balance/sbt" element={<AuthenticationGuard component={AccountBalanceSbtScreen} />} />
           <Route path="/wallet/account/balance/redeem" element={<AuthenticationGuard component={BalanceRedeemFormScreen} />} />
@@ -59,7 +58,7 @@ const App: React.FC = () => {
           
       </Routes>
       </userContext.DamlLedger>
-      </AuthContextStore.Provider>
+    </AuthContextStore.Provider>
   );
 };
 

@@ -5,11 +5,10 @@ import {
   InstrumentSummary,
   AccountSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { QuestionCircle } from "react-bootstrap-icons";
 import Modal from "react-modal";
 import { Disclosure } from "@daml.js/daml-finance-interface-util/lib/Daml/Finance/Interface/Util/Disclosure";
 import { Party, Map, emptyMap, Unit, ContractId } from "@daml/types";
-import { nameFromParty, wait } from "../Util";
+import { wait } from "../Util";
 import HoverPopUp from "./hoverPopUp";
 
 export default function BalanceSbts(props: {
@@ -155,7 +154,7 @@ export default function BalanceSbts(props: {
       }
 
       trBalances = (
-        <tr>
+        <tr key={inst.cid}>
           <td>
             {inst.pbaView?.instrument.id.unpack} |{" "}{inst.pbaView?.instrument.version}
           </td>

@@ -8,6 +8,7 @@ import { PageLayout } from "../components/PageLayout";
 import Instruments from "../components/layout/instruments";
 import { packageStringFromParty } from "../components/Util";
 import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
 const DirectoryScreen: React.FC = () => {
   const sbt_depository = process.env.REACT_APP_LEDGER_INSTRUMENT_DEPOSITORY;
@@ -17,8 +18,7 @@ const DirectoryScreen: React.FC = () => {
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 
-  const { isAuthenticated, isLoading } = useAuth0();
-  const [primaryParty, setPrimaryParty] = useState<string>("");
+  const { isLoading } = useAuth0();
   const [instruments, setInstruments] = useState<InstrumentSummary[]>();
 
   let walletClient: WalletViewsClient;
@@ -28,37 +28,24 @@ const DirectoryScreen: React.FC = () => {
     token: ctx.token,
   });
 
-  const fetchUserLedger = async () => {
-    if (isAuthenticated && !isLoading) {
-      try {
-        const user = await ledger.getUser();
-        if (user.primaryParty !== undefined) {
-          setPrimaryParty(user.primaryParty);
-          ctx.setPrimaryParty(user.primaryParty);
-        }
-      } catch (err) {
-        console.log("error when fetching primary party", err);
-      }
-    }
-  };
 
   const fetchInstruments = async () => {
-    if (primaryParty !== "" && sbt_depository!== undefined && sbt_issuer!== undefined) {
+    if (ctx.primaryParty !== "" && sbt_depository!== undefined && sbt_issuer!== undefined) {
       const resp = await walletClient.getInstruments({
-         depository: sbt_depository +  "::" + packageStringFromParty(primaryParty), 
-         issuer: sbt_issuer +  "::" + packageStringFromParty(primaryParty), 
+         depository: sbt_depository +  "::" + packageStringFromParty(ctx.primaryParty), 
+         issuer: sbt_issuer +  "::" + packageStringFromParty(ctx.primaryParty), 
          id: {unpack:"EntityName"}, version: null });
-      setInstruments(resp.instruments.filter(instrument => instrument.pbaView?.owner !== primaryParty))
+      setInstruments(resp.instruments.filter(instrument => instrument.pbaView?.owner !== ctx.primaryParty))
     }
   };
 
   useEffect(() => {
-    fetchUserLedger();
-  }, []);
+    fetchDataForUserLedger(ctx, ledger);
+  }, [ctx, ledger]);
 
   useEffect(() => {
     fetchInstruments();
-  }, [primaryParty]);
+  }, [ctx.primaryParty]);
 
   if (isLoading) {
     return (
