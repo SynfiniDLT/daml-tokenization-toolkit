@@ -1,5 +1,5 @@
 # Use a Node.js base image
-FROM node
+FROM node:19.8.1
 
 ENV NODE_OPTIONS=--openssl-legacy-provider
 
