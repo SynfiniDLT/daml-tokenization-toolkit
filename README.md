@@ -54,6 +54,12 @@ To test the wallet backend:
 make test-wallet-views
 ```
 
+To test the wallet backend client library:
+
+```bash
+make test-wallet-views-client
+```
+
 For front end:
 
 ```bash

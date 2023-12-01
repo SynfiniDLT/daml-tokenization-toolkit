@@ -1,0 +1,13 @@
+{
+  "mintSettings": {
+    "custodian": "custodian",
+    "instrumentDepository": "depository",
+    "instrumentIssuer": "issuer",
+    "instrumentId": "Instrument1",
+    "instrumentVersion": "1",
+    "minterBurner": "issuer",
+    "supplyAccountId": "issuer@custodian",
+    "settlementFactory": "default",
+    "observers": ["alice"]
+  }
+}

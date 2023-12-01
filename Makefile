@@ -118,7 +118,9 @@ wallet-views/typescript-client/lib: wallet-views/typescript-client/daml.js $(she
 .PHONY: build-wallet-views-client
 build-wallet-views-client: wallet-views/typescript-client/lib
 
-# TODO test client
+.PHONY: test-wallet-views-client
+test-wallet-views-client: install-onboarding compile-wallet-views wallet-views/typescript-client/lib
+	cd wallet-views/typescript-client && ./test.sh
 ## END wallet-views
 
 ## BEGIN wallet ui

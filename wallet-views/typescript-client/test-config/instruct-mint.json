@@ -1,0 +1,15 @@
+{
+  "readAs": [],
+  "instructMintSettings": {
+    "custodian": "custodian",
+    "operators": ["custodian"],
+    "instrumentDepository": "depository",
+    "instrumentIssuer": "issuer",
+    "instrumentId": "Instrument1",
+    "instrumentVersion": "1",
+    "instructor": "alice",
+    "receiver": "alice",
+    "receiverAccountId": "alice@custodian",
+    "amount": 100000
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "settlementFactorySettings": [
+    {
+      "label": "default",
+      "provider": "custodian",
+      "observers": ["alice", "issuer"]
+    }
+  ]
+}

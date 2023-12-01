@@ -1,0 +1,31 @@
+{
+  "readAs": [],
+  "accountFactory": "default",
+  "accountSettings": [
+    {
+      "owner": "alice",
+      "custodian": "custodian",
+      "id": "alice@custodian",
+      "description": "Alice's account",
+      "incomingControllers": [],
+      "outgoingControllers": ["alice"],
+      "holdingFactory": "fungible",
+      "observers": []
+    },
+    {
+      "owner": "issuer",
+      "custodian": "custodian",
+      "id": "issuer@custodian",
+      "description": "Total supply account",
+      "incomingControllers": ["issuer"],
+      "outgoingControllers": ["issuer"],
+      "holdingFactory": "fungible",
+      "observers": [
+        {
+          "context": "o",
+          "parties": ["alice"]
+        }
+      ]
+    }
+  ]
+}
