@@ -37,6 +37,12 @@ public class WalletViewsController {
     this.ledgerApiConfig = ledgerApiConfig;
   }
 
+
+  @GetMapping("")
+  public ResponseEntity<String> get(){
+    return ResponseEntity.ok("ok");
+  }
+
   @PostMapping("/accounts")
   public ResponseEntity<String> account(
     @RequestBody AccountFilter filter,

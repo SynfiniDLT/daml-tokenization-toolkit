@@ -6,13 +6,14 @@ import AuthContextStore from "../store/AuthContextStore";
 import { formatCurrency } from "../components/Util";
 import { v4 as uuid } from "uuid";
 import * as damlTypes from "@daml/types";
-import { InstructBurnHelper } from "@daml.js/daml-mint/lib/Synfini/Mint";
 import { MintReceiver } from "@daml.js/daml-mint/lib/Synfini/Mint/Delegation";
 import { HoldingSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
 import { WalletViewsClient } from "@synfini/wallet-views";
-import { DivBorderRoundContainer } from "../components/layout/general.styled";
+import { ContainerColumn, ContainerDiv, ContainerColumnKey, DivBorderRoundContainer, ContainerColumnValue } from "../components/layout/general.styled";
 import Modal from "react-modal";
+import { Coin } from "react-bootstrap-icons";
+import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
 const BalanceRedeemFormScreen: React.FC = () => {
   const nav = useNavigate();
@@ -21,7 +22,6 @@ const BalanceRedeemFormScreen: React.FC = () => {
   const ctx = useContext(AuthContextStore);
   const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
 
-  const [primaryParty, setPrimaryParty] = useState<string>("");
   const [amountInput, setAmountInput] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -33,22 +33,6 @@ const BalanceRedeemFormScreen: React.FC = () => {
     baseUrl: walletViewsBaseUrl,
     token: ctx.token,
   });
-
-  const fetchUserLedger = async () => {
-    try {
-      const user = await ledger.getUser();
-      const rights = await ledger.listUserRights();
-      const found = rights.find((right) => right.type === "CanActAs" && right.party === user.primaryParty);
-      ctx.readOnly = found === undefined;
-
-      if (user.primaryParty !== undefined) {
-        setPrimaryParty(user.primaryParty);
-        ctx.setPrimaryParty(user.primaryParty);
-      }
-    } catch (err) {
-      console.log("error when fetching primary party", err);
-    }
-  };
 
   const handleChangeAmount = (event: any) => {
     setAmountInput(formatCurrencyInput(event));
@@ -135,32 +119,44 @@ const BalanceRedeemFormScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchUserLedger();
-  }, []);
+    fetchDataForUserLedger(ctx, ledger);
+  }, [ctx, ledger]);
 
   return (
     <PageLayout>
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
-        Redeem Balance
+        AUDN Redemption
       </h3>
 
       <DivBorderRoundContainer>
         <form onSubmit={handleSubmit}>
-          <p>Account: {state.balance.account.id.unpack}</p>
-          <p>Instrument: {state.balance.instrument.id.unpack}</p>
-          <p>Balance unlocked to redeem: {formatCurrency(state.balance.unlocked, "en-US")}</p>
-          <span>Amount:</span>
-          <span>
-            <input
-              type="string"
-              id="amount"
-              name="amount"
-              value={amountInput}
-              onChange={handleChangeAmount}
-              style={{ width: "200px" }}
-              onInput={formatCurrencyInput}
-            />
-          </span>
+          <ContainerDiv>
+          <ContainerColumn>
+            <ContainerColumnKey>Account:</ContainerColumnKey>
+            <ContainerColumnKey>Instrument:</ContainerColumnKey>
+            <ContainerColumnKey>Balance Available:</ContainerColumnKey>
+            <ContainerColumnKey>Amount:</ContainerColumnKey>
+          </ContainerColumn>
+
+          <ContainerColumn>
+            <ContainerColumnValue>{state.balance.account.id.unpack}</ContainerColumnValue>
+            <ContainerColumnValue>{state.balance.instrument.id.unpack} <Coin /></ContainerColumnValue>
+            <ContainerColumnValue>${formatCurrency(state.balance.unlocked, "en-US")} <Coin /></ContainerColumnValue>
+            <ContainerColumnValue>
+                {" "}<input
+                type="string"
+                id="amount"
+                name="amount"
+                value={amountInput}
+                onChange={handleChangeAmount}
+                style={{ width: "200px" }}
+                onInput={formatCurrencyInput}
+              />
+               {" "}<Coin />
+            </ContainerColumnValue>
+          </ContainerColumn>
+          </ContainerDiv>
+          <p><br/></p>
           {parseFloat(state.balance.unlocked) >= parseFloat(amountInput) && (
             <button type="submit" className="button__login" style={{ width: "200px" }}>
               Redeem

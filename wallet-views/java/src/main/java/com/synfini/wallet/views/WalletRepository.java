@@ -64,7 +64,7 @@ public class WalletRepository {
     final var queryRemoves =
       "SELECT DISTINCT ON (custodian, owner, account_id)\n" +
       "  true is_removed,\n" +
-      "  a.owner owner,\n" +
+      "  a.owner AS owner,\n" +
       "  a.custodian custodian,\n" +
       "  a.account_id account_id\n" +
       "FROM accounts a INNER JOIN account_factory_events e ON\n" +
@@ -210,7 +210,7 @@ public class WalletRepository {
         "  t.instrument_version instrument_version,\n" +
         "  t.description description,\n" +
         "  t.valid_as_of valid_as_of,\n" +
-        "  t.owner owner,\n" +
+        "  t.owner AS owner,\n" +
         "  t.attributes attributes\n" +
         "FROM pba_instruments t INNER JOIN instrument_witnesses ON t.cid = instrument_witnesses.cid\n" +
         "WHERE\n" +

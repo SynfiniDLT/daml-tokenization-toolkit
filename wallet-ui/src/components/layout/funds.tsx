@@ -1,4 +1,3 @@
-import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import FundDetails from "./fundDetails";
 
 export default function Funds(props: { funds?: any[] }) {

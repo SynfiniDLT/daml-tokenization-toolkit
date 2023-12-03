@@ -7,17 +7,20 @@ export const NavBarTabs = () => {
   const walletTab = (
     <>
       <NavBarTab path="/wallet" label="Wallet" />
+      <NavBarTab path="/fund" label="Invest" />
       <NavBarTab path="/settlements" label="Transactions" />
       <NavBarTab path="/directory" label="Directory" />
-      {/* <NavBarTab path="/dvp" label="Peer to Peer" /> */}
     </>
   );
 
-  const returnTab = isAuthenticated && walletTab;
+  const LoginTab = (
+    <NavBarTab path="/" label="Wallet" />
+  )
+
+  const returnTab = isAuthenticated ? walletTab : LoginTab;
 
   return (
     <div className="nav-bar__tabs">
-      <NavBarTab path="/" label="Home" />
       {returnTab}
     </div>
   );

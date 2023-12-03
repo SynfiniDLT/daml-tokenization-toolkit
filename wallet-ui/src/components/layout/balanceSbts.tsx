@@ -5,11 +5,11 @@ import {
   InstrumentSummary,
   AccountSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { QuestionCircle } from "react-bootstrap-icons";
 import Modal from "react-modal";
 import { Disclosure } from "@daml.js/daml-finance-interface-util/lib/Daml/Finance/Interface/Util/Disclosure";
 import { Party, Map, emptyMap, Unit, ContractId } from "@daml/types";
-import { nameFromParty, wait } from "../Util";
+import { wait } from "../Util";
+import HoverPopUp from "./hoverPopUp";
 
 export default function BalanceSbts(props: {
   instruments?: InstrumentSummary[];
@@ -140,33 +140,47 @@ export default function BalanceSbts(props: {
   let trBalances;
 
   if (props.instruments !== undefined) {
+    console.log("props", props)
     props.instruments?.forEach((inst: InstrumentSummary, index) => {
       let entity: any = inst.pbaView?.attributes.entriesArray();
-      let partiesSharedWith: string = "";
+      let partiesSharedWith: string[] = [];
       if (props.partyBoundAttributes!== undefined && props.partyBoundAttributes.length > 0){
-
-        props.partyBoundAttributes[index].observers.forEach((el: string) => {
-          if (el !== ctx.primaryParty && !el.toLowerCase().includes("validator")){
-            if (partiesSharedWith===""){
-              partiesSharedWith = partiesSharedWith.concat("- " + nameFromParty(el));
-            }else{
-              partiesSharedWith = partiesSharedWith.concat("\n- ").concat(nameFromParty(el));
+        if (props.partyBoundAttributes[index]!== null && props.partyBoundAttributes[index].observers !== null){
+          props.partyBoundAttributes[index].observers.forEach((el: string) => {
+            if (el !== ctx.primaryParty){
+              partiesSharedWith.push(el);
             }
-          }
-        });
+          });
+        }
       }
 
       trBalances = (
-        <tr>
+        <tr key={inst.cid}>
           <td>
-            {inst.pbaView?.instrument.id.unpack} |{" "}
-            {inst.pbaView?.instrument.version}
+            {inst.pbaView?.instrument.id.unpack} |{" "}{inst.pbaView?.instrument.version}
           </td>
-          <td>{"???"}</td>
-          <td>{inst.pbaView?.instrument.issuer.substring(0, 30)}</td>
-          <td>{Array.from(entity, ([key, value]) => `${key} | ${value}`)}</td>
-          <td style={{ whiteSpace: "pre-line"}}>{partiesSharedWith}</td>
           <td>
+            <HoverPopUp 
+              triggerText={inst.pbaView?.instrument.issuer.substring(0, 30) + "..."} 
+              popUpContent={inst.pbaView?.instrument.issuer} 
+            />
+          </td>
+          <td style={{width: "200px"}}>
+          {Array.from(entity, ([key, value]) => (
+              <>
+                {`${key} | ${value}`}
+                <br />
+              </>
+          ))}
+          </td>
+          <td style={{ whiteSpace: "pre-line", width: "350px"}}>
+            {partiesSharedWith.map((party, index) => (
+              <div key={index} style={{margin: "10px"}}>
+                - <HoverPopUp triggerText={party.substring(0,30)+ "..."} popUpContent={party} />
+              </div>
+            ))}
+          </td>
+          <td style={{width: "300px"}}>
             <button
               type="button"
               className="button__login"
@@ -199,23 +213,17 @@ export default function BalanceSbts(props: {
       {props.instruments?.length === 0 ? (
         <p>There is no balance for this account.</p>
       ) : (
-        <table id="customers">
+        <table id="assets">
           <thead>
             <tr>
               <th>
                 SBT ID
-                <QuestionCircle />
-              </th>
-              <th>
-                SBT Name
-                <QuestionCircle />
               </th>
               <th>
                 Issuer
-                <QuestionCircle />
               </th>
               <th>
-                Attributes <QuestionCircle />
+                Attributes 
               </th>
               <th>
                 Organizations shared with

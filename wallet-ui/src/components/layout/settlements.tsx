@@ -12,7 +12,6 @@ export default function Settlements(props: { settlements?: SettlementSummary[] }
           <>
             {props.settlements.map((settlement: SettlementSummary, index: number) => (
               <div key={index}>
-                <h5 className="profile__title"></h5>
                 <SettlementDetails
                   settlement={settlement}
                   key={settlement.batchCid}

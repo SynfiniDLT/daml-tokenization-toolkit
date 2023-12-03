@@ -1,0 +1,19 @@
+# Use a Node.js base image
+FROM node:19.8.1
+
+ENV NODE_OPTIONS=--openssl-legacy-provider
+
+COPY wallet-views /wallet-views
+
+WORKDIR /wallet-ui
+
+COPY wallet-ui/package.json .
+
+RUN npm install
+
+COPY wallet-ui .
+
+EXPOSE 8090
+
+CMD ["sh","-c","npm start"]
+

@@ -14,6 +14,7 @@ import {
   InstrumentSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import BalanceSbts from "../components/layout/balanceSbts";
+import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
 const AccountBalanceScreen: React.FC = () => {
   const { isLoading } = useAuth0();
@@ -23,7 +24,6 @@ const AccountBalanceScreen: React.FC = () => {
   const walletViewsBaseUrl: string = `${window.location.protocol}//${window.location.host}`;
 
   const [balances, setBalances] = useState<Balance[]>([]);
-  const [primaryParty, setPrimaryParty] = useState<string>("");
   const [instruments, setInstruments] = useState<InstrumentSummary[]>();
 
   let walletClient: WalletViewsClient;
@@ -32,23 +32,11 @@ const AccountBalanceScreen: React.FC = () => {
     token: ctx.token,
   });
 
-  const fetchUserLedger = async () => {
-    try {
-      const user = await ledger.getUser();
-      if (user.primaryParty !== undefined) {
-        setPrimaryParty(user.primaryParty);
-        ctx.setPrimaryParty(user.primaryParty);
-      }
-    } catch (err) {
-      console.log("error when fetching primary party", err);
-    }
-  };
-
   const fetchBalances = async () => {
-    if (primaryParty !== "") {
+    if (ctx.primaryParty !== "") {
       const resp = await walletClient.getBalance({
         account: {
-          owner: primaryParty,
+          owner: ctx.primaryParty,
           custodian: state.account.view.custodian,
           id: state.account.view.id,
         },
@@ -74,17 +62,17 @@ const AccountBalanceScreen: React.FC = () => {
   }
   
   useEffect(() => {
-    fetchUserLedger();
-  }, []);
+    fetchDataForUserLedger(ctx, ledger);
+  }, [ctx, ledger]);
 
   useEffect(() => {
     fetchBalances()
-  }, [primaryParty]);
+  });
 
   useEffect(() => {
     fetchInstruments(balances)
     .then((res => setInstruments(res)));
-  },[primaryParty, balances])
+  })
 
   if (isLoading) {
     return (

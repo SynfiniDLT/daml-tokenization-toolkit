@@ -3,6 +3,7 @@ import React ,{useContext} from "react";
 import { LoginButton } from "../../buttons/login-button";
 import { LogoutButton } from "../../buttons/logout-button";
 import AuthContextStore from "../../../store/AuthContextStore";
+import HoverPopUp from "../../layout/hoverPopUp";
 
 export const NavBarButtons = () => {
   const { isAuthenticated, user } = useAuth0();
@@ -17,11 +18,9 @@ export const NavBarButtons = () => {
       )}
       {isAuthenticated && (
         <>
-          <div style={{ position: "absolute", right: "20%", bottom: "15%" }}>
+          <div style={{ position: "relative", right: "20%", bottom: "15%" }}>
             {user !== undefined && user.email} <br />
-            {ctx.primaryParty !== '' && (
-              ctx.primaryParty.substring(0,30) + "..."
-            )}
+            <HoverPopUp popUpContent={ctx.primaryParty} triggerText={ctx.primaryParty !== '' && (ctx.primaryParty.substring(0,30) + "...")}></HoverPopUp>
             <br />
             {ctx.readOnly && ("Observer mode")}
           </div>
