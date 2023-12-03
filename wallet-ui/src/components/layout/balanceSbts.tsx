@@ -140,13 +140,14 @@ export default function BalanceSbts(props: {
   let trBalances;
 
   if (props.instruments !== undefined) {
+    console.log("props", props)
     props.instruments?.forEach((inst: InstrumentSummary, index) => {
       let entity: any = inst.pbaView?.attributes.entriesArray();
       let partiesSharedWith: string[] = [];
       if (props.partyBoundAttributes!== undefined && props.partyBoundAttributes.length > 0){
         if (props.partyBoundAttributes[index]!== null && props.partyBoundAttributes[index].observers !== null){
           props.partyBoundAttributes[index].observers.forEach((el: string) => {
-            if (el !== ctx.primaryParty && !el.toLowerCase().includes("validator") &&  !el.toLowerCase().includes("operator")){
+            if (el !== ctx.primaryParty){
               partiesSharedWith.push(el);
             }
           });
