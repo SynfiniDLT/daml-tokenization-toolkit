@@ -6,8 +6,8 @@ tokenization_lib_home=$(pwd)
 
 make compile-wallet-views
 make install-onboarding
-export PATH=$PATH:~/dops
 export DOPS_HOME=~/.dops
+export PATH=$PATH:$DOPS_HOME/bin
 
 set +e
 psql -h localhost -p 5432 -U postgres -c 'drop database wallet_views'
@@ -38,6 +38,7 @@ dops create-users onboarding/demo/users/demo-users-input.json
 
 cd ${tokenization_lib_home}/wallet-views/java
 nohup mvn -Dmaven.test.skip=true spring-boot:run \
+  -Dspring-boot.run.jvmArguments="-Dprojection.flyway.migrate-on-start=true" \
   -Dspring-boot.run.arguments=" \
     --walletviews.ledger-host=${LEDGER_HOST} \
     --walletviews.ledger-port=${LEDGER_PORT} \
