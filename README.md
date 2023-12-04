@@ -74,9 +74,15 @@ make clean
 
 ## dops CLI
 
-The dops CLI can be used for various operations on the ledger:
+The `dops` ("Daml Ops") CLI can be used for various operations on the ledger, such party allocation, creation of users
+and Daml Finance account setup.
+
+To install it, run:
 
 ```
-echo "export DOPS_HOME=${DOPS_HOME}" >> ~/.bashrc
+make build-onboarding
+echo "export DOPS_HOME=~/.dops" >> ~/.bashrc
 echo "export PATH=\$PATH:${DOPS_HOME}/bin" >> ~/.bashrc
 ```
+
+TODO: add more documentation on the CLI tool.
