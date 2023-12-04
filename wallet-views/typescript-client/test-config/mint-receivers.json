@@ -1,0 +1,14 @@
+{
+  "mintReceiverSettings": [
+    {
+      "operators" : ["custodian"],
+      "receiver" : "alice",
+      "custodian" : "custodian",
+      "accountId" : "alice@custodian",
+      "instrumentIssuer" : "issuer",
+      "instrumentDepository" : "depository",
+      "instrumentId" : "Instrument1",
+      "instrumentVersion" : "1"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "users": [
+    {
+      "userId": "alice",
+      "actAs": ["alice"],
+      "readAs": []
+    }
+  ]
+}

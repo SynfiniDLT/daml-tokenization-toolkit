@@ -1,7 +1,0 @@
-{
-  "issuer": "Issuer::1220f6e17adb8dcfe762c5972938da5c9a630102fc3178d65cd1fc01bed975c16bdd",
-  "alice": "Alice::1220f6e17adb8dcfe762c5972938da5c9a630102fc3178d65cd1fc01bed975c16bdd",
-  "custodian": "Custodian::1220f6e17adb8dcfe762c5972938da5c9a630102fc3178d65cd1fc01bed975c16bdd",
-  "bob": "Bob::1220f6e17adb8dcfe762c5972938da5c9a630102fc3178d65cd1fc01bed975c16bdd",
-  "depository": "Depository::1220f6e17adb8dcfe762c5972938da5c9a630102fc3178d65cd1fc01bed975c16bdd"
-}

@@ -110,6 +110,7 @@ public class IntegrationTest {
 
   @BeforeAll
   public static void beforeAll() throws Exception {
+    System.setProperty("projection.flyway.migrate-on-start", "true");
     ServerSocket socket = new ServerSocket(0);
     sandboxPort = socket.getLocalPort();
     System.setProperty("walletviews.ledger-port", sandboxPort.toString());

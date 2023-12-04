@@ -3,7 +3,6 @@ import { WalletViewsClient } from '.';
 import * as DamlTypes from '@daml/types';
 
 let alice: DamlTypes.Party;
-let bob: DamlTypes.Party;
 let aliceAccountId = "alice@custodian";
 let custodian: DamlTypes.Party;
 let issuer: DamlTypes.Party;
@@ -21,17 +20,25 @@ function generateToken(user: string): string {
   return encode(header) + "." + encode(payload) + "." + signature;
 }
 
+function findParty(parties: any, label: string): DamlTypes.Party {
+  const partiesList : any[] = parties.parties;
+  return partiesList.find(p => p.label == label).partyId;
+}
+
 beforeAll(() => {
-  const allocatePartiesOutput = JSON.parse(fs.readFileSync('allocate-parties-output.json', 'utf-8'));
-  alice = allocatePartiesOutput.alice;
-  bob = allocatePartiesOutput.bob;
-  custodian = allocatePartiesOutput.custodian;
-  issuer = allocatePartiesOutput.issuer;
-  depository = allocatePartiesOutput.depository;
+  const allocatePartiesOutput = JSON.parse(fs.readFileSync('.dops/parties.json', 'utf-8'));
+  alice = findParty(allocatePartiesOutput, 'alice');
+  custodian = findParty(allocatePartiesOutput, 'custodian');
+  issuer = findParty(allocatePartiesOutput, 'issuer');
+  depository = findParty(allocatePartiesOutput, 'depository');
+
+  if (process.env.WALLET_VIEWS_PORT === undefined) {
+    throw Error('WALLET_VIEWS_PORT not defined');
+  }
 
   aliceClient = new WalletViewsClient({
-    baseUrl: 'http://localhost:8080',
-    token: generateToken("alice")
+    baseUrl: 'http://localhost:' + process.env.WALLET_VIEWS_PORT,
+    token: generateToken('alice')
   });
 });
 
@@ -73,17 +80,8 @@ test('Returns settlements', async () => {
   const settlement = resp.settlements[0];
   expect(settlement.steps.length).toEqual(2);
 
-  const sentByAlice = settlement.steps.filter(step => step.routedStep.sender === alice);
-  expect(sentByAlice.length).toEqual(1);
-  const step1 = sentByAlice[0];
-  expect(step1.routedStep.quantity.amount).toEqual("1.0");
-  expect(step1.routedStep.quantity.unit.issuer).toEqual(issuer);
-  expect(step1.routedStep.sender).toEqual(alice);
-
-  const sentByBob = settlement.steps.filter(step => step.routedStep.sender === bob);
-  expect(sentByBob.length).toEqual(1);
-  const step2 = sentByBob[0];
-  expect(step2.routedStep.quantity.amount).toEqual("2.0");
-  expect(step2.routedStep.quantity.unit.issuer).toEqual(issuer);
-  expect(step2.routedStep.sender).toEqual(bob);
+  settlement.steps.forEach(step => {
+    expect(step.routedStep.quantity.amount).toEqual("100000.0");
+    expect(step.routedStep.quantity.unit.issuer).toEqual(issuer);
+  });
 });

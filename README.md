@@ -54,6 +54,12 @@ To test the wallet backend:
 make test-wallet-views
 ```
 
+To test the wallet backend client library:
+
+```bash
+make test-wallet-views-client
+```
+
 For front end:
 
 ```bash
@@ -65,3 +71,18 @@ To clean the build state:
 ```bash
 make clean
 ```
+
+## dops CLI
+
+The `dops` ("Daml Ops") CLI can be used for various operations on the ledger, such party allocation, creation of users
+and Daml Finance account setup.
+
+To install it, run:
+
+```
+make build-onboarding
+echo "export DOPS_HOME=~/.dops" >> ~/.bashrc
+echo "export PATH=\$PATH:${DOPS_HOME}/bin" >> ~/.bashrc
+```
+
+TODO: add more documentation on the CLI tool.

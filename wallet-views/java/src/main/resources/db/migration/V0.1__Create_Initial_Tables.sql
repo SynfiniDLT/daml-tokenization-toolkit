@@ -1,5 +1,5 @@
 -- Hstore (key/value) data type must be enabled
--- CREATE EXTENSION hstore;
+CREATE EXTENSION hstore;
 
 CREATE TABLE accounts
 (

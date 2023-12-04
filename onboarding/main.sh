@@ -40,6 +40,10 @@ if [ ! -f "${DOPS_FUND_ISSUER_OPEN_OFFERS_FILE}" ]; then
   echo '{"fundIssuerOpenOffers": []}' > "${DOPS_FUND_ISSUER_OPEN_OFFERS_FILE}"
 fi
 
+if [ -z ${1+x} ]; then
+  echo "Please provide command"
+  exit 1
+fi
 command=$1
 shift
 
@@ -127,6 +131,6 @@ elif [ "$command" = "create-fund-investors" ]; then
 elif [ "$command" = "accept-fund-purchase" ]; then
   ${dops_commands}/accept-fund-purchase.sh $@
 else
-  echo "Unsupported command"
+  echo "Unsupported command: $command"
   exit 1
 fi

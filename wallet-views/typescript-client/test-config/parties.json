@@ -1,0 +1,24 @@
+{
+  "partySettings": [
+    {
+      "label": "alice",
+      "displayName": "alice",
+      "partyIdHint": "alice"
+    },
+    {
+      "label": "custodian",
+      "displayName": "custodian",
+      "partyIdHint": "custodian"
+    },
+    {
+      "label": "issuer",
+      "displayName": "issuer",
+      "partyIdHint": "issuer"
+    },
+    {
+      "label": "depository",
+      "displayName": "depository",
+      "partyIdHint": "depository"
+    }
+  ]
+}

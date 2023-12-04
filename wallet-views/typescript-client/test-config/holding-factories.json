@@ -1,0 +1,15 @@
+{
+  "holdingFactorySettings": [
+    {
+      "label": "fungible",
+      "holdingType": "Fungible",
+      "provider": "custodian",
+      "observers": [
+        {
+          "context": "o",
+          "parties": ["alice", "issuer"]
+        }
+      ]
+    }
+  ]
+}

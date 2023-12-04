@@ -10,7 +10,7 @@
       "id": "sbt",
       "description": "sbt account",
       "incomingControllers": [
-        "InvestorA"
+        "SBT_Issuer"
       ],
       "outgoingControllers": [
         "SBT_Issuer"
@@ -31,7 +31,7 @@
       "id": "sbt",
       "description": "sbt account",
       "incomingControllers": [
-        "InvestorB"
+        "SBT_Issuer"
       ],
       "outgoingControllers": [
         "SBT_Issuer"
