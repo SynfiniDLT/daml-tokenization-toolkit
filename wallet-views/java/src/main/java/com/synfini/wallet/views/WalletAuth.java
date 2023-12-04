@@ -8,8 +8,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.synfini.wallet.views.config.LedgerApiConfig;
 import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
-import io.netty.handler.ssl.SslContextBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -53,9 +51,6 @@ public class WalletAuth {
     boolean result = false;
     com.daml.ledger.javaapi.data.ListUserRightsResponse userRights;
     try {
-      logger.info("LedgerHost="+ ledgerApiConfig.ledgerHost);
-      logger.info("LedgerPort="+ ledgerApiConfig.ledgerPort);
-      logger.info("token="+ token);
       final DamlLedgerClient.Builder clientBuilder = DamlLedgerClient
         .newBuilder(ledgerApiConfig.ledgerHost, ledgerApiConfig.ledgerPort)
         .withAccessToken(token);

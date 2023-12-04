@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -ux
+set -x
 set +e
 
 rm -rf .dops
@@ -45,6 +45,7 @@ sandbox_pg_id=$(ps --pid $sandbox_pid -o "pgid" --no-headers)
 # Start backend
 cd ${test_dir}/../java
 nohup mvn -Dmaven.test.skip=true spring-boot:run \
+  -Dspring-boot.run.jvmArguments="-Dprojection.flyway.migrate-on-start=true" \
   -Dspring-boot.run.arguments=" \
     --spring.datasource.url=jdbc:postgresql://localhost:${POSTGRES_PORT}/wallet_views \
     --walletviews.ledger-host=${LEDGER_HOST} \
@@ -77,7 +78,6 @@ dops create-accounts-unilateral test-config/accounts.json
 dops create-settlement-factories test-config/settlement-factories.json
 dops create-mint-unilateral test-config/mint.json
 dops create-mint-receivers test-config/mint-receivers.json
-dops instruct-mint test-config/instruct-mint.json
 instruct_mint_output_file=$(mktemp)
 dops instruct-mint test-config/instruct-mint.json --output-file $instruct_mint_output_file
 dops execute-mint test-config/execute-mint.json $instruct_mint_output_file
