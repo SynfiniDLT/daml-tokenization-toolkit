@@ -11,7 +11,6 @@ import { CreateEvent } from "@daml/ledger";
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
 const FundScreen: React.FC = () => {
-  const nav = useNavigate();
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 
@@ -43,16 +42,16 @@ const FundScreen: React.FC = () => {
     );
   }
 
-  if (user?.name?.toLowerCase().includes("employee") || user?.name?.toLowerCase().includes("fund")){
-    nav("/");
-  }
-
   return (
     <PageLayout>
       <div>
         {!user?.name?.toLowerCase().includes("employee") && 
-        
-          <Funds funds={funds} />
+          <>
+            <div style={{ marginTop: "15px" }}>
+              <h4 className="profile__title">Funds</h4>
+            </div>
+            <Funds funds={funds} />
+          </>
         }
       </div>
 
