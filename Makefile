@@ -21,6 +21,9 @@ install-custom-views:
 .build/trackable-holding.dar: .lib $(shell ./find-daml-project-files.sh trackable-holding/main)
 	cd trackable-holding/main && daml build -o ../../.build/trackable-holding.dar
 
+.build/trackable-settlement.dar: .lib $(shell ./find-daml-project-files.sh trackable-settlement/main)
+	cd trackable-settlement/main && daml build -o ../../.build/trackable-settlement.dar
+
 ## BEGIN mint
 .build/daml-mint.dar: .lib .build/tokenization-util.dar $(shell ./find-daml-project-files.sh mint/main)
 	cd mint/main && daml build -o ../../.build/daml-mint.dar
@@ -55,6 +58,12 @@ test-fund: .build/fund-tokenization.dar
 ## END fund
 
 ## BEGIN onboarding
+.build/account-onboarding-one-time-offer-interface.dar: .lib $(shell ./find-daml-project-files.sh account-onboarding/one-time-offer-interface)
+	cd account-onboarding/one-time-offer-interface && daml build -o ../../.build/account-onboarding-one-time-offer-interface.dar
+
+.build/account-onboarding-one-time-offer.dar: .build/account-onboarding-one-time-offer-interface.dar $(shell ./find-daml-project-files.sh account-onboarding/one-time-offer-implementation)
+	cd account-onboarding/one-time-offer-implementation && daml build -o ../../.build/account-onboarding-one-time-offer.dar
+
 .build/tokenization-onboarding.dar: .lib .build/trackable-holding.dar .build/daml-mint.dar .build/fund-tokenization.dar .build/pbt.dar $(shell ./find-daml-project-files.sh onboarding/main)
 	cd onboarding/main && daml build -o ../../.build/tokenization-onboarding.dar
 

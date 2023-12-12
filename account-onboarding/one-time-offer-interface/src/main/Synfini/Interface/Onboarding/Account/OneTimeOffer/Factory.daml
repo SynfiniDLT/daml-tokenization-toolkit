@@ -1,0 +1,34 @@
+module Synfini.Interface.Onboarding.Account.OneTimeOffer.Factory where
+
+import Daml.Finance.Interface.Types.Common.Types
+import qualified Daml.Finance.Interface.Account.Account as Account
+import qualified Daml.Finance.Interface.Account.Factory as Account
+import qualified Daml.Finance.Interface.Holding.Factory as Holding
+
+import qualified Synfini.Interface.Onboarding.Account.OneTimeOffer.OneTimeOffer as OneTimeOffer
+
+data View = View
+  with
+    provider : Party
+
+type V = View
+
+interface Factory where
+  viewtype V
+
+  create' : Create -> Update (ContractId OneTimeOffer.I)
+
+  nonconsuming choice Create : ContractId OneTimeOffer.I
+    with
+      account : AccountKey
+      controllers : Account.Controllers
+      accountDescription : Text
+      offerDescription : Text
+      accountFactoryCid : ContractId Account.F
+      holdingFactoryCid : ContractId Holding.F
+      observers : PartiesMap
+    controller account.custodian
+    do
+      create' this arg
+
+type F = Factory

@@ -1,0 +1,33 @@
+module Synfini.Onboarding.Account.OneTimeOffer where
+
+import Daml.Finance.Interface.Types.Common.Types
+import qualified Daml.Finance.Interface.Account.Account as Account
+import qualified Daml.Finance.Interface.Account.Factory as Account
+import qualified Daml.Finance.Interface.Holding.Factory as Holding
+import qualified Synfini.Interface.Onboarding.Account.OneTimeOffer.OneTimeOffer as OneTimeOffer
+
+template OneTimeOffer
+  with
+    account : AccountKey
+    controllers : Account.Controllers
+    description : Text
+    accountFactoryCid : ContractId Account.F
+    holdingFactoryCid : ContractId Holding.F
+    observers : PartiesMap
+    offerDescription : Text
+  where
+    signatory account.custodian
+
+    observer account.owner
+
+    interface instance OneTimeOffer.I for OneTimeOffer where
+      view = OneTimeOffer.View with ..
+
+      accept = exercise accountFactoryCid Account.Create with
+        account
+        holdingFactoryCid
+        controllers
+        description
+        observers
+
+      decline = pure ()
