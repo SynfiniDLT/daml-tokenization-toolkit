@@ -4,6 +4,7 @@ import Daml.Finance.Interface.Types.Common.Types
 import qualified Daml.Finance.Interface.Account.Account as Account
 import qualified Daml.Finance.Interface.Account.Factory as Account
 import qualified Daml.Finance.Interface.Holding.Factory as Holding
+import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
 
 import qualified Synfini.Interface.Onboarding.Account.OneTimeOffer.OneTimeOffer as OneTimeOffer
 
@@ -13,7 +14,7 @@ data View = View
 
 type V = View
 
-interface Factory where
+interface Factory requires Disclosure.I where
   viewtype V
 
   create' : Create -> Update (ContractId OneTimeOffer.I)
@@ -21,14 +22,15 @@ interface Factory where
   nonconsuming choice Create : ContractId OneTimeOffer.I
     with
       account : AccountKey
-      controllers : Account.Controllers
+      accountControllers : Account.Controllers
       accountDescription : Text
-      offerDescription : Text
+      accountObservers : PartiesMap
       accountFactoryCid : ContractId Account.F
       holdingFactoryCid : ContractId Holding.F
+      description : Text
       observers : PartiesMap
     controller account.custodian
     do
       create' this arg
 
-type F = Factory
+type I = Factory

@@ -4,21 +4,22 @@ import Daml.Finance.Interface.Types.Common.Types
 import qualified Daml.Finance.Interface.Account.Account as Account
 import qualified Daml.Finance.Interface.Account.Factory as Account
 import qualified Daml.Finance.Interface.Holding.Factory as Holding
+import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
 
 data View = View
   with
     account : AccountKey
-    controllers : Account.Controllers
-    description : Text
-    observers : PartiesMap
+    accountControllers : Account.Controllers
+    accountDescription : Text
+    accountObservers : PartiesMap
     accountFactoryCid : ContractId Account.F
     holdingFactoryCid : ContractId Holding.F
-    offerDescription : Text
+    description : Text
   deriving (Show, Eq)
 
 type V = View
 
-interface OneTimeOffer where
+interface OneTimeOffer requires Disclosure.I where
   viewtype V
 
   accept : Update (ContractId Account.I)

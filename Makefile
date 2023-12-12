@@ -64,6 +64,12 @@ test-fund: .build/fund-tokenization.dar
 .build/account-onboarding-one-time-offer.dar: .build/account-onboarding-one-time-offer-interface.dar $(shell ./find-daml-project-files.sh account-onboarding/one-time-offer-implementation)
 	cd account-onboarding/one-time-offer-implementation && daml build -o ../../.build/account-onboarding-one-time-offer.dar
 
+.build/account-onboarding-open-offer-interface.dar: .lib $(shell ./find-daml-project-files.sh account-onboarding/open-offer-interface)
+	cd account-onboarding/open-offer-interface && daml build -o ../../.build/account-onboarding-open-offer-interface.dar
+
+.build/account-onboarding-open-offer.dar: .build/account-onboarding-open-offer-interface.dar $(shell ./find-daml-project-files.sh account-onboarding/open-offer-implementation)
+	cd account-onboarding/open-offer-implementation && daml build -o ../../.build/account-onboarding-open-offer.dar
+
 .build/tokenization-onboarding.dar: .lib .build/trackable-holding.dar .build/daml-mint.dar .build/fund-tokenization.dar .build/pbt.dar $(shell ./find-daml-project-files.sh onboarding/main)
 	cd onboarding/main && daml build -o ../../.build/tokenization-onboarding.dar
 

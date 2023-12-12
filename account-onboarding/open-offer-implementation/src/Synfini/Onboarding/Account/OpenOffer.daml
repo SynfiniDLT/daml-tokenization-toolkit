@@ -1,0 +1,49 @@
+module Synfini.Onboarding.Account.OpenOffer where
+
+import Daml.Finance.Interface.Types.Common.Types
+import qualified Daml.Finance.Interface.Account.Account as Account
+import qualified Daml.Finance.Interface.Account.Factory as Account
+import qualified Daml.Finance.Interface.Holding.Factory as Holding
+import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
+import qualified Daml.Finance.Util.Disclosure as ImplUtil
+import qualified Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer as OpenOffer
+import qualified DA.Set as Set
+import qualified DA.Optional as O
+
+template OpenOffer
+  with
+    custodian : Party
+    ownerIncomingControlled : Bool
+    ownerOutgoingControlled : Bool
+    additionalControllers : Account.Controllers
+    permittedOwners : Optional Parties
+    accountFactoryCid : ContractId Account.F
+    holdingFactoryCid : ContractId Holding.F
+    observers : PartiesMap
+  where
+    signatory custodian
+
+    observer Disclosure.flattenObservers observers, O.fromOptional Set.empty permittedOwners
+
+    interface instance Disclosure.I for OpenOffer where
+      view = Disclosure.View with disclosureControllers = Set.fromList [custodian], observers
+      setObservers = ImplUtil.setObserversImpl @_ @Disclosure.I this None
+      addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
+      removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
+
+    interface instance OpenOffer.I for OpenOffer where
+      view = OpenOffer.View with ..
+      accept args = do
+        assertMsg
+          "Must be a permitted owner"
+          (O.optional True (\allowed -> args.owner `Set.member` allowed) permittedOwners)
+        let incomingControllers =
+              (if ownerIncomingControlled then Set.fromList [args.owner] else Set.empty) <> additionalControllers.incoming
+            outgoingControllers =
+              (if ownerOutgoingControlled then Set.fromList [args.owner] else Set.empty) <> additionalControllers.outgoing
+        exercise accountFactoryCid Account.Create with
+          account = AccountKey with custodian, owner = args.owner, id = args.id
+          holdingFactoryCid
+          controllers = Account.Controllers with incoming = incomingControllers, outgoing = outgoingControllers
+          description = args.description
+          observers = args.observers
