@@ -22,6 +22,8 @@ template UsedTypes
       Settlements :+:
       SettlementsFilter :+:
       Instruments :+:
-      InstrumentsFilter
+      InstrumentsFilter :+:
+      AccountOffersFilter :+:
+      AccountOffers
   where
     signatory undefinedParty

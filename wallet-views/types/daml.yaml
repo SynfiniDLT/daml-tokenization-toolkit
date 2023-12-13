@@ -15,3 +15,4 @@ data-dependencies:
   - ../../.lib/daml-finance-interface-instrument-token.dar
   - ../../.lib/daml-finance-interface-types-common.dar
   - ../../.build/pbt-interface.dar
+  - ../../.build/account-onboarding-one-time-offer-interface.dar

@@ -93,7 +93,7 @@ build-pbt: .build/pbt.dar
 ## END pbt
 
 ## BEGIN wallet-views
-.build/daml-wallet-views-types.dar: .lib .build/pbt-interface.dar $(shell ./find-daml-project-files.sh wallet-views/types)
+.build/daml-wallet-views-types.dar: .lib .build/account-onboarding-one-time-offer-interface.dar .build/pbt-interface.dar $(shell ./find-daml-project-files.sh wallet-views/types)
 	cd wallet-views/types && daml build -o ../../.build/daml-wallet-views-types.dar
 
 # Codegen - java

@@ -8,6 +8,7 @@ import qualified Daml.Finance.Interface.Settlement.Batch as Batch
 import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
 import qualified Daml.Finance.Interface.Instrument.Base.Instrument as Instrument
 import qualified Daml.Finance.Interface.Instrument.Token.Instrument as Token
+import qualified Synfini.Interface.Onboarding.Account.OneTimeOffer.OneTimeOffer as AccountOffer
 import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Instrument as Pbt
 import Daml.Finance.Interface.Settlement.Types
 import Daml.Finance.Interface.Types.Common.Types
@@ -124,4 +125,15 @@ data InstrumentsFilter = InstrumentsFilter
     issuer : Party
     id : Id
     version : Optional Text
+  deriving (Show, Eq)
+
+data AccountOffersFilter = AccountOffersFilter
+  with
+    custodian : Optional Party
+    owner : Party
+  deriving (Show, Eq)
+
+data AccountOffers = AccountOffers
+  with
+    accountOffers : [AccountOffer.V]
   deriving (Show, Eq)

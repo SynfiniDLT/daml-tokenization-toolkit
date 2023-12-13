@@ -1,0 +1,15 @@
+module Synfini.Interface.Onboarding.Account.OpenOffer.Factory where
+
+import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
+
+data View = View
+  with
+    provider : Party
+  deriving (Show, Eq)
+
+type V = View
+
+interface Factory requires Disclosure.I where
+  viewtype V
+
+  create' : Create -> ContractId OpenOffer.I
