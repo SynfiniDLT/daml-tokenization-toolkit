@@ -1,6 +1,6 @@
 {-# LANGUAGE ApplicativeDo #-}
 
-module Synfini.Onboarding.Mint.Instruct where
+module Synfini.Onboarding.Scripts.Mint.Instruct where
 
 import qualified Daml.Finance.Interface.Holding.Util as Holding
 import qualified Daml.Finance.Interface.Holding.Fungible as Fungible
@@ -8,7 +8,7 @@ import Daml.Finance.Interface.Types.Common.Types
 import Daml.Script
 import qualified DA.Set as Set
 import Synfini.Mint
-import Synfini.Onboarding.Types
+import Synfini.Onboarding.Scripts.Types
 import Synfini.Mint.Delegation
 import qualified Daml.Finance.Interface.Account.Util as Account
 import qualified Daml.Finance.Interface.Holding.Base as Holding

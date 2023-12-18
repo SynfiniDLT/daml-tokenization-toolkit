@@ -22,7 +22,12 @@ data-dependencies:
   - ../../.lib/daml-finance-instrument-token.dar
   - ../../.lib/daml-finance-settlement.dar
 
+  - ../../.build/account-onboarding-one-time-offer-interface.dar
+  - ../../.build/account-onboarding-open-offer-interface.dar
+
   - ../../.build/trackable-holding.dar
+  - ../../.build/account-onboarding-one-time-offer.dar
+  - ../../.build/account-onboarding-open-offer.dar
   - ../../.build/daml-mint.dar
   - ../../.build/pbt-interface.dar
   - ../../.build/pbt.dar

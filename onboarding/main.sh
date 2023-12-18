@@ -15,6 +15,10 @@ export DOPS_ACCOUNT_FACTORIES_FILE=${DOPS_INTERNAL}/account-factories.json
 if [ ! -f "${DOPS_ACCOUNT_FACTORIES_FILE}" ]; then
   echo '{"accountFactories": []}' > "${DOPS_ACCOUNT_FACTORIES_FILE}"
 fi
+export DOPS_ACCOUNT_OPEN_OFFER_FACTORIES_FILE=${DOPS_INTERNAL}/account-open-offer-factories.json
+if [ ! -f "${DOPS_ACCOUNT_OPEN_OFFER_FACTORIES_FILE}" ]; then
+  echo '{"accountOpenOfferFactories": []}' > "${DOPS_ACCOUNT_OPEN_OFFER_FACTORIES_FILE}"
+fi
 export DOPS_HOLDING_FACTORIES_FILE=${DOPS_INTERNAL}/holding-factories.json
 if [ ! -f "${DOPS_HOLDING_FACTORIES_FILE}" ]; then
   echo '{"holdingFactories": []}' > "${DOPS_HOLDING_FACTORIES_FILE}"

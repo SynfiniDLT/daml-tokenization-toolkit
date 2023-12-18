@@ -1,4 +1,4 @@
-module Synfini.Onboarding.Mint.Delegation where
+module Synfini.Onboarding.Scripts.Mint.Delegation where
 
 import qualified Daml.Finance.Interface.Holding.Fungible as Fungible
 import Daml.Finance.Interface.Types.Common.Types
@@ -7,7 +7,7 @@ import DA.Set (Set)
 import qualified DA.Set as Set
 import Synfini.Mint
 import Synfini.Mint.Delegation
-import Synfini.Onboarding.Types
+import Synfini.Onboarding.Scripts.Types
 import qualified Daml.Finance.Interface.Holding.Base as Holding
 import DA.Foldable (forA_)
 import Daml.Script

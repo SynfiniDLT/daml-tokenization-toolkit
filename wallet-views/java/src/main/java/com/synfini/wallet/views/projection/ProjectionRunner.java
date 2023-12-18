@@ -10,6 +10,7 @@ import com.synfini.wallet.views.config.LedgerApiConfig;
 import com.synfini.wallet.views.config.ProjectionConfig;
 import com.synfini.wallet.views.config.SpringDbConfig;
 import com.synfini.wallet.views.projection.generators.account.AccountFactoryEventsProjectionGenerator;
+import com.synfini.wallet.views.projection.generators.account.AccountOpenOffersProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.account.AccountsProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.batch.BatchesProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.holding.HoldingsProjectionGenerator;
@@ -25,6 +26,7 @@ import daml.finance.interface$.settlement.instruction.Instruction;
 import io.grpc.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import synfini.interface$.onboarding.account.openoffer.openoffer.OpenOffer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -87,7 +89,7 @@ public class ProjectionRunner implements Callable<Integer> {
     dbConfig.setJdbcUrl(springDbConfig.url);
     dbConfig.setUsername(springDbConfig.user);
     dbConfig.setPassword(springDbConfig.password);
-    dbConfig.setMaximumPoolSize(24); // TODO this should be set based on the number projections (e.g. 2 * numProjections)
+    dbConfig.setMaximumPoolSize(26); // TODO this should be set based on the number projections (e.g. 2 * numProjections)
 
     final Optional<SharedTokenCallCredentials> tokenCreds;
     if (tokenUrl.isPresent()) {
@@ -146,6 +148,8 @@ public class ProjectionRunner implements Callable<Integer> {
     logger.info("Initialising controls");
     final var generators = List.of(
       // Accounts
+      new AccountOpenOffersProjectionGenerator(readAs, connection),
+      new WitnessProjectionGenerator(readAs, "account_open_offers", OpenOffer.INTERFACE, "account_open_offer_witnesses"),
       new AccountFactoryEventsProjectionGenerator(readAs),
       new AccountsProjectionGenerator(readAs, connection),
 

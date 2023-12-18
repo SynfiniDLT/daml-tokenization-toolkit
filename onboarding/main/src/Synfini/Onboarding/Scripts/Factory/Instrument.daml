@@ -1,4 +1,4 @@
-module Synfini.Onboarding.Factory.Instrument where
+module Synfini.Onboarding.Scripts.Factory.Instrument where
 
 import qualified Daml.Finance.Interface.Instrument.Token.Factory as Token
 import qualified Daml.Finance.Instrument.Token.Factory as TokenImpl
@@ -6,7 +6,7 @@ import Daml.Script
 import qualified DA.Optional as O
 import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Factory as Pba
 import qualified Synfini.Instrument.PartyBoundAttributes.Factory as PbaImpl
-import Synfini.Onboarding.Types
+import Synfini.Onboarding.Scripts.Types
 import DA.Action (when)
 
 data InstrumentFactorySettings = InstrumentFactorySettings

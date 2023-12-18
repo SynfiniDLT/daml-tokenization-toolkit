@@ -1,4 +1,4 @@
-module Synfini.Onboarding.Types where
+module Synfini.Onboarding.Scripts.Types where
 
 import Daml.Finance.Interface.Types.Common.Types
 import qualified DA.Map as Map

@@ -1,11 +1,11 @@
 {-# LANGUAGE ApplicativeDo #-}
-module Synfini.Onboarding.PartyBoundAttributes.Unilateral where
+module Synfini.Onboarding.Scripts.PartyBoundAttributes.Unilateral where
 
 import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Factory as Pba
-import Synfini.Onboarding.Factory.Instrument
-import Synfini.Onboarding.Factory.Settlement
+import Synfini.Onboarding.Scripts.Factory.Instrument
+import Synfini.Onboarding.Scripts.Factory.Settlement
 import DA.Map (Map)
-import Synfini.Onboarding.Types
+import Synfini.Onboarding.Scripts.Types
 import Daml.Script
 import qualified DA.Set as Set
 import Daml.Finance.Interface.Settlement.Types

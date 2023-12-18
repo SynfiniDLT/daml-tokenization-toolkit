@@ -15,6 +15,7 @@ data View = View
     permittedOwners : Optional Parties
     accountFactoryCid : ContractId Account.F
     holdingFactoryCid : ContractId Holding.F
+    description : Text
   deriving (Show, Eq)
 
 type V = View
@@ -22,16 +23,16 @@ type V = View
 interface OpenOffer requires Disclosure.I where
   viewtype V
 
-  accept : Accept -> Update (ContractId Account.I)
+  take' : Take -> Update (ContractId Account.I)
 
-  nonconsuming choice Accept : ContractId Account.I
+  nonconsuming choice Take : ContractId Account.I
     with
       owner : Party
       id : Id
-      description : Text
-      observers : PartiesMap
+      accountDescription : Text
+      accountObservers : PartiesMap
     controller owner
     do
-      accept this arg
+      take' this arg
 
 type I = OpenOffer

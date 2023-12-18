@@ -1,10 +1,10 @@
-module Synfini.Onboarding.Factory.Settlement where
+module Synfini.Onboarding.Scripts.Factory.Settlement where
 
 import qualified Daml.Finance.Settlement.Factory as SettlementImpl
 import qualified Daml.Finance.Interface.Settlement.Factory as Settlement
 import qualified DA.Set as Set
 import Daml.Script
-import Synfini.Onboarding.Types
+import Synfini.Onboarding.Scripts.Types
 
 data SettlementFactorySettings = SettlementFactorySettings
   with

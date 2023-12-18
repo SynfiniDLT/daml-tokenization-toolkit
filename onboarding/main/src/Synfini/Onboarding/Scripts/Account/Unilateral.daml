@@ -1,8 +1,8 @@
-module Synfini.Onboarding.Account.Unilateral where
+module Synfini.Onboarding.Scripts.Account.Unilateral where
 
-import Synfini.Onboarding.Types
-import Synfini.Onboarding.Factory.Account
-import Synfini.Onboarding.Factory.Holding
+import Synfini.Onboarding.Scripts.Types
+import Synfini.Onboarding.Scripts.Factory.Account
+import Synfini.Onboarding.Scripts.Factory.Holding
 import qualified DA.Map as Map
 import Daml.Script
 import qualified DA.Optional as O

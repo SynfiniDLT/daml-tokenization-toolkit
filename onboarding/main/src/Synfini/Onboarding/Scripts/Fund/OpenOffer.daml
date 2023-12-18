@@ -1,8 +1,8 @@
-module Synfini.Onboarding.Fund.OpenOffer where
+module Synfini.Onboarding.Scripts.Fund.OpenOffer where
 
 import Synfini.Fund.Offer
-import Synfini.Onboarding.Types
-import Synfini.Onboarding.Factory.Settlement
+import Synfini.Onboarding.Scripts.Types
+import Synfini.Onboarding.Scripts.Factory.Settlement
 import Daml.Finance.Interface.Types.Common.Types
 import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
 import DA.Set (Set)

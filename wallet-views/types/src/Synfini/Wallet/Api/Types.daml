@@ -8,7 +8,7 @@ import qualified Daml.Finance.Interface.Settlement.Batch as Batch
 import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
 import qualified Daml.Finance.Interface.Instrument.Base.Instrument as Instrument
 import qualified Daml.Finance.Interface.Instrument.Token.Instrument as Token
-import qualified Synfini.Interface.Onboarding.Account.OneTimeOffer.OneTimeOffer as AccountOffer
+import qualified Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer as AccountOpenOffer
 import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Instrument as Pbt
 import Daml.Finance.Interface.Settlement.Types
 import Daml.Finance.Interface.Types.Common.Types
@@ -110,8 +110,8 @@ data Settlements = Settlements
 data InstrumentSummary = InstrumentSummary
   with
     cid : ContractId Instrument.I
-    tokenView : Optional Token.View
-    pbaView : Optional Pbt.View
+    tokenView : Optional Token.V
+    pbaView : Optional Pbt.V
   deriving (Show, Eq)
 
 data Instruments = Instruments
@@ -127,13 +127,18 @@ data InstrumentsFilter = InstrumentsFilter
     version : Optional Text
   deriving (Show, Eq)
 
-data AccountOffersFilter = AccountOffersFilter
+data AccountOpenOffersFilter = AccountOpenOffersFilter
   with
-    custodian : Optional Party
-    owner : Party
   deriving (Show, Eq)
 
-data AccountOffers = AccountOffers
+data AccountOpenOfferSummary = AccountOpenOfferSummary
   with
-    accountOffers : [AccountOffer.V]
+    cid : ContractId AccountOpenOffer.I
+    view : AccountOpenOffer.V
+    create : Optional TransactionDetail
+  deriving (Show, Eq)
+
+data AccountOpenOffers = AccountOpenOffers
+  with
+    accountOpenOffers : [AccountOpenOfferSummary]
   deriving (Show, Eq)

@@ -100,6 +100,7 @@ public class IntegrationTest {
   private static ManagedChannel adminChannel;
   private static DamlLedgerClient allPartiesLedgerClient;
   private static daml.finance.interface$.account.factory.Factory.ContractId accountFactoryCid;
+  private static synfini.interface$.onboarding.account.openoffer.factory.Factory.ContractId accountOpenOfferFactoryCid;
   private static daml.finance.interface$.holding.factory.Factory.ContractId holdingFactoryCid;
   private static daml.finance.interface$.settlement.factory.Factory.ContractId settlementFactoryCid;
   private static daml.finance.interface$.instrument.token.factory.Factory.ContractId tokenInstrumentFactoryCid;
@@ -163,6 +164,7 @@ public class IntegrationTest {
             "daml-finance-account.dar",
             "daml-finance-settlement.dar",
             "daml-finance-instrument-token.dar",
+            "account-onboarding-open-offer.dar",
             "pbt.dar"
           )
         ) {
@@ -255,6 +257,7 @@ public class IntegrationTest {
     final var obs = arrayToSet(investor1, investor2, depository, issuer);
     final var obsMap = Collections.singletonMap("everyone", obs);
     final var accountFactory = new daml.finance.account.account.Factory(custodian, obsMap);
+    final var accountOpenOfferFactory = new synfini.onboarding.account.openoffer.Factory(custodian, obsMap);
     final var holdingFactory = new daml.finance.holding.fungible.Factory(custodian, obsMap);
     final var settlementFactory = new daml.finance.settlement.factory.Factory(custodian, obs);
     final var tokenInstrumentFactory = new daml.finance.instrument.token.factory.Factory(custodian, obsMap);
@@ -263,6 +266,14 @@ public class IntegrationTest {
       allPartiesLedgerClient
         .getCommandClient()
         .submitAndWaitForResult(allPartiesUpdateSubmission(accountFactory.create()))
+        .blockingGet()
+        .contractId
+        .contractId
+    );
+    accountOpenOfferFactoryCid = new synfini.interface$.onboarding.account.openoffer.factory.Factory.ContractId(
+      allPartiesLedgerClient
+        .getCommandClient()
+        .submitAndWaitForResult(allPartiesUpdateSubmission(accountOpenOfferFactory.create()))
         .blockingGet()
         .contractId
         .contractId
@@ -811,6 +822,70 @@ public class IntegrationTest {
                   ),
                   Optional.of(new TransactionDetail(createOffset, Instant.EPOCH)),
                   Optional.of(new TransactionDetail(removeOffset, Instant.EPOCH))
+                )
+              )
+            )
+          )
+        )
+      );
+  }
+
+  @Test
+  void returnsAccountOpenOffers() throws Exception {
+    registerAuthMock(investor1User, 60 * 60 * 24);
+    startProjectionDaemon(investor1, investor1User);
+    delayForProjectionToStart();
+
+    final var ownerIncomingControlled = false;
+    final var ownerOutgoingControlled = true;
+    final var additionalControllers = new Controllers(
+      listToSet(List.of(custodian)),
+      listToSet(List.of(custodian, investor2))
+    );
+    final Optional<da.set.types.Set<String>> permittedOwners = Optional.empty();
+    final var description = "description";
+    final var cid = allPartiesLedgerClient
+      .getCommandClient()
+      .submitAndWaitForResult(
+        allPartiesUpdateSubmission(
+          accountOpenOfferFactoryCid.exerciseCreate(
+            custodian,
+            ownerIncomingControlled,
+            ownerOutgoingControlled,
+            additionalControllers,
+            permittedOwners,
+            accountFactoryCid,
+            holdingFactoryCid,
+            description,
+            Map.of("obs", listToSet(List.of(investor1, investor2)))
+          )
+        )
+      )
+      .blockingGet().exerciseResult;
+    final var offset = getLedgerEnd();
+    delayForProjectionIngestion();
+
+    mvc
+      .perform(getAccountOpenOffersBuilder().headers(userTokenHeader(investor1User)))
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(
+          toJson(
+            new AccountOpenOffers(
+              List.of(
+                new AccountOpenOfferSummary(
+                  cid,
+                  new synfini.interface$.onboarding.account.openoffer.openoffer.View(
+                    custodian,
+                    ownerIncomingControlled,
+                    ownerOutgoingControlled,
+                    additionalControllers,
+                    permittedOwners,
+                    accountFactoryCid,
+                    holdingFactoryCid,
+                    description
+                  ),
+                  Optional.of(new TransactionDetail(offset, Instant.EPOCH))
                 )
               )
             )
@@ -1447,6 +1522,13 @@ public class IntegrationTest {
     return MockMvcRequestBuilders
       .post(walletViewsBasePath + "accounts")
       .content(toJson(new AccountFilter(owner)))
+      .contentType(MediaType.APPLICATION_JSON);
+  }
+
+  private static MockHttpServletRequestBuilder getAccountOpenOffersBuilder() {
+    return MockMvcRequestBuilders
+      .post(walletViewsBasePath + "account-open-offers")
+      .content(toJson(new AccountOpenOffersFilter()))
       .contentType(MediaType.APPLICATION_JSON);
   }
 

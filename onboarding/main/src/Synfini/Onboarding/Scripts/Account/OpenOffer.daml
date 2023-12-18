@@ -1,4 +1,4 @@
-module Synfini.Onboarding.Account.OpenOffer where
+module Synfini.Onboarding.Scripts.Account.OpenOffer where
 
 import qualified Daml.Finance.Interface.Account.Account as Account
 import qualified Daml.Finance.Interface.Account.Factory as Account
@@ -7,48 +7,14 @@ import Daml.Finance.Interface.Types.Common.Types
 import qualified DA.Optional as O
 import qualified DA.Set as Set
 import DA.Set (Set)
-import Synfini.Onboarding.Types
-import Synfini.Onboarding.Factory.Account
-import Synfini.Onboarding.Factory.Holding
+import Synfini.Onboarding.Scripts.Types
+import Synfini.Onboarding.Scripts.Factory.Account
+import Synfini.Onboarding.Scripts.Factory.Holding
+import qualified Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer as AccountOpenOffer
+import qualified Synfini.Interface.Onboarding.Account.OpenOffer.Factory as AccountOpenOfferFactory
 import Daml.Script
 import DA.Foldable (forA_)
 import qualified DA.Map as Map
-
-template OpenAccountOffer
-  with
-    custodian : Party
-    operators : Account.Controllers
-    ownerIncomingControlled : Bool
-    ownerOutgoingControlled : Bool
-    accountFactoryCid : ContractId Account.F
-    holdingFactoryCid : ContractId Holding.F
-    observers : Set Party
-  where
-    signatory custodian
-
-    observer observers
-
-    nonconsuming choice OpenAccount : ContractId Account.I
-      with
-        owner : Party
-        id : Id
-        description : Text
-        accountObservers : PartiesMap
-      controller owner
-      do
-        let account = AccountKey with custodian, owner, id
-        existingAccount <- lookupByKey @Account.R account
-        assertMsg "Cannot already have an account with same key" (O.isNone existingAccount)
-        let incomingControllers =
-              (if ownerIncomingControlled then Set.fromList [owner] else Set.empty) <> operators.incoming
-            outgoingControllers =
-              (if ownerOutgoingControlled then Set.fromList [owner] else Set.empty) <> operators.outgoing
-        exercise accountFactoryCid Account.Create with
-          account
-          holdingFactoryCid
-          controllers = Account.Controllers with incoming = incomingControllers, outgoing = outgoingControllers
-          description
-          observers = accountObservers
 
 data CreateOpenAccountOfferSettings = CreateOpenAccountOfferSettings
   with
@@ -60,19 +26,22 @@ data CreateOpenAccountOfferSettings = CreateOpenAccountOfferSettings
     ownerOutgoingControlled : Bool
     accountFactory : Text
     holdingFactory : Text
-    observers : [Text]
+    description : Text
+    observers : [Observer]
+    accountOpenOfferFactory : Text
 
 data CreateOpenAccountOfferInput = CreateOpenAccountOfferInput
   with
     parties : [PartyInfo]
     accountFactories : [AccountFactory]
     holdingFactories : [HoldingFactory]
+    accountOpenOfferFactories : [AccountOpenOfferFactory]
     offerSettings : [CreateOpenAccountOfferSettings]
 
 data LabelledOpenAccountOffer = LabelledOpenAccountOffer
   with
     label : Text
-    cid : ContractId OpenAccountOffer
+    cid : ContractId AccountOpenOffer.I
 
 data CreateOpenAccountOfferOutput = CreateOpenAccountOfferOutput
   with
@@ -84,20 +53,23 @@ createOpenAccountOffer input = do
   let p = getPartyId pm
   accountOpenOffers <- forA input.offerSettings $ \offerSetting -> do
     let custodian = p offerSetting.custodian
-        operators = Account.Controllers with
+        additionalControllers = Account.Controllers with
           incoming = Set.fromList (p <$> offerSetting.incomingOperators)
           outgoing = Set.fromList (p <$> offerSetting.outgoingOperators)
         accountFactoryCid = findFactoryContractId offerSetting.accountFactory input.accountFactories
         holdingFactoryCid = findFactoryContractId offerSetting.holdingFactory input.holdingFactories
-    let openAccountOffer = OpenAccountOffer with
-          custodian
-          operators
-          ownerIncomingControlled = offerSetting.ownerIncomingControlled
-          ownerOutgoingControlled = offerSetting.ownerOutgoingControlled
-          accountFactoryCid
-          holdingFactoryCid
-          observers = Set.fromList (p <$> offerSetting.observers)
-    cid <- submit custodian do createCmd openAccountOffer
+        accountOpenOfferFactoryCid = findFactoryContractId offerSetting.accountOpenOfferFactory input.accountOpenOfferFactories
+    cid <- submit custodian do
+      exerciseCmd accountOpenOfferFactoryCid AccountOpenOfferFactory.Create with
+        custodian
+        permittedOwners = None -- TODO add support for this field
+        additionalControllers
+        ownerIncomingControlled = offerSetting.ownerIncomingControlled
+        ownerOutgoingControlled = offerSetting.ownerOutgoingControlled
+        accountFactoryCid
+        holdingFactoryCid
+        description = offerSetting.description
+        observers = asPartiesMap p offerSetting.observers
     pure LabelledOpenAccountOffer with label = offerSetting.label, cid
   pure CreateOpenAccountOfferOutput with accountOpenOffers
 
@@ -128,8 +100,8 @@ openAccounts input = do
           ("Offer not found: " <> settings.offer)
           (Map.lookup settings.offer offersMap)
     submitMulti [owner] readAs do
-      exerciseCmd openAccountOfferCid OpenAccount with
+      exerciseCmd openAccountOfferCid AccountOpenOffer.Take with
         owner
         id = Id settings.id
-        description = settings.description
+        accountDescription = settings.description
         accountObservers = asPartiesMap p settings.observers

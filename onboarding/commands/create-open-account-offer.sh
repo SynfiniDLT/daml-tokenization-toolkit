@@ -11,7 +11,7 @@ $DOPS_UTIL/add-json.sh \
   --input-file /dev/stdin \
   --output-file $output_file \
   --dar ${DOPS_DAR} \
-  --script-name Synfini.Onboarding.Account.OpenOffer:createOpenAccountOffer \
+  --script-name Synfini.Onboarding.Scripts.Account.OpenOffer:createOpenAccountOffer \
   "${@:2}"
 
 new_offers_file=$(mktemp)

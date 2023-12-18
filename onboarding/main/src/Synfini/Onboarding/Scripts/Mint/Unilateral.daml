@@ -1,8 +1,8 @@
-module Synfini.Onboarding.Mint.Unilateral where
+module Synfini.Onboarding.Scripts.Mint.Unilateral where
 
 import Daml.Script
-import Synfini.Onboarding.Types
-import Synfini.Onboarding.Factory.Settlement
+import Synfini.Onboarding.Scripts.Types
+import Synfini.Onboarding.Scripts.Factory.Settlement
 import Synfini.Mint
 import qualified DA.Set as Set
 import Daml.Finance.Interface.Types.Common.Types

@@ -10,5 +10,5 @@ $DOPS_UTIL/add-json.sh \
   $DOPS_UTIL/daml-script.sh \
   --input-file /dev/stdin \
   --dar ${DOPS_DAR} \
-  --script-name Synfini.Onboarding.Account.Unilateral:createAccounts \
+  --script-name Synfini.Onboarding.Scripts.Account.Unilateral:createAccounts \
   "${@:2}"

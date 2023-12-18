@@ -7,7 +7,7 @@ $DOPS_UTIL/daml-script.sh \
   --input-file $1 \
   --output-file $output_file \
   --dar ${DOPS_DAR} \
-  --script-name Synfini.Onboarding.Party:allocateParties \
+  --script-name Synfini.Onboarding.Scripts.Party:allocateParties \
   "${@:2}"
 
 new_parties_file=$(mktemp)

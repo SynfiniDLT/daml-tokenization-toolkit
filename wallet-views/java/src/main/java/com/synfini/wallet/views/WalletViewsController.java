@@ -55,6 +55,17 @@ public class WalletViewsController {
     return ResponseEntity.ok(asJson(accounts));
   }
 
+  @PostMapping("/account-open-offers")
+  public ResponseEntity<String> accountOpenOffers(
+    @RequestBody AccountOpenOffersFilter filter,
+    @RequestHeader(value = HttpHeaders.AUTHORIZATION, defaultValue = "") String auth
+  ) {
+    final var userRights = WalletAuth.getUser(ledgerApiConfig, auth);
+    final var parties = allParties(userRights);
+    final var accounts = new AccountOpenOffers(walletRepository.accountOpenOffers(parties));
+    return ResponseEntity.ok(asJson(accounts));
+  }
+
   @PostMapping("/balance")
   public ResponseEntity<String> balance(
     @RequestBody BalanceFilter filter,

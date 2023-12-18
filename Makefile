@@ -6,9 +6,9 @@
 .PHONY: install-custom-views
 install-custom-views:
 	cd custom-views && \
-	sbt 'set test in assembly := {}' clean assembly && \
+	sbt 'set assembly / test := {}' 'set assembly / assemblyOutputPath := file("custom-views-assembly-LOCAL-SNAPSHOT.jar")' clean assembly && \
 	mvn install:install-file \
-		-Dfile=target/scala-2.13/custom-views-assembly-LOCAL-SNAPSHOT.jar \
+		-Dfile=custom-views-assembly-LOCAL-SNAPSHOT.jar \
 		-DgroupId=com.daml \
 		-DartifactId=custom-views_2.13 \
 		-Dversion=assembly-LOCAL-SNAPSHOT \
@@ -70,7 +70,14 @@ test-fund: .build/fund-tokenization.dar
 .build/account-onboarding-open-offer.dar: .build/account-onboarding-open-offer-interface.dar $(shell ./find-daml-project-files.sh account-onboarding/open-offer-implementation)
 	cd account-onboarding/open-offer-implementation && daml build -o ../../.build/account-onboarding-open-offer.dar
 
-.build/tokenization-onboarding.dar: .lib .build/trackable-holding.dar .build/daml-mint.dar .build/fund-tokenization.dar .build/pbt.dar $(shell ./find-daml-project-files.sh onboarding/main)
+.build/tokenization-onboarding.dar: .lib \
+  .build/account-onboarding-one-time-offer.dar \
+	.build/account-onboarding-open-offer.dar \
+  .build/trackable-holding.dar \
+  .build/daml-mint.dar \
+  .build/fund-tokenization.dar \
+  .build/pbt.dar \
+  $(shell ./find-daml-project-files.sh onboarding/main)
 	cd onboarding/main && daml build -o ../../.build/tokenization-onboarding.dar
 
 .PHONY: build-onboarding
@@ -93,7 +100,7 @@ build-pbt: .build/pbt.dar
 ## END pbt
 
 ## BEGIN wallet-views
-.build/daml-wallet-views-types.dar: .lib .build/account-onboarding-one-time-offer-interface.dar .build/pbt-interface.dar $(shell ./find-daml-project-files.sh wallet-views/types)
+.build/daml-wallet-views-types.dar: .lib .build/account-onboarding-open-offer-interface.dar .build/pbt-interface.dar $(shell ./find-daml-project-files.sh wallet-views/types)
 	cd wallet-views/types && daml build -o ../../.build/daml-wallet-views-types.dar
 
 # Codegen - java
@@ -101,13 +108,15 @@ wallet-views/java/src/generated-main/java: .build/daml-wallet-views-types.dar
 	rm -rf wallet-views/java/src/generated-main/java
 	daml codegen java -o wallet-views/java/src/generated-main/java .build/daml-wallet-views-types.dar
 
-wallet-views/java/src/generated-test/java: .lib .build/pbt.dar
+wallet-views/java/src/generated-test/java: .lib .build/account-onboarding-open-offer.dar .build/pbt.dar
 	rm -rf wallet-views/java/src/generated-test/java
 	daml codegen java \
 		-o wallet-views/java/src/generated-test/java \
-		.lib/daml-finance-account.dar .lib/daml-finance-holding.dar \
+		.lib/daml-finance-account.dar \
+		.lib/daml-finance-holding.dar \
 		.lib/daml-finance-settlement.dar \
 		.lib/daml-finance-instrument-token.dar \
+		.build/account-onboarding-open-offer.dar \
 		.build/pbt.dar
 
 .PHONY: compile-wallet-views
