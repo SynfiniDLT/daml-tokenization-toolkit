@@ -7,7 +7,7 @@ CUSTOM_VIEWS_JAR = custom-views-assembly-LOCAL-SNAPSHOT.jar
 .PHONY: install-custom-views
 install-custom-views:
 	cd custom-views && \
-	sbt 'set assembly / test := {}' 'set assembly / assemblyOutputPath := file(${CUSTOM_VIEWS_JAR})' clean assembly && \
+	sbt 'set assembly / test := {}' 'set assembly / assemblyOutputPath := file("${CUSTOM_VIEWS_JAR}")' clean assembly && \
 	mvn install:install-file \
 		-Dfile=${CUSTOM_VIEWS_JAR} \
 		-DgroupId=com.daml \
