@@ -92,6 +92,8 @@ elif [ "$command" = "create-users" ]; then
   ${dops_commands}/create-users.sh $@
 elif [ "$command" = "create-account-factories" ]; then
   ${dops_commands}/create-account-factories.sh $@
+elif [ "$command" = "create-account-open-offer-factories" ]; then
+  ${dops_commands}/create-account-open-offer-factories.sh $@
 elif [ "$command" = "create-holding-factories" ]; then
   ${dops_commands}/create-holding-factories.sh $@
 elif [ "$command" = "create-settlement-factories" ]; then

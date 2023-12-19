@@ -85,3 +85,10 @@ test('Returns settlements', async () => {
     expect(step.routedStep.quantity.unit.issuer).toEqual(issuer);
   });
 });
+
+test('Returns account open offers', async () => {
+  const resp = await aliceClient.getAccountOpenOffers({});
+  expect(resp.accountOpenOffers.length).toEqual(1);
+  const offer = resp.accountOpenOffers[0];
+  expect(offer.view.custodian).toEqual(custodian);
+});

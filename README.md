@@ -101,8 +101,8 @@ To install it and it to your `PATH`, run:
 
 ```
 make install-onboarding
-echo "export DOPS_HOME=~/.dops" >> ~/.bashrc
-echo "export PATH=\$PATH:${DOPS_HOME}/bin" >> ~/.bashrc
+echo 'export DOPS_HOME=~/.dops' >> ~/.bashrc
+echo 'export PATH=$PATH:$DOPS_HOME/bin' >> ~/.bashrc
 source ~/.bashrc
 ```
 

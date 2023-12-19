@@ -20,8 +20,8 @@ data CreateOpenAccountOfferSettings = CreateOpenAccountOfferSettings
   with
     label : Text
     custodian : Text
-    incomingOperators : [Text]
-    outgoingOperators : [Text]
+    additionalIncomingControllers : [Text]
+    additionalOutgoingControllers : [Text]
     ownerIncomingControlled : Bool
     ownerOutgoingControlled : Bool
     accountFactory : Text
@@ -54,8 +54,8 @@ createOpenAccountOffer input = do
   accountOpenOffers <- forA input.offerSettings $ \offerSetting -> do
     let custodian = p offerSetting.custodian
         additionalControllers = Account.Controllers with
-          incoming = Set.fromList (p <$> offerSetting.incomingOperators)
-          outgoing = Set.fromList (p <$> offerSetting.outgoingOperators)
+          incoming = Set.fromList (p <$> offerSetting.additionalIncomingControllers)
+          outgoing = Set.fromList (p <$> offerSetting.additionalOutgoingControllers)
         accountFactoryCid = findFactoryContractId offerSetting.accountFactory input.accountFactories
         holdingFactoryCid = findFactoryContractId offerSetting.holdingFactory input.holdingFactories
         accountOpenOfferFactoryCid = findFactoryContractId offerSetting.accountOpenOfferFactory input.accountOpenOfferFactories
