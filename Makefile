@@ -5,15 +5,15 @@
 
 .PHONY: install-custom-views
 install-custom-views:
-  cd custom-views && \
-  sbt 'set assembly / test := {}' 'set assembly / assemblyOutputPath := file("custom-views-assembly-LOCAL-SNAPSHOT.jar")' clean assembly && \
-  mvn install:install-file \
-    -Dfile=custom-views-assembly-LOCAL-SNAPSHOT.jar \
-    -DgroupId=com.daml \
-    -DartifactId=custom-views_2.13 \
-    -Dversion=assembly-LOCAL-SNAPSHOT \
-    -Dpackaging=jar \
-    -DgeneratePom=true
+	cd custom-views && \
+	sbt 'set assembly / test := {}' 'set assembly / assemblyOutputPath := file("custom-views-assembly-LOCAL-SNAPSHOT.jar")' clean assembly && \
+	mvn install:install-file \
+		-Dfile=custom-views-assembly-LOCAL-SNAPSHOT.jar \
+		-DgroupId=com.daml \
+		-DartifactId=custom-views_2.13 \
+		-Dversion=assembly-LOCAL-SNAPSHOT \
+		-Dpackaging=jar \
+		-DgeneratePom=true
 
 .build/tokenization-util.dar: .lib $(shell ./find-daml-project-files.sh util/main)
 	cd util/main && daml build -o ../../.build/tokenization-util.dar
