@@ -155,3 +155,4 @@ clean:
 	rm -rf wallet-ui/node_modules wallet-ui/build
 	rm -rf .build
 	rm -rf .lib
+	rm -rf custom-views/custom-views-assembly-LOCAL-SNAPSHOT.jar
