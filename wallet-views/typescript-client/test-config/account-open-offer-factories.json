@@ -1,0 +1,14 @@
+{
+  "accountOpenOfferFactorySettings": [
+    {
+      "label": "default",
+      "provider": "custodian",
+      "observers": [
+        {
+          "context": "o",
+          "parties": ["alice"]
+        }
+      ]
+    }
+  ]
+}

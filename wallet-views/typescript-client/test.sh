@@ -74,6 +74,8 @@ sleep 15s
 dops create-users test-config/users.json
 dops create-holding-factories test-config/holding-factories.json
 dops create-account-factories test-config/account-factories.json
+dops create-account-open-offer-factories test-config/account-open-offer-factories.json
+dops create-account-open-offers test-config/account-open-offers.json
 dops create-accounts-unilateral test-config/accounts.json
 dops create-settlement-factories test-config/settlement-factories.json
 dops create-mint-unilateral test-config/mint.json

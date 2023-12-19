@@ -10,5 +10,5 @@ $DOPS_UTIL/add-json.sh \
   $DOPS_UTIL/daml-script.sh \
   --input-file /dev/stdin \
   --dar ${DOPS_DAR} \
-  --script-name Synfini.Onboarding.Fund.OpenOffer:createFundOffer \
+  --script-name Synfini.Onboarding.Scripts.Fund.OpenOffer:createFundOffer \
   "${@:2}"

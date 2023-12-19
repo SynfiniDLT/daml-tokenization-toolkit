@@ -6,9 +6,9 @@
 .PHONY: install-custom-views
 install-custom-views:
 	cd custom-views && \
-	sbt 'set test in assembly := {}' clean assembly && \
+	sbt 'set assembly / test := {}' 'set assembly / assemblyOutputPath := file("custom-views-assembly-LOCAL-SNAPSHOT.jar")' clean assembly && \
 	mvn install:install-file \
-		-Dfile=target/scala-2.13/custom-views-assembly-LOCAL-SNAPSHOT.jar \
+		-Dfile=custom-views-assembly-LOCAL-SNAPSHOT.jar \
 		-DgroupId=com.daml \
 		-DartifactId=custom-views_2.13 \
 		-Dversion=assembly-LOCAL-SNAPSHOT \
@@ -20,6 +20,9 @@ install-custom-views:
 
 .build/trackable-holding.dar: .lib $(shell ./find-daml-project-files.sh trackable-holding/main)
 	cd trackable-holding/main && daml build -o ../../.build/trackable-holding.dar
+
+.build/trackable-settlement.dar: .lib $(shell ./find-daml-project-files.sh trackable-settlement/main)
+	cd trackable-settlement/main && daml build -o ../../.build/trackable-settlement.dar
 
 ## BEGIN mint
 .build/daml-mint.dar: .lib .build/tokenization-util.dar $(shell ./find-daml-project-files.sh mint/main)
@@ -55,7 +58,26 @@ test-fund: .build/fund-tokenization.dar
 ## END fund
 
 ## BEGIN onboarding
-.build/tokenization-onboarding.dar: .lib .build/trackable-holding.dar .build/daml-mint.dar .build/fund-tokenization.dar .build/pbt.dar $(shell ./find-daml-project-files.sh onboarding/main)
+.build/account-onboarding-one-time-offer-interface.dar: .lib $(shell ./find-daml-project-files.sh account-onboarding/one-time-offer-interface)
+	cd account-onboarding/one-time-offer-interface && daml build -o ../../.build/account-onboarding-one-time-offer-interface.dar
+
+.build/account-onboarding-one-time-offer.dar: .build/account-onboarding-one-time-offer-interface.dar $(shell ./find-daml-project-files.sh account-onboarding/one-time-offer-implementation)
+	cd account-onboarding/one-time-offer-implementation && daml build -o ../../.build/account-onboarding-one-time-offer.dar
+
+.build/account-onboarding-open-offer-interface.dar: .lib $(shell ./find-daml-project-files.sh account-onboarding/open-offer-interface)
+	cd account-onboarding/open-offer-interface && daml build -o ../../.build/account-onboarding-open-offer-interface.dar
+
+.build/account-onboarding-open-offer.dar: .build/account-onboarding-open-offer-interface.dar $(shell ./find-daml-project-files.sh account-onboarding/open-offer-implementation)
+	cd account-onboarding/open-offer-implementation && daml build -o ../../.build/account-onboarding-open-offer.dar
+
+.build/tokenization-onboarding.dar: .lib \
+  .build/account-onboarding-one-time-offer.dar \
+	.build/account-onboarding-open-offer.dar \
+  .build/trackable-holding.dar \
+  .build/daml-mint.dar \
+  .build/fund-tokenization.dar \
+  .build/pbt.dar \
+  $(shell ./find-daml-project-files.sh onboarding/main)
 	cd onboarding/main && daml build -o ../../.build/tokenization-onboarding.dar
 
 .PHONY: build-onboarding
@@ -78,7 +100,7 @@ build-pbt: .build/pbt.dar
 ## END pbt
 
 ## BEGIN wallet-views
-.build/daml-wallet-views-types.dar: .lib .build/pbt-interface.dar $(shell ./find-daml-project-files.sh wallet-views/types)
+.build/daml-wallet-views-types.dar: .lib .build/account-onboarding-open-offer-interface.dar .build/pbt-interface.dar $(shell ./find-daml-project-files.sh wallet-views/types)
 	cd wallet-views/types && daml build -o ../../.build/daml-wallet-views-types.dar
 
 # Codegen - java
@@ -86,13 +108,15 @@ wallet-views/java/src/generated-main/java: .build/daml-wallet-views-types.dar
 	rm -rf wallet-views/java/src/generated-main/java
 	daml codegen java -o wallet-views/java/src/generated-main/java .build/daml-wallet-views-types.dar
 
-wallet-views/java/src/generated-test/java: .lib .build/pbt.dar
+wallet-views/java/src/generated-test/java: .lib .build/account-onboarding-open-offer.dar .build/pbt.dar
 	rm -rf wallet-views/java/src/generated-test/java
 	daml codegen java \
 		-o wallet-views/java/src/generated-test/java \
-		.lib/daml-finance-account.dar .lib/daml-finance-holding.dar \
+		.lib/daml-finance-account.dar \
+		.lib/daml-finance-holding.dar \
 		.lib/daml-finance-settlement.dar \
 		.lib/daml-finance-instrument-token.dar \
+		.build/account-onboarding-open-offer.dar \
 		.build/pbt.dar
 
 .PHONY: compile-wallet-views
@@ -124,9 +148,19 @@ test-wallet-views-client: install-onboarding compile-wallet-views wallet-views/t
 ## END wallet-views
 
 ## BEGIN wallet ui
-wallet-ui/daml.js: .lib .build/fund-tokenization.dar .build/daml-mint.dar .build/pbt-interface.dar 
+wallet-ui/daml.js: .lib \
+  .build/account-onboarding-open-offer-interface.dar \
+  .build/fund-tokenization.dar \
+  .build/daml-mint.dar \
+  .build/pbt-interface.dar 
 	rm -rf wallet-ui/daml.js
-	daml codegen js .lib/daml-finance-interface-util.dar .build/fund-tokenization.dar .lib/daml-finance-interface-holding.dar .build/daml-mint.dar .build/pbt-interface.dar -o wallet-ui/daml.js
+	daml codegen js \
+		.build/account-onboarding-open-offer-interface.dar \
+		.lib/daml-finance-interface-util.dar \
+		.build/fund-tokenization.dar \
+		.lib/daml-finance-interface-holding.dar \
+		.build/daml-mint.dar \
+		.build/pbt-interface.dar -o wallet-ui/daml.js
 
 .PHONY: build-wallet-ui
 build-wallet-ui: wallet-ui/daml.js wallet-views/typescript-client/lib $(shell ./find-ts-project-files.sh wallet-ui)
@@ -139,19 +173,10 @@ start-wallet-ui: wallet-ui/daml.js wallet-views/typescript-client/lib
 
 .PHONY: clean
 clean:
-	cd util/main && daml clean
-	cd trackable-holding/main && daml clean
-	cd mint/main && daml clean
-	cd mint/test && daml clean
+	./clean-daml-projects.sh
 	cd mint/java-example && mvn clean && rm -rf src/generated-main
-	cd fund/main && daml clean
-	cd fund/test && daml clean
-	cd onboarding/main && daml clean
-	cd pbt/interface && daml clean
-	cd pbt/implementation && daml clean
-	cd wallet-views/types && daml clean
-	cd wallet-views/java && mvn clean
+	cd wallet-views/java && mvn clean && rm -rf src/generated-main src/generated-test
 	rm -rf wallet-views/typescript-client/daml.js wallet-views/typescript-client/node_modules wallet-views/typescript-client/lib
-	rm -rf wallet-ui/node_modules wallet-ui/build
+	rm -rf wallet-ui/daml.js wallet-ui/node_modules wallet-ui/build
 	rm -rf .build
 	rm -rf .lib

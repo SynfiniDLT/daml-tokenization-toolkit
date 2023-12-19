@@ -1,0 +1,73 @@
+module Synfini.Onboarding.Scripts.Fund.Unilateral where
+
+import Synfini.Fund.Offer
+import Synfini.Onboarding.Scripts.Types
+import Synfini.Onboarding.Scripts.Factory.Settlement
+import Daml.Finance.Interface.Types.Common.Types
+import Daml.Script
+import qualified DA.Set as Set
+
+data FundOfferSettings = FundOfferSettings
+  with
+    fund : Text
+    fundManager : Text
+    fundCustodian : Text
+    instrumentVersion : Text
+    instrumentDepository : Text
+    instrumentId : Text
+    paymentInstrumentIssuer : Text
+    paymentInstrumentDepository : Text
+    paymentInstrumentVersion : Text
+    paymentInstrumentId : Text
+    costPerUnit : Decimal
+    commission : Decimal
+    minInvesment : Decimal -- Minimum investment amount (measured in units of the payment instrument, not including
+    -- commission fees)
+    fundPaymentAccountId : Text -- Account where fund receives payments
+    fundManagerPaymentAccountId : Text -- Account where fund manager receives commissions
+    paymentCustodian : Text -- Custodian at which all payment assets must be held
+    settlementFactory : Text
+    observers : [Text]
+
+data CreateFundOfferInput = CreateFundOfferInput
+  with
+    parties : [PartyInfo]
+    settlementFactories : [SettlementFactory]
+    offerSettings : FundOfferSettings
+
+createFundOffer : CreateFundOfferInput -> Script ()
+createFundOffer input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let fund = p input.offerSettings.fund
+      fundManager = p input.offerSettings.fundManager
+      fundCustodian = p input.offerSettings.fundCustodian
+      instrumentDepository =  p input.offerSettings.instrumentDepository
+      paymentInstrumentIssuer = p input.offerSettings.paymentInstrumentIssuer
+      paymentInstrumentDepository = p input.offerSettings.paymentInstrumentDepository
+      paymentCustodian = p input.offerSettings.paymentCustodian
+      observers = Set.fromList (p <$> input.offerSettings.observers)
+      settlementFactoryCid = findFactoryContractId input.offerSettings.settlementFactory input.settlementFactories
+  submitMulti [fund, instrumentDepository, fundManager, fundCustodian] [] do
+    createCmd FundOffer with
+      fundManager
+      fundCustodian
+      unitsInstrument = InstrumentKey with
+        issuer = fund
+        depository = instrumentDepository
+        id = Id input.offerSettings.instrumentId
+        version = input.offerSettings.instrumentVersion
+      paymentInstrument = InstrumentKey with
+        issuer = paymentInstrumentIssuer
+        depository = paymentInstrumentDepository
+        id = Id input.offerSettings.paymentInstrumentId
+        version = input.offerSettings.paymentInstrumentVersion
+      costPerUnit = input.offerSettings.costPerUnit
+      commission = input.offerSettings.commission
+      minInvesment = input.offerSettings.minInvesment
+      fundPaymentAccountId = Id input.offerSettings.fundPaymentAccountId
+      fundManagerPaymentAccountId = Id input.offerSettings.fundManagerPaymentAccountId
+      paymentCustodian
+      settlementFactoryCid
+      observers
+  pure ()

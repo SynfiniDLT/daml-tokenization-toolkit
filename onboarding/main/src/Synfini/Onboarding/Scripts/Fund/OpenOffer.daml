@@ -1,0 +1,154 @@
+module Synfini.Onboarding.Scripts.Fund.OpenOffer where
+
+import Synfini.Fund.Offer
+import Synfini.Onboarding.Scripts.Types
+import Synfini.Onboarding.Scripts.Factory.Settlement
+import Daml.Finance.Interface.Types.Common.Types
+import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
+import DA.Set (Set)
+import qualified DA.Set as Set
+import Daml.Script
+import qualified DA.Optional as O
+
+template FundIssuerOpenOffer
+  with
+    fundCustodian : Party
+    fundDepository : Party
+    fund : Party
+    fundManager : Party
+  where
+    signatory fundDepository, fundCustodian
+
+    observer fund, fundManager
+
+    nonconsuming choice CreateFundOffer : ContractId FundOffer
+      with
+        fundInstrumentId : Id
+        fundInstrumentVersion : Text
+        costPerUnit : Decimal
+        commission : Decimal
+        minInvesment : Decimal
+        paymentCustodian : Party
+        paymentInstrument : InstrumentKey
+        fundPaymentAccountId : Id
+        fundManagerPaymentAccountId : Id
+        settlementFactoryCid : ContractId SettlementFactory.I
+        observers : Set Party
+      controller fund, fundManager
+      do
+        create FundOffer with
+          fundManager
+          fundCustodian
+          unitsInstrument = InstrumentKey with
+            depository = fundDepository
+            issuer = fund
+            id = fundInstrumentId
+            version = fundInstrumentVersion
+          paymentInstrument
+          costPerUnit
+          commission
+          minInvesment
+          fundPaymentAccountId
+          fundManagerPaymentAccountId
+          paymentCustodian
+          settlementFactoryCid
+          observers
+
+data OfferSettings = OfferSettings
+  with
+    label : Text
+    fundCustodian : Text
+    fundDepository : Text
+    fund : Text
+    fundManager : Text
+
+data CreateFundIssuerOpenOffersInput = CreateFundIssuerOpenOffersInput
+  with
+    parties : [PartyInfo]
+    offerSettings : [OfferSettings]
+
+data LabelledFundIssuerOpenOffer = LabelledFundIssuerOpenOffer
+  with
+    label : Text
+    cid : ContractId FundIssuerOpenOffer
+
+data CreateFundIssuerOpenOffersOutput = CreateFundIssuerOpenOffersOutput
+  with
+    fundIssuerOpenOffers : [LabelledFundIssuerOpenOffer]
+
+createFundIssuerOpenOffers : CreateFundIssuerOpenOffersInput -> Script CreateFundIssuerOpenOffersOutput
+createFundIssuerOpenOffers input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  fundIssuerOpenOffers <- forA input.offerSettings $ \settings -> do
+    let fundCustodian = p settings.fundCustodian
+        fundDepository = p settings.fundDepository
+        fund = p settings.fund
+        fundManager = p settings.fundManager
+    cid <- submitMulti [fundCustodian, fundDepository] [] do
+      createCmd FundIssuerOpenOffer with
+        fundCustodian
+        fundDepository
+        fund
+        fundManager
+    pure LabelledFundIssuerOpenOffer with label = settings.label, cid
+  pure CreateFundIssuerOpenOffersOutput with fundIssuerOpenOffers
+
+data FundOfferSettings = FundOfferSettings
+  with
+    fundIssuerOffer : Text
+    fund : Text
+    fundManager : Text
+    fundInstrumentId : Text
+    fundInstrumentVersion : Text
+    costPerUnit : Decimal
+    commission : Decimal
+    minInvesment : Decimal
+    paymentCustodian : Text
+    paymentInstrumentDepository : Text
+    paymentInstrumentIssuer : Text
+    paymentInstrumentId : Text
+    paymentInstrumentVersion : Text
+    fundPaymentAccountId : Text
+    fundManagerPaymentAccountId : Text
+    settlementFactory : Text
+    observers : [Text]
+
+data CreateFundOfferInput = CreateFundOfferInput
+  with
+    parties : [PartyInfo]
+    settlementFactories : [SettlementFactory]
+    fundIssuerOpenOffers : [LabelledFundIssuerOpenOffer]
+    offerSettings : FundOfferSettings
+
+createFundOffer : CreateFundOfferInput -> Script ()
+createFundOffer input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let offer = O.fromSomeNote "Could not find fund issuer offer" $
+        find (\offer -> offer.label == input.offerSettings.fundIssuerOffer) input.fundIssuerOpenOffers
+      fund = p input.offerSettings.fund
+      fundManager = p input.offerSettings.fundManager
+      paymentCustodian = p input.offerSettings.paymentCustodian
+      paymentInstrumentIssuer = p input.offerSettings.paymentInstrumentIssuer
+      paymentInstrumentDepository = p input.offerSettings.paymentInstrumentDepository
+      settlementFactoryCid = findFactoryContractId input.offerSettings.settlementFactory input.settlementFactories
+      observers = Set.fromList (p <$> input.offerSettings.observers)
+  submitMulti [fund, fundManager] [] do
+    exerciseCmd offer.cid CreateFundOffer with
+      fundInstrumentId = Id input.offerSettings.fundInstrumentId
+      fundInstrumentVersion = input.offerSettings.fundInstrumentVersion
+      costPerUnit = input.offerSettings.costPerUnit
+      commission = input.offerSettings.commission
+      minInvesment = input.offerSettings.minInvesment
+      paymentCustodian
+      paymentInstrument = InstrumentKey with
+        depository = paymentInstrumentDepository
+        issuer = paymentInstrumentIssuer
+        id = Id input.offerSettings.paymentInstrumentId
+        version = input.offerSettings.paymentInstrumentVersion
+      fundPaymentAccountId = Id input.offerSettings.fundPaymentAccountId
+      fundManagerPaymentAccountId = Id input.offerSettings.fundManagerPaymentAccountId
+      settlementFactoryCid
+      observers
+  pure ()

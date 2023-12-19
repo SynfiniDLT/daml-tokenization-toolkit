@@ -1,0 +1,41 @@
+module Synfini.Onboarding.Scripts.Factory.Settlement where
+
+import qualified Daml.Finance.Settlement.Factory as SettlementImpl
+import qualified Daml.Finance.Interface.Settlement.Factory as Settlement
+import qualified DA.Set as Set
+import Daml.Script
+import Synfini.Onboarding.Scripts.Types
+
+data SettlementFactorySettings = SettlementFactorySettings
+  with
+    label : Text
+    provider : Text
+    observers : [Text]
+
+data CreateSettlementFactoriesInput = CreateSettlementFactoriesInput
+  with
+    parties : [PartyInfo]
+    settlementFactorySettings : [SettlementFactorySettings]
+
+data SettlementFactory = SettlementFactory
+  with
+    label : Text
+    cid : ContractId Settlement.F
+
+data CreateSettlementFactoriesOutput = CreateSettlementFactoriesOutput
+  with
+    settlementFactories : [SettlementFactory]
+
+createSettlementFactories : CreateSettlementFactoriesInput -> Script CreateSettlementFactoriesOutput
+createSettlementFactories input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  settlementFactories <- forA input.settlementFactorySettings $ \settings -> do
+    let provider = p settings.provider
+    cid <- toInterfaceContractId <$> submit provider do
+      createCmd SettlementImpl.Factory with
+        provider
+        observers = Set.fromList (p <$> settings.observers)
+    pure SettlementFactory with label = settings.label, cid
+  pure CreateSettlementFactoriesOutput with 
+    settlementFactories

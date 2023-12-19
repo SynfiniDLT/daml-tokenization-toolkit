@@ -1,6 +1,32 @@
 -- Hstore (key/value) data type must be enabled
 CREATE EXTENSION hstore;
 
+CREATE TABLE account_open_offers
+(
+  cid VARCHAR NOT NULL,
+  custodian VARCHAR NOT NULL,
+  owner_incoming_controlled BOOLEAN NOT NULL,
+  owner_outgoing_controlled BOOLEAN NOT NULL,
+  additional_controllers_incoming VARCHAR[] NOT NULL,
+  additional_controllers_outgoing VARCHAR[] NOT NULL,
+  permitted_owners VARCHAR[],
+  account_factory_cid VARCHAR NOT NULL,
+  holding_factory_cid VARCHAR NOT NULL,
+  description VARCHAR NOT NULL,
+  create_offset VARCHAR,
+  create_effective_time TIMESTAMP,
+  archive_offset VARCHAR,
+  archive_effective_time TIMESTAMP,
+  PRIMARY KEY (cid)
+);
+
+CREATE TABLE account_open_offer_witnesses
+(
+  cid VARCHAR NOT NULL,
+  party VARCHAR NOT NULL,
+  PRIMARY KEY (cid, party)
+);
+
 CREATE TABLE accounts
 (
   cid VARCHAR NOT NULL,

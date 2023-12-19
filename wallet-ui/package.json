@@ -20,6 +20,7 @@
     "@daml.js/daml-finance-interface-holding": "file:daml.js/daml-finance-interface-holding-2.0.0",
     "@daml.js/daml-finance-interface-util": "file:daml.js/daml-finance-interface-util-2.0.0",
     "@daml.js/fund-tokenization": "file:daml.js/fund-tokenization-0.0.1",
+    "@daml.js/account-onboarding-open-offer-interface": "file:daml.js/account-onboarding-open-offer-interface-0.0.1",
     "@daml.js/daml-mint": "file:daml.js/daml-mint-0.0.1",
     "@daml.js/daml-pbt": "file:daml.js/pbt-interface-0.0.1",
     "@daml.js/synfini-wallet-views-types": "file:../wallet-views/typescript-client/daml.js/daml-wallet-views-types-0.0.1",

@@ -1,0 +1,37 @@
+module Synfini.Interface.Onboarding.Account.OpenOffer.Factory where
+
+import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
+import qualified Daml.Finance.Interface.Account.Account as Account
+import Daml.Finance.Interface.Types.Common.Types
+import qualified Daml.Finance.Interface.Account.Factory as Account
+import qualified Daml.Finance.Interface.Holding.Factory as Holding
+import qualified Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer as OpenOffer
+
+data View = View
+  with
+    provider : Party
+  deriving (Show, Eq)
+
+type V = View
+
+interface Factory requires Disclosure.I where
+  viewtype V
+
+  create' : Create -> Update (ContractId OpenOffer.I)
+
+  nonconsuming choice Create : ContractId OpenOffer.I
+    with
+      custodian : Party
+      ownerIncomingControlled : Bool
+      ownerOutgoingControlled : Bool
+      additionalControllers : Account.Controllers
+      permittedOwners : Optional Parties
+      accountFactoryCid : ContractId Account.F
+      holdingFactoryCid : ContractId Holding.F
+      description : Text
+      observers : PartiesMap
+    controller custodian
+    do
+      create' this arg
+
+type I = Factory

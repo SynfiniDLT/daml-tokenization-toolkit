@@ -9,5 +9,5 @@ $DOPS_UTIL/add-json.sh \
   $1 | $DOPS_UTIL/daml-script.sh \
   --input-file /dev/stdin \
   --dar ${DOPS_DAR} \
-  --script-name Synfini.Onboarding.PartyBoundAttributes.Unilateral:createPbas \
+  --script-name Synfini.Onboarding.Scripts.PartyBoundAttributes.Unilateral:createPbas \
   "${@:2}"

@@ -1,0 +1,26 @@
+module Synfini.TrackableSettlement.Factory where
+
+import Daml.Finance.Interface.Types.Common.Types
+import qualified Daml.Finance.Interface.Settlement.Batch as Batch
+import qualified Daml.Finance.Interface.Settlement.Factory as Factory
+import qualified Daml.Finance.Settlement.Factory as Default
+import qualified Synfini.TrackableSettlement.Batch as Custom
+import Synfini.TrackableSettlement.Batch (Batch(..))
+
+template Factory
+  with
+    defaultFactory : Default.Factory
+    settlementTrackers : Parties
+  where
+    signatory (signatory defaultFactory)
+
+    observer (observer defaultFactory)
+
+    interface instance Factory.I for Factory where
+      view = view @Factory.I (toInterface defaultFactory)
+      instruct args = do
+        (batchCid, instructionCids) <- Factory.instruct (toInterface defaultFactory) args
+        defaultBatch <- fetch (coerceContractId batchCid)
+        archive batchCid
+        customBatchCid <- create Custom.Batch with defaultBatch, trackers = settlementTrackers
+        pure (toInterfaceContractId customBatchCid, instructionCids)

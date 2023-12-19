@@ -1,0 +1,49 @@
+module Synfini.Onboarding.Scripts.Factory.Instrument where
+
+import qualified Daml.Finance.Interface.Instrument.Token.Factory as Token
+import qualified Daml.Finance.Instrument.Token.Factory as TokenImpl
+import Daml.Script
+import qualified DA.Optional as O
+import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Factory as Pba
+import qualified Synfini.Instrument.PartyBoundAttributes.Factory as PbaImpl
+import Synfini.Onboarding.Scripts.Types
+import DA.Action (when)
+
+data InstrumentFactorySettings = InstrumentFactorySettings
+  with
+    label : Text
+    instrumentType : Text
+    provider : Text
+    observers : [Observer]
+
+data CreateInstrumentFactoriesInput = CreateInstrumentFactoriesInput
+  with
+    parties : [PartyInfo]
+    instrumentFactorySettings : [InstrumentFactorySettings]
+
+data InstrumentFactory = InstrumentFactory
+  with
+    label : Text
+    cid : ContractId ()
+
+data CreateInstrumentFactoriesOutput = CreateInstrumentFactoriesOutput
+  with
+    instrumentFactories : [InstrumentFactory]
+
+createInstrumentFactories : CreateInstrumentFactoriesInput -> Script CreateInstrumentFactoriesOutput
+createInstrumentFactories CreateInstrumentFactoriesInput { parties, instrumentFactorySettings } = do
+  let pm = partyTable parties
+  let p = getPartyId pm
+  instrumentFactories <- forA instrumentFactorySettings $ \settings -> do
+    let observers = asPartiesMap p settings.observers
+    let provider = p settings.provider
+    cid <- case settings.instrumentType of
+      "Token" ->
+        coerceContractId <$> submit provider do
+          createCmd TokenImpl.Factory with provider, observers
+      "Pba" ->
+        coerceContractId <$> submit provider do
+          createCmd PbaImpl.Factory with provider, observers
+      other -> error ("Unsupported instrument type: " <> show other)
+    pure InstrumentFactory with label = settings.label, cid
+  pure CreateInstrumentFactoriesOutput with instrumentFactories

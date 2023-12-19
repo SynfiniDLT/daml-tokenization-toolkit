@@ -9,6 +9,6 @@ echo $input_json | $DOPS_UTIL/daml-script.sh \
   --input-file /dev/stdin \
   --output-file $DOPS_PARTIES_FILE \
   --dar ${DOPS_DAR} \
-  --script-name Synfini.Onboarding.Party:importParties \
+  --script-name Synfini.Onboarding.Scripts.Party:importParties \
   "${@:2}"
 rm $json_input_file

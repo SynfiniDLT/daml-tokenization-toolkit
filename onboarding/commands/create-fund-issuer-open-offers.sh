@@ -9,7 +9,7 @@ $DOPS_UTIL/add-json.sh \
   --input-file /dev/stdin \
   --output-file $output_file \
   --dar ${DOPS_DAR} \
-  --script-name Synfini.Onboarding.Fund.OpenOffer:createFundIssuerOpenOffers \
+  --script-name Synfini.Onboarding.Scripts.Fund.OpenOffer:createFundIssuerOpenOffers \
   "${@:2}"
 
 new_offers_file=$(mktemp)
