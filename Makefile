@@ -148,9 +148,19 @@ test-wallet-views-client: install-onboarding compile-wallet-views wallet-views/t
 ## END wallet-views
 
 ## BEGIN wallet ui
-wallet-ui/daml.js: .lib .build/fund-tokenization.dar .build/daml-mint.dar .build/pbt-interface.dar 
+wallet-ui/daml.js: .lib \
+  .build/account-onboarding-open-offer-interface.dar \
+  .build/fund-tokenization.dar \
+  .build/daml-mint.dar \
+  .build/pbt-interface.dar 
 	rm -rf wallet-ui/daml.js
-	daml codegen js .lib/daml-finance-interface-util.dar .build/fund-tokenization.dar .lib/daml-finance-interface-holding.dar .build/daml-mint.dar .build/pbt-interface.dar -o wallet-ui/daml.js
+	daml codegen js \
+		.build/account-onboarding-open-offer-interface.dar \
+		.lib/daml-finance-interface-util.dar \
+		.build/fund-tokenization.dar \
+		.lib/daml-finance-interface-holding.dar \
+		.build/daml-mint.dar \
+		.build/pbt-interface.dar -o wallet-ui/daml.js
 
 .PHONY: build-wallet-ui
 build-wallet-ui: wallet-ui/daml.js wallet-views/typescript-client/lib $(shell ./find-ts-project-files.sh wallet-ui)
@@ -165,8 +175,8 @@ start-wallet-ui: wallet-ui/daml.js wallet-views/typescript-client/lib
 clean:
 	./clean-daml-projects.sh
 	cd mint/java-example && mvn clean && rm -rf src/generated-main
-	cd wallet-views/java && mvn clean
+	cd wallet-views/java && mvn clean && rm -rf src/generated-main src/generated-test
 	rm -rf wallet-views/typescript-client/daml.js wallet-views/typescript-client/node_modules wallet-views/typescript-client/lib
-	rm -rf wallet-ui/node_modules wallet-ui/build
+	rm -rf wallet-ui/daml.js wallet-ui/node_modules wallet-ui/build
 	rm -rf .build
 	rm -rf .lib
