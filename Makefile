@@ -3,12 +3,13 @@
 .lib: dependencies.conf
 	./get-dependencies.sh
 
+CUSTOM_VIEWS_JAR = custom-views-assembly-LOCAL-SNAPSHOT.jar
 .PHONY: install-custom-views
 install-custom-views:
 	cd custom-views && \
-	sbt 'set test in assembly := {}' clean assembly && \
+	sbt 'set assembly / test := {}' 'set assembly / assemblyOutputPath := file(${CUSTOM_VIEWS_JAR})' clean assembly && \
 	mvn install:install-file \
-		-Dfile=target/scala-2.13/custom-views-assembly-LOCAL-SNAPSHOT.jar \
+		-Dfile=${CUSTOM_VIEWS_JAR} \
 		-DgroupId=com.daml \
 		-DartifactId=custom-views_2.13 \
 		-Dversion=assembly-LOCAL-SNAPSHOT \
@@ -155,3 +156,4 @@ clean:
 	rm -rf wallet-ui/node_modules wallet-ui/build
 	rm -rf .build
 	rm -rf .lib
+	rm -rf custom-views/${CUSTOM_VIEWS_JAR}
