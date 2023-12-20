@@ -1,0 +1,263 @@
+module Synfini.Onboarding.Account.Test where
+
+import qualified Daml.Finance.Interface.Holding.Factory as Holding
+import qualified Daml.Finance.Account.Account as AccountImpl
+import qualified Daml.Finance.Holding.Fungible as FungibleImpl
+import Daml.Script
+import qualified Daml.Finance.Interface.Account.Factory as Account
+import qualified DA.Map as Map
+import qualified DA.Set as Set
+import Synfini.Tokenization.Util (assertEqMsg)
+import qualified Synfini.Onboarding.Account.OpenOffer as OpenOfferImpl
+import qualified Synfini.Interface.Onboarding.Account.OpenOffer.Factory as OpenOfferFactory
+import qualified Daml.Finance.Interface.Account.Account as Account
+import qualified Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer as AccountOpenOffer
+import qualified Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer as OpenOffer
+import Daml.Finance.Interface.Types.Common.Types
+import qualified DA.Optional as O
+import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
+
+-- TODO add test cases for one-time-offer
+
+data Setup = Setup
+  with
+    alice : Party
+    bob : Party
+    custodian : Party
+    accountFactoryCid : ContractId Account.F
+    holdingFactoryCid : ContractId Holding.F
+    openOfferFactoryCid : ContractId OpenOfferFactory.I
+
+withSetup : (Setup -> Script ()) -> Script ()
+withSetup test = do
+  alice <- allocateParty "alice"
+  bob <- allocateParty "bob"
+  custodian <- allocateParty "custodian"
+  let observers = Map.fromList [("obs", Set.fromList [alice, bob])]
+  accountFactoryCid <- toInterfaceContractId <$> submit custodian do
+    createCmd AccountImpl.Factory with
+      provider = custodian
+      observers
+  holdingFactoryCid <- toInterfaceContractId <$> submit custodian do
+    createCmd FungibleImpl.Factory with
+      provider = custodian
+      observers
+  openOfferFactoryCid <- toInterfaceContractId <$> submit custodian do
+    createCmd OpenOfferImpl.Factory with
+      provider = custodian
+      observers
+  test (Setup with ..)
+
+test_signatory : Script ()
+test_signatory = withSetup $
+  \Setup { custodian, alice, accountFactoryCid, holdingFactoryCid, openOfferFactoryCid } -> do
+  submitMustFail custodian do
+    exerciseCmd openOfferFactoryCid OpenOfferFactory.Create with
+      custodian = alice
+      ownerIncomingControlled = False
+      ownerOutgoingControlled = True
+      additionalControllers = Account.Controllers Set.empty Set.empty
+      permittedOwners = None
+      accountFactoryCid
+      holdingFactoryCid
+      description = ""
+      observers = Map.empty
+  submitMustFail alice do
+    exerciseCmd openOfferFactoryCid OpenOfferFactory.Create with
+      custodian
+      ownerIncomingControlled = False
+      ownerOutgoingControlled = True
+      additionalControllers = Account.Controllers Set.empty Set.empty
+      permittedOwners = None
+      accountFactoryCid
+      holdingFactoryCid
+      description = ""
+      observers = Map.empty
+  submit custodian do
+    exerciseCmd openOfferFactoryCid OpenOfferFactory.Create with
+      custodian
+      ownerIncomingControlled = False
+      ownerOutgoingControlled = True
+      additionalControllers = Account.Controllers Set.empty Set.empty
+      permittedOwners = None
+      accountFactoryCid
+      holdingFactoryCid
+      description = ""
+      observers = Map.empty
+  pure ()
+
+test_observer : Script ()
+test_observer = withSetup $
+  \Setup { custodian, alice, bob, accountFactoryCid, holdingFactoryCid, openOfferFactoryCid } -> do
+  custodianOnlyCid <- submit custodian do
+    exerciseCmd openOfferFactoryCid OpenOfferFactory.Create with
+      custodian
+      ownerIncomingControlled = False
+      ownerOutgoingControlled = True
+      additionalControllers = Account.Controllers Set.empty Set.empty
+      permittedOwners = None
+      accountFactoryCid
+      holdingFactoryCid
+      description = ""
+      observers = Map.empty
+  custodianAndAliceCid <- submit custodian do
+    exerciseCmd openOfferFactoryCid OpenOfferFactory.Create with
+      custodian
+      ownerIncomingControlled = False
+      ownerOutgoingControlled = True
+      additionalControllers = Account.Controllers Set.empty Set.empty
+      permittedOwners = Some (Set.fromList [alice])
+      accountFactoryCid
+      holdingFactoryCid
+      description = ""
+      observers = Map.empty
+  custodianAndBobCid <- submit custodian do
+    exerciseCmd openOfferFactoryCid OpenOfferFactory.Create with
+      custodian
+      ownerIncomingControlled = False
+      ownerOutgoingControlled = True
+      additionalControllers = Account.Controllers Set.empty Set.empty
+      permittedOwners = None
+      accountFactoryCid
+      holdingFactoryCid
+      description = ""
+      observers = Map.fromList [("obs", Set.fromList [bob])]
+  custodianCids <- fmap fst <$> queryInterface @AccountOpenOffer.I custodian
+  aliceCids <- fmap fst <$> queryInterface @AccountOpenOffer.I alice
+  bobCids <- fmap fst <$> queryInterface @AccountOpenOffer.I bob
+  assertEqMsg
+    "Custodian must see expected offers"
+    (Set.fromList custodianCids)
+    (Set.fromList [custodianOnlyCid, custodianAndAliceCid, custodianAndBobCid])
+  assertEqMsg
+    "Alice must see expected offers"
+    (Set.fromList aliceCids)
+    (Set.fromList [custodianAndAliceCid])
+  assertEqMsg
+    "Bob must see expected offers"
+    (Set.fromList bobCids)
+    (Set.fromList [custodianAndBobCid])
+
+test_create_account : Script ()
+test_create_account = withSetup $
+  \Setup { custodian, alice, bob, accountFactoryCid, holdingFactoryCid, openOfferFactoryCid } -> do
+  openOfferCid <- submit custodian do
+    exerciseCmd openOfferFactoryCid OpenOfferFactory.Create with
+      custodian
+      ownerIncomingControlled = False
+      ownerOutgoingControlled = True
+      additionalControllers = Account.Controllers Set.empty Set.empty
+      permittedOwners = None
+      accountFactoryCid
+      holdingFactoryCid
+      description = ""
+      observers = Map.fromList [("obs", Set.fromList [alice])]
+  let id = Id "123"
+      accountDescription = "lorem ipsum"
+      accountObservers = Map.fromList [("obs", Set.fromList [bob])]
+  aliceAccountCid <- submit alice do
+    exerciseCmd openOfferCid OpenOffer.Take with
+      owner = alice
+      id
+      accountDescription
+      accountObservers
+  aliceAccount <- O.fromSomeNote "Interface view failed for Account" <$> queryInterfaceContractId alice aliceAccountCid
+  assertEqMsg "Alice's account must have expected owner" aliceAccount.owner alice
+  assertEqMsg "Alice's account must have expected id" aliceAccount.id id
+  assertEqMsg "Alice's account must have expected incoming controllers" aliceAccount.controllers.incoming Set.empty
+  assertEqMsg
+    "Alice's account must have expected outgoing controllers"
+    aliceAccount.controllers.outgoing (Set.fromList [alice])
+  assertEqMsg "Alice's account must have expected description" aliceAccount.description accountDescription
+  aliceAccountDisclosure <- O.fromSomeNote "Interface view failed for Disclosure" <$>
+    queryInterfaceContractId alice (toInterfaceContractId @Disclosure.I aliceAccountCid)
+  assertEqMsg "Alice's account must have expected observers" aliceAccountDisclosure.observers accountObservers
+
+test_create_account_controllers : Script ()
+test_create_account_controllers = withSetup $
+  \Setup { custodian, alice, bob, accountFactoryCid, holdingFactoryCid, openOfferFactoryCid } -> do
+  openOfferOwnerIncomingControlledCid <- submit custodian do
+    exerciseCmd openOfferFactoryCid OpenOfferFactory.Create with
+      custodian
+      ownerIncomingControlled = True
+      ownerOutgoingControlled = False
+      additionalControllers = Account.Controllers with
+        incoming = Set.empty
+        outgoing = Set.fromList [bob]
+      permittedOwners = None
+      accountFactoryCid
+      holdingFactoryCid
+      description = ""
+      observers = Map.fromList [("obs", Set.fromList [alice])]
+  openOfferOwnerAdditionalIncomingControllerCid <- submit custodian do
+    exerciseCmd openOfferFactoryCid OpenOfferFactory.Create with
+      custodian
+      ownerIncomingControlled = False
+      ownerOutgoingControlled = True
+      additionalControllers = Account.Controllers with
+        incoming = Set.fromList [bob]
+        outgoing = Set.empty
+      permittedOwners = None
+      accountFactoryCid
+      holdingFactoryCid
+      description = ""
+      observers = Map.fromList [("obs", Set.fromList [alice])]
+  let accountDescription = "lorem ipsum"
+      accountObservers = Map.fromList [("obs", Set.fromList [bob])]
+  ownerIncomingControlledAccountCid <- submit alice do
+    exerciseCmd openOfferOwnerIncomingControlledCid OpenOffer.Take with
+      owner = alice
+      id = Id "1"
+      accountDescription = ""
+      accountObservers = Map.empty
+  ownerIncomingControlledAccount <- O.fromSomeNote "Interface view failed for Account" <$>
+    queryInterfaceContractId alice ownerIncomingControlledAccountCid
+  assertEqMsg
+    "Account must have owner as incoming controller"
+    ownerIncomingControlledAccount.controllers.incoming
+    (Set.fromList [alice])
+  assertEqMsg
+    "Account must have expected additional outgoing controllers"
+    ownerIncomingControlledAccount.controllers.outgoing
+    (Set.fromList [bob])
+  additionalIncomingControllerAccountCid <- submit alice do
+    exerciseCmd openOfferOwnerAdditionalIncomingControllerCid OpenOffer.Take with
+      owner = alice
+      id = Id "2"
+      accountDescription = ""
+      accountObservers = Map.empty
+  additionalIncomingControllerAccount <- O.fromSomeNote "Interface view failed for Account" <$>
+    queryInterfaceContractId alice additionalIncomingControllerAccountCid
+  assertEqMsg
+    "Account must have expected additional incoming controllers"
+    additionalIncomingControllerAccount.controllers.incoming
+    (Set.fromList [bob])
+  pure ()
+
+test_approved_owners : Script ()
+test_approved_owners = withSetup $
+  \Setup { custodian, alice, bob, accountFactoryCid, holdingFactoryCid, openOfferFactoryCid } -> do
+  openOfferCid <- submit custodian do
+    exerciseCmd openOfferFactoryCid OpenOfferFactory.Create with
+      custodian
+      ownerIncomingControlled = False
+      ownerOutgoingControlled = True
+      additionalControllers = Account.Controllers Set.empty Set.empty
+      permittedOwners = Some (Set.fromList [alice])
+      accountFactoryCid
+      holdingFactoryCid
+      description = ""
+      observers = Map.fromList [("obs", Set.fromList [alice, bob])]
+  submitMustFail bob do
+    exerciseCmd openOfferCid OpenOffer.Take with
+      owner = bob
+      id = Id "1"
+      accountDescription = ""
+      accountObservers = Map.empty
+  submit alice do
+    exerciseCmd openOfferCid OpenOffer.Take with
+      owner = alice
+      id = Id "1"
+      accountDescription = ""
+      accountObservers = Map.empty
+  pure ()

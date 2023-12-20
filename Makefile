@@ -70,6 +70,10 @@ test-fund: .build/fund-tokenization.dar
 .build/account-onboarding-open-offer.dar: .build/account-onboarding-open-offer-interface.dar $(shell ./find-daml-project-files.sh account-onboarding/open-offer-implementation)
 	cd account-onboarding/open-offer-implementation && daml build -o ../../.build/account-onboarding-open-offer.dar
 
+.PHONY: test-account-onboarding
+test-account-onboarding: .build/account-onboarding-open-offer.dar .build/tokenization-util.dar
+	cd account-onboarding/test && daml test
+
 .build/tokenization-onboarding.dar: .lib \
   .build/account-onboarding-one-time-offer.dar \
 	.build/account-onboarding-open-offer.dar \

@@ -3,6 +3,7 @@ module Synfini.Tokenization.Util where
 import qualified Daml.Finance.Interface.Holding.Fungible as Fungible
 import qualified DA.List.Total as List
 import qualified DA.Optional as O
+import DA.Action (when)
 
 mergeAndSplitHelper : [ContractId Fungible.I] -> [Decimal] -> Update Fungible.SplitResult
 mergeAndSplitHelper holdingCids amounts = do
@@ -36,3 +37,6 @@ mergeAndSplitHelper2 holdingCids amount1 amount2 = do
       holdingCid2,
       splitResult.rest
     )
+
+assertEqMsg : (CanAssert m, Show a, Eq a) => Text -> a -> a -> m ()
+assertEqMsg msg a b = when (a /= b) (assertFail (msg <> ": expected " <> show a <> " == " <> show b))
