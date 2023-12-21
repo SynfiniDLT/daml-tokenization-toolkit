@@ -58,6 +58,7 @@ test-fund: .build/fund-tokenization.dar
 ## END fund
 
 ## BEGIN onboarding
+# Account
 .build/account-onboarding-one-time-offer-interface.dar: .lib $(shell ./find-daml-project-files.sh account-onboarding/one-time-offer-interface)
 	cd account-onboarding/one-time-offer-interface && daml build -o ../../.build/account-onboarding-one-time-offer-interface.dar
 
@@ -74,6 +75,20 @@ test-fund: .build/fund-tokenization.dar
 test-account-onboarding: .build/account-onboarding-open-offer.dar .build/tokenization-util.dar
 	cd account-onboarding/test && daml test
 
+# Issuer
+.build/issuer-onboarding-token-interface.dar: .lib $(shell ./find-daml-project-files.sh issuer-onboarding/token-interface)
+	cd issuer-onboarding/token-interface && daml build -o ../../.build/issuer-onboarding-token-interface.dar
+
+.build/issuer-onboarding-token.dar: .build/issuer-onboarding-token-interface.dar \
+  .build/tokenization-util.dar \
+  $(shell ./find-daml-project-files.sh issuer-onboarding/token-implementation)
+	cd issuer-onboarding/token-implementation && daml build -o ../../.build/issuer-onboarding-token.dar
+
+.PHONY: test-issuer-onboarding
+test-issuer-onboarding: .build/issuer-onboarding-token.dar .build/tokenization-util.dar
+	cd issuer-onboarding/test && daml test
+
+# Scripts
 .build/tokenization-onboarding.dar: .lib \
   .build/account-onboarding-one-time-offer.dar \
 	.build/account-onboarding-open-offer.dar \

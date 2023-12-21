@@ -1,0 +1,39 @@
+module Synfini.Interface.Onboarding.Issuer.Token.Factory where
+
+import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
+import qualified Synfini.Interface.Onboarding.Issuer.Token.Token as Issuer
+import qualified Daml.Finance.Interface.Instrument.Token.Factory as Token
+import Daml.Finance.Interface.Types.Common.Types
+
+data View = View
+  with
+    provider : Party
+  deriving (Show, Eq)
+
+type V = View
+
+interface Factory requires Disclosure.I where
+  viewtype V
+
+  create' : Create -> Update (ContractId Issuer.I)
+
+  nonconsuming choice GetView : V
+    -- ^ Retrieves the interface view.
+    with
+      viewer : Party
+        -- ^ The party retrieving the view.
+    controller viewer
+    do
+      pure $ view this
+
+  nonconsuming choice Create : ContractId Issuer.I
+    with
+      depository : Party
+      issuer : Party
+      instrumentFactoryCid : ContractId Token.F
+      observers : PartiesMap
+    controller depository
+    do
+      create' this arg
+
+type I = Factory
