@@ -8,7 +8,7 @@ import qualified Synfini.Interface.Onboarding.Issuer.Token.Factory as TokenIssue
 import qualified Synfini.Onboarding.Issuer.Token as TokenIssuerImpl
 import qualified DA.Map as Map
 import qualified DA.Set as Set
-import qualified Synfini.Interface.Onboarding.Issuer.Token.Token as TokenIssuer
+import qualified Synfini.Interface.Onboarding.Issuer.Token.Issuer as TokenIssuer
 import Daml.Finance.Interface.Instrument.Token.Types (Token(..))
 import DA.Time (time)
 import DA.Date (date)

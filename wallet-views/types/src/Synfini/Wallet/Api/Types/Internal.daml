@@ -24,6 +24,8 @@ template UsedTypes
       Instruments :+:
       InstrumentsFilter :+:
       AccountOpenOffersFilter :+:
-      AccountOpenOffers
+      AccountOpenOffers :+:
+      IssuersFilter :+:
+      Issuers
   where
     signatory undefinedParty

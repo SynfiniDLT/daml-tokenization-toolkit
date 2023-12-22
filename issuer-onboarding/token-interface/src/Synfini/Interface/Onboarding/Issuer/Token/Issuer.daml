@@ -1,4 +1,4 @@
-module Synfini.Interface.Onboarding.Issuer.Token.Token where
+module Synfini.Interface.Onboarding.Issuer.Token.Issuer where
 
 import qualified Daml.Finance.Interface.Instrument.Token.Instrument as Token
 import qualified Daml.Finance.Interface.Instrument.Token.Factory as Token

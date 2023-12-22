@@ -119,6 +119,17 @@ public class WalletViewsController {
     return ResponseEntity.ok(asJson(instruments));
   }
 
+  @PostMapping("/issuers")
+  public ResponseEntity<String> issuers(
+    @RequestBody IssuersFilter filter,
+    @RequestHeader(value = HttpHeaders.AUTHORIZATION, defaultValue = "") String auth
+  ) {
+    final var userRights = WalletAuth.getUser(ledgerApiConfig, auth);
+    final var parties = allParties(userRights);
+    final var instruments = new Issuers(walletRepository.issuers(parties));
+    return ResponseEntity.ok(asJson(instruments));
+  }
+
   private static List<String> allParties(ListUserRightsResponse userRights) {
     return userRights
       .getRights()

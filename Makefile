@@ -62,13 +62,15 @@ test-fund: .build/fund-tokenization.dar
 .build/account-onboarding-one-time-offer-interface.dar: .lib $(shell ./find-daml-project-files.sh account-onboarding/one-time-offer-interface)
 	cd account-onboarding/one-time-offer-interface && daml build -o ../../.build/account-onboarding-one-time-offer-interface.dar
 
-.build/account-onboarding-one-time-offer.dar: .build/account-onboarding-one-time-offer-interface.dar $(shell ./find-daml-project-files.sh account-onboarding/one-time-offer-implementation)
+.build/account-onboarding-one-time-offer.dar: .build/account-onboarding-one-time-offer-interface.dar \
+  $(shell ./find-daml-project-files.sh account-onboarding/one-time-offer-implementation)
 	cd account-onboarding/one-time-offer-implementation && daml build -o ../../.build/account-onboarding-one-time-offer.dar
 
 .build/account-onboarding-open-offer-interface.dar: .lib $(shell ./find-daml-project-files.sh account-onboarding/open-offer-interface)
 	cd account-onboarding/open-offer-interface && daml build -o ../../.build/account-onboarding-open-offer-interface.dar
 
-.build/account-onboarding-open-offer.dar: .build/account-onboarding-open-offer-interface.dar $(shell ./find-daml-project-files.sh account-onboarding/open-offer-implementation)
+.build/account-onboarding-open-offer.dar: .build/account-onboarding-open-offer-interface.dar \
+  $(shell ./find-daml-project-files.sh account-onboarding/open-offer-implementation)
 	cd account-onboarding/open-offer-implementation && daml build -o ../../.build/account-onboarding-open-offer.dar
 
 .PHONY: test-account-onboarding
@@ -119,7 +121,11 @@ build-pbt: .build/pbt.dar
 ## END pbt
 
 ## BEGIN wallet-views
-.build/daml-wallet-views-types.dar: .lib .build/account-onboarding-open-offer-interface.dar .build/pbt-interface.dar $(shell ./find-daml-project-files.sh wallet-views/types)
+.build/daml-wallet-views-types.dar: .lib \
+  .build/account-onboarding-open-offer-interface.dar \
+  .build/issuer-onboarding-token-interface.dar \
+  .build/pbt-interface.dar \
+  $(shell ./find-daml-project-files.sh wallet-views/types)
 	cd wallet-views/types && daml build -o ../../.build/daml-wallet-views-types.dar
 
 # Codegen - java
@@ -127,7 +133,10 @@ wallet-views/java/src/generated-main/java: .build/daml-wallet-views-types.dar
 	rm -rf wallet-views/java/src/generated-main/java
 	daml codegen java -o wallet-views/java/src/generated-main/java .build/daml-wallet-views-types.dar
 
-wallet-views/java/src/generated-test/java: .lib .build/account-onboarding-open-offer.dar .build/pbt.dar
+wallet-views/java/src/generated-test/java: .lib \
+  .build/account-onboarding-open-offer.dar \
+  .build/issuer-onboarding-token.dar \
+  .build/pbt.dar
 	rm -rf wallet-views/java/src/generated-test/java
 	daml codegen java \
 		-o wallet-views/java/src/generated-test/java \
@@ -136,6 +145,7 @@ wallet-views/java/src/generated-test/java: .lib .build/account-onboarding-open-o
 		.lib/daml-finance-settlement.dar \
 		.lib/daml-finance-instrument-token.dar \
 		.build/account-onboarding-open-offer.dar \
+		.build/issuer-onboarding-token.dar \
 		.build/pbt.dar
 
 .PHONY: compile-wallet-views
@@ -155,7 +165,8 @@ wallet-views/typescript-client/daml.js: .build/daml-wallet-views-types.dar
 	rm -rf wallet-views/typescript-client/daml.js
 	daml codegen js .build/daml-wallet-views-types.dar -o wallet-views/typescript-client/daml.js
 
-wallet-views/typescript-client/lib: wallet-views/typescript-client/daml.js $(shell ./find-ts-project-files.sh wallet-views/typescript-client)
+wallet-views/typescript-client/lib: wallet-views/typescript-client/daml.js \
+  $(shell ./find-ts-project-files.sh wallet-views/typescript-client)
 	cd wallet-views/typescript-client && npm install && npm run build
 
 .PHONY: build-wallet-views-client

@@ -1,7 +1,7 @@
 module Synfini.Interface.Onboarding.Issuer.Token.Factory where
 
 import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
-import qualified Synfini.Interface.Onboarding.Issuer.Token.Token as Issuer
+import qualified Synfini.Interface.Onboarding.Issuer.Token.Issuer as Issuer
 import qualified Daml.Finance.Interface.Instrument.Token.Factory as Token
 import Daml.Finance.Interface.Types.Common.Types
 

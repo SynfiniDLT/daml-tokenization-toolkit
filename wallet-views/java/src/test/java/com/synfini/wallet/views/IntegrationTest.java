@@ -96,6 +96,7 @@ public class IntegrationTest {
   private static String investor1User;
   private static String investor2;
   private static String investor2User;
+  private static String issuerUser;
   private static String allPartiesUser;
   private static ManagedChannel allPartiesChannel;
   private static ManagedChannel adminChannel;
@@ -106,6 +107,7 @@ public class IntegrationTest {
   private static daml.finance.interface$.settlement.factory.Factory.ContractId settlementFactoryCid;
   private static daml.finance.interface$.instrument.token.factory.Factory.ContractId tokenInstrumentFactoryCid;
   private static synfini.interface$.instrument.partyboundattributes.factory.Factory.ContractId  pbaInstrumentFactoryCid;
+  private static synfini.interface$.onboarding.issuer.token.factory.Factory.ContractId tokenInstrumentIssuerFactoryCid;
 
   @Autowired
   private MockMvc mvc;
@@ -166,6 +168,7 @@ public class IntegrationTest {
             "daml-finance-settlement.dar",
             "daml-finance-instrument-token.dar",
             "account-onboarding-open-offer.dar",
+            "issuer-onboarding-token.dar",
             "pbt.dar"
           )
         ) {
@@ -198,7 +201,7 @@ public class IntegrationTest {
   }
 
   @AfterAll
-  static void afterAll() throws InterruptedException, IOException {
+  static void afterAll() throws InterruptedException {
     if (adminChannel != null) {
       shutdownChannel(adminChannel);
     }
@@ -230,6 +233,7 @@ public class IntegrationTest {
     custodianUser = "custodian-" + entropy;
     investor1User = "investor1-" + entropy;
     investor2User = "investor2-" + entropy;
+    issuerUser = "issuer-" + entropy;
     allPartiesUser = "all-parties-user-" + entropy;
     final var adminLedgerClient = DamlLedgerClient.newBuilder(adminChannelBuilder()).build();
     adminLedgerClient.connect();
@@ -237,6 +241,7 @@ public class IntegrationTest {
     userManagementClient.createUser(new CreateUserRequest(custodianUser, custodian)).blockingGet();
     userManagementClient.createUser(new CreateUserRequest(investor1User, investor1)).blockingGet();
     userManagementClient.createUser(new CreateUserRequest(investor2User, investor2)).blockingGet();
+    userManagementClient.createUser(new CreateUserRequest(issuerUser, issuer)).blockingGet();
     userManagementClient.createUser(
       new CreateUserRequest(
         new User(allPartiesUser, custodian),
@@ -263,6 +268,7 @@ public class IntegrationTest {
     final var settlementFactory = new daml.finance.settlement.factory.Factory(custodian, obs);
     final var tokenInstrumentFactory = new daml.finance.instrument.token.factory.Factory(custodian, obsMap);
     final var pbaInstrumentFactory = new synfini.instrument.partyboundattributes.factory.Factory(custodian, obsMap);
+    final var tokenIssuerFactory = new synfini.onboarding.issuer.token.Factory(custodian, obsMap);
     accountFactoryCid = new daml.finance.interface$.account.factory.Factory.ContractId(
       allPartiesLedgerClient
         .getCommandClient()
@@ -307,6 +313,14 @@ public class IntegrationTest {
       allPartiesLedgerClient
         .getCommandClient()
         .submitAndWaitForResult(allPartiesUpdateSubmission(pbaInstrumentFactory.create()))
+        .blockingGet()
+        .contractId
+        .contractId
+    );
+    tokenInstrumentIssuerFactoryCid = new synfini.interface$.onboarding.issuer.token.factory.Factory.ContractId(
+      allPartiesLedgerClient
+        .getCommandClient()
+        .submitAndWaitForResult(allPartiesUpdateSubmission(tokenIssuerFactory.create()))
         .blockingGet()
         .contractId
         .contractId
@@ -965,6 +979,53 @@ public class IntegrationTest {
       .perform(getAccountOpenOffersBuilder().headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(content().json(toJson(new AccountOpenOffers(List.of()))));
+  }
+
+  @Test
+  void returnsIssuers() throws Exception {
+    registerAuthMock(issuerUser, 60 * 60 * 24);
+    startProjectionDaemon(issuer, issuerUser);
+    delayForProjectionToStart();
+
+    final var tokenIssuerCid = allPartiesLedgerClient
+      .getCommandClient()
+      .submitAndWaitForResult(
+        allPartiesUpdateSubmission(
+          tokenInstrumentIssuerFactoryCid.exerciseCreate(
+            depository,
+            issuer,
+            tokenInstrumentFactoryCid,
+            Map.of()
+          )
+        )
+      ).blockingGet().exerciseResult;
+    delayForProjectionIngestion();
+
+    mvc
+      .perform(getIssuersBuilder().headers(userTokenHeader(issuerUser)))
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(
+          toJson(
+            new Issuers(
+              List.of(
+                new IssuerSummary(
+                  Optional.of(
+                    new TokenIssuerSummary(
+                      tokenIssuerCid,
+                      new synfini.interface$.onboarding.issuer.token.issuer.View(
+                        depository,
+                        issuer,
+                        tokenInstrumentFactoryCid
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      );
   }
 
   @Test
@@ -1628,6 +1689,13 @@ public class IntegrationTest {
     return MockMvcRequestBuilders
       .post(walletViewsBasePath + "instruments")
       .content(toJson(new InstrumentsFilter(dep, iss, id, version)))
+      .contentType(MediaType.APPLICATION_JSON);
+  }
+
+  private static MockHttpServletRequestBuilder getIssuersBuilder() {
+    return MockMvcRequestBuilders
+      .post(walletViewsBasePath + "issuers")
+      .content(toJson(new IssuersFilter()))
       .contentType(MediaType.APPLICATION_JSON);
   }
 

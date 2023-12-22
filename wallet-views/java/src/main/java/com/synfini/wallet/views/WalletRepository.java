@@ -28,6 +28,7 @@ import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import synfini.interface$.onboarding.account.openoffer.openoffer.OpenOffer;
+import synfini.interface$.onboarding.issuer.token.issuer.Issuer;
 import synfini.wallet.api.types.*;
 
 import javax.sql.DataSource;
@@ -262,6 +263,22 @@ public class WalletRepository {
     return instruments;
   }
 
+  public List<IssuerSummary> issuers(List<String> readAs) {
+    return jdbcTemplate.query(
+      "SELECT\n" +
+      "  i.cid cid,\n" +
+      "  i.depository depository,\n" +
+      "  i.issuer issuer,\n" +
+      "  i.instrument_factory_cid instrument_factory_cid\n" +
+      "FROM token_instrument_issuers i INNER JOIN token_instrument_issuer_witnesses w ON i.cid = w.cid\n" +
+      "WHERE w.party = ANY(?)",
+      ps -> {
+        ps.setArray(1, asSqlArray(readAs));
+      },
+      new IssuersRowMapper()
+    );
+  }
+
   public List<SettlementSummary> settlements(
     List<String> readAs,
     Optional<String> before,
@@ -435,6 +452,26 @@ public class WalletRepository {
           getLock(rs)
         ),
         getTransactionDetail(rs, "create")
+      );
+    }
+  }
+
+  private static class IssuersRowMapper implements RowMapper<IssuerSummary> {
+    @Override
+    public IssuerSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return new IssuerSummary(
+        Optional.of(
+          new TokenIssuerSummary(
+            new Issuer.ContractId(rs.getString("cid")),
+            new synfini.interface$.onboarding.issuer.token.issuer.View(
+              rs.getString("depository"),
+              rs.getString("issuer"),
+              new daml.finance.interface$.instrument.token.factory.Factory.ContractId(
+                rs.getString("instrument_factory_cid")
+              )
+            )
+          )
+        )
       );
     }
   }

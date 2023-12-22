@@ -9,6 +9,7 @@ import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
 import qualified Daml.Finance.Interface.Instrument.Base.Instrument as Instrument
 import qualified Daml.Finance.Interface.Instrument.Token.Instrument as Token
 import qualified Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer as AccountOpenOffer
+import qualified Synfini.Interface.Onboarding.Issuer.Token.Issuer as TokenIssuer
 import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Instrument as Pbt
 import Daml.Finance.Interface.Settlement.Types
 import Daml.Finance.Interface.Types.Common.Types
@@ -127,6 +128,7 @@ data InstrumentsFilter = InstrumentsFilter
     version : Optional Text
   deriving (Show, Eq)
 
+-- TODO may need to add filter parameters here
 data AccountOpenOffersFilter = AccountOpenOffersFilter
   with
   deriving (Show, Eq)
@@ -141,4 +143,25 @@ data AccountOpenOfferSummary = AccountOpenOfferSummary
 data AccountOpenOffers = AccountOpenOffers
   with
     accountOpenOffers : [AccountOpenOfferSummary]
+  deriving (Show, Eq)
+
+-- TODO may need to add filter parameters here
+data IssuersFilter = IssuersFilter
+  with
+  deriving (Show, Eq)
+
+data TokenIssuerSummary = TokenIssuerSummary
+  with
+    cid : ContractId TokenIssuer.I
+    view : TokenIssuer.V
+  deriving (Show, Eq)
+
+data IssuerSummary = IssuerSummary
+  with
+    tokenIssuer : Optional TokenIssuerSummary -- In future, there may be issuer contracts for other instrument types, so this is an optional field
+  deriving (Show, Eq)
+
+data Issuers = Issuers
+  with
+    issuers : [IssuerSummary]
   deriving (Show, Eq)

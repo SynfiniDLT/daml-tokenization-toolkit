@@ -5,7 +5,7 @@ import qualified Daml.Finance.Interface.Instrument.Token.Factory as Token
 import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
 import qualified DA.Set as Set
 import qualified Daml.Finance.Util.Disclosure as ImplUtil
-import qualified Synfini.Interface.Onboarding.Issuer.Token.Token as TokenIssuer
+import qualified Synfini.Interface.Onboarding.Issuer.Token.Issuer as TokenIssuer
 import qualified Synfini.Interface.Onboarding.Issuer.Token.Factory as TokenIssuerFactory
 import Synfini.Tokenization.Util (assertEqMsg)
 
