@@ -126,7 +126,7 @@ public class WalletViewsController {
   ) {
     final var userRights = WalletAuth.getUser(ledgerApiConfig, auth);
     final var parties = allParties(userRights);
-    final var instruments = new Issuers(walletRepository.issuers(parties));
+    final var instruments = new Issuers(walletRepository.issuers(filter.depository, filter.issuer, parties));
     return ResponseEntity.ok(asJson(instruments));
   }
 

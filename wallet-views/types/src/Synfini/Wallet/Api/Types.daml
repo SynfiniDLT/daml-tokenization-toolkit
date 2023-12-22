@@ -148,6 +148,8 @@ data AccountOpenOffers = AccountOpenOffers
 -- TODO may need to add filter parameters here
 data IssuersFilter = IssuersFilter
   with
+    depository : Optional Party
+    issuer : Optional Party
   deriving (Show, Eq)
 
 data TokenIssuerSummary = TokenIssuerSummary

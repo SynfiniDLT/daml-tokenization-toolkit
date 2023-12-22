@@ -217,6 +217,9 @@ CREATE TABLE token_instrument_issuers
   PRIMARY KEY (cid)
 );
 
+CREATE INDEX token_instrument_issuers_issuer_index ON token_instrument_issuers (issuer);
+CREATE INDEX token_instrument_issuers_depository_index ON token_instrument_issuers (depository);
+
 CREATE TABLE token_instrument_issuer_witnesses
 (
   cid VARCHAR NOT NULL,

@@ -263,7 +263,7 @@ public class WalletRepository {
     return instruments;
   }
 
-  public List<IssuerSummary> issuers(List<String> readAs) {
+  public List<IssuerSummary> issuers(Optional<String> depository, Optional<String> issuer, List<String> readAs) {
     return jdbcTemplate.query(
       "SELECT\n" +
       "  i.cid cid,\n" +
@@ -271,9 +271,15 @@ public class WalletRepository {
       "  i.issuer issuer,\n" +
       "  i.instrument_factory_cid instrument_factory_cid\n" +
       "FROM token_instrument_issuers i INNER JOIN token_instrument_issuer_witnesses w ON i.cid = w.cid\n" +
-      "WHERE w.party = ANY(?)",
+      "WHERE (? IS NULL OR i.depository = ?) AND (? IS NULL OR i.issuer = ?) AND w.party = ANY(?)",
       ps -> {
-        ps.setArray(1, asSqlArray(readAs));
+        ps.setString(1, depository.orElse(null));
+        ps.setString(2, depository.orElse(null));
+
+        ps.setString(3, issuer.orElse(null));
+        ps.setString(4, issuer.orElse(null));
+
+        ps.setArray(5, asSqlArray(readAs));
       },
       new IssuersRowMapper()
     );

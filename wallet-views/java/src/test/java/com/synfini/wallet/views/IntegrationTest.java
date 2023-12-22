@@ -995,37 +995,79 @@ public class IntegrationTest {
             depository,
             issuer,
             tokenInstrumentFactoryCid,
-            Map.of()
+            Map.of("obs", arrayToSet(investor1))
           )
         )
       ).blockingGet().exerciseResult;
     delayForProjectionIngestion();
 
-    mvc
-      .perform(getIssuersBuilder().headers(userTokenHeader(issuerUser)))
-      .andExpect(status().isOk())
-      .andExpect(
-        content().json(
-          toJson(
-            new Issuers(
-              List.of(
-                new IssuerSummary(
-                  Optional.of(
-                    new TokenIssuerSummary(
-                      tokenIssuerCid,
-                      new synfini.interface$.onboarding.issuer.token.issuer.View(
-                        depository,
-                        issuer,
-                        tokenInstrumentFactoryCid
-                      )
-                    )
-                  )
-                )
-              )
-            )
+    final var tokenIssuerSummary = new IssuerSummary(
+      Optional.of(
+        new TokenIssuerSummary(
+          tokenIssuerCid,
+          new synfini.interface$.onboarding.issuer.token.issuer.View(
+            depository,
+            issuer,
+            tokenInstrumentFactoryCid
           )
         )
-      );
+      )
+    );
+
+    mvc
+      .perform(
+        getIssuersBuilder(Optional.empty(), Optional.empty()).headers(userTokenHeader(issuerUser))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(new Issuers(List.of(tokenIssuerSummary)))));
+
+    mvc
+      .perform(
+        getIssuersBuilder(Optional.of(depository), Optional.empty()).headers(userTokenHeader(issuerUser))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(new Issuers(List.of(tokenIssuerSummary)))));
+
+    mvc
+      .perform(
+        getIssuersBuilder(Optional.empty(), Optional.of(issuer)).headers(userTokenHeader(issuerUser))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(new Issuers(List.of(tokenIssuerSummary)))));
+
+    mvc
+      .perform(
+        getIssuersBuilder(
+          Optional.of("other depository"),
+          Optional.empty()
+        ).headers(userTokenHeader(issuerUser))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(new Issuers(List.of()))));
+
+    mvc
+      .perform(
+        getIssuersBuilder(
+          Optional.empty(),
+          Optional.of("other issuer")
+        ).headers(userTokenHeader(issuerUser))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(new Issuers(List.of()))));
+
+    mvc
+      .perform(
+        getIssuersBuilder(Optional.empty(), Optional.empty()).headers(userTokenHeader(investor1User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(new Issuers(List.of(tokenIssuerSummary)))));
+
+    mvc
+      .perform(
+        getIssuersBuilder(Optional.empty(), Optional.empty()).headers(userTokenHeader(investor2User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(new Issuers(List.of()))));
   }
 
   @Test
@@ -1692,10 +1734,10 @@ public class IntegrationTest {
       .contentType(MediaType.APPLICATION_JSON);
   }
 
-  private static MockHttpServletRequestBuilder getIssuersBuilder() {
+  private static MockHttpServletRequestBuilder getIssuersBuilder(Optional<String> depository, Optional<String> issuer) {
     return MockMvcRequestBuilders
       .post(walletViewsBasePath + "issuers")
-      .content(toJson(new IssuersFilter()))
+      .content(toJson(new IssuersFilter(depository, issuer)))
       .contentType(MediaType.APPLICATION_JSON);
   }
 
