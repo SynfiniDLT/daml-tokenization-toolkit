@@ -68,12 +68,12 @@ const AccountBalanceScreen: React.FC = () => {
 
   useEffect(() => {
     fetchBalances()
-  });
+  },[ctx.primaryParty]);
 
   useEffect(() => {
     fetchInstruments(balances)
     .then((res => setInstruments(res)));
-  })
+  },[ctx.primaryParty])
 
   if (isLoading) {
     return (

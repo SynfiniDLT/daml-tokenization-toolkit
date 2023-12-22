@@ -14,7 +14,7 @@ import AccountBalanceSbtScreen from "./pages/AccountBalanceSbtScreen";
 import WalletScreen from "./pages/WalletScreen";
 import { FundSubscribeFormScreen } from "./pages/FundSubscribeFormScreen";
 import BalanceRedeemFormScreen from "./pages/BalanceRedeemFormScreen";
-import AccountCreateScreen from "./pages/AccountCreateScreen";
+import AccountOfferScreen from "./pages/AccountOfferScreen";
 import AssetCreateScreen from "./pages/AssetCreateScreen";
 
 export const userContext = createLedgerContext();
@@ -77,7 +77,7 @@ const App: React.FC = () => {
               <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
               <Route path="/fund" element={<AuthenticationGuard component={FundScreen} />} />
               <Route path="/fund/subscribe" element={<AuthenticationGuard component={FundSubscribeFormScreen} />} />
-              <Route path="/account/create" element={<AuthenticationGuard component={AccountCreateScreen} />} />
+              <Route path="/account/create" element={<AuthenticationGuard component={AccountOfferScreen} />} />
             </>
           ) : walletMode===("fund") ? (
             <>

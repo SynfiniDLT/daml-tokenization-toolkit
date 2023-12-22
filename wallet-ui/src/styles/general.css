@@ -653,3 +653,8 @@ input {
     z-index: "auto"
   
 }
+
+.container-inline {
+  display: flex;
+  justify-content: space-between;
+}

@@ -18,7 +18,7 @@ const WalletScreen: React.FC = () => {
 
   const [accountBalancesMap, setAccountBalancesMap] = useState(new Map<any, any>());
 
-  console.log("rrrr",walletViewsBaseUrl)
+  console.log("url backend endpoint=>",walletViewsBaseUrl)
 
   let walletClient: WalletViewsClient;
 

@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { QuestionCircle } from "react-bootstrap-icons";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { nameFromParty } from "../Util";
 
 interface AccountDetailsProps {
   account: AccountSummary;
@@ -39,7 +40,7 @@ export default function AccountDetails(props: AccountDetailsProps) {
             <QuestionCircle />
             <span className="tooltiptext">Custodian is responsible to look after digital assets on behalf of an investor or client.</span>
         </div>
-          <br /> {props.account.view.custodian}
+          <br /> {nameFromParty(props.account.view.custodian)}
         <p>
           <br/>
           Contract ID:
