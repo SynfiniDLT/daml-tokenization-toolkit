@@ -3,7 +3,7 @@
     {
       "provider": "SynfiniValidator",
       "label": "token.V1",
-      "issuerType": "Token",
+      "instrumentType": "Token",
       "observers": [
         {
           "context": "public",

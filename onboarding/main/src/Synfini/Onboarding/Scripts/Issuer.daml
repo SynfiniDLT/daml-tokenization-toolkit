@@ -1,0 +1,48 @@
+module Synfini.Onboarding.Scripts.Issuer where
+
+import qualified Daml.Finance.Interface.Instrument.Token.Factory as TokenFactory
+import qualified Synfini.Interface.Onboarding.Issuer.Token.Factory as TokenIssuerFactory
+import Synfini.Onboarding.Scripts.Factory.Instrument
+import Synfini.Onboarding.Scripts.Types
+import Daml.Script
+import DA.Foldable (forA_)
+
+data IssuerSettings = IssuerSettings
+  with
+    issuerFactory : Text
+    instrumentFactory : Text
+    instrumentType : Text
+    depository : Text
+    issuer : Text
+    observers : [Observer]
+
+data CreateIssuersInput = CreateIssuersInput
+  with
+    parties : [PartyInfo]
+    readAs : [Text]
+    issuerFactories : [IssuerFactory]
+    instrumentFactories : [InstrumentFactory]
+    issuerSettings : [IssuerSettings]
+
+createIssuers : CreateIssuersInput -> Script ()
+createIssuers input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let readAs = p <$> input.readAs
+  forA_ input.issuerSettings $ \settings -> do
+    let depository = p settings.depository
+        issuer = p  settings.issuer
+        issuerFactoryCid = findFactoryContractId settings.issuerFactory input.issuerFactories
+        instrumentFactoryCid = findFactoryContractId settings.instrumentFactory input.instrumentFactories
+        observers = asPartiesMap p settings.observers
+    case settings.instrumentType of
+      "Token" -> do
+        let tokenIssuerFactoryCid : ContractId TokenIssuerFactory.I = coerceContractId issuerFactoryCid
+            tokenInstrumentFactoryCid : ContractId TokenFactory.F = coerceContractId instrumentFactoryCid
+        submitMulti [depository] readAs do
+          exerciseCmd tokenIssuerFactoryCid TokenIssuerFactory.Create with
+            depository
+            issuer
+            instrumentFactoryCid = tokenInstrumentFactoryCid
+            observers
+      other -> error ("Unsupported token type: " <> other)

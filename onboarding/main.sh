@@ -132,6 +132,8 @@ elif [ "$command" = "instruct-burn" ]; then
   ${dops_commands}/instruct-burn.sh $@
 elif [ "$command" = "execute-burn" ]; then
   ${dops_commands}/execute-burn.sh $@
+elif [ "$command" = "create-issuers" ]; then
+  ${dops_commands}/create-issuers.sh $@
 elif [ "$command" = "create-fund-offer-unilateral" ]; then
   ${dops_commands}/create-fund-offer.sh $@
 elif [ "$command" = "create-fund-issuer-open-offers" ]; then

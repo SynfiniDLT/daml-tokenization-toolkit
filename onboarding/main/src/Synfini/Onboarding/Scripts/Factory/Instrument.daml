@@ -49,7 +49,7 @@ data IssuerFactorySettings = IssuerFactorySettings
   with
     label : Text
     provider : Text
-    issuerType : Text
+    instrumentType : Text
     observers : [Observer]
 
 data CreateIssuerFactoriesInput = CreateIssuerFactoriesInput
@@ -73,9 +73,9 @@ createIssuerFactories input = do
   issuerFactories <- forA input.issuerFactorySettings $ \settings -> do
     let observers = asPartiesMap p settings.observers
     let provider = p settings.provider
-    cid <- case settings.issuerType of
+    cid <- case settings.instrumentType of
       "Token" -> coerceContractId <$> submit provider do
         createCmd TokenIssuerImpl.Factory with provider, observers
-      other -> error ("Unsupported issuer type: " <> show other)
+      other -> error ("Unsupported instrument type: " <> show other)
     pure IssuerFactory with label = settings.label, cid
   pure CreateIssuerFactoriesOutput with issuerFactories
