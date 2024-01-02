@@ -89,7 +89,8 @@ test_create_token_instrument = withSetup $
   instrument <- O.fromSomeNote "Error getting token instrument interface view" <$>
     queryInterfaceContractId alice instrumentCid
   assertEqMsg "Must have expected token" instrument.token token
-  pure ()
+  activeIssuers <- fmap fst <$> queryInterface @TokenIssuer.I issuer
+  assertEqMsg "TokenIssuer contract must not be archived" activeIssuers [tokenIssuerCid]
 
 test_remove_token_instrument : Script ()
 test_remove_token_instrument = withSetup $
@@ -114,3 +115,5 @@ test_remove_token_instrument = withSetup $
       instrumentCid
   activeInstruments <- queryInterface @Token.I depository
   assertEqMsg "Must have archived all instruments" activeInstruments []
+  activeIssuers <- fmap fst <$> queryInterface @TokenIssuer.I issuer
+  assertEqMsg "TokenIssuer contract must not be archived" activeIssuers [tokenIssuerCid]
