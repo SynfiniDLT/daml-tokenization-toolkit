@@ -1,12 +1,9 @@
 module Synfini.Onboarding.Scripts.Account.OpenOffer where
 
 import qualified Daml.Finance.Interface.Account.Account as Account
-import qualified Daml.Finance.Interface.Account.Factory as Account
-import qualified Daml.Finance.Interface.Holding.Factory as Holding
 import Daml.Finance.Interface.Types.Common.Types
 import qualified DA.Optional as O
 import qualified DA.Set as Set
-import DA.Set (Set)
 import Synfini.Onboarding.Scripts.Types
 import Synfini.Onboarding.Scripts.Factory.Account
 import Synfini.Onboarding.Scripts.Factory.Holding

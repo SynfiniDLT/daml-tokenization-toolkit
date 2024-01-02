@@ -31,6 +31,10 @@ export DOPS_INSTRUMENT_FACTORIES_FILE=${DOPS_INTERNAL}/instrument-factories.json
 if [ ! -f "${DOPS_INSTRUMENT_FACTORIES_FILE}" ]; then
   echo '{"instrumentFactories": []}' > "${DOPS_INSTRUMENT_FACTORIES_FILE}"
 fi
+export DOPS_ISSUER_FACTORIES_FILE=${DOPS_INTERNAL}/issuer-factories.json
+if [ ! -f "${DOPS_ISSUER_FACTORIES_FILE}" ]; then
+  echo '{"issuerFactories": []}' > "${DOPS_ISSUER_FACTORIES_FILE}"
+fi
 export DOPS_ACCOUNT_OPEN_OFFERS_FILE=${DOPS_INTERNAL}/account-open-offers.json
 if [ ! -f "${DOPS_ACCOUNT_OPEN_OFFERS_FILE}" ]; then
   echo '{"accountOpenOffers": []}' > "${DOPS_ACCOUNT_OPEN_OFFERS_FILE}"
@@ -100,6 +104,8 @@ elif [ "$command" = "create-settlement-factories" ]; then
   ${dops_commands}/create-settlement-factories.sh $@
 elif [ "$command" = "create-instrument-factories" ]; then
   ${dops_commands}/create-instrument-factories.sh $@
+elif [ "$command" = "create-issuer-factories" ]; then
+  ${dops_commands}/create-issuer-factories.sh $@
 elif [ "$command" = "create-accounts-unilateral" ]; then
   ${dops_commands}/create-accounts-unilateral.sh $@
 elif [ "$command" = "create-account-open-offers" ]; then

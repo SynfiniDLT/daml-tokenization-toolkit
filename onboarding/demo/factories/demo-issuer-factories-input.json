@@ -1,0 +1,15 @@
+{
+  "issuerFactorySettings": [
+    {
+      "provider": "SynfiniValidator",
+      "label": "token.V1",
+      "issuerType": "Token",
+      "observers": [
+        {
+          "context": "public",
+          "parties": ["Synfini_Public"]
+        }
+      ]
+    }
+  ]
+}

@@ -15,9 +15,6 @@ import DA.Foldable (forA_)
 import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
 import qualified Daml.Finance.Interface.Settlement.Batch as Batch
 import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
-import qualified DA.Optional as O
-import qualified DA.Map as Map
-import DA.Action (foldlA)
 import qualified DA.Text as TX
 
 data PbaSettings = PbaSettings

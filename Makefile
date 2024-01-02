@@ -94,6 +94,7 @@ test-issuer-onboarding: .build/issuer-onboarding-token.dar .build/tokenization-u
 .build/tokenization-onboarding.dar: .lib \
   .build/account-onboarding-one-time-offer.dar \
 	.build/account-onboarding-open-offer.dar \
+	.build/issuer-onboarding-token.dar \
   .build/trackable-holding.dar \
   .build/daml-mint.dar \
   .build/fund-tokenization.dar \
