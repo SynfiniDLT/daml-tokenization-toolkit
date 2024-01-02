@@ -160,7 +160,7 @@ data TokenIssuerSummary = TokenIssuerSummary
 
 data IssuerSummary = IssuerSummary
   with
-    tokenIssuer : Optional TokenIssuerSummary -- In future, there may be issuer contracts for other instrument types, so this is an optional field
+    token : Optional TokenIssuerSummary -- In future, there may be issuer contracts for other instrument types, so this is an optional field
   deriving (Show, Eq)
 
 data Issuers = Issuers
