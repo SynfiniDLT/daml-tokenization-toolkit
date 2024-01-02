@@ -8,7 +8,7 @@ fi
 env="$1"
 version="$2"
 
-s3_url_be="s3://dlts-artifacts/synfini-wallet-app/${env}/${version}/application.properties /opt/app/config/${env}/${version}"
+s3_url_be="s3://dlts-artifacts/synfini-wallet-app/application.properties /opt/app/config"
 s3_url_fe_investor="s3://dlts-artifacts/synfini-wallet-app/${env}/${version}/.env.investor /opt/app/config/${env}/${version}"
 s3_url_fe_issuer="s3://dlts-artifacts/synfini-wallet-app/${env}/${version}/.env.issuer /opt/app/config/${env}/${version}"
 
