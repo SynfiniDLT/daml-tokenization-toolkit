@@ -1,16 +1,11 @@
 #!/bin/bash
 
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <environment> <version>"
-    exit 1
-fi
+echo ${ENV}
+echo ${VERSION}
 
-env="$1"
-version="$2"
-
-s3_url_be="s3://dlts-artifacts/synfini-wallet-app/${env}/${version}/application.properties /opt/app/config/${env}/${version}"
-s3_url_fe_investor="s3://dlts-artifacts/synfini-wallet-app/${env}/${version}/.env.investor /opt/app/config/${env}/${version}"
-s3_url_fe_issuer="s3://dlts-artifacts/synfini-wallet-app/${env}/${version}/.env.issuer /opt/app/config/${env}/${version}"
+s3_url_be="s3://dlts-artifacts/synfini-wallet-app/${ENV}/${VERSION}/application.properties /opt/app/config/${ENV}/${VERSION}"
+s3_url_fe_investor="s3://dlts-artifacts/synfini-wallet-app/${ENV}/${VERSION}/.env.investor /opt/app/config/${ENV}/${VERSION}"
+s3_url_fe_issuer="s3://dlts-artifacts/synfini-wallet-app/${ENV}/${VERSION}/.env.issuer /opt/app/config/${ENV}/${VERSION}"
 
 aws s3 cp $s3_url_be
 aws s3 cp $s3_url_fe_investor
