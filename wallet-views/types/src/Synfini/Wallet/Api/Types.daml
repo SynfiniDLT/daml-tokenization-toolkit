@@ -148,7 +148,6 @@ data AccountOpenOffers = AccountOpenOffers
     accountOpenOffers : [AccountOpenOfferSummary]
   deriving (Show, Eq)
 
--- TODO may need to add filter parameters here
 data IssuersFilter = IssuersFilter
   with
     depository : Optional Party
