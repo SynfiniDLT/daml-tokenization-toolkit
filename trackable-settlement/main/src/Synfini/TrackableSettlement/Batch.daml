@@ -33,4 +33,6 @@ checkVisiblityOfInstructions Batch { defaultBatch, trackers } = do
   forA_ routedStepsWithInstructionId $ \(_, instructionId) -> do
     (_, instruction) <- fetchByKey @Instruction InstructionKey with requestors, batchId = id, id = instructionId
     let stakeholders = Set.fromList (stakeholder instruction)
-    assertMsg "Instruction must be visible to trackers in order to settle" (trackers `Set.isSubsetOf` stakeholders)
+    assertMsg
+      "Instruction must be visible to trackers in order to settle or cancel"
+      (trackers `Set.isSubsetOf` stakeholders)

@@ -4,6 +4,7 @@ import qualified Daml.Finance.Settlement.Factory as SettlementImpl
 import qualified Daml.Finance.Interface.Settlement.Factory as Settlement
 import qualified DA.Set as Set
 import Daml.Script
+import qualified Synfini.TrackableSettlement.Factory as TrackableSettlementImpl
 import Synfini.Onboarding.Scripts.Types
 
 data SettlementFactorySettings = SettlementFactorySettings
@@ -11,6 +12,7 @@ data SettlementFactorySettings = SettlementFactorySettings
     label : Text
     provider : Text
     observers : [Text]
+    settlementTrackers : Optional [Text]
 
 data CreateSettlementFactoriesInput = CreateSettlementFactoriesInput
   with
@@ -32,10 +34,15 @@ createSettlementFactories input = do
   let p = getPartyId pm
   settlementFactories <- forA input.settlementFactorySettings $ \settings -> do
     let provider = p settings.provider
-    cid <- toInterfaceContractId <$> submit provider do
-      createCmd SettlementImpl.Factory with
-        provider
-        observers = Set.fromList (p <$> settings.observers)
+    let defaultFactory = SettlementImpl.Factory with
+          provider
+          observers = Set.fromList (p <$> settings.observers)
+    cid <- case settings.settlementTrackers of
+      None -> toInterfaceContractId <$> submit provider do createCmd defaultFactory
+      Some trackers -> toInterfaceContractId <$> submit provider do
+        createCmd TrackableSettlementImpl.Factory with
+          defaultFactory
+          settlementTrackers = Set.fromList (p <$> trackers)
     pure SettlementFactory with label = settings.label, cid
   pure CreateSettlementFactoriesOutput with 
     settlementFactories

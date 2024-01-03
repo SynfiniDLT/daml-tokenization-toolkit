@@ -4,8 +4,10 @@ import Daml.Finance.Interface.Types.Common.Types
 import qualified Daml.Finance.Interface.Settlement.Batch as Batch
 import qualified Daml.Finance.Interface.Settlement.Factory as Factory
 import qualified Daml.Finance.Settlement.Factory as Default
+import qualified Daml.Finance.Settlement.Instruction as Default
 import qualified Synfini.TrackableSettlement.Batch as Custom
 import Synfini.TrackableSettlement.Batch (Batch(..))
+import qualified DA.Map as Map
 
 template Factory
   with
@@ -22,5 +24,11 @@ template Factory
         (batchCid, instructionCids) <- Factory.instruct (toInterface defaultFactory) args
         defaultBatch <- fetch (coerceContractId batchCid)
         archive batchCid
-        customBatchCid <- create Custom.Batch with defaultBatch, trackers = settlementTrackers
-        pure (toInterfaceContractId customBatchCid, instructionCids)
+        customBatchCid <- toInterfaceContractId <$>
+          create Custom.Batch with defaultBatch, trackers = settlementTrackers
+        observedInstructionCids <- forA instructionCids $ \instructionCid -> do
+          defaultInstruction : Default.Instruction <- fetch (coerceContractId instructionCid)
+          archive instructionCid
+          let newObservers = Map.insert "trackers" settlementTrackers defaultInstruction.observers
+          toInterfaceContractId <$> create defaultInstruction with observers = newObservers
+        pure (customBatchCid, observedInstructionCids)

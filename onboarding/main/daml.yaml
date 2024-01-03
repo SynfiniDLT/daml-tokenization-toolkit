@@ -28,6 +28,7 @@ data-dependencies:
   - ../../.build/pbt-interface.dar
 
   - ../../.build/trackable-holding.dar
+  - ../../.build/trackable-settlement.dar
   - ../../.build/account-onboarding-one-time-offer.dar
   - ../../.build/account-onboarding-open-offer.dar
   - ../../.build/issuer-onboarding-token.dar
