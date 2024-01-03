@@ -1,11 +1,12 @@
 module Synfini.Interface.Onboarding.Issuer.Token.Issuer where
 
-import qualified Daml.Finance.Interface.Instrument.Token.Instrument as Token
-import qualified Daml.Finance.Interface.Instrument.Token.Factory as Token
 import Daml.Finance.Interface.Instrument.Token.Types (Token)
 import Daml.Finance.Interface.Types.Common.Types (PartiesMap)
-import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
-import qualified Daml.Finance.Interface.Instrument.Token.Instrument as Instrument
+
+import Daml.Finance.Interface.Instrument.Token.Factory qualified as Token
+import Daml.Finance.Interface.Instrument.Token.Instrument qualified as Token
+import Daml.Finance.Interface.Instrument.Token.Instrument qualified as Instrument
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
 data View = View
   with

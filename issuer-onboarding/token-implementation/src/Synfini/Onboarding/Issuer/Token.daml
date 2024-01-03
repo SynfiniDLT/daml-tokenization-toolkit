@@ -1,13 +1,18 @@
 module Synfini.Onboarding.Issuer.Token where
 
+import DA.Set qualified as Set
+
+import Daml.Finance.Util.Disclosure qualified as ImplUtil
+
 import Daml.Finance.Interface.Types.Common.Types
-import qualified Daml.Finance.Interface.Instrument.Token.Factory as Token
-import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
-import qualified DA.Set as Set
-import qualified Daml.Finance.Util.Disclosure as ImplUtil
-import qualified Synfini.Interface.Onboarding.Issuer.Token.Issuer as TokenIssuer
-import qualified Synfini.Interface.Onboarding.Issuer.Token.Factory as TokenIssuerFactory
+
+import Daml.Finance.Interface.Instrument.Token.Factory qualified as Token
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
 import Synfini.Tokenization.Util (assertEqMsg)
+
+import Synfini.Interface.Onboarding.Issuer.Token.Factory qualified as TokenIssuerFactory
+import Synfini.Interface.Onboarding.Issuer.Token.Issuer qualified as TokenIssuer
 
 template Issuer
   with

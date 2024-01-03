@@ -1,11 +1,16 @@
 module Synfini.Onboarding.Scripts.Factory.Settlement where
 
-import qualified Daml.Finance.Settlement.Factory as SettlementImpl
-import qualified Daml.Finance.Interface.Settlement.Factory as Settlement
-import qualified DA.Set as Set
+import DA.Set qualified as Set
+
 import Daml.Script
-import qualified Synfini.TrackableSettlement.Factory as TrackableSettlementImpl
+
+import Daml.Finance.Settlement.Factory qualified as SettlementImpl
+
+import Daml.Finance.Interface.Settlement.Factory qualified as Settlement
+
 import Synfini.Onboarding.Scripts.Types
+
+import Synfini.TrackableSettlement.Factory qualified as TrackableSettlementImpl
 
 data SettlementFactorySettings = SettlementFactorySettings
   with

@@ -1,17 +1,23 @@
 module Synfini.Onboarding.Scripts.Account.OpenOffer where
 
-import qualified Daml.Finance.Interface.Account.Account as Account
+import DA.Foldable (forA_)
+
+import DA.Map qualified as Map
+import DA.Optional qualified as O
+import DA.Set qualified as Set
+
+import Daml.Script
+
 import Daml.Finance.Interface.Types.Common.Types
-import qualified DA.Optional as O
-import qualified DA.Set as Set
-import Synfini.Onboarding.Scripts.Types
+
+import Daml.Finance.Interface.Account.Account qualified as Account
+
 import Synfini.Onboarding.Scripts.Factory.Account
 import Synfini.Onboarding.Scripts.Factory.Holding
-import qualified Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer as AccountOpenOffer
-import qualified Synfini.Interface.Onboarding.Account.OpenOffer.Factory as AccountOpenOfferFactory
-import Daml.Script
-import DA.Foldable (forA_)
-import qualified DA.Map as Map
+import Synfini.Onboarding.Scripts.Types
+
+import Synfini.Interface.Onboarding.Account.OpenOffer.Factory qualified as AccountOpenOfferFactory
+import Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer qualified as AccountOpenOffer
 
 data CreateOpenAccountOfferSettings = CreateOpenAccountOfferSettings
   with

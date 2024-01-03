@@ -1,8 +1,10 @@
 module Synfini.Onboarding.Scripts.User where
 
-import Synfini.Onboarding.Scripts.Types
-import Daml.Script
 import DA.Foldable (forA_)
+
+import Daml.Script
+
+import Synfini.Onboarding.Scripts.Types
 
 data UserSettings = UserSettings
   with

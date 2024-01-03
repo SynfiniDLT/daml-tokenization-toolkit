@@ -1,21 +1,30 @@
 module Synfini.Onboarding.Issuer.Test where
 
-import Daml.Script
-import Daml.Finance.Interface.Types.Common.Types
-import qualified Daml.Finance.Interface.Instrument.Token.Factory as Token
-import qualified Daml.Finance.Instrument.Token.Factory as TokenImpl
-import qualified Synfini.Interface.Onboarding.Issuer.Token.Factory as TokenIssuerFactory
-import qualified Synfini.Onboarding.Issuer.Token as TokenIssuerImpl
-import qualified DA.Map as Map
-import qualified DA.Set as Set
-import qualified Synfini.Interface.Onboarding.Issuer.Token.Issuer as TokenIssuer
-import Daml.Finance.Interface.Instrument.Token.Types (Token(..))
-import DA.Time (time)
 import DA.Date (date)
 import DA.Date.Types (Month(Jan))
-import qualified DA.Optional as O
+import DA.Time (time)
+
+import DA.Map qualified as Map
+import DA.Optional qualified as O
+import DA.Set qualified as Set
+
+import Daml.Script
+
+import Daml.Finance.Instrument.Token.Factory qualified as TokenImpl
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Instrument.Token.Types (Token (..))
+
+import Daml.Finance.Interface.Instrument.Token.Factory qualified as Token
+import Daml.Finance.Interface.Instrument.Token.Instrument qualified as Token
+
 import Synfini.Tokenization.Util (assertEqMsg)
-import qualified Daml.Finance.Interface.Instrument.Token.Instrument as Token
+
+import Synfini.Onboarding.Issuer.Token qualified as TokenIssuerImpl
+
+import Synfini.Interface.Onboarding.Issuer.Token.Factory qualified as TokenIssuerFactory
+import Synfini.Interface.Onboarding.Issuer.Token.Issuer qualified as TokenIssuer
 
 data Setup = Setup
   with

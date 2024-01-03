@@ -1,21 +1,28 @@
 module Synfini.Onboarding.Account.Test where
 
-import qualified Daml.Finance.Interface.Holding.Factory as Holding
-import qualified Daml.Finance.Account.Account as AccountImpl
-import qualified Daml.Finance.Holding.Fungible as FungibleImpl
+import DA.Map qualified as Map
+import DA.Optional qualified as O
+import DA.Set qualified as Set
+
 import Daml.Script
-import qualified Daml.Finance.Interface.Account.Factory as Account
-import qualified DA.Map as Map
-import qualified DA.Set as Set
-import Synfini.Tokenization.Util (assertEqMsg)
-import qualified Synfini.Onboarding.Account.OpenOffer as OpenOfferImpl
-import qualified Synfini.Interface.Onboarding.Account.OpenOffer.Factory as OpenOfferFactory
-import qualified Daml.Finance.Interface.Account.Account as Account
-import qualified Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer as AccountOpenOffer
-import qualified Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer as OpenOffer
+
+import Daml.Finance.Account.Account qualified as AccountImpl
+import Daml.Finance.Holding.Fungible qualified as FungibleImpl
+
 import Daml.Finance.Interface.Types.Common.Types
-import qualified DA.Optional as O
-import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
+
+import Daml.Finance.Interface.Account.Account qualified as Account
+import Daml.Finance.Interface.Account.Factory qualified as Account
+import Daml.Finance.Interface.Holding.Factory qualified as Holding
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Synfini.Tokenization.Util (assertEqMsg)
+
+import Synfini.Onboarding.Account.OpenOffer qualified as OpenOfferImpl
+
+import Synfini.Interface.Onboarding.Account.OpenOffer.Factory qualified as OpenOfferFactory
+import Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer qualified as AccountOpenOffer
+import Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer qualified as OpenOffer
 
 -- TODO add test cases for one-time-offer
 

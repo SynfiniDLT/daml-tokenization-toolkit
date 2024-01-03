@@ -1,11 +1,15 @@
 module Synfini.Onboarding.Scripts.Issuer where
 
-import qualified Daml.Finance.Interface.Instrument.Token.Factory as TokenFactory
-import qualified Synfini.Interface.Onboarding.Issuer.Token.Factory as TokenIssuerFactory
+import DA.Foldable (forA_)
+
+import Daml.Script
+
+import Daml.Finance.Interface.Instrument.Token.Factory qualified as TokenFactory
+
 import Synfini.Onboarding.Scripts.Factory.Instrument
 import Synfini.Onboarding.Scripts.Types
-import Daml.Script
-import DA.Foldable (forA_)
+
+import Synfini.Interface.Onboarding.Issuer.Token.Factory qualified as TokenIssuerFactory
 
 data IssuerSettings = IssuerSettings
   with

@@ -1,10 +1,13 @@
 module Synfini.Onboarding.Scripts.Factory.Instrument where
 
-import qualified Daml.Finance.Instrument.Token.Factory as TokenImpl
 import Daml.Script
-import qualified Synfini.Instrument.PartyBoundAttributes.Factory as PbaImpl
+
+import Daml.Finance.Instrument.Token.Factory qualified as TokenImpl
+
 import Synfini.Onboarding.Scripts.Types
-import qualified Synfini.Onboarding.Issuer.Token as TokenIssuerImpl
+
+import Synfini.Instrument.PartyBoundAttributes.Factory qualified as PbaImpl
+import Synfini.Onboarding.Issuer.Token qualified as TokenIssuerImpl
 
 data InstrumentFactorySettings = InstrumentFactorySettings
   with

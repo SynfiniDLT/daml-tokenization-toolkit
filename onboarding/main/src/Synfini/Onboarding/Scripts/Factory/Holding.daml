@@ -1,13 +1,18 @@
 module Synfini.Onboarding.Scripts.Factory.Holding where
 
-import qualified Daml.Finance.Holding.Fungible as FungibleImpl
-import qualified Daml.Finance.Holding.NonFungible as NonFungibleImpl
-import qualified Daml.Finance.Holding.NonTransferable as NonTranferableImpl
-import qualified Daml.Finance.Interface.Holding.Factory as Holding
-import qualified Synfini.TrackableHolding.Fungible as TrackableFungibleImpl
+import DA.Set qualified as Set
+
 import Daml.Script
+
+import Daml.Finance.Holding.Fungible qualified as FungibleImpl
+import Daml.Finance.Holding.NonFungible qualified as NonFungibleImpl
+import Daml.Finance.Holding.NonTransferable qualified as NonTranferableImpl
+
+import Daml.Finance.Interface.Holding.Factory qualified as Holding
+
 import Synfini.Onboarding.Scripts.Types
-import qualified DA.Set as Set
+
+import Synfini.TrackableHolding.Fungible qualified as TrackableFungibleImpl
 
 data HoldingFactorySettings = HoldingFactorySettings
   with
