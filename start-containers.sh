@@ -1,14 +1,10 @@
 #!/bin/bash
 
+ENV=$DEPLOYMENT_GROUP_NAME
+VERSION=$(xml_grep --text_only '/project/version' pom.xml)
 
-#export VERSION=$(xml_grep --text_only '/project/version' wallet-views/java/pom.xml)
-export VERSION=0.0.2
-export ENV=dev
-
-
-echo ${ENV}
-echo ${VERSION}
-
+echo "ENV = ${ENV}"
+echo "VERSION = ${VERSION}"
 
 aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 115676289457.dkr.ecr.ap-southeast-2.amazonaws.com
 

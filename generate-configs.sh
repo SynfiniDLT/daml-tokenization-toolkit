@@ -1,11 +1,10 @@
 #!/bin/bash
 
-#export VERSION=$(xml_grep --text_only '/project/version' wallet-views/java/pom.xml)
-export VERSION=0.0.2
-export ENV=dev
+ENV=$DEPLOYMENT_GROUP_NAME
+VERSION=$(xml_grep --text_only '/project/version' pom.xml)
 
-echo ${ENV}
-echo ${VERSION}
+echo "ENV = ${ENV}"
+echo "VERSION = ${VERSION}"
 
 s3_url_be="s3://dlts-artifacts/synfini-wallet-app/${ENV}/${VERSION}/application.properties /opt/app/config/${ENV}/${VERSION}"
 s3_url_fe_investor="s3://dlts-artifacts/synfini-wallet-app/${ENV}/${VERSION}/.env.investor /opt/app/config/${ENV}/${VERSION}"
