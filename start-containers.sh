@@ -1,5 +1,10 @@
 #!/bin/bash
 
+
+export VERSION=$(xml_grep --text_only '/project/version' wallet-views/java/pom.xml)
+export ENV=dev
+
+
 echo ${ENV}
 echo ${VERSION}
 
