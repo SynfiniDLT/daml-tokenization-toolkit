@@ -10,11 +10,13 @@ docker pull 115676289457.dkr.ecr.ap-southeast-2.amazonaws.com/synfini-wallet-be:
 
 docker pull 115676289457.dkr.ecr.ap-southeast-2.amazonaws.com/synfini-wallet-fe:${VERSION}
 
-docker rm -f synfini-wallet-backend
+docker rm -f synfini-wallet-backend 2>/dev/null || true
 
-docker rm -f synfini-wallet-frontend-investor
+docker rm -f synfini-wallet-frontend 2>/dev/null || true
 
-docker rm -f synfini-wallet-frontend-issuer
+docker rm -f synfini-wallet-frontend-investor 2>/dev/null || true
+
+docker rm -f synfini-wallet-frontend-issuer 2>/dev/null || true
 
 
 docker run -v /opt/app/config/${ENV}/${VERSION} -p 8091:8091 --name synfini-wallet-backend --rm -d -it 115676289457.dkr.ecr.ap-southeast-2.amazonaws.com/synfini-wallet-be:${VERSION}
