@@ -15,6 +15,7 @@ account_onboarding_open_offer_dar = $(build_dir)/account-onboarding-open-offer.d
 issuer_onboarding_token_interface_dar = $(build_dir)/issuer-onboarding-token-interface.dar
 issuer_onboarding_token_dar = $(build_dir)/issuer-onboarding-token.dar
 onboarding_scripts_dar = $(build_dir)/tokenization-onboarding.dar
+primary_issuance_one_time_offer_interface = $(build_dir)/primary-issuance-one-time-offer-interface.dar
 pbt_dar = $(build_dir)/pbt.dar
 pbt_interface_dar = $(build_dir)/pbt-interface.dar
 wallet_views_types_dar = $(build_dir)/daml-wallet-views-types.dar
@@ -55,6 +56,10 @@ $(trackable_settlement_dar): $(daml_finance_dir) $(shell ./find-daml-project-fil
 	cd trackable-settlement/main && daml build -o $(proj_root)/$(trackable_settlement_dar)
 
 ## BEGIN mint
+$(primary_issuance_one_time_offer_interface): $(daml_finance_dir) \
+  $(shell ./find-daml-project-files.sh primary-issuance/one-time-offer-interface)
+	cd primary-issuance/one-time-offer-interface && daml build -o $(proj_root)/$(primary_issuance_one_time_offer_interface)
+
 .build/daml-mint.dar: $(daml_finance_dir) $(util_dar) $(shell ./find-daml-project-files.sh mint/main)
 	cd mint/main && daml build -o $(proj_root)/.build/daml-mint.dar
 

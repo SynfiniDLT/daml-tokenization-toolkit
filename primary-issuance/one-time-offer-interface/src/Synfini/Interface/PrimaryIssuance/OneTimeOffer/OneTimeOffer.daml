@@ -1,0 +1,43 @@
+module Synfini.Interface.PrimaryIssuance.OneTimeOffer.OneTimeOffer where
+
+import Daml.Finance.Interface.Types.Common.Types
+import DA.Set (Set)
+import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
+import qualified Daml.Finance.Interface.Settlement.RouteProvider as RouteProvider
+
+-- | Describes a payment from the buyer to the payee, required per unit of the instrument to be purchased
+data Payment = Payment
+  with
+    payee : Party
+    quantity : InstrumentQuantity
+  deriving (Show, Eq)
+
+data Receiver = Buyer | OtherReceiver Party deriving (Show, Eq)
+
+data Delivery = Delivery
+  with
+    sender : Party
+    receiver : Receiver
+    quantity : InstrumentQuantity
+  deriving (Show, Eq)
+
+data View = View
+  with
+    id : Id
+    instrument : InstrumentKey
+    payments : [Payment]
+    deliveries : [Delivery]
+    routeProviderCid : ContractId RouteProvider.I
+    settlementFactoryCid : ContractId SettlementFactory.I
+  deriving (Show, Eq)
+
+type V = View
+
+interface OneTimeOffer where
+  viewtype V
+
+  choice RequestIssuance : ()
+    with
+      receiver : Party
+      id : Id
+      
