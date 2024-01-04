@@ -71,13 +71,23 @@ curl http://localhost:${WALLET_VIEWS_PORT}/wallet-views/v1/projection/start \
   "
 sleep 15s
 
+# Factories
 dops create-users test-config/users.json
 dops create-holding-factories test-config/holding-factories.json
 dops create-account-factories test-config/account-factories.json
 dops create-account-open-offer-factories test-config/account-open-offer-factories.json
+dops create-settlement-factories test-config/settlement-factories.json
+dops create-instrument-factories test-config/instrument-factories.json
+dops create-issuer-factories test-config/issuer-factories.json
+
+# Accounts
 dops create-account-open-offers test-config/account-open-offers.json
 dops create-accounts-unilateral test-config/accounts.json
-dops create-settlement-factories test-config/settlement-factories.json
+
+# Instrument
+dops create-issuers test-config/issuers.json
+
+# Mint
 dops create-mint-unilateral test-config/mint.json
 dops create-mint-receivers test-config/mint-receivers.json
 instruct_mint_output_file=$(mktemp)

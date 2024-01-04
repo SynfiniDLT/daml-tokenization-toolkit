@@ -92,3 +92,10 @@ test('Returns account open offers', async () => {
   const offer = resp.accountOpenOffers[0];
   expect(offer.view.custodian).toEqual(custodian);
 });
+
+test('Returns issuers', async () => {
+  const resp = await aliceClient.getIssuers({ depository, issuer });
+  expect(resp.issuers.length).toEqual(1);
+  const issuerSummary = resp.issuers[0];
+  expect(issuerSummary.token?.view.issuer).toEqual(issuer);
+});
