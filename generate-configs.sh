@@ -1,8 +1,7 @@
 #!/bin/bash
 
 ENV=$DEPLOYMENT_GROUP_NAME
-#VERSION=$(xml_grep --text_only '/project/version' /home/ec2-user/wallet-app-deploy/wallet-views/java/pom.xml)
-VERSION=0.0.2
+VERSION=$(xml_grep --text_only '/project/version' /home/ec2-user/wallet-app-deploy/wallet-views/java/pom.xml)
 
 echo "ENV = ${ENV}"
 echo "VERSION = ${VERSION}"
