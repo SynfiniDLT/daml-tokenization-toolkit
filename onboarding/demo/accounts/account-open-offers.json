@@ -1,0 +1,40 @@
+{
+  "offerSettings": [
+    {
+      "label": "AccountOffer01",
+      "custodian": "SynfiniValidator",
+      "additionalIncomingControllers": [],
+      "additionalOutgoingControllers": [],
+      "ownerIncomingControlled": false,
+      "ownerOutgoingControlled": true,
+      "accountFactory": "v1",
+      "holdingFactory": "FungibleV1",
+      "description": "Account Offer 01",
+      "observers": [
+        {
+          "context": "o",
+          "parties": ["Synfini_Public","WalletOperator"]
+        }
+      ],
+      "accountOpenOfferFactory": "v1"
+    },
+    {
+      "label": "AccountOffer02",
+      "custodian": "SynfiniValidator",
+      "additionalIncomingControllers": [],
+      "additionalOutgoingControllers": [],
+      "ownerIncomingControlled": false,
+      "ownerOutgoingControlled": true,
+      "accountFactory": "v1",
+      "holdingFactory": "FungibleV1",
+      "description": "Account Offer 02",
+      "observers": [
+        {
+          "context": "o",
+          "parties": ["Synfini_Public","WalletOperator"]
+        }
+      ],
+      "accountOpenOfferFactory": "v1"
+    }
+  ]
+}

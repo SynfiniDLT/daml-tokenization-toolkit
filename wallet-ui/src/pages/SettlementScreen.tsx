@@ -10,7 +10,8 @@ import { SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfi
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
 const SettlementScreen: React.FC = () => {
-  const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
+  //const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
+  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 

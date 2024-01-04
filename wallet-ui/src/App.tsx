@@ -14,8 +14,9 @@ import AccountBalanceSbtScreen from "./pages/AccountBalanceSbtScreen";
 import WalletScreen from "./pages/WalletScreen";
 import { FundSubscribeFormScreen } from "./pages/FundSubscribeFormScreen";
 import BalanceRedeemFormScreen from "./pages/BalanceRedeemFormScreen";
+import AccountOfferScreen from "./pages/AccountOfferScreen";
+import AssetCreateScreen from "./pages/AssetCreateScreen";
 
-// Context for the party of the user.
 export const userContext = createLedgerContext();
 
 const App: React.FC = () => {
@@ -24,6 +25,18 @@ const App: React.FC = () => {
   const [token, setToken] = useState<string>("");
   const [primaryParty, setPrimaryParty] = useState<string>('');
   const [readOnly, setReadOnly] = useState<boolean>(false);
+  const walletMode = process.env.REACT_APP_MODE || "";
+  const modeStyle = {
+    backgroundColor:
+      walletMode === 'investor'
+        ? 'var(--black)'
+        : walletMode === 'issuer'
+        ? 'var(--issuer)' 
+        : walletMode === 'fund'
+        ? 'var(--fund)' 
+        : 'var(--black)',
+  };
+
 
   const fetchToken = async () => {
     const authToken = await getAccessTokenSilently();
@@ -44,18 +57,51 @@ const App: React.FC = () => {
   return (
     <AuthContextStore.Provider value={{token: token, setPrimaryParty: setPrimaryParty, primaryParty: primaryParty, readOnly: readOnly}}>
       <userContext.DamlLedger token={token} party={primaryParty} >
+      <style>
+      {`
+          body { background-color: ${modeStyle.backgroundColor}; }
+          .nav-bar__container { background-color: ${modeStyle.backgroundColor}; }
+          .page-footer { background-color: ${modeStyle.backgroundColor}; }
+      `}
+      </style>
       <Routes>
-          {isAuthenticated ? <Route path="/" element={<AuthenticationGuard component={WalletScreen} />} /> : <Route path="/" element={<HomeScreen />} />}
-          
-          <Route path="/wallet" element={<AuthenticationGuard component={WalletScreen} />} />
-          <Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />
-          <Route path="/wallet/account/balance/sbt" element={<AuthenticationGuard component={AccountBalanceSbtScreen} />} />
-          <Route path="/wallet/account/balance/redeem" element={<AuthenticationGuard component={BalanceRedeemFormScreen} />} />
-          <Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />
-          <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
-          <Route path="/fund" element={<AuthenticationGuard component={FundScreen} />} />
-          <Route path="/fund/subscribe" element={<AuthenticationGuard component={FundSubscribeFormScreen} />} />
-          
+        {isAuthenticated ? (
+          walletMode===("investor") ? (
+            <>
+              <Route path="/" element={<AuthenticationGuard component={WalletScreen} />} />
+              <Route path="/wallet" element={<AuthenticationGuard component={WalletScreen} />} />
+              <Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />
+              <Route path="/wallet/account/balance/sbt" element={<AuthenticationGuard component={AccountBalanceSbtScreen} />} />
+              <Route path="/wallet/account/balance/redeem" element={<AuthenticationGuard component={BalanceRedeemFormScreen} />} />
+              <Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />
+              <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
+              <Route path="/fund" element={<AuthenticationGuard component={FundScreen} />} />
+              <Route path="/fund/subscribe" element={<AuthenticationGuard component={FundSubscribeFormScreen} />} />
+              <Route path="/account/create" element={<AuthenticationGuard component={AccountOfferScreen} />} />
+            </>
+          ) : walletMode===("fund") ? (
+            <>
+              <Route path="/" element={<AuthenticationGuard component={HomeScreen} />} />
+              <Route path="/wallet" element={<AuthenticationGuard component={WalletScreen} />} />
+              <Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />
+              <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
+              <Route path="/funds" element={<AuthenticationGuard component={HomeScreen} />} />
+              <Route path="/asset/create" element={<AuthenticationGuard component={AssetCreateScreen} />} />
+            </>
+          ) : walletMode===("issuer") ? (
+            <>
+              <Route path="/" element={<AuthenticationGuard component={HomeScreen} />} />
+              <Route path="/wallet" element={<AuthenticationGuard component={WalletScreen} />} />
+              <Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />
+              <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
+              <Route path="/asset/create" element={<AuthenticationGuard component={AssetCreateScreen} />} />
+            </>
+          ) : (
+            <></>
+          )
+        ) : (
+          <Route path="/" element={<HomeScreen />} />
+        )}
       </Routes>
       </userContext.DamlLedger>
     </AuthContextStore.Provider>

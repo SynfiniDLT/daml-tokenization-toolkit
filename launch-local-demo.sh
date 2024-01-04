@@ -65,6 +65,7 @@ dops create-account-factories onboarding/demo/factories/demo-account-factories-i
 dops create-holding-factories onboarding/demo/factories/demo-holding-factories-input.json
 dops create-settlement-factories onboarding/demo/factories/demo-settlement-factories-input.json
 dops create-instrument-factories onboarding/demo/factories/demo-instrument-factories-input.json
+dops create-account-open-offer-factories onboarding/demo/factories/account-open-offer-factories.json
 
 # Accounts
 dops create-accounts-unilateral onboarding/demo/accounts/demo-accounts-input.json
@@ -73,6 +74,9 @@ dops create-accounts-unilateral onboarding/demo/accounts/demo-fund-account-input
 dops create-accounts-unilateral onboarding/demo/accounts/demo-fund-investor-account-input.json
 dops create-accounts-unilateral onboarding/demo/accounts/demo-fund-units-accounts-input.json
 dops create-accounts-unilateral onboarding/demo/accounts/demo-sbt-accounts-input.json
+
+# Account Offer
+dops create-account-open-offers onboarding/demo/accounts/account-open-offers.json
 
 # AUDN
 dops create-mint-unilateral onboarding/demo/audn/demo-mint-input.json

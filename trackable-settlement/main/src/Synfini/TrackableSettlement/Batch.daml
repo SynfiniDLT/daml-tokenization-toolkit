@@ -21,11 +21,11 @@ template Batch
       view = view @Batch.I (toInterface defaultBatch)
       settle args = do
         checkVisiblityOfInstructions this
-        Batch.settle (toInterface this) args
+        Batch.settle (toInterface defaultBatch) args
 
       cancel args = do
         checkVisiblityOfInstructions this
-        Batch.cancel (toInterface this) args
+        Batch.cancel (toInterface defaultBatch) args
 
 checkVisiblityOfInstructions : Batch -> Update ()
 checkVisiblityOfInstructions Batch { defaultBatch, trackers } = do
