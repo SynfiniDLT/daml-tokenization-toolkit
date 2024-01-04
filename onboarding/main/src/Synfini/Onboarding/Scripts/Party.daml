@@ -1,10 +1,12 @@
 module Synfini.Onboarding.Scripts.Party where
 
-import Daml.Script
-import Synfini.Onboarding.Scripts.Types
-import qualified DA.Set as Set
-import DA.Action (when)
 import DA.Foldable (forA_)
+
+import DA.Set qualified as Set
+
+import Daml.Script
+
+import Synfini.Onboarding.Scripts.Types
 
 data PartySettings = PartySettings
   with

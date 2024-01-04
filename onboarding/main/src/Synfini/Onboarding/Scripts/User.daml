@@ -1,12 +1,10 @@
 module Synfini.Onboarding.Scripts.User where
 
-import Synfini.Onboarding.Scripts.Types
-import Daml.Script
-import DA.Map (Map)
-import qualified DA.Map as Map
-import qualified DA.Set as Set
 import DA.Foldable (forA_)
-import qualified DA.Optional as O
+
+import Daml.Script
+
+import Synfini.Onboarding.Scripts.Types
 
 data UserSettings = UserSettings
   with

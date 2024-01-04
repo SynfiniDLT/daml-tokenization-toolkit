@@ -1,15 +1,16 @@
 module Synfini.Onboarding.Scripts.Factory.Account where
 
-import qualified Daml.Finance.Interface.Account.Factory as Account
-import qualified Daml.Finance.Account.Account as AccountImpl
-import Synfini.Onboarding.Scripts.Party
-import Synfini.Onboarding.Scripts.Types
-import qualified Synfini.Interface.Onboarding.Account.OpenOffer.Factory as AccountOpenOfferFactory
-import qualified Synfini.Onboarding.Account.OpenOffer as AccountOpenOfferFactoryImpl
-import DA.Map (Map)
 import Daml.Script
-import qualified DA.Map as Map
-import qualified DA.Set as Set
+
+import Daml.Finance.Account.Account qualified as AccountImpl
+
+import Daml.Finance.Interface.Account.Factory qualified as Account
+
+import Synfini.Onboarding.Scripts.Types
+
+import Synfini.Onboarding.Account.OpenOffer qualified as AccountOpenOfferFactoryImpl
+
+import Synfini.Interface.Onboarding.Account.OpenOffer.Factory qualified as AccountOpenOfferFactory
 
 data AccountFactorySettings = AccountFactorySettings
   with

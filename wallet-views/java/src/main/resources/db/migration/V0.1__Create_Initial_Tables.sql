@@ -203,3 +203,26 @@ CREATE TABLE instrument_witnesses
   party VARCHAR NOT NULL,
   PRIMARY KEY (cid, party)
 );
+
+CREATE TABLE token_instrument_issuers
+(
+  cid VARCHAR NOT NULL,
+  issuer VARCHAR NOT NULL,
+  depository VARCHAR NOT NULL,
+  instrument_factory_cid VARCHAR NOT NULL,
+  create_offset VARCHAR,
+  create_effective_time TIMESTAMP,
+  archive_offset VARCHAR,
+  archive_effective_time TIMESTAMP,
+  PRIMARY KEY (cid)
+);
+
+CREATE INDEX token_instrument_issuers_issuer_index ON token_instrument_issuers (issuer);
+CREATE INDEX token_instrument_issuers_depository_index ON token_instrument_issuers (depository);
+
+CREATE TABLE token_instrument_issuer_witnesses
+(
+  cid VARCHAR NOT NULL,
+  party VARCHAR NOT NULL,
+  PRIMARY KEY (cid, party)
+);

@@ -17,3 +17,4 @@ data-dependencies:
 
   - ../../.build/pbt-interface.dar
   - ../../.build/account-onboarding-open-offer-interface.dar
+  - ../../.build/issuer-onboarding-token-interface.dar

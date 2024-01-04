@@ -8,11 +8,9 @@ import com.daml.projection.*;
 import com.daml.projection.javadsl.BatchSource;
 import com.synfini.wallet.views.Util;
 import com.synfini.wallet.views.projection.ProjectionGenerator;
-import com.synfini.wallet.views.projection.events.AccountEvent;
 import com.synfini.wallet.views.projection.events.AccountOpenOfferEvent;
-import daml.finance.interface$.account.account.Account;
-import synfini.interface$.onboarding.account.openoffer.openoffer.View;
 import synfini.interface$.onboarding.account.openoffer.openoffer.OpenOffer;
+import synfini.interface$.onboarding.account.openoffer.openoffer.View;
 
 import java.sql.Connection;
 import java.util.Collections;

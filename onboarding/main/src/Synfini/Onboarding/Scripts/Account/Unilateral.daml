@@ -1,16 +1,20 @@
 module Synfini.Onboarding.Scripts.Account.Unilateral where
 
-import Synfini.Onboarding.Scripts.Types
+import DA.Foldable qualified as F
+import DA.Map qualified as Map
+import DA.Optional qualified as O
+import DA.Set qualified as Set
+
+import Daml.Script
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Account.Account qualified as Account
+import Daml.Finance.Interface.Account.Factory qualified as Account
+
 import Synfini.Onboarding.Scripts.Factory.Account
 import Synfini.Onboarding.Scripts.Factory.Holding
-import qualified DA.Map as Map
-import Daml.Script
-import qualified DA.Optional as O
-import qualified Daml.Finance.Interface.Account.Account as Account
-import qualified Daml.Finance.Interface.Account.Factory as Account
-import qualified DA.Set as Set
-import Daml.Finance.Interface.Types.Common.Types
-import qualified DA.Foldable as F
+import Synfini.Onboarding.Scripts.Types
 
 data AccountSettings = AccountSettings
   with

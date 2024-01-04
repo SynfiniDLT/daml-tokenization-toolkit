@@ -5,7 +5,8 @@
       "provider": "SynfiniValidator",
       "observers": [
         "Synfini_Public"
-      ]
+      ],
+      "settlementTrackers": ["WalletOperator"]
     }
   ]
 }

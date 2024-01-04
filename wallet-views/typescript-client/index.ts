@@ -10,7 +10,9 @@ import {
   InstrumentsFilter,
   Instruments,
   AccountOpenOffersFilter,
-  AccountOpenOffers
+  AccountOpenOffers,
+  IssuersFilter,
+  Issuers
 } from '@daml.js/daml-wallet-views-types/lib/Synfini/Wallet/Api/Types';
 import fetch from 'cross-fetch';
 
@@ -56,6 +58,11 @@ export class WalletViewsClient {
   async getInstruments(filter: InstrumentsFilter): Promise<Instruments> {
     const json = await this.post("/instruments", InstrumentsFilter.encode(filter));
     return await Instruments.decoder.runPromise(json);
+  }
+
+  async getIssuers(filter: IssuersFilter): Promise<Issuers> {
+    const json = await this.post("/issuers", IssuersFilter.encode(filter));
+    return await Issuers.decoder.runPromise(json);
   }
 
   private async post(endpoint: string, requestBody: any): Promise<any> {

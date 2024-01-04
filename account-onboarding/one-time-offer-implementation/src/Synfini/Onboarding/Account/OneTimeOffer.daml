@@ -1,14 +1,18 @@
 module Synfini.Onboarding.Account.OneTimeOffer where
 
+import DA.Set qualified as Set
+
 import Daml.Finance.Interface.Types.Common.Types
-import qualified Daml.Finance.Interface.Account.Account as Account
-import qualified Daml.Finance.Interface.Account.Factory as Account
-import qualified Daml.Finance.Interface.Holding.Factory as Holding
-import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
-import qualified Daml.Finance.Util.Disclosure as ImplUtil
-import qualified DA.Set as Set
-import qualified Synfini.Interface.Onboarding.Account.OneTimeOffer.OneTimeOffer as OneTimeOffer
-import qualified Synfini.Interface.Onboarding.Account.OneTimeOffer.Factory as OneTimeOfferFactory
+
+import Daml.Finance.Interface.Account.Account qualified as Account
+import Daml.Finance.Interface.Account.Factory qualified as Account
+import Daml.Finance.Interface.Holding.Factory qualified as Holding
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Daml.Finance.Util.Disclosure qualified as ImplUtil
+
+import Synfini.Interface.Onboarding.Account.OneTimeOffer.Factory qualified as OneTimeOfferFactory
+import Synfini.Interface.Onboarding.Account.OneTimeOffer.OneTimeOffer qualified as OneTimeOffer
 
 template OneTimeOffer
   with

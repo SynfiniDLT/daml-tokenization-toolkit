@@ -1,10 +1,12 @@
 module Synfini.Onboarding.Scripts.Types where
 
-import Daml.Finance.Interface.Types.Common.Types
-import qualified DA.Map as Map
 import DA.Map (Map)
-import qualified DA.Set as Set
-import qualified DA.Optional as O
+
+import DA.Map qualified as Map
+import DA.Optional qualified as O
+import DA.Set qualified as Set
+
+import Daml.Finance.Interface.Types.Common.Types
 
 data PartyInfo = PartyInfo
   with

@@ -18,6 +18,7 @@ import com.synfini.wallet.views.projection.generators.instruction.InstructionExe
 import com.synfini.wallet.views.projection.generators.instruction.InstructionsProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.instrument.PbaProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.instrument.TokenProjectionGenerator;
+import com.synfini.wallet.views.projection.generators.issuer.TokenIssuerProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.witness.WitnessProjectionGenerator;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -89,7 +90,7 @@ public class ProjectionRunner implements Callable<Integer> {
     dbConfig.setJdbcUrl(springDbConfig.url);
     dbConfig.setUsername(springDbConfig.user);
     dbConfig.setPassword(springDbConfig.password);
-    dbConfig.setMaximumPoolSize(26); // TODO this should be set based on the number projections (e.g. 2 * numProjections)
+    dbConfig.setMaximumPoolSize(28); // TODO this should be set based on the number projections (e.g. 2 * numProjections)
 
     final Optional<SharedTokenCallCredentials> tokenCreds;
     if (tokenUrl.isPresent()) {
@@ -184,6 +185,15 @@ public class ProjectionRunner implements Callable<Integer> {
         "pba_instruments",
         synfini.interface$.instrument.partyboundattributes.instrument.Instrument.INTERFACE,
         "instrument_witnesses"
+      ),
+
+      // Issuers
+      new TokenIssuerProjectionGenerator(readAs),
+      new WitnessProjectionGenerator(
+        readAs,
+        "token_issuer",
+        synfini.interface$.onboarding.issuer.token.issuer.Issuer.INTERFACE,
+        "token_instrument_issuer_witnesses"
       )
     );
 

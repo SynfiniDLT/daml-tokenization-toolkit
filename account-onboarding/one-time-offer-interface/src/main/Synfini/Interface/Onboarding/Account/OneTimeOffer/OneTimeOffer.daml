@@ -1,10 +1,11 @@
 module Synfini.Interface.Onboarding.Account.OneTimeOffer.OneTimeOffer where
 
 import Daml.Finance.Interface.Types.Common.Types
-import qualified Daml.Finance.Interface.Account.Account as Account
-import qualified Daml.Finance.Interface.Account.Factory as Account
-import qualified Daml.Finance.Interface.Holding.Factory as Holding
-import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
+
+import Daml.Finance.Interface.Account.Account qualified as Account
+import Daml.Finance.Interface.Account.Factory qualified as Account
+import Daml.Finance.Interface.Holding.Factory qualified as Holding
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
 data View = View
   with
@@ -25,6 +26,15 @@ interface OneTimeOffer requires Disclosure.I where
   accept : Update (ContractId Account.I)
 
   decline : Update ()
+
+  nonconsuming choice GetView : View
+    -- ^ Retrieves the interface view.
+    with
+      viewer : Party
+        -- ^ The party fetching the view.
+    controller viewer
+    do
+      pure $ view this
 
   choice Accept : ContractId Account.I
     controller (view this).account.owner

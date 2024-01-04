@@ -11,5 +11,6 @@ data-dependencies:
   - ../../.lib/daml-finance-interface-types-common.dar
   - ../../.lib/daml-finance-interface-settlement.dar
   - ../../.lib/daml-finance-interface-util.dar
+
   - ../../.lib/daml-finance-settlement.dar
   - ../../.lib/daml-finance-util.dar
