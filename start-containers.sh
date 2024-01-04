@@ -22,7 +22,7 @@ docker rm -f synfini-wallet-frontend-investor 2>/dev/null || true
 docker rm -f synfini-wallet-frontend-issuer 2>/dev/null || true
 
 
-docker run -v /opt/app/config/${ENV}/${VERSION} -p 8091:8091 --name synfini-wallet-backend --rm -d -it 115676289457.dkr.ecr.ap-southeast-2.amazonaws.com/synfini-wallet-be:${VERSION}
+docker run -v /opt/app/config/${ENV}/${VERSION}:/app/config -p 8091:8091 --name synfini-wallet-backend --rm -d -it 115676289457.dkr.ecr.ap-southeast-2.amazonaws.com/synfini-wallet-be:${VERSION}
 
 docker run -v /opt/app/config/${ENV}/${VERSION}/.env.investor:/wallet-ui/.env -p 8090:8090 --name synfini-wallet-frontend-investor --rm -d -it 115676289457.dkr.ecr.ap-southeast-2.amazonaws.com/synfini-wallet-fe:${VERSION}
 
