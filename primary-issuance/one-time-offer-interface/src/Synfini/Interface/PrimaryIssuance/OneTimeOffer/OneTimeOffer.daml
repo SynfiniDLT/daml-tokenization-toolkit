@@ -1,11 +1,13 @@
 module Synfini.Interface.PrimaryIssuance.OneTimeOffer.OneTimeOffer where
 
 import Daml.Finance.Interface.Types.Common.Types
-import DA.Set (Set)
 import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
 import qualified Daml.Finance.Interface.Settlement.RouteProvider as RouteProvider
+import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
+import DA.Set (Set)
 
--- | Describes a payment from the buyer to the payee, required per unit of the instrument to be purchased
+-- | Describes a payment from the receiver of the issued units, to the payee, required per unit of the instrument issued
+-- instrument.
 data Payment = Payment
   with
     payee : Party
@@ -24,20 +26,41 @@ data Delivery = Delivery
 data View = View
   with
     id : Id
-    instrument : InstrumentKey
+    description : Text
+    custodian : Party
+    issuer : Party
+    approver : Party
+    receiver : Party
+    revokers : Set Party
     payments : [Payment]
     deliveries : [Delivery]
-    routeProviderCid : ContractId RouteProvider.I
+    minIssuance : Optional Decimal
+    maxIssuance :  Optional Decimal
+    paymentRouteProviderCid : ContractId RouteProvider.I
     settlementFactoryCid : ContractId SettlementFactory.I
   deriving (Show, Eq)
 
 type V = View
 
-interface OneTimeOffer where
+interface OneTimeOffer requires Disclosure.I where
   viewtype V
 
-  choice RequestIssuance : ()
+  accept : Accept -> Update ()
+
+  revoke : Revoke -> Update ()
+
+  choice Accept : ()
     with
-      receiver : Party
       id : Id
-      
+      description : Text
+      amount : Decimal
+    controller (view this).receiver
+    do
+      accept this arg
+
+  choice Revoke : ()
+    with
+      revoker : Party
+    controller revoker
+    do
+      revoke this arg
