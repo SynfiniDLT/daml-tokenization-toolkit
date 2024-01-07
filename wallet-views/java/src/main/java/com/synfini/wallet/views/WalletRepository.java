@@ -24,6 +24,7 @@ import daml.finance.interface$.types.common.types.Quantity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
@@ -193,69 +194,53 @@ public class WalletRepository {
   public List<InstrumentSummary> instruments(
     String depository,
     String issuer,
-    Id id,
+    Optional<Id> id,
     Optional<String> version,
     List<String> readAs
   ) {
-    // TODO clean up duplicated code here
-    final var instruments = jdbcTemplate.query(
-    "SELECT DISTINCT ON (instrument_depository, instrument_issuer, instrument_id, instrument_version)\n" +
+    final var commonSelect = "SELECT DISTINCT ON (instrument_depository, instrument_issuer, instrument_id, instrument_version)\n" +
       "  t.cid cid,\n" +
       "  t.instrument_depository instrument_depository,\n" +
       "  t.instrument_issuer instrument_issuer,\n" +
       "  t.instrument_id instrument_id,\n" +
       "  t.instrument_version instrument_version,\n" +
       "  t.description description,\n" +
-      "  t.valid_as_of valid_as_of\n" +
-      "FROM token_instruments t INNER JOIN instrument_witnesses ON t.cid = instrument_witnesses.cid\n" +
-      "WHERE\n" +
+      "  t.valid_as_of valid_as_of";
+    final var commonWhereOrder = "WHERE\n" +
       "  instrument_witnesses.party = ANY(?) AND\n" +
       "  t.instrument_depository = ? AND\n" +
       "  t.instrument_issuer = ? AND\n" +
-      "  t.instrument_id = ? AND\n" +
+      "  (? IS NULL OR t.instrument_id = ?) AND\n" +
       "  (? IS NULL OR t.instrument_version = ?) AND\n" +
       "  t.archive_offset IS NULL\n" +
-      "ORDER BY instrument_depository, instrument_issuer, instrument_id, instrument_version",
-      ps -> {
-        ps.setArray(1, asSqlArray(readAs));
-        ps.setString(2, depository);
-        ps.setString(3, issuer);
-        ps.setString(4, id.unpack);
-        ps.setString(5, version.orElse(null));
-        ps.setString(6, version.orElse(null));
-      },
+      "ORDER BY instrument_depository, instrument_issuer, instrument_id, instrument_version";
+    final PreparedStatementSetter commonSetVars = ps -> {
+      ps.setArray(1, asSqlArray(readAs));
+      ps.setString(2, depository);
+      ps.setString(3, issuer);
+      final var idStr = id.map(i -> i.unpack).orElse(null);
+      ps.setString(4, idStr);
+      ps.setString(5, idStr);
+      final var versionStr = version.orElse(null);
+      ps.setString(6, versionStr);
+      ps.setString(7, versionStr);
+    };
+    final var instruments = jdbcTemplate.query(
+    commonSelect + "\n" +
+      "FROM token_instruments t INNER JOIN instrument_witnesses ON t.cid = instrument_witnesses.cid\n" +
+      commonWhereOrder,
+      commonSetVars,
       new TokenInstrumentRowMapper()
     );
 
     instruments.addAll(
       jdbcTemplate.query(
-      "SELECT DISTINCT ON (instrument_depository, instrument_issuer, instrument_id, instrument_version)\n" +
-        "  t.cid cid,\n" +
-        "  t.instrument_depository instrument_depository,\n" +
-        "  t.instrument_issuer instrument_issuer,\n" +
-        "  t.instrument_id instrument_id,\n" +
-        "  t.instrument_version instrument_version,\n" +
-        "  t.description description,\n" +
-        "  t.valid_as_of valid_as_of,\n" +
+      commonSelect + ",\n" +
         "  t.owner AS owner,\n" +
         "  t.attributes attributes\n" +
         "FROM pba_instruments t INNER JOIN instrument_witnesses ON t.cid = instrument_witnesses.cid\n" +
-        "WHERE\n" +
-        "  instrument_witnesses.party = ANY(?) AND\n" +
-        "  t.instrument_depository = ? AND\n" +
-        "  t.instrument_issuer = ? AND\n" +
-        "  t.instrument_id = ? AND\n" +
-        "  (? IS NULL OR t.instrument_version = ?) AND\n" +
-        "  t.archive_offset IS NULL\n" +
-        "ORDER BY instrument_depository, instrument_issuer, instrument_id, instrument_version",
-        ps -> {
-          ps.setArray(1, asSqlArray(readAs));
-          ps.setString(2, depository);
-          ps.setString(3, issuer);
-          ps.setString(4, id.unpack);
-          ps.setString(5, version.orElse(null));
-          ps.setString(6, version.orElse(null));
-        },
+        commonWhereOrder,
+        commonSetVars,
         new PbtInstrumentRowMapper()
       )
     );

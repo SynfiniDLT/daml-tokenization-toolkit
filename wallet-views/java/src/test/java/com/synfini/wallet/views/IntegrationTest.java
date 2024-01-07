@@ -67,6 +67,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -1324,49 +1325,69 @@ public class IntegrationTest {
     startProjectionDaemon(investor1, investor1User);
     delayForProjectionToStart();
 
-    final var token = new Token(instrument1(), "my desc", Instant.EPOCH);
+    final var token1 = new Token(instrument1(), "my desc", Instant.EPOCH);
+    final var token2 = new Token(instrument2(), "my desc 2", Instant.EPOCH);
     final var obs = Collections.singletonMap("o", arrayToSet(investor1));
-    final var tokenCid = allPartiesLedgerClient
+    final var token1Cid = allPartiesLedgerClient
       .getCommandClient()
       .submitAndWaitForResult(
-        allPartiesUpdateSubmission(tokenInstrumentFactoryCid.exerciseCreate(token, obs))
+        allPartiesUpdateSubmission(tokenInstrumentFactoryCid.exerciseCreate(token1, obs))
+      ).blockingGet().exerciseResult;
+    final var token2Cid = allPartiesLedgerClient
+      .getCommandClient()
+      .submitAndWaitForResult(
+        allPartiesUpdateSubmission(tokenInstrumentFactoryCid.exerciseCreate(token2, obs))
       ).blockingGet().exerciseResult;
     delayForProjectionIngestion();
 
-    final var expectedInstruments = new Instruments(
-      List.of(
-        new InstrumentSummary(
-          new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(tokenCid.contractId),
-          Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token)),
-          Optional.empty()
-        )
-      )
+    final var instrument1Summary = new InstrumentSummary(
+      new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(token1Cid.contractId),
+      Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token1)),
+      Optional.empty()
+    );
+    final var instrument2Summary = new InstrumentSummary(
+      new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(token2Cid.contractId),
+      Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token2)),
+      Optional.empty()
     );
     mvc
       .perform(
         getInstrumentsBuilder(
-          token.instrument.depository,
-          token.instrument.issuer,
-          token.instrument.id,
-          Optional.of(token.instrument.version)
+          token1.instrument.depository,
+          token1.instrument.issuer,
+          Optional.of(token1.instrument.id),
+          Optional.of(token1.instrument.version)
         ).headers(userTokenHeader(investor1User))
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(expectedInstruments))
+        content().json(toJson(new Instruments(List.of(instrument1Summary))))
       );
     mvc
       .perform(
         getInstrumentsBuilder(
-          token.instrument.depository,
-          token.instrument.issuer,
-          token.instrument.id,
+          token1.instrument.depository,
+          token1.instrument.issuer,
+          Optional.of(token1.instrument.id),
           Optional.empty()
         ).headers(userTokenHeader(investor1User))
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(expectedInstruments))
+        content().json(toJson(new Instruments(List.of(instrument1Summary, instrument2Summary))))
+      );
+    mvc
+      .perform(
+        getInstrumentsBuilder(
+          token1.instrument.depository,
+          token1.instrument.issuer,
+          Optional.empty(),
+          Optional.empty()
+        ).headers(userTokenHeader(investor1User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(toJson(new Instruments(List.of(instrument1Summary, instrument2Summary))))
       );
   }
 
@@ -1399,7 +1420,7 @@ public class IntegrationTest {
         getInstrumentsBuilder(
           instr.depository,
           instr.issuer,
-          instr.id,
+          Optional.of(instr.id),
           Optional.of(instr.version)
         ).headers(userTokenHeader(investor1User))
       )
@@ -1725,7 +1746,7 @@ public class IntegrationTest {
   private static MockHttpServletRequestBuilder getInstrumentsBuilder(
     String dep,
     String iss,
-    Id id,
+    Optional<Id> id,
     Optional<String> version
   ) {
     return MockMvcRequestBuilders
