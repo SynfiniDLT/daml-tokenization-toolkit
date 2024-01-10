@@ -15,7 +15,8 @@ import WalletScreen from "./pages/WalletScreen";
 import { FundSubscribeFormScreen } from "./pages/FundSubscribeFormScreen";
 import BalanceRedeemFormScreen from "./pages/BalanceRedeemFormScreen";
 import AccountOfferScreen from "./pages/AccountOfferScreen";
-import AssetCreateScreen from "./pages/AssetCreateScreen";
+import IssuersScreen from "./pages/IssuersScreen";
+import { InstrumentCreateFormScreen } from "./pages/InstrumentCreateScreen";
 
 export const userContext = createLedgerContext();
 
@@ -86,15 +87,18 @@ const App: React.FC = () => {
               <Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />
               <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
               <Route path="/funds" element={<AuthenticationGuard component={HomeScreen} />} />
-              <Route path="/asset/create" element={<AuthenticationGuard component={AssetCreateScreen} />} />
+              {/* <Route path="/asset/create" element={<AuthenticationGuard component={AssetCreateScreen} />} /> */}
             </>
           ) : walletMode===("issuer") ? (
             <>
               <Route path="/" element={<AuthenticationGuard component={HomeScreen} />} />
               <Route path="/wallet" element={<AuthenticationGuard component={WalletScreen} />} />
+              <Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />
               <Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />
               <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
-              <Route path="/asset/create" element={<AuthenticationGuard component={AssetCreateScreen} />} />
+              <Route path="/issuers/" element={<AuthenticationGuard component={IssuersScreen} />} />
+              <Route path="/issuers/instrument/create" element={<AuthenticationGuard component={InstrumentCreateFormScreen} />} />
+              <Route path="/account/create" element={<AuthenticationGuard component={AccountOfferScreen} />} />
             </>
           ) : (
             <></>

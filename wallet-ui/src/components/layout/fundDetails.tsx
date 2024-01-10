@@ -34,7 +34,7 @@ export default function FundDetails(props: FundDetailsProps) {
   }, [location]);
 
   return (
-    <CardContainer>
+    <CardContainer pointer>
       <ContainerDiv id={props.fund.payload.fundManager}>
         <ContainerColumn>
           <ContainerColumnKey>Issuer:</ContainerColumnKey>

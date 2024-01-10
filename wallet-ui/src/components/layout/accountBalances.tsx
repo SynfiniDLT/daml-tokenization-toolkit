@@ -27,7 +27,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
       valueBalance.forEach((balance: any) => {
         const trAsset = (
           <tr key={balance.account.id.unpack}>
-            <td>account {balance.account.id.unpack} </td>
+            <td>{balance.account.id.unpack} </td>
             <td>
               {balance.instrument.id.unpack === "AUDN" && (
                 <>
@@ -35,7 +35,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
                   &nbsp;&nbsp;
                 </>
               )}
-              {balance.instrument.id.unpack}
+              <HoverPopUp triggerText={balance.instrument.id.unpack} popUpContent={balance.instrument.version} />
             </td>
             <td>{keyAccount.view.description} </td>
             <td><HoverPopUp triggerText={nameFromParty(balance.instrument.issuer)} popUpContent={balance.instrument.issuer} /></td>

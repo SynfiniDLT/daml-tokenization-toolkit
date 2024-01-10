@@ -66,6 +66,7 @@ dops create-holding-factories onboarding/demo/factories/demo-holding-factories-i
 dops create-settlement-factories onboarding/demo/factories/demo-settlement-factories-input.json
 dops create-instrument-factories onboarding/demo/factories/demo-instrument-factories-input.json
 dops create-account-open-offer-factories onboarding/demo/factories/account-open-offer-factories.json
+dops create-issuer-factories  onboarding/demo/factories/demo-issuer-factories-input.json
 
 # Accounts
 dops create-accounts-unilateral onboarding/demo/accounts/demo-accounts-input.json
@@ -100,5 +101,8 @@ instruct_fund_mint_output_file=$(mktemp)
 dops instruct-mint onboarding/demo/fund/demo-fund-instruct-mint.json --output-file $instruct_fund_mint_output_file
 dops execute-mint onboarding/demo/fund/demo-execute-fund-mint-input.json $instruct_fund_mint_output_file
 rm $instruct_fund_mint_output_file
+
+# Issuer
+dops create-issuers onboarding/demo/issuers/demo-issuers-input.json
 
 cd ${tokenization_lib_home}

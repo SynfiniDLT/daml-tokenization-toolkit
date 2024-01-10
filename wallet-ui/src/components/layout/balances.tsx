@@ -19,7 +19,7 @@ export default function Balances(props: { balances?: Balance[] }) {
           <table id="assets">
             <thead>
               <tr>
-                <th>Instrument | Version<QuestionCircle /></th>
+                <th>Asset Name | Version<QuestionCircle /></th>
                 <th>Depository<QuestionCircle /></th>
                 <th>Issuer<QuestionCircle /></th>
                 <th>Balance<QuestionCircle /></th>
