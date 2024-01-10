@@ -17,8 +17,8 @@ issuer_onboarding_token_dar = $(build_dir)/issuer-onboarding-token.dar
 onboarding_scripts_dar = $(build_dir)/tokenization-onboarding.dar
 minter_burner_interface_dar = $(build_dir)/issuer-onboarding-minter-burner-interface.dar
 minter_burner_dar = $(build_dir)/issuer-onboarding-minter-burner.dar
-primary_issuance_one_time_offer_interface_dar = $(build_dir)/primary-issuance-one-time-offer-interface.dar
-primary_issuance_one_time_offer_dar = $(build_dir)/primary-issuance-one-time-offer.dar
+settlement_one_time_offer_interface_dar = $(build_dir)/settlement-one-time-offer-interface.dar
+settlement_one_time_offer_dar = $(build_dir)/settlement-one-time-offer.dar
 pbt_dar = $(build_dir)/pbt.dar
 pbt_interface_dar = $(build_dir)/pbt-interface.dar
 wallet_views_types_dar = $(build_dir)/daml-wallet-views-types.dar
@@ -59,13 +59,13 @@ $(trackable_settlement_dar): $(daml_finance_dir) $(shell ./find-daml-project-fil
 	cd trackable-settlement/main && daml build -o $(proj_root)/$(trackable_settlement_dar)
 
 ## BEGIN mint
-# $(primary_issuance_one_time_offer_interface_dar): $(daml_finance_dir) \
-#   $(shell ./find-daml-project-files.sh primary-issuance/one-time-offer-interface)
-# 	cd primary-issuance/one-time-offer-interface && daml build -o $(proj_root)/$(primary_issuance_one_time_offer_interface_dar)
+$(settlement_one_time_offer_interface_dar): $(daml_finance_dir) \
+  $(shell ./find-daml-project-files.sh settlement/one-time-offer-interface)
+	cd settlement/one-time-offer-interface && daml build -o $(proj_root)/$(settlement_one_time_offer_interface_dar)
 
-# $(primary_issuance_one_time_offer_dar): $(primary_issuance_one_time_offer_interface_dar) \
-#   $(shell ./find-daml-project-files.sh primary-issuance/one-time-offer-implementation)
-# 	cd primary-issuance/one-time-offer-implementation && daml build -o $(proj_root)/$(primary_issuance_one_time_offer_dar)
+$(settlement_one_time_offer_dar): $(settlement_one_time_offer_interface_dar) \
+  $(shell ./find-daml-project-files.sh settlement/one-time-offer-implementation)
+	cd settlement/one-time-offer-implementation && daml build -o $(proj_root)/$(settlement_one_time_offer_dar)
 
 .build/daml-mint.dar: $(daml_finance_dir) $(util_dar) $(shell ./find-daml-project-files.sh mint/main)
 	cd mint/main && daml build -o $(proj_root)/.build/daml-mint.dar

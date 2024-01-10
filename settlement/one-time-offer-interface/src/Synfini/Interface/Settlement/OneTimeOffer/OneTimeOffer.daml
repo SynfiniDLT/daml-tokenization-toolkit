@@ -1,0 +1,69 @@
+module Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer where
+
+import Daml.Finance.Interface.Types.Common.Types
+import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
+import qualified Daml.Finance.Interface.Settlement.RouteProvider as RouteProvider
+import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
+import DA.Set (Set)
+import Daml.Finance.Interface.Settlement.Types (Step)
+import qualified Daml.Finance.Interface.Settlement.Batch as Batch
+import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
+
+data View = View
+  with
+    offerId : Id
+    offerDescription : Text
+    offerer : Party
+    offerees : Set Party
+    settlers : Set Party
+    steps : [Step]
+    settlementTime : Optional Time
+    minQuantity : Optional Decimal
+    maxQuantity :  Optional Decimal
+    routeProviderCid : ContractId RouteProvider.I
+    settlementFactoryCid : ContractId SettlementFactory.I
+  deriving (Show, Eq)
+
+type V = View
+
+interface OneTimeOffer requires Disclosure.I where
+  viewtype V
+
+  instructSettlement : InstructSettlement -> Update (ContractId Batch.I, [ContractId Instruction.I])
+
+  accept : Accept -> Update (ContractId I)
+
+  reject : Reject -> Update ()
+
+  revoke : Revoke -> Update ()
+
+  choice Accept : ContractId I
+    with
+      acceptor : Party
+    controller acceptor
+    do
+      accept this arg
+
+  choice Reject : ()
+    with
+      rejector : Party
+    controller rejector
+    do
+      reject this arg
+
+  choice Revoke : ()
+    controller (view this).offerer
+    do
+      revoke this arg
+
+  choice InstructSettlement : (ContractId Batch.I, [ContractId Instruction.I])
+    with
+      id : Id
+      description : Text
+      amount : Decimal
+      instructor : Party
+    controller instructor
+    do
+      instructSettlement this arg
+
+type I = OneTimeOffer

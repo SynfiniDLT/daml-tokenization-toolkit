@@ -1,0 +1,52 @@
+module Synfini.Settlement.OneTimeOffer where
+
+import Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer qualified as OneTimeOffer
+import DA.Set (Set)
+import Daml.Finance.Interface.Settlement.Types
+import Daml.Finance.Interface.Types.Common.Types
+import qualified Daml.Finance.Interface.Settlement.RouteProvider as RouteProvider
+import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
+import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
+import qualified DA.Set as Set
+
+template OneTimeOffer
+  with
+    offerId : Id
+    offerDescription : Text
+    offerer : Party
+    offerees : Set Party
+    signedOfferees : Set Party
+    settlers : Set Party
+    steps : [Step]
+    settlementTime : Optional Time
+    minQuantity : Optional Decimal
+    maxQuantity :  Optional Decimal
+    routeProviderCid : ContractId RouteProvider.I
+    settlementFactoryCid : ContractId SettlementFactory.I
+    observers : PartiesMap
+  where
+    signatory offerer, signedOfferees
+
+    key (offerer, offerId) : (Party, Id)
+    maintainer key._1
+
+    observer offerees, Disclosure.flattenObservers observers
+
+    interface instance Disclosure.I for OneTimeOffer where
+      view = Disclosure.View with disclosureControllers = Set.fromList [offerer], observers
+      setObservers = ImplUtil.setObserversImpl @_ @Disclosure.I this None
+      addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
+      removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
+
+    interface instance OneTimeOffer.I for OneTimeOffer where
+      view = OneTimeOffer.View with ..
+      accept OneTimeOffer.Accept { acceptor } =
+        assertMsg "Acceptor must be an offeree" (acceptor `Set.member` offerees)
+        create this with signedOfferees = Set.insert acceptor signedOfferees
+      reject OneTimeOffer.Reject { rejector } =
+        assertMsg "Rejector must be an offeree" (acceptor `Set.member` offerees)
+        pure ()
+      revoke _ = pure ()
+      instructSettlement OneTimeOffer.InstructSettlement {
+        id
+      }

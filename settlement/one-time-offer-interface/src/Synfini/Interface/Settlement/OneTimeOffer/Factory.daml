@@ -1,0 +1,4 @@
+module Synfini.Interface.Settlement.OneTimeOffer.Factory where
+
+import Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer qualified as OneTimeOffer
+
