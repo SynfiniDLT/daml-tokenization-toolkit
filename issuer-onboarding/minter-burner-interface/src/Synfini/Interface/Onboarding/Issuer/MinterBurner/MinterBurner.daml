@@ -1,0 +1,55 @@
+module Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner where
+
+import Daml.Finance.Interface.Holding.Base qualified as Holding
+import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+data View = View
+  with
+    custodian : Party
+    depository : Party
+    issuer : Party
+  deriving (Show, Eq)
+
+type V = View
+
+interface MinterBurner requires Disclosure.I where
+  viewtype V
+
+  allocateIssuerCredit : AllocateIssuerCredit -> Update (ContractId Instruction.I, Optional (ContractId Holding.I))
+
+  unallocateIssuerCredit : UnallocateIssuerCredit -> Update (ContractId Instruction.I, Optional (ContractId Holding.I))
+
+  approveIssuerDebit : ApproveIssuerDebit -> Update (ContractId Instruction.I)
+
+  unapproveIssuerDebit : UnapproveIssuerDebit -> Update (ContractId Instruction.I)
+
+  nonconsuming choice AllocateIssuerCredit : (ContractId Instruction.I, Optional (ContractId Holding.I))
+    with
+      instructionCid : ContractId Instruction.I
+    controller (view this).issuer
+    do
+      allocateIssuerCredit this arg
+
+  nonconsuming choice UnallocateIssuerCredit : (ContractId Instruction.I, Optional (ContractId Holding.I))
+    with
+      instructionCid : ContractId Instruction.I
+    controller (view this).issuer
+    do
+      unallocateIssuerCredit this arg
+
+  nonconsuming choice ApproveIssuerDebit : ContractId Instruction.I
+    with
+      instructionCid : ContractId Instruction.I
+    controller (view this).issuer
+    do
+      approveIssuerDebit this arg
+
+  nonconsuming choice UnapproveIssuerDebit : ContractId Instruction.I
+    with
+      instructionCid : ContractId Instruction.I
+    controller (view this).issuer
+    do
+      unapproveIssuerDebit this arg
+
+type I = MinterBurner

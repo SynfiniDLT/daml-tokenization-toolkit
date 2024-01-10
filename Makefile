@@ -15,7 +15,10 @@ account_onboarding_open_offer_dar = $(build_dir)/account-onboarding-open-offer.d
 issuer_onboarding_token_interface_dar = $(build_dir)/issuer-onboarding-token-interface.dar
 issuer_onboarding_token_dar = $(build_dir)/issuer-onboarding-token.dar
 onboarding_scripts_dar = $(build_dir)/tokenization-onboarding.dar
-primary_issuance_one_time_offer_interface = $(build_dir)/primary-issuance-one-time-offer-interface.dar
+minter_burner_interface_dar = $(build_dir)/issuer-onboarding-minter-burner-interface.dar
+minter_burner_dar = $(build_dir)/issuer-onboarding-minter-burner.dar
+primary_issuance_one_time_offer_interface_dar = $(build_dir)/primary-issuance-one-time-offer-interface.dar
+primary_issuance_one_time_offer_dar = $(build_dir)/primary-issuance-one-time-offer.dar
 pbt_dar = $(build_dir)/pbt.dar
 pbt_interface_dar = $(build_dir)/pbt-interface.dar
 wallet_views_types_dar = $(build_dir)/daml-wallet-views-types.dar
@@ -56,9 +59,13 @@ $(trackable_settlement_dar): $(daml_finance_dir) $(shell ./find-daml-project-fil
 	cd trackable-settlement/main && daml build -o $(proj_root)/$(trackable_settlement_dar)
 
 ## BEGIN mint
-$(primary_issuance_one_time_offer_interface): $(daml_finance_dir) \
-  $(shell ./find-daml-project-files.sh primary-issuance/one-time-offer-interface)
-	cd primary-issuance/one-time-offer-interface && daml build -o $(proj_root)/$(primary_issuance_one_time_offer_interface)
+# $(primary_issuance_one_time_offer_interface_dar): $(daml_finance_dir) \
+#   $(shell ./find-daml-project-files.sh primary-issuance/one-time-offer-interface)
+# 	cd primary-issuance/one-time-offer-interface && daml build -o $(proj_root)/$(primary_issuance_one_time_offer_interface_dar)
+
+# $(primary_issuance_one_time_offer_dar): $(primary_issuance_one_time_offer_interface_dar) \
+#   $(shell ./find-daml-project-files.sh primary-issuance/one-time-offer-implementation)
+# 	cd primary-issuance/one-time-offer-implementation && daml build -o $(proj_root)/$(primary_issuance_one_time_offer_dar)
 
 .build/daml-mint.dar: $(daml_finance_dir) $(util_dar) $(shell ./find-daml-project-files.sh mint/main)
 	cd mint/main && daml build -o $(proj_root)/.build/daml-mint.dar
@@ -116,16 +123,25 @@ test-account-onboarding: $(account_onboarding_open_offer_dar) $(util_dar)
 
 # Issuer
 $(issuer_onboarding_token_interface_dar): $(daml_finance_dir) \
-  $(shell ./find-daml-project-files.sh issuer-onboarding/token-interface)
-	cd issuer-onboarding/token-interface && daml build -o $(proj_root)/$(issuer_onboarding_token_interface_dar)
+  $(shell ./find-daml-project-files.sh issuer-onboarding/instrument-token-interface)
+	cd issuer-onboarding/instrument-token-interface && daml build -o $(proj_root)/$(issuer_onboarding_token_interface_dar)
 
 $(issuer_onboarding_token_dar): $(issuer_onboarding_token_interface_dar) \
   $(util_dar) \
-  $(shell ./find-daml-project-files.sh issuer-onboarding/token-implementation)
-	cd issuer-onboarding/token-implementation && daml build -o $(proj_root)/$(issuer_onboarding_token_dar)
+  $(shell ./find-daml-project-files.sh issuer-onboarding/instrument-token-implementation)
+	cd issuer-onboarding/instrument-token-implementation && daml build -o $(proj_root)/$(issuer_onboarding_token_dar)
+
+$(minter_burner_interface_dar): $(daml_finance_dir) \
+  $(shell ./find-daml-project-files.sh issuer-onboarding/minter-burner-interface)
+	cd issuer-onboarding/minter-burner-interface && daml build -o $(proj_root)/$(minter_burner_interface_dar)
+
+$(minter_burner_dar): $(minter_burner_interface_dar) \
+  $(util_dar) \
+  $(shell ./find-daml-project-files.sh issuer-onboarding/minter-burner-implementation)
+	cd issuer-onboarding/minter-burner-implementation && daml build -o $(proj_root)/$(minter_burner_dar)
 
 .PHONY: test-issuer-onboarding
-test-issuer-onboarding: $(issuer_onboarding_token_dar) $(util_dar)
+test-issuer-onboarding: $(issuer_onboarding_token_dar) $(minter_burner_dar) $(util_dar)
 	cd issuer-onboarding/test && daml test
 
 # Scripts
@@ -245,7 +261,8 @@ start-wallet-ui: $(wallet_ui_codegen) $(wallet_views_typescript_client_build)
 clean:
 	./clean-daml-projects.sh
 	cd mint/java-example && mvn clean && rm -rf src/generated-main
-	cd wallet-views/java && mvn clean && rm -rf src/generated-main src/generated-test
+	cd wallet-views/java && mvn clean
+	rm -rf $(wallet_views_main_codegen) $(wallet_views_test_codegen)
 	rm -rf $(wallet_views_client_codegen) wallet-views/typescript-client/node_modules $(wallet_views_typescript_client_build)
 	rm -rf $(wallet_ui_codegen) wallet-ui/node_modules wallet-ui/build
 	rm -rf $(build_dir)
