@@ -71,8 +71,6 @@ export const InstrumentCreateFormScreen: React.FC = () => {
         upperLimit: upperLimitInput,
       };
 
-      console.log("observers to add", observers)
-
       await ledger
         .exercise(TokenIssuer.CreateInstrument, state.issuer.token.cid, {
           token: {

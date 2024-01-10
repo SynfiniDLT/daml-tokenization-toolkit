@@ -30,7 +30,7 @@ export default function instrumentTokenDetails(props: InstrumentDetailsProps) {
             <ContainerColumnKey>Tranche ID(UUID):</ContainerColumnKey>
             <ContainerColumnKey>IPFS url:</ContainerColumnKey>
             <ContainerColumnKey>Upper Limit</ContainerColumnKey>
-            <ContainerColumnKey>Creation Date</ContainerColumnKey>
+            <ContainerColumnKey >Creation Date (dd/mm/yyyy HH:MM:ss:sss)</ContainerColumnKey>
           </ContainerColumn>
 
           <ContainerColumn>

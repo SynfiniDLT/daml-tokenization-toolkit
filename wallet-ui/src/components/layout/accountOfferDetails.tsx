@@ -112,14 +112,13 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
         <ContainerDiv>
           <ContainerColumn>
             <ContainerColumnKey>Offer Name:</ContainerColumnKey>
-            <ContainerColumnKey>Custodian:</ContainerColumnKey>
+            <ContainerColumnKey>Validator:</ContainerColumnKey>
             <ContainerColumnKey>Holding Factory:</ContainerColumnKey>
             <p></p>
             <button
               type="button"
               className="button__login"
               style={{ width: "150px" }}
-              //onClick={() => handleClick({props.accountOffer})}
               onClick={() => handleClick(props.accountOffer)}
             >
               Open Account

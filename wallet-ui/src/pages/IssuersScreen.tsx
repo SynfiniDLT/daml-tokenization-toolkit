@@ -46,7 +46,6 @@ const IssuersScreen: React.FC = () => {
          id: null, 
          version: null
     });
-    console.log("resp_instrument",resp_instrument);
     setInstruments(resp_instrument.instruments);
   }
 

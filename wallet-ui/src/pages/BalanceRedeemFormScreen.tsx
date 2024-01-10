@@ -68,10 +68,8 @@ const BalanceRedeemFormScreen: React.FC = () => {
         );
       });
 
-    console.log("About to exercise");
     try {
       let referenceIdUUID = uuid();
-      console.log('state', state);
       let operators = state
           .account
           .operatorsArray
