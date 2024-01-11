@@ -1,17 +1,21 @@
 # Warning: make sure to keep this sdk version updated to be the same as the other daml.yaml files
 # and the daml version in the java pom.xml
 sdk-version: 2.6.3
-name: settlement-one-time-offer
+name: settlement-one-time-offer-test
 source: src
 version: 0.0.1
 dependencies:
   - daml-prim
   - daml-stdlib
+  - daml-script
 data-dependencies:
   - ../../.lib/daml-finance-interface-types-common.dar
+  - ../../.lib/daml-finance-interface-holding.dar
   - ../../.lib/daml-finance-interface-util.dar
   - ../../.lib/daml-finance-interface-settlement.dar
 
   - ../../.lib/daml-finance-util.dar
 
   - ../../.build/settlement-one-time-offer-interface.dar
+
+  - ../../.build/settlement-one-time-offer.dar

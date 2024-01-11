@@ -12,9 +12,10 @@ import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
 data View = View
   with
     offerId : Id
-    offerDescription : Text
-    offerer : Party
+    offerers : Set Party
     offerees : Set Party
+    offerDescription : Text
+    settlementInstructors : Set Party
     settlers : Set Party
     steps : [Step]
     settlementTime : Optional Time
@@ -29,41 +30,29 @@ type V = View
 interface OneTimeOffer requires Disclosure.I where
   viewtype V
 
-  instructSettlement : InstructSettlement -> Update (ContractId Batch.I, [ContractId Instruction.I])
-
-  accept : Accept -> Update (ContractId I)
+  accept : Accept -> Update (ContractId Batch.I, [ContractId Instruction.I])
 
   reject : Reject -> Update ()
 
   revoke : Revoke -> Update ()
 
-  choice Accept : ContractId I
+  choice Accept : (ContractId Batch.I, [ContractId Instruction.I])
     with
-      acceptor : Party
-    controller acceptor
+      id : Id
+      quantity : Decimal
+      description : Text
+    controller (view this).offerees
     do
       accept this arg
 
   choice Reject : ()
-    with
-      rejector : Party
-    controller rejector
+    controller (view this).offerees
     do
       reject this arg
 
   choice Revoke : ()
-    controller (view this).offerer
+    controller (view this).offerers
     do
       revoke this arg
-
-  choice InstructSettlement : (ContractId Batch.I, [ContractId Instruction.I])
-    with
-      id : Id
-      description : Text
-      amount : Decimal
-      instructor : Party
-    controller instructor
-    do
-      instructSettlement this arg
 
 type I = OneTimeOffer

@@ -1,0 +1,19 @@
+module Synfini.Settlement.OneTimeOffer.Test where
+
+import Daml.Finance.Interface.Types.Common.Types
+import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
+import qualified Daml.Finance.Interface.Settlement.RouteProvider as RouteProvider
+
+import Daml.Script
+
+data Setup = Setup
+  with
+    custodian1 : Party
+    depository1 : Party
+    issuer1 : Party
+    alice : Party
+    bob : Party
+    charlie : Party
+    settlementFactoryCid : ContractId SettlementFactory.I
+    routeProviderCid : ContractId
+ss 

@@ -67,6 +67,10 @@ $(settlement_one_time_offer_dar): $(settlement_one_time_offer_interface_dar) \
   $(shell ./find-daml-project-files.sh settlement/one-time-offer-implementation)
 	cd settlement/one-time-offer-implementation && daml build -o $(proj_root)/$(settlement_one_time_offer_dar)
 
+.PHONY: test-settlement
+test-settlement: $(settlement_one_time_offer_dar)
+	cd settlement/test && daml test 
+
 .build/daml-mint.dar: $(daml_finance_dir) $(util_dar) $(shell ./find-daml-project-files.sh mint/main)
 	cd mint/main && daml build -o $(proj_root)/.build/daml-mint.dar
 

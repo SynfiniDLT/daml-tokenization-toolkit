@@ -8,14 +8,16 @@ import qualified Daml.Finance.Interface.Settlement.RouteProvider as RouteProvide
 import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
 import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
 import qualified DA.Set as Set
+import qualified DA.Optional as O
+import qualified Daml.Finance.Util.Disclosure as ImplUtil
 
 template OneTimeOffer
   with
     offerId : Id
-    offerDescription : Text
-    offerer : Party
+    offerers : Set Party
     offerees : Set Party
-    signedOfferees : Set Party
+    offerDescription : Text
+    settlementInstructors : Set Party
     settlers : Set Party
     steps : [Step]
     settlementTime : Optional Time
@@ -25,28 +27,42 @@ template OneTimeOffer
     settlementFactoryCid : ContractId SettlementFactory.I
     observers : PartiesMap
   where
-    signatory offerer, signedOfferees
+    signatory offerers
 
-    key (offerer, offerId) : (Party, Id)
+    key (offerers, offerId) : (Set Party, Id)
     maintainer key._1
 
     observer offerees, Disclosure.flattenObservers observers
 
+    ensure settlementInstructors `Set.isSubsetOf` (offerers <> offerees)
+
     interface instance Disclosure.I for OneTimeOffer where
-      view = Disclosure.View with disclosureControllers = Set.fromList [offerer], observers
+      view = Disclosure.View with disclosureControllers = offerers, observers
       setObservers = ImplUtil.setObserversImpl @_ @Disclosure.I this None
       addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
       removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
 
     interface instance OneTimeOffer.I for OneTimeOffer where
       view = OneTimeOffer.View with ..
-      accept OneTimeOffer.Accept { acceptor } =
-        assertMsg "Acceptor must be an offeree" (acceptor `Set.member` offerees)
-        create this with signedOfferees = Set.insert acceptor signedOfferees
-      reject OneTimeOffer.Reject { rejector } =
-        assertMsg "Rejector must be an offeree" (acceptor `Set.member` offerees)
-        pure ()
+      accept OneTimeOffer.Accept { id, quantity, description } = do
+        assertMsg
+          "Quantity must be greater than or equal to permitted minimum"
+          (O.optional True (quantity >=) minQuantity)
+        assertMsg
+          "Quantity must be less than or equal to permitted maximum"
+          (O.optional True (quantity <=) maxQuantity)
+        let scaledSteps = (\step -> step with quantity.amount = quantity * step.quantity.amount) <$> steps
+        routedSteps <- exercise routeProviderCid RouteProvider.Discover with
+          discoverors = settlementInstructors
+          contextId = Some offerId
+          steps = scaledSteps
+        exercise settlementFactoryCid SettlementFactory.Instruct with
+          id
+          contextId = Some offerId
+          instructors = settlementInstructors
+          settlers
+          description
+          routedSteps
+          settlementTime
+      reject _ = pure ()
       revoke _ = pure ()
-      instructSettlement OneTimeOffer.InstructSettlement {
-        id
-      }
