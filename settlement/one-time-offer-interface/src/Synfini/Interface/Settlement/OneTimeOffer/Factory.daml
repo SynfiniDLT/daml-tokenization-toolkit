@@ -6,6 +6,7 @@ import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
 import Daml.Finance.Interface.Types.Common.Types (Id, PartiesMap)
 import DA.Set (Set)
 import Daml.Finance.Interface.Settlement.Types (Step)
+import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
 
 data View = View
   with
@@ -14,7 +15,7 @@ data View = View
 
 type V = View
 
-interface Factory where
+interface Factory requires Disclosure.I where
   viewtype V
 
   create' : Create -> Update (ContractId OneTimeOffer.I)

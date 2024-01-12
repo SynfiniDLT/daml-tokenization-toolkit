@@ -15,10 +15,10 @@ data View = View
     offerers : Set Party -- ^ Parties who have signed the offer
     offerees : Set Party -- ^ Parties whose authorisation is required to accept the offer
     offerDescription : Text -- ^ Description of this offer
-    settlementInstructors : Set Party -- ^ Parties who will act as instructors of the settlement, if it is accepted
-    settlers : Set Party -- ^ Parties who will act as settlers on the resulting 'Batch' is the offer is accepted.
+    settlementInstructors : Set Party -- ^ Parties who will act as instructors of the settlement if the offer is accepted
+    settlers : Set Party -- ^ Parties who will act as settlers on the resulting 'Batch' if the offer is accepted
     steps : [Step] -- ^ Proposed settlement steps, where the quantity of each step is multiplied by the quantity
-    -- specified by the offerees if they accept
+    -- specified by the offerees when they accept
     settlementTime : Optional Time
     minQuantity : Optional Decimal -- ^ Minimum quantity that can be specified by the offerees
     maxQuantity :  Optional Decimal -- ^ Maximum quantity that can be specified by the offerees
@@ -37,20 +37,24 @@ interface OneTimeOffer requires Disclosure.I where
 
   revoke : Revoke -> Update ()
 
+  -- | Choice to allow the offerees to accept the offer and instruct the settlement (the settlement is not executed as
+  -- as result of this choice)
   choice Accept : (ContractId Batch.I, [ContractId Instruction.I])
     with
-      id : Id
-      quantity : Decimal
-      description : Text
+      id : Id -- ^ Unique identifier of the resuling 'Batch'
+      quantity : Decimal -- ^ The quantity of each settlement step will be multiplied by this amount
+      description : Text -- ^ Description of the 'Batch'
     controller (view this).offerees
     do
       accept this arg
 
+  -- | Choice to allow the offerees to reject the offer
   choice Reject : ()
     controller (view this).offerees
     do
       reject this arg
 
+  -- | Choice for the offerers to take away the offer
   choice Revoke : ()
     controller (view this).offerers
     do

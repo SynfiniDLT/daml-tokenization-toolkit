@@ -1,0 +1,42 @@
+module Synfini.Onboarding.Scripts.RouteProvider where
+
+import Daml.Script
+import Synfini.Onboarding.Scripts.Types
+import qualified Daml.Finance.Interface.Settlement.RouteProvider as RouteProvider
+import qualified Daml.Finance.Settlement.RouteProvider.SingleCustodian as RouteProviderImpl
+import qualified DA.Set as Set
+
+data RouteProviderSettings = RouteProviderSettings
+  with
+    label : Text
+    provider : Text
+    observers : [Text]
+    singleCustodian : Text
+
+data CreateRouteProvidersInput = CreateRouteProvidersInput
+  with
+    parties : [PartyInfo]
+    routeProviderSettings : [RouteProviderSettings]
+
+data RouteProvider = RouteProvider
+  with
+    label : Text
+    cid : ContractId RouteProvider.I
+
+data CreateRouteProvidersOutput = CreateRouteProvidersOutput
+  with
+    routeProviders : [RouteProvider]
+
+createRouteProviders : CreateRouteProvidersInput -> Script CreateRouteProvidersOutput
+createRouteProviders input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  routeProviders <- forA input.routeProviderSettings $ \settings -> do
+    let provider = p settings.provider
+    cid <- toInterfaceContractId <$> submit provider do
+      createCmd RouteProviderImpl.SingleCustodian with
+        provider
+        custodian = p settings.singleCustodian
+        observers = Set.fromList (p <$> settings.observers)
+    pure RouteProvider with label = settings.label, cid
+  pure CreateRouteProvidersOutput with routeProviders

@@ -64,8 +64,12 @@ cd ${tokenization_lib_home}
 dops create-account-factories onboarding/demo/factories/demo-account-factories-input.json
 dops create-holding-factories onboarding/demo/factories/demo-holding-factories-input.json
 dops create-settlement-factories onboarding/demo/factories/demo-settlement-factories-input.json
+dops create-settlement-one-time-offer-factories onboarding/demo/factories/demo-settlement-one-time-offer-factories-input.json
 dops create-instrument-factories onboarding/demo/factories/demo-instrument-factories-input.json
 dops create-account-open-offer-factories onboarding/demo/factories/account-open-offer-factories.json
+
+# Route Providers
+dops create-route-providers onboarding/demo/route-providers/demo-route-providers-input.json
 
 # Accounts
 dops create-accounts-unilateral onboarding/demo/accounts/demo-accounts-input.json

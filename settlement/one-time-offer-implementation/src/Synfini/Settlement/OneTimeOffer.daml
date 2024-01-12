@@ -10,6 +10,7 @@ import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
 import qualified DA.Set as Set
 import qualified DA.Optional as O
 import qualified Daml.Finance.Util.Disclosure as ImplUtil
+import qualified Synfini.Interface.Settlement.OneTimeOffer.Factory as OneTimeOfferFactory
 
 template OneTimeOffer
   with
@@ -66,3 +67,36 @@ template OneTimeOffer
           settlementTime
       reject _ = pure ()
       revoke _ = pure ()
+
+template Factory
+  with
+    provider : Party
+    observers : PartiesMap
+  where
+    signatory provider
+
+    observer Disclosure.flattenObservers observers
+
+    interface instance Disclosure.I for Factory where
+      view = Disclosure.View with disclosureControllers = Set.fromList [provider], observers
+      setObservers = ImplUtil.setObserversImpl @_ @Disclosure.I this None
+      addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
+      removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
+
+    interface instance OneTimeOfferFactory.I for Factory where
+      view = OneTimeOfferFactory.View with provider
+      create' OneTimeOfferFactory.Create {
+        offerId,
+        offerers,
+        offerees,
+        offerDescription,
+        settlementInstructors,
+        settlers,
+        steps,
+        settlementTime,
+        minQuantity,
+        maxQuantity,
+        routeProviderCid,
+        settlementFactoryCid,
+        observers
+      } = toInterfaceContractId <$> create OneTimeOffer with ..
