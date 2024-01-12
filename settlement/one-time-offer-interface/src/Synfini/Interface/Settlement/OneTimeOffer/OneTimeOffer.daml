@@ -11,18 +11,19 @@ import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
 
 data View = View
   with
-    offerId : Id
-    offerers : Set Party
-    offerees : Set Party
-    offerDescription : Text
-    settlementInstructors : Set Party
-    settlers : Set Party
-    steps : [Step]
+    offerId : Id -- ^ Unique identifier of the offer
+    offerers : Set Party -- ^ Parties who have signed the offer
+    offerees : Set Party -- ^ Parties whose authorisation is required to accept the offer
+    offerDescription : Text -- ^ Description of this offer
+    settlementInstructors : Set Party -- ^ Parties who will act as instructors of the settlement, if it is accepted
+    settlers : Set Party -- ^ Parties who will act as settlers on the resulting 'Batch' is the offer is accepted.
+    steps : [Step] -- ^ Proposed settlement steps, where the quantity of each step is multiplied by the quantity
+    -- specified by the offerees if they accept
     settlementTime : Optional Time
-    minQuantity : Optional Decimal
-    maxQuantity :  Optional Decimal
-    routeProviderCid : ContractId RouteProvider.I
-    settlementFactoryCid : ContractId SettlementFactory.I
+    minQuantity : Optional Decimal -- ^ Minimum quantity that can be specified by the offerees
+    maxQuantity :  Optional Decimal -- ^ Maximum quantity that can be specified by the offerees
+    routeProviderCid : ContractId RouteProvider.I -- ^ Route provider used to determine the custodian(s) used for settlement
+    settlementFactoryCid : ContractId SettlementFactory.I -- ^ Settlement factory used to instruct settlement
   deriving (Show, Eq)
 
 type V = View

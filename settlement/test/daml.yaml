@@ -15,6 +15,7 @@ data-dependencies:
   - ../../.lib/daml-finance-interface-settlement.dar
 
   - ../../.lib/daml-finance-util.dar
+  - ../../.lib/daml-finance-settlement.dar
 
   - ../../.build/settlement-one-time-offer-interface.dar
 
