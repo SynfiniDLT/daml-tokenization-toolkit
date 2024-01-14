@@ -5,7 +5,9 @@ import AuthContextStore from "../store/AuthContextStore";
 import { PageLayout } from "../components/PageLayout";
 import {
   ContainerColumn,
+  ContainerColumnField,
   ContainerColumnKey,
+  ContainerColumnValue,
   ContainerDiv,
   DivBorderRoundContainer,
 } from "../components/layout/general.styled";
@@ -25,25 +27,35 @@ export const InstrumentCreateFormScreen: React.FC = () => {
   const wallet_depository = process.env.REACT_APP_LEDGER_WALLET_DEPOSITORY;
   const wallet_operator = process.env.REACT_APP_LEDGER_WALLET_OPERATOR;
 
-  const [assetNameInput, setAssetNameInput] = useState("");
-  const [upperLimitInput, setUpperLimitInput] = useState("");
+  const [productTypeInput, setProductTypeInput] = useState("");
+  const [productVersionInput, setProductVersionInput] = useState("");
+  const [piePointQuantityInput, setPiePointQuantity] = useState("");
   const [ipfsInput, setIpfsInput] = useState("");
+  const [priceInput, setPriceInput] = useState("");
   const [observerInput, setObserverInput] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isMessageOpen, setIsMessageOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const handleAssetNameInput = (event: any) => {
-    setAssetNameInput(event.target.value);
+  const handleProductTypeInput = (event: any) => {
+    setProductTypeInput(event.target.value);
   };
 
-  const handleUpperLimitInput = (event: any) => {
-    setUpperLimitInput(event.target.value);
+  const handleProductVersionInput = (event: any) => {
+    setProductVersionInput(event.target.value);
+  };
+
+  const handlePiePointQuantity = (event: any) => {
+    setPiePointQuantity(event.target.value);
   };
 
   const handleIpfsInput = (event: any) => {
     setIpfsInput(event.target.value);
+  };
+
+  const handlePriceInput = (event: any) => {
+    setPriceInput(event.target.value);
   };
 
   const handleObserverInput = (event: any) => {
@@ -60,15 +72,18 @@ export const InstrumentCreateFormScreen: React.FC = () => {
     if (state.issuer.token.cid !== undefined) {
       setIsSubmitting(true);
       let idUUID = uuid();
+      
       let observers: Party[] = [];
       observers.push(wallet_depository + "::" + packageStringFromParty(ctx.primaryParty));
       observers.push(wallet_operator + "::" + packageStringFromParty(ctx.primaryParty));
       observers.push(ctx.primaryParty);
-      observers.push(observerInput);
+      if (observerInput!== undefined && observerInput!=="")
+        observers.push(observerInput);
 
       const desc_instrument = {
         ipfs: ipfsInput,
-        upperLimit: upperLimitInput,
+        piePointQuantity: piePointQuantityInput,
+        price: priceInput
       };
 
       await ledger
@@ -77,7 +92,7 @@ export const InstrumentCreateFormScreen: React.FC = () => {
             instrument: {
               depository: wallet_depository + "::" + packageStringFromParty(ctx.primaryParty),
               issuer: ctx.primaryParty,
-              id: { unpack: assetNameInput },
+              id: { unpack: productTypeInput+"-"+productVersionInput },
               version: idUUID,
             },
             description: JSON.stringify(desc_instrument),
@@ -108,38 +123,61 @@ export const InstrumentCreateFormScreen: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <ContainerDiv>
             <ContainerColumn>
-              <ContainerColumnKey>
-                Asset Name:
-                <input
-                  type="text"
-                  id="assetName"
-                  name="assetName"
-                  style={{ width: "150px" }}
-                  onChange={handleAssetNameInput}
-                />
-              </ContainerColumnKey>
-              <ContainerColumnKey>
-                Upper Limit:
-                <input
-                  type="text"
-                  id="upperLimit"
-                  name="upperLimit"
-                  style={{ width: "150px" }}
-                  onChange={handleUpperLimitInput}
-                />
-              </ContainerColumnKey>
-              <ContainerColumnKey>
-                IPFS url:
-                <input type="text" id="url" name="url" style={{ width: "150px" }} onChange={handleIpfsInput} />
-              </ContainerColumnKey>
-              <ContainerColumnKey>
-                Observer:
-                <input type="text" id="observer" name="observer" style={{ width: "150px" }} onChange={handleObserverInput} />
-              </ContainerColumnKey>
+              <ContainerColumnField>Product Type:</ContainerColumnField>
+              <ContainerColumnField>Product Version:</ContainerColumnField>
+              <ContainerColumnField>PIE Point Quantity:</ContainerColumnField>
+              <ContainerColumnField>IPFS url:</ContainerColumnField>
+              <ContainerColumnField>Issuing Price:</ContainerColumnField>
+              <ContainerColumnField>Promote To:</ContainerColumnField>
               <p></p>
-              <button type="submit" className="button__login" disabled={isSubmitting}>Submit</button>
+              <button type="submit" className="button__login" disabled={isSubmitting}>
+                Submit
+              </button>
             </ContainerColumn>
-            <ContainerColumn></ContainerColumn>
+            <ContainerColumn>
+              <ContainerColumnField>
+                <input
+                  type="text"
+                  id="productType"
+                  name="produtType"
+                  style={{ width: "150px" }}
+                  onChange={handleProductTypeInput}
+                />
+              </ContainerColumnField>
+              <ContainerColumnField>
+                <input
+                  type="text"
+                  id="productVersion"
+                  name="produtVersion"
+                  style={{ width: "150px" }}
+                  onChange={handleProductVersionInput}
+                />
+              </ContainerColumnField>
+              <ContainerColumnField>
+                <input
+                  type="text"
+                  id="piePointQuantity"
+                  name="piePointQuantity"
+                  style={{ width: "150px" }}
+                  onChange={handlePiePointQuantity}
+                />
+              </ContainerColumnField>
+              <ContainerColumnField>
+                <input type="text" id="url" name="url" style={{ width: "150px" }} onChange={handleIpfsInput} />
+              </ContainerColumnField>
+              <ContainerColumnField>
+                <input type="text" id="price" name="price" style={{ width: "150px" }} onChange={handlePriceInput} />
+              </ContainerColumnField>
+              <ContainerColumnField>
+                <input
+                  type="text"
+                  id="observer"
+                  name="observer"
+                  style={{ width: "150px" }}
+                  onChange={handleObserverInput}
+                />
+              </ContainerColumnField>
+            </ContainerColumn>
           </ContainerDiv>
         </form>
       </DivBorderRoundContainer>

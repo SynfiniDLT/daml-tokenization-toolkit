@@ -51,6 +51,13 @@ export const ContainerColumnKey = styled.p`
   padding: 5px;
 `;
 
+export const ContainerColumnField = styled.p`
+  margin: 5px;
+  padding: 5px;
+  height: 2em;
+  vertical-align: middle;
+`;
+
 export const ContainerColumnValue = styled.p`
   margin-bottom: 5px;
   padding: 5px;

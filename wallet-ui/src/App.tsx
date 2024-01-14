@@ -16,7 +16,7 @@ import { FundSubscribeFormScreen } from "./pages/FundSubscribeFormScreen";
 import BalanceRedeemFormScreen from "./pages/BalanceRedeemFormScreen";
 import AccountOfferScreen from "./pages/AccountOfferScreen";
 import IssuersScreen from "./pages/IssuersScreen";
-import { InstrumentCreateFormScreen } from "./pages/InstrumentCreateScreen";
+import { InstrumentCreateFormScreen } from "./pages/InstrumentCreateFormScreen";
 
 export const userContext = createLedgerContext();
 
