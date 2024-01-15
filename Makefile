@@ -75,7 +75,7 @@ $(settlement_helpers_dar): $(settlement_one_time_offer_interface_dar) \
 	cd settlement/helpers && daml build -o $(proj_root)/$(settlement_helpers_dar)
 
 .PHONY: test-settlement
-test-settlement: $(settlement_one_time_offer_dar)
+test-settlement: $(settlement_one_time_offer_dar) $(util_dar)
 	cd settlement/test && daml test 
 
 .build/daml-mint.dar: $(daml_finance_dir) $(util_dar) $(shell ./find-daml-project-files.sh mint/main)
@@ -265,6 +265,7 @@ $(wallet_ui_codegen): $(daml_finance_dir) \
 		$(daml_finance_dir)/daml-finance-interface-util.dar \
 		.build/fund-tokenization.dar \
 		$(daml_finance_dir)/daml-finance-interface-holding.dar \
+		$(daml_finance_dir)/daml-finance-interface-settlement.dar \
 		.build/daml-mint.dar \
 		$(pbt_interface_dar) -o $(wallet_ui_codegen)
 
