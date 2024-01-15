@@ -11,10 +11,14 @@ dependencies:
 data-dependencies:
   - ../../.lib/daml-finance-interface-types-common.dar
   - ../../.lib/daml-finance-interface-instrument-token.dar
+  - ../../.lib/daml-finance-interface-settlement.dar
 
   - ../../.lib/daml-finance-instrument-token.dar
+  - ../../.lib/daml-finance-settlement.dar
 
   - ../../.build/issuer-onboarding-token-interface.dar
+  - ../../.build/issuer-onboarding-minter-burner-interface.dar
 
   - ../../.build/issuer-onboarding-token.dar
+  - ../../.build/issuer-onboarding-minter-burner.dar
   - ../../.build/tokenization-util.dar

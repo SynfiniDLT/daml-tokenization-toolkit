@@ -12,6 +12,9 @@ import Synfini.Onboarding.Scripts.Types
 
 import Synfini.TrackableSettlement.Factory qualified as TrackableSettlementImpl
 
+import Synfini.Interface.Settlement.OneTimeOffer.Factory qualified as OneTimeOfferFactory
+import Synfini.Settlement.OneTimeOffer qualified as OneTimeOfferImpl
+
 data SettlementFactorySettings = SettlementFactorySettings
   with
     label : Text
@@ -51,3 +54,34 @@ createSettlementFactories input = do
     pure SettlementFactory with label = settings.label, cid
   pure CreateSettlementFactoriesOutput with 
     settlementFactories
+
+data OneTimeOfferFactorySettings = OneTimeOfferFactorySettings
+  with
+    label : Text
+    provider : Text
+    observers : [Observer]
+
+data CreateOneTimeOfferFactoriesInput = CreateOneTimeOfferFactoriesInput
+  with
+    parties : [PartyInfo]
+    settlementOneTimeOfferFactorySettings : [OneTimeOfferFactorySettings]
+
+data OneTimeOfferFactory = OneTimeOfferFactory
+  with
+    cid : ContractId OneTimeOfferFactory.I
+    label : Text
+
+data CreateOneTimeOfferFactoriesOutput = CreateOneTimeOfferFactoriesOutput
+  with
+    settlementOneTimeOfferFactories : [OneTimeOfferFactory]
+
+createSettlementOneTimeOfferFactories : CreateOneTimeOfferFactoriesInput -> Script CreateOneTimeOfferFactoriesOutput
+createSettlementOneTimeOfferFactories input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  settlementOneTimeOfferFactories <- forA input.settlementOneTimeOfferFactorySettings $ \settings -> do
+    let observers = asPartiesMap p settings.observers
+    let provider = p settings.provider
+    cid <- toInterfaceContractId <$> submit provider do createCmd OneTimeOfferImpl.Factory with provider, observers
+    pure OneTimeOfferFactory with label = settings.label, cid
+  pure CreateOneTimeOfferFactoriesOutput with settlementOneTimeOfferFactories

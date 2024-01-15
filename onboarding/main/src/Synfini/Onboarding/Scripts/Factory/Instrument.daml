@@ -7,7 +7,7 @@ import Daml.Finance.Instrument.Token.Factory qualified as TokenImpl
 import Synfini.Onboarding.Scripts.Types
 
 import Synfini.Instrument.PartyBoundAttributes.Factory qualified as PbaImpl
-import Synfini.Onboarding.Issuer.Token qualified as TokenIssuerImpl
+import Synfini.Onboarding.Issuer.Instrument.Token qualified as TokenIssuerImpl
 
 data InstrumentFactorySettings = InstrumentFactorySettings
   with

@@ -192,7 +192,7 @@ public class ProjectionRunner implements Callable<Integer> {
       new WitnessProjectionGenerator(
         readAs,
         "token_issuer",
-        synfini.interface$.onboarding.issuer.token.issuer.Issuer.INTERFACE,
+        synfini.interface$.onboarding.issuer.instrument.token.issuer.Issuer.INTERFACE,
         "token_instrument_issuer_witnesses"
       )
     );

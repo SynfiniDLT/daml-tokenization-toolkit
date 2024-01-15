@@ -27,6 +27,10 @@ export DOPS_SETTLEMENT_FACTORIES_FILE=${DOPS_INTERNAL}/settlement-factories.json
 if [ ! -f "${DOPS_SETTLEMENT_FACTORIES_FILE}" ]; then
   echo '{"settlementFactories": []}' > "${DOPS_SETTLEMENT_FACTORIES_FILE}"
 fi
+export DOPS_SETTLEMENT_ONE_TIME_OFFER_FACTORIES_FILE=${DOPS_INTERNAL}/settlement-one-time-offer-factories.json
+if [ ! -f "${DOPS_SETTLEMENT_ONE_TIME_OFFER_FACTORIES_FILE}" ]; then
+  echo '{"settlementOneTimeOfferFactories": []}' > "${DOPS_SETTLEMENT_ONE_TIME_OFFER_FACTORIES_FILE}"
+fi
 export DOPS_INSTRUMENT_FACTORIES_FILE=${DOPS_INTERNAL}/instrument-factories.json
 if [ ! -f "${DOPS_INSTRUMENT_FACTORIES_FILE}" ]; then
   echo '{"instrumentFactories": []}' > "${DOPS_INSTRUMENT_FACTORIES_FILE}"
@@ -34,6 +38,10 @@ fi
 export DOPS_ISSUER_FACTORIES_FILE=${DOPS_INTERNAL}/issuer-factories.json
 if [ ! -f "${DOPS_ISSUER_FACTORIES_FILE}" ]; then
   echo '{"issuerFactories": []}' > "${DOPS_ISSUER_FACTORIES_FILE}"
+fi
+export DOPS_ROUTE_PROVIDERS_FILE=${DOPS_INTERNAL}/route-providers.json
+if [ ! -f "${DOPS_ROUTE_PROVIDERS_FILE}" ]; then
+  echo '{"routeProviders": []}' > "${DOPS_ROUTE_PROVIDERS_FILE}"
 fi
 export DOPS_ACCOUNT_OPEN_OFFERS_FILE=${DOPS_INTERNAL}/account-open-offers.json
 if [ ! -f "${DOPS_ACCOUNT_OPEN_OFFERS_FILE}" ]; then
@@ -102,10 +110,14 @@ elif [ "$command" = "create-holding-factories" ]; then
   ${dops_commands}/create-holding-factories.sh $@
 elif [ "$command" = "create-settlement-factories" ]; then
   ${dops_commands}/create-settlement-factories.sh $@
+elif [ "$command" = "create-settlement-one-time-offer-factories" ]; then
+  ${dops_commands}/create-settlement-one-time-offer-factories.sh $@
 elif [ "$command" = "create-instrument-factories" ]; then
   ${dops_commands}/create-instrument-factories.sh $@
 elif [ "$command" = "create-issuer-factories" ]; then
   ${dops_commands}/create-issuer-factories.sh $@
+elif [ "$command" = "create-route-providers" ]; then
+  ${dops_commands}/create-route-providers.sh $@
 elif [ "$command" = "create-accounts-unilateral" ]; then
   ${dops_commands}/create-accounts-unilateral.sh $@
 elif [ "$command" = "create-account-open-offers" ]; then

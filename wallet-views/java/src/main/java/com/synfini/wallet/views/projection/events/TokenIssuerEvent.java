@@ -9,13 +9,13 @@ public class TokenIssuerEvent {
   public final String contractId;
   public final Optional<Offset> offset;
   public final Optional<Instant> effectiveTime;
-  public final Optional<synfini.interface$.onboarding.issuer.token.issuer.View> view;
+  public final Optional<synfini.interface$.onboarding.issuer.instrument.token.issuer.View> view;
 
   public TokenIssuerEvent(
     String contractId,
     Optional<Offset> offset,
     Optional<Instant> effectiveTime,
-    Optional<synfini.interface$.onboarding.issuer.token.issuer.View>  view
+    Optional<synfini.interface$.onboarding.issuer.instrument.token.issuer.View>  view
   ) {
     this.contractId = contractId;
     this.offset = offset;
