@@ -93,7 +93,6 @@ export const FundSubscribeFormScreen: React.FC = () => {
         });
 
       if (holdingUnlockedCidArr.length > 0) {
-        console.log("accountAUDN", accountAUDN);
         const operators = {
           map: accountAUDN.view.controllers.outgoing.map.delete(accountAUDN.view.owner)
         };

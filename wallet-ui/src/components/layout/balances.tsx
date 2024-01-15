@@ -1,6 +1,7 @@
 import { Balance } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { QuestionCircle } from "react-bootstrap-icons";
 import { formatCurrency } from "../Util";
+import HoverPopUp from "./hoverPopUp";
 
 
 export default function Balances(props: { balances?: Balance[] }) {
@@ -19,7 +20,7 @@ export default function Balances(props: { balances?: Balance[] }) {
           <table id="assets">
             <thead>
               <tr>
-                <th>Instrument | Version<QuestionCircle /></th>
+                <th>Asset Name<QuestionCircle /></th>
                 <th>Depository<QuestionCircle /></th>
                 <th>Issuer<QuestionCircle /></th>
                 <th>Balance<QuestionCircle /></th>
@@ -31,11 +32,10 @@ export default function Balances(props: { balances?: Balance[] }) {
               {props.balances.map((balance: Balance, index: number) => (
                 <tr key={`${balance.instrument.depository}|${balance.instrument.issuer}|${balance.instrument.id}|${balance.instrument.version}`}>
                   <td>
-                    {balance.instrument.id.unpack} {" | "}
-                    version: {balance.instrument.version}
+                    <HoverPopUp triggerText={balance.instrument.id.unpack} popUpContent={balance.instrument.version} />
                   </td>
-                  <td>{balance.instrument.depository.substring(0, 30)}...</td>
-                  <td>{balance.instrument.issuer.substring(0, 30)}...</td>
+                  <td><HoverPopUp triggerText={balance.instrument.depository.substring(0, 30)+"..."} popUpContent={balance.instrument.depository} customLeft="100%" /></td>
+                  <td><HoverPopUp triggerText={balance.instrument.issuer.substring(0, 30)+"..."} popUpContent={balance.instrument.issuer} customLeft="100%" /></td>
                   <td>{formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(),'en-US')}</td>
                   <td>{formatCurrency(balance.unlocked,'en-US')}</td>
                   <td>{formatCurrency(balance.locked,'en-US')}</td>

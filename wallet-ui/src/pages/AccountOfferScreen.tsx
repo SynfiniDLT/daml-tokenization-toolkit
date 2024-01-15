@@ -4,7 +4,6 @@ import AuthContextStore from "../store/AuthContextStore";
 import { userContext } from "../App";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
-import { wait } from "../components/Util";
 import { PageLoader } from "../components/layout/page-loader";
 import { AccountOpenOfferSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import AccountOffers from "../components/layout/accountOffers";
@@ -19,7 +18,6 @@ const AccountOfferScreen: React.FC = () => {
   const [accountOffers, setAccountOffers] = useState<AccountOpenOfferSummary[]>();
   const [accounts, setAccounts] = useState<any>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState("");
 
   let walletClient: WalletViewsClient;
 
@@ -45,8 +43,6 @@ const AccountOfferScreen: React.FC = () => {
     fetchAccounts();
   }, []);
 
-  console.log("accountoffer", accountOffers);
-  console.log("accounts", accounts);
 
   if (isLoading) {
     return (
@@ -61,7 +57,7 @@ const AccountOfferScreen: React.FC = () => {
       <>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <div style={{ flex: 1, marginRight: "15px" }}>
-            <h4 className="profile__title">Accounts Created</h4>
+            <h4 className="profile__title">My Accounts</h4>
             <Accounts accounts={accounts} />
           </div>
           <div style={{ flex: 1 }}>

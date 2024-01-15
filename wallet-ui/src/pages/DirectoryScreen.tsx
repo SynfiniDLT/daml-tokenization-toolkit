@@ -58,6 +58,9 @@ const DirectoryScreen: React.FC = () => {
 
   return (
     <PageLayout>
+      <div style={{ marginTop: "15px" }}>
+        <h4 className="profile__title">SBT Contents</h4>
+      </div>
       <div>
             <Instruments instruments={instruments} />
       </div>

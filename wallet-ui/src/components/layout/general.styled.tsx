@@ -18,11 +18,15 @@ export const ButtonContainer = styled.div`
   height: 40px;
 `;
 
-export const CardContainer = styled.div`
+interface CardContainerProps {
+  pointer?: boolean;
+}
+
+export const CardContainer = styled.div<CardContainerProps>`
   border-radius: 12px;
   margin: 15px;
   padding: 10px;
-  cursor: pointer;
+  cursor: ${(props) => (props.pointer ? 'pointer' : 'default')};
   background-color: #2a2b2f;
   box-shadow: inset 0 0 0.5px 1px hsla(0, 0%, 100%, 0.075),
     0 0 0 1px hsla(0, 0%, 0%, 0.05), 0 0.3px 0.4px hsla(0, 0%, 0%, 0.02),
@@ -44,10 +48,19 @@ export const ContainerColumn = styled.div`
 
 export const ContainerColumnKey = styled.p`
   margin-bottom: 5px;
+  padding: 5px;
+`;
+
+export const ContainerColumnField = styled.p`
+  margin: 5px;
+  padding: 5px;
+  height: 2em;
+  vertical-align: middle;
 `;
 
 export const ContainerColumnValue = styled.p`
   margin-bottom: 5px;
+  padding: 5px;
   justify-content: space-between;
   margin-left: 10px;
   white-space: nowrap;

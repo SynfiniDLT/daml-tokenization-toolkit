@@ -1,14 +1,19 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
-import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { AccountSummary, InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { formatCurrency, nameFromParty } from "../Util";
 import { Coin } from "react-bootstrap-icons";
 import HoverPopUp from "./hoverPopUp";
+import InstrumentPopDetails from "./instrumentPopDetails";
+import { useState } from "react";
 
 export default function AccountBalances(props: { accountBalancesMap?: any }) {
   const { user } = useAuth0();
   const nav = useNavigate();
   const accountBalanceEntries = Array.from(props.accountBalancesMap.entries());
+  const [instrument, setInstrument] = useState<any>();
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+
 
   const handleSeeDetails = (account: AccountSummary) => {
     nav("/wallet/account/balance/sbt", { state: { account: account } });
@@ -18,6 +23,11 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
     nav("/wallet/account/balance/redeem", { state: { balance: balance, account: account } });
   };
 
+  const handleInstrumentModal = (instrument: any) => {
+     setInstrument(instrument);
+     setIsOpen(!isOpen);
+  }
+
   let trAssets: any = [];
   let trSbts: any = [];
   accountBalanceEntries.forEach((accountBalanceEntry: any) => {
@@ -26,41 +36,46 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
     if (keyAccount.view.id.unpack !== "sbt") {
       valueBalance.forEach((balance: any) => {
         const trAsset = (
-          <tr key={balance.account.id.unpack}>
-            <td>account {balance.account.id.unpack} </td>
-            <td>
-              {balance.instrument.id.unpack === "AUDN" && (
+          <>
+          
+            <tr key={balance.account.id.unpack}>
+              <td>{balance.account.id.unpack} </td>
+              <td>
+                {balance.instrument.id.unpack === "AUDN" && (
+                  <>
+                    <Coin />
+                    &nbsp;&nbsp;
+                  </>
+                )}
+                <a href="#" onClick={() => handleInstrumentModal(balance.instrument)}>
+                  <HoverPopUp triggerText={balance.instrument.id.unpack} popUpContent={balance.instrument.version} />
+                </a>
+              </td>
+              <td>{keyAccount.view.description} </td>
+              <td><HoverPopUp triggerText={nameFromParty(balance.instrument.issuer)} popUpContent={balance.instrument.issuer} /></td>
+
+              {balance.instrument.id.unpack === "AUDN" ? (
                 <>
-                  <Coin />
-                  &nbsp;&nbsp;
+                  <td>
+                    {formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")} <Coin />
+                  </td>
+                  <td>{formatCurrency(balance.unlocked, "en-US")} <Coin /></td>
+                  <td>{formatCurrency(balance.locked, "en-US")} <Coin /></td>
+                </>
+              ) : (
+                <>
+                  <td>{Number(balance.unlocked)}</td>
+                  <td>{Number(balance.unlocked)}</td>
+                  <td>-</td>
                 </>
               )}
-              {balance.instrument.id.unpack}
-            </td>
-            <td>{keyAccount.view.description} </td>
-            <td><HoverPopUp triggerText={nameFromParty(balance.instrument.issuer)} popUpContent={balance.instrument.issuer} /></td>
-
-            {balance.instrument.id.unpack === "AUDN" ? (
-              <>
-                <td>
-                  {formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")} <Coin />
-                </td>
-                <td>{formatCurrency(balance.unlocked, "en-US")} <Coin /></td>
-                <td>{formatCurrency(balance.locked, "en-US")} <Coin /></td>
-              </>
-            ) : (
-              <>
-                <td>{Number(balance.unlocked)}</td>
-                <td>{Number(balance.unlocked)}</td>
-                <td>-</td>
-              </>
-            )}
-            <td>
-              {balance.instrument.id.unpack === "AUDN" && !user?.name?.toLowerCase().includes("employee") && (
-                <button onClick={() => handleRedeem(balance, keyAccount)}>Redeem</button>
-              )}
-            </td>
-          </tr>
+              <td>
+                {balance.instrument.id.unpack === "AUDN" && !user?.name?.toLowerCase().includes("employee") && (
+                  <button onClick={() => handleRedeem(balance, keyAccount)}>Redeem</button>
+                  )}
+              </td>
+            </tr>
+          </>
         );
         trAssets.push(trAsset);
       });
@@ -69,6 +84,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
     if (keyAccount.view.id.unpack === "sbt") {
       valueBalance.forEach((balance: any) => {
         const trSbt = (
+          <>
           <tr key={balance.instrument.id.unpack}>
             <td>
               {balance.instrument.id.unpack} | {balance.instrument.version}
@@ -80,6 +96,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
               <button onClick={() => handleSeeDetails(keyAccount)}>See Details</button>
             </td>
           </tr>
+          </>
         );
         trSbts.push(trSbt);
       });
@@ -108,7 +125,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
           <tbody>{trAssets}</tbody>
         </table>
       </div>
-
+      <InstrumentPopDetails instrument={instrument} isOpen={isOpen} handleClose={() => setIsOpen(false)}/>
       {trSbts.length > 0 && (
         <>
           <div style={{ marginTop: "15px" }}>
@@ -128,6 +145,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
           </div>
         </>
       )}
+      
     </>
   );
 }

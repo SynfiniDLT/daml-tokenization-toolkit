@@ -1,5 +1,4 @@
 import React, { useContext, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import Modal from "react-modal";
 import {
   CardContainer,
@@ -17,15 +16,13 @@ import { Party, emptyMap, Map } from "@daml/types";
 import { Set } from "@daml.js/97b883cd8a2b7f49f90d5d39c981cf6e110cf1f1c64427a28a6d58ec88c43657/lib/DA/Set/Types";
 import { v4 as uuid } from "uuid";
 import { packageStringFromParty, nameFromParty } from "../Util";
+import HoverPopUp from "./hoverPopUp";
 
 interface AccountOpenOfferSummaryProps {
   accountOffer: AccountOpenOfferSummary;
 }
 
 export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps) {
-  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
-  const nav = useNavigate();
-  const location = useLocation();
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
   const wallet_operaton = process.env.REACT_APP_LEDGER_WALLET_OPERATOR;
@@ -114,14 +111,14 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
       <CardContainer>
         <ContainerDiv>
           <ContainerColumn>
-            <ContainerColumnKey>Description:</ContainerColumnKey>
-            <ContainerColumnKey>Custodian:</ContainerColumnKey>
+            <ContainerColumnKey>Offer Name:</ContainerColumnKey>
+            <ContainerColumnKey>Validator:</ContainerColumnKey>
+            <ContainerColumnKey>Holding Factory:</ContainerColumnKey>
             <p></p>
             <button
               type="button"
               className="button__login"
               style={{ width: "150px" }}
-              //onClick={() => handleClick({props.accountOffer})}
               onClick={() => handleClick(props.accountOffer)}
             >
               Open Account
@@ -129,7 +126,8 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
           </ContainerColumn>
           <ContainerColumn>
             <ContainerColumnValue>{props.accountOffer.view.description}</ContainerColumnValue>
-            <ContainerColumnValue>{nameFromParty(props.accountOffer.view.custodian)}</ContainerColumnValue>
+            <ContainerColumnValue><HoverPopUp triggerText={nameFromParty(props.accountOffer.view.custodian)} popUpContent={props.accountOffer.view.custodian} /></ContainerColumnValue>
+            <ContainerColumnValue><HoverPopUp customLeft="-80%" triggerText={props.accountOffer.view.holdingFactoryCid.substring(0,30)+"..."} popUpContent={props.accountOffer.view.holdingFactoryCid} /></ContainerColumnValue>
           </ContainerColumn>
         </ContainerDiv>
       </CardContainer>
@@ -148,14 +146,17 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
                 <tbody>
                   {accountOffer!== undefined && 
                 <tr>
-                    <td>Custodian:{nameFromParty(accountOffer?.view.custodian)}</td>
+                    <td style={{width: "95px"}}>Custodian:</td><td>{nameFromParty(accountOffer?.view.custodian)}</td>
                   </tr>
                 }
                   <tr>
-                    <td>Description:{accountOffer?.view.description}</td>
+                    <td style={{width: "95px"}}>Offer Name:</td><td>{accountOffer?.view.description}</td>
                   </tr>
                   <tr>
-                    <td>Account name:
+                    <td style={{width: "95px"}}>Description:
+                      </td>
+                      <td>
+
                       <input
                         type="text"
                         id="accountName"
@@ -163,8 +164,8 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
                         style={{ width: "200px" }}
                         value={accountName}
                         onChange={handleAccountName}
-                      />{" "}
-                    </td>
+                      />
+                      </td>
                   </tr>
                 </tbody>
               </table>

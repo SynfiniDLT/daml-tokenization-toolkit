@@ -19,7 +19,6 @@ export const NavBarTabs = () => {
     <>
       <NavBarTab path="/" label="Home" />
       <NavBarTab path="/wallet" label="Fund Wallet" />
-      <NavBarTab path="/asset/create" label="Create" />
       <NavBarTab path="/settlements" label="Transactions" />
       <NavBarTab path="/directory" label="Directory" />
     </>
@@ -29,7 +28,8 @@ export const NavBarTabs = () => {
     <>
       <NavBarTab path="/" label="Home" />
       <NavBarTab path="/wallet" label="Wallet" />
-      <NavBarTab path="/asset/create" label="Create" />
+      <NavBarTab path="/account/create" label="Accounts" />
+      <NavBarTab path="/issuers" label="Instruments" />
       <NavBarTab path="/settlements" label="Transactions" />
       <NavBarTab path="/directory" label="Directory" />
     </>

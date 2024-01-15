@@ -127,7 +127,7 @@ data InstrumentsFilter = InstrumentsFilter
   with
     depository : Party
     issuer : Party
-    id : Id
+    id : Optional Id
     version : Optional Text
   deriving (Show, Eq)
 
