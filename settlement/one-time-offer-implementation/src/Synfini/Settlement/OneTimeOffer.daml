@@ -45,7 +45,7 @@ template OneTimeOffer
 
     interface instance OneTimeOffer.I for OneTimeOffer where
       view = OneTimeOffer.View with ..
-      accept OneTimeOffer.Accept { id, quantity, description } = do
+      accept OneTimeOffer.Accept { quantity, description } = do
         assertMsg
           "Quantity must be greater than or equal to permitted minimum"
           (O.optional True (quantity >=) minQuantity)
@@ -58,7 +58,7 @@ template OneTimeOffer
           contextId = Some offerId
           steps = scaledSteps
         exercise settlementFactoryCid SettlementFactory.Instruct with
-          id
+          id = offerId
           contextId = Some offerId
           instructors = settlementInstructors
           settlers
