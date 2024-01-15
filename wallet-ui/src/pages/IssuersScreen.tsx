@@ -5,7 +5,6 @@ import { userContext } from "../App";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 import { PageLoader } from "../components/layout/page-loader";
-import CreateAssetButton from "../components/layout/createAssetButton";
 import { packageStringFromParty } from "../components/Util";
 import Issuers from "../components/layout/issuers";
 import { InstrumentSummary, IssuerSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
@@ -63,22 +62,6 @@ const IssuersScreen: React.FC = () => {
       <div>
         <PageLoader />
       </div>
-    );
-  }
-
-  let createButton;
-
-  if (walletMode === "issuer") {
-    createButton = (
-      <button type="button" className="button__login" style={{ width: "150px" }}>
-        Create Instrument
-      </button>
-    );
-  } else if (walletMode === "fund") {
-    createButton = (
-      <button type="button" className="button__login" style={{ width: "150px" }}>
-        Create Fund
-      </button>
     );
   }
 

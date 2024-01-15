@@ -146,14 +146,17 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
                 <tbody>
                   {accountOffer!== undefined && 
                 <tr>
-                    <td>Custodian:{nameFromParty(accountOffer?.view.custodian)}</td>
+                    <td style={{width: "95px"}}>Custodian:</td><td>{nameFromParty(accountOffer?.view.custodian)}</td>
                   </tr>
                 }
                   <tr>
-                    <td>Offer Name:{accountOffer?.view.description}</td>
+                    <td style={{width: "95px"}}>Offer Name:</td><td>{accountOffer?.view.description}</td>
                   </tr>
                   <tr>
-                    <td>Description:
+                    <td style={{width: "95px"}}>Description:
+                      </td>
+                      <td>
+
                       <input
                         type="text"
                         id="accountName"
@@ -161,8 +164,8 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
                         style={{ width: "200px" }}
                         value={accountName}
                         onChange={handleAccountName}
-                      />{" "}
-                    </td>
+                      />
+                      </td>
                   </tr>
                 </tbody>
               </table>
