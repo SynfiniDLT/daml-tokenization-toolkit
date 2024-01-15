@@ -24,7 +24,7 @@ interface Factory requires Disclosure.I where
     with
       offerId : Id
       offerers : Set Party
-      offerees : Set Party
+      offeree : Party
       offerDescription : Text
       settlementInstructors : Set Party
       settlers : Set Party

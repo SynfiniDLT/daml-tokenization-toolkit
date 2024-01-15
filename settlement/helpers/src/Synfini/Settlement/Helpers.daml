@@ -61,7 +61,6 @@ template OneTimeOfferAcceptHelper
     allocations : Map InstructionIndex AllocationHelp
     approvals : Map InstructionIndex ApprovalHelp
     offerCid : ContractId OneTimeOffer.I
-    id : Id
     quantity : Decimal
     description : Text
   where
@@ -70,7 +69,7 @@ template OneTimeOfferAcceptHelper
     choice AcceptOneTimeOffer : (ContractId Batch.I, [ContractId Instruction.I], HoldingsMap)
       controller acceptors
       do
-        (batchCid, instructionCids) <- exercise offerCid OneTimeOffer.Accept with id, quantity, description
+        (batchCid, instructionCids) <- exercise offerCid OneTimeOffer.Accept with quantity, description
         let instructionsWithIndices = zip (enumFromTo 0 (length instructionCids - 1)) instructionCids
         let instructionsMap = Map.fromList instructionsWithIndices
         let instructionsWithActions =

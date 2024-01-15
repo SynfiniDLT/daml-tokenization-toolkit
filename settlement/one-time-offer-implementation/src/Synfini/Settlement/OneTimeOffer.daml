@@ -16,7 +16,7 @@ template OneTimeOffer
   with
     offerId : Id
     offerers : Set Party
-    offerees : Set Party
+    offeree : Party
     offerDescription : Text
     settlementInstructors : Set Party
     settlers : Set Party
@@ -33,9 +33,9 @@ template OneTimeOffer
     key (offerers, offerId) : (Set Party, Id)
     maintainer key._1
 
-    observer offerees, Disclosure.flattenObservers observers
+    observer offeree, Disclosure.flattenObservers observers
 
-    ensure settlementInstructors `Set.isSubsetOf` (offerers <> offerees)
+    ensure settlementInstructors `Set.isSubsetOf` (Set.insert offeree offerers)
 
     interface instance Disclosure.I for OneTimeOffer where
       view = Disclosure.View with disclosureControllers = offerers, observers
@@ -88,7 +88,7 @@ template Factory
       create' OneTimeOfferFactory.Create {
         offerId,
         offerers,
-        offerees,
+        offeree,
         offerDescription,
         settlementInstructors,
         settlers,
