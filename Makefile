@@ -19,6 +19,7 @@ minter_burner_interface_dar = $(build_dir)/issuer-onboarding-minter-burner-inter
 minter_burner_dar = $(build_dir)/issuer-onboarding-minter-burner.dar
 settlement_one_time_offer_interface_dar = $(build_dir)/settlement-one-time-offer-interface.dar
 settlement_one_time_offer_dar = $(build_dir)/settlement-one-time-offer.dar
+settlement_helpers_dar = $(build_dir)/settlement-helpers.dar
 pbt_dar = $(build_dir)/pbt.dar
 pbt_interface_dar = $(build_dir)/pbt-interface.dar
 wallet_views_types_dar = $(build_dir)/daml-wallet-views-types.dar
@@ -66,6 +67,12 @@ $(settlement_one_time_offer_interface_dar): $(daml_finance_dir) \
 $(settlement_one_time_offer_dar): $(settlement_one_time_offer_interface_dar) \
   $(shell ./find-daml-project-files.sh settlement/one-time-offer-implementation)
 	cd settlement/one-time-offer-implementation && daml build -o $(proj_root)/$(settlement_one_time_offer_dar)
+
+$(settlement_helpers_dar): $(settlement_one_time_offer_interface_dar) \
+  $(minter_burner_interface_dar) \
+  $(util_dar) \
+  $(shell ./find-daml-project-files.sh settlement/helpers)
+	cd settlement/helpers && daml build -o $(proj_root)/$(settlement_helpers_dar)
 
 .PHONY: test-settlement
 test-settlement: $(settlement_one_time_offer_dar)
