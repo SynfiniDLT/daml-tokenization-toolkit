@@ -29,7 +29,7 @@ import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import synfini.interface$.onboarding.account.openoffer.openoffer.OpenOffer;
-import synfini.interface$.onboarding.issuer.token.issuer.Issuer;
+import synfini.interface$.onboarding.issuer.instrument.token.issuer.Issuer;
 import synfini.wallet.api.types.*;
 
 import javax.sql.DataSource;
@@ -454,7 +454,7 @@ public class WalletRepository {
         Optional.of(
           new TokenIssuerSummary(
             new Issuer.ContractId(rs.getString("cid")),
-            new synfini.interface$.onboarding.issuer.token.issuer.View(
+            new synfini.interface$.onboarding.issuer.instrument.token.issuer.View(
               rs.getString("depository"),
               rs.getString("issuer"),
               new daml.finance.interface$.instrument.token.factory.Factory.ContractId(

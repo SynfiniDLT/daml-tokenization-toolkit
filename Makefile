@@ -249,6 +249,9 @@ test-wallet-views-client: install-onboarding compile-wallet-views $(wallet_views
 $(wallet_ui_codegen): $(daml_finance_dir) \
   $(account_onboarding_open_offer_interface_dar) \
   $(issuer_onboarding_token_interface_dar) \
+  $(minter_burner_interface_dar) \
+  $(settlement_one_time_offer_interface_dar) \
+  $(settlement_helpers_dar) \
   .build/fund-tokenization.dar \
   .build/daml-mint.dar \
   $(pbt_interface_dar) 
@@ -256,6 +259,9 @@ $(wallet_ui_codegen): $(daml_finance_dir) \
 	daml codegen js \
 		$(account_onboarding_open_offer_interface_dar) \
 		$(issuer_onboarding_token_interface_dar) \
+		$(minter_burner_interface_dar) \
+		$(settlement_one_time_offer_interface_dar) \
+		$(settlement_helpers_dar) \
 		$(daml_finance_dir)/daml-finance-interface-util.dar \
 		.build/fund-tokenization.dar \
 		$(daml_finance_dir)/daml-finance-interface-holding.dar \

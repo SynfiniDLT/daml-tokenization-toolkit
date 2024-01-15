@@ -9,8 +9,8 @@ import com.daml.projection.javadsl.BatchSource;
 import com.synfini.wallet.views.Util;
 import com.synfini.wallet.views.projection.ProjectionGenerator;
 import com.synfini.wallet.views.projection.events.TokenIssuerEvent;
-import synfini.interface$.onboarding.issuer.token.issuer.Issuer;
-import synfini.interface$.onboarding.issuer.token.issuer.View;
+import synfini.interface$.onboarding.issuer.instrument.token.issuer.Issuer;
+import synfini.interface$.onboarding.issuer.instrument.token.issuer.View;
 
 import java.time.Instant;
 import java.util.Collections;
