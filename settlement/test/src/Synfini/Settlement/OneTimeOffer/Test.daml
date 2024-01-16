@@ -1,5 +1,6 @@
 module Synfini.Settlement.OneTimeOffer.Test where
 
+import DA.Map qualified as Map
 import DA.Set qualified as Set
 
 import Daml.Script
@@ -7,20 +8,20 @@ import Daml.Script
 import Daml.Finance.Settlement.Factory qualified as SettlementImpl
 import Daml.Finance.Settlement.RouteProvider.SingleCustodian qualified as SettlementImpl
 
+import Daml.Finance.Interface.Settlement.Types
 import Daml.Finance.Interface.Types.Common.Types
 
+import Daml.Finance.Interface.Settlement.Batch qualified as Batch
 import Daml.Finance.Interface.Settlement.Factory qualified as SettlementFactory
+import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
 import Daml.Finance.Interface.Settlement.RouteProvider qualified as RouteProvider
 
-import Synfini.Settlement.OneTimeOffer qualified as OneTimeOfferImpl
-import qualified DA.Map as Map
-import qualified Synfini.Interface.Settlement.OneTimeOffer.Factory as OneTimeOfferFactory
-import Daml.Finance.Interface.Settlement.Types
-import qualified Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer as OneTimeOffer
-import qualified Daml.Finance.Interface.Settlement.Batch as Batch
-
 import Synfini.Tokenization.Util (assertEqMsg)
-import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
+
+import Synfini.Settlement.OneTimeOffer qualified as OneTimeOfferImpl
+
+import Synfini.Interface.Settlement.OneTimeOffer.Factory qualified as OneTimeOfferFactory
+import Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer qualified as OneTimeOffer
 
 data Setup = Setup
   with

@@ -1,0 +1,70 @@
+module Synfini.Interface.Settlement.OpenOffer.OpenOffer where
+
+import DA.Set (Set)
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Settlement.Batch qualified as Batch
+import Daml.Finance.Interface.Settlement.Factory qualified as SettlementFactory
+import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
+import Daml.Finance.Interface.Settlement.RouteProvider qualified as RouteProvider
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+import DA.Time (RelTime)
+
+data Entity = PartyEntity Party | TakerEntity deriving (Show, Eq, Ord)
+
+data OfferStep = OfferStep
+  with
+    sender : Entity
+    receiver : Entity
+    quantity : InstrumentQuantity
+  deriving (Show, Eq)
+
+data View = View
+  with
+    offerId : Id
+    offerDescription : Text
+    offerers : Set Party
+    settlementInstructors : Set Entity
+    settlers : Set Entity
+    permittedTakers : Optional (Set Party)
+    steps : [OfferStep]
+    settlementTime : Optional (Either Time RelTime)
+    minQuantity : Optional Decimal -- ^ Minimum quantity that can be specified by the taker
+    maxQuantity :  Optional Decimal -- ^ Maximum quantity that can be specified by the taker
+    routeProviderCid : ContractId RouteProvider.I -- ^ Route provider used to determine the custodian(s) used for settlement
+    settlementFactoryCid : ContractId SettlementFactory.I -- ^ Settlement factory used to instruct settlement
+  deriving (Show, Eq)
+
+type V =  View
+
+interface OpenOffer requires Disclosure.I where
+  viewtype V
+
+  take' : Take -> Update (ContractId Batch.I, [ContractId Instruction.I])
+
+  revoke : Revoke -> Update ()
+
+  nonconsuming choice GetView : V
+    with
+      viewer : Party
+    controller viewer
+    do
+      pure (view this)
+
+  nonconsuming choice Take : (ContractId Batch.I, [ContractId Instruction.I])
+    with
+      id : Id
+      taker : Party
+      quantity : Decimal
+      description : Text
+    controller taker
+    do
+      take' this arg
+
+  choice Revoke : ()
+    controller (view this).offerers
+    do
+      revoke this arg
+
+type I = OpenOffer
