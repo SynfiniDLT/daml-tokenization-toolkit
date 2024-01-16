@@ -1,12 +1,26 @@
 module Synfini.Settlement.OneTimeOffer.Test where
 
-import Daml.Finance.Interface.Types.Common.Types
-import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
-import qualified Daml.Finance.Interface.Settlement.RouteProvider as RouteProvider
-import qualified Daml.Finance.Settlement.Factory as SettlementImpl
-import qualified Daml.Finance.Settlement.RouteProvider.SingleCustodian as SettlementImpl
+import DA.Set qualified as Set
+
 import Daml.Script
-import qualified DA.Set as Set
+
+import Daml.Finance.Settlement.Factory qualified as SettlementImpl
+import Daml.Finance.Settlement.RouteProvider.SingleCustodian qualified as SettlementImpl
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Settlement.Factory qualified as SettlementFactory
+import Daml.Finance.Interface.Settlement.RouteProvider qualified as RouteProvider
+
+import Synfini.Settlement.OneTimeOffer qualified as OneTimeOfferImpl
+import qualified DA.Map as Map
+import qualified Synfini.Interface.Settlement.OneTimeOffer.Factory as OneTimeOfferFactory
+import Daml.Finance.Interface.Settlement.Types
+import qualified Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer as OneTimeOffer
+import qualified Daml.Finance.Interface.Settlement.Batch as Batch
+
+import Synfini.Tokenization.Util (assertEqMsg)
+import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
 
 data Setup = Setup
   with
@@ -18,6 +32,7 @@ data Setup = Setup
     charlie : Party
     settlementFactoryCid : ContractId SettlementFactory.I
     routeProviderCid : ContractId RouteProvider.I
+    oneTimeOfferFactoryCid : ContractId OneTimeOfferFactory.I
 
 withSetup : (Setup -> Script ()) -> Script ()
 withSetup test = do
@@ -38,8 +53,151 @@ withSetup test = do
       provider
       custodian = custodian1
       observers
+  oneTimeOfferFactoryCid <- toInterfaceContractId <$> submit provider do
+    createCmd OneTimeOfferImpl.Factory with
+      provider
+      observers = Map.fromList [("", observers)]
   test (Setup with ..)
 
-test_bi_lateral_workflow : Script ()
-test_bi_lateral_workflow = withSetup $ \setup -> do
-  pure ()
+test_accept_workflow : Script ()
+test_accept_workflow = withSetup $
+  \Setup {
+    alice,
+    bob,
+    charlie,
+    custodian1,
+    depository1,
+    issuer1,
+    settlementFactoryCid,
+    routeProviderCid,
+    oneTimeOfferFactoryCid } -> do
+  let step = Step with
+        sender = alice
+        receiver = bob
+        quantity = Quantity with
+          amount = 100.0
+          unit = InstrumentKey with
+            depository = depository1
+            issuer = issuer1
+            id = Id "ABC"
+            version = "0"
+  let offerId = Id "offer"
+      offerers = Set.fromList [alice, custodian1]
+      settlers = Set.fromList [charlie]
+      settlementInstructors = Set.fromList [alice]
+  let createOfferCmd = exerciseCmd oneTimeOfferFactoryCid OneTimeOfferFactory.Create with
+        offerId
+        offerDescription = "desc"
+        offerers
+        offeree = bob
+        settlementTime = None
+        settlementInstructors
+        settlers
+        minQuantity = Some 1.0
+        maxQuantity = Some 2.0
+        routeProviderCid
+        settlementFactoryCid
+        observers = Map.fromList [("", Set.fromList [charlie])]
+        steps = [step]
+  submitMustFail alice createOfferCmd
+  submitMustFail custodian1 createOfferCmd
+  oneTimeOfferCid <- submitMulti (Set.toList offerers) [] createOfferCmd
+  let acceptDescription = "accept"
+  submitMustFail charlie do
+    exerciseCmd oneTimeOfferCid OneTimeOffer.Accept with
+      quantity = 1.5
+      description = acceptDescription
+  submitMustFail bob do
+    exerciseCmd oneTimeOfferCid OneTimeOffer.Accept with
+      quantity = 0.99
+      description = acceptDescription
+  submitMustFail bob do
+    exerciseCmd oneTimeOfferCid OneTimeOffer.Accept with
+      quantity = 2.01
+      description = acceptDescription
+  (batchCid, [instructionCid]) <- submit bob do
+    exerciseCmd oneTimeOfferCid OneTimeOffer.Accept with
+      quantity = 2.0
+      description = acceptDescription
+  [(activeBatchCid, Some batch)] <- queryInterface @Batch.I alice
+  assertEqMsg "Must have expected batch contract ID" activeBatchCid batchCid
+  assertEqMsg "Must have expected batch ID" batch.id offerId
+  assertEqMsg "Must have expected batch description" batch.description acceptDescription
+  assertEqMsg "Must have expected settlers" batch.settlers settlers
+  assertEqMsg "Must have expected instructors" batch.requestors settlementInstructors
+  [(activeInstructionCid, Some instruction)] <- queryInterface @Instruction.I alice
+  assertEqMsg "Must have expected instruction contract ID" activeInstructionCid instructionCid
+  assertEqMsg "Must have expected quantity" instruction.routedStep.quantity.amount 200.0
+  assertEqMsg "Must have expected instrument" instruction.routedStep.quantity.unit step.quantity.unit
+
+test_reject_workflow : Script ()
+test_reject_workflow = withSetup
+  \Setup {
+    alice,
+    bob,
+    charlie,
+    settlementFactoryCid,
+    routeProviderCid,
+    oneTimeOfferFactoryCid } -> do
+  oneTimeOfferCid <- submit alice do
+    exerciseCmd oneTimeOfferFactoryCid OneTimeOfferFactory.Create with
+      offerId = Id "1"
+      offerDescription = "desc"
+      offerers = Set.fromList [alice]
+      offeree = bob
+      settlementTime = None
+      settlementInstructors = Set.fromList [alice]
+      settlers = Set.fromList [alice]
+      minQuantity = Some 1.0
+      maxQuantity = Some 2.0
+      routeProviderCid
+      settlementFactoryCid
+      observers = Map.fromList [("", Set.fromList [charlie])]
+      steps = []
+  submitMustFail charlie do
+    exerciseCmd oneTimeOfferCid OneTimeOffer.Reject
+  submitMustFail alice do
+    exerciseCmd oneTimeOfferCid OneTimeOffer.Reject
+  submit bob do
+    exerciseCmd oneTimeOfferCid OneTimeOffer.Reject
+  activeOneTimeOffers <- queryInterface @OneTimeOffer.I [alice, bob, charlie]
+  assertEqMsg "Must have no active offers" activeOneTimeOffers []
+  activeBatches <- queryInterface @Batch.I [alice, bob, charlie]
+  assertEqMsg "Must have no active batches" activeBatches []
+
+test_revoke_workflow : Script ()
+test_revoke_workflow = withSetup
+  \Setup {
+    alice,
+    bob,
+    charlie,
+    settlementFactoryCid,
+    routeProviderCid,
+    oneTimeOfferFactoryCid } -> do
+  oneTimeOfferCid <- submitMulti [alice, bob] [] do
+    exerciseCmd oneTimeOfferFactoryCid OneTimeOfferFactory.Create with
+      offerId = Id "1"
+      offerDescription = "desc"
+      offerers = Set.fromList [alice, bob]
+      offeree = charlie
+      settlementTime = None
+      settlementInstructors = Set.fromList [alice]
+      settlers = Set.fromList [alice]
+      minQuantity = Some 1.0
+      maxQuantity = Some 2.0
+      routeProviderCid
+      settlementFactoryCid
+      observers = Map.empty
+      steps = []
+  submitMustFail alice do
+    exerciseCmd oneTimeOfferCid OneTimeOffer.Revoke
+  submitMustFail bob do
+    exerciseCmd oneTimeOfferCid OneTimeOffer.Revoke
+  submitMustFail charlie do
+    exerciseCmd oneTimeOfferCid OneTimeOffer.Revoke
+  submitMulti [alice, bob] [] do
+    exerciseCmd oneTimeOfferCid OneTimeOffer.Revoke
+  activeOneTimeOffers <- queryInterface @OneTimeOffer.I [alice, bob, charlie]
+  assertEqMsg "Must have no active offers" activeOneTimeOffers []
+  activeBatches <- queryInterface @Batch.I [alice, bob, charlie]
+  assertEqMsg "Must have no active batches" activeBatches []

@@ -1,21 +1,25 @@
 module Synfini.Settlement.Helpers where
 
+import DA.Action (foldlA)
+import DA.Map (Map)
+import DA.Set (Set)
+
+import DA.List qualified as L
+import DA.Map qualified as Map
+import DA.Optional qualified as O
+import DA.Set qualified as Set
+
+import Daml.Finance.Interface.Settlement.Types
+import Daml.Finance.Interface.Types.Common.Types
+
 import Daml.Finance.Interface.Holding.Base qualified as Holding
 import Daml.Finance.Interface.Settlement.Batch qualified as Batch
 import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
-import Daml.Finance.Interface.Settlement.Types
-import Daml.Finance.Interface.Types.Common.Types
+
 import Synfini.Tokenization.Util (mergeAndSplitHelper1)
 
+import Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner qualified as MinterBurner
 import Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer qualified as OneTimeOffer
-import qualified Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner as MinterBurner
-import qualified DA.Map as Map
-import qualified DA.Set as Set
-import DA.Set (Set)
-import qualified DA.Optional as O
-import DA.Map (Map)
-import qualified DA.List as L
-import DA.Action (foldlA)
 
 type InstructionIndex = Int
 
@@ -57,7 +61,6 @@ template OneTimeOfferAcceptHelper
     allocations : Map InstructionIndex AllocationHelp
     approvals : Map InstructionIndex ApprovalHelp
     offerCid : ContractId OneTimeOffer.I
-    id : Id
     quantity : Decimal
     description : Text
   where
@@ -66,15 +69,15 @@ template OneTimeOfferAcceptHelper
     choice AcceptOneTimeOffer : (ContractId Batch.I, [ContractId Instruction.I], HoldingsMap)
       controller acceptors
       do
-        (batchCid, instructionCids) <- exercise offerCid OneTimeOffer.Accept with id, quantity, description
+        (batchCid, instructionCids) <- exercise offerCid OneTimeOffer.Accept with quantity, description
         let instructionsWithIndices = zip (enumFromTo 0 (length instructionCids - 1)) instructionCids
         let instructionsMap = Map.fromList instructionsWithIndices
         let instructionsWithActions =
               (\(index, instructionCid) -> (index, instructionCid, Map.lookup index allocations, Map.lookup index approvals)) <$>
               instructionsWithIndices
-        (holdings, instructionsMap) <- foldlA
+        (instructionsMap, holdings) <- foldlA
           (allocateAndApproveHelper acceptors)
-          (holdings, instructionsMap)
+          (instructionsMap, holdings)
           instructionsWithActions
         let instructionCids = snd <$> Map.toList instructionsMap
         pure (batchCid, instructionCids, holdings)
@@ -89,20 +92,25 @@ template AllocateAndApproveHelper
   where
     signatory actors
 
-    choice AllocateAndApprove : ()
+    ensure all (`Map.member` instructions) (Map.keys allocations) &&
+      all (`Map.member` instructions) (Map.keys approvals)
+
+    choice AllocateAndApprove : (InstructionsMap, HoldingsMap)
       controller actors
       do
-        -- TODO
-        pure ()
+        let mapInstr (index, instructionCid) =
+              (index, instructionCid, Map.lookup index allocations, Map.lookup index approvals)
+        let instructionsList = mapInstr <$> (Map.toList instructions)
+        foldlA (allocateAndApproveHelper actors) (instructions, holdings) instructionsList
 
-type InstructionState = (HoldingsMap, InstructionsMap)
+type InstructionState = (InstructionsMap, HoldingsMap)
 
 allocateAndApproveHelper :
   Set Party ->
   InstructionState ->
   (InstructionIndex, ContractId Instruction.I, Optional AllocationHelp, Optional ApprovalHelp) ->
   Update InstructionState
-allocateAndApproveHelper actors (holdingsMap, instructionsMap) (index, instructionCid, allocation, approval) = do
+allocateAndApproveHelper actors (instructionsMap, holdingsMap) (index, instructionCid, allocation, approval) = do
   let viewer = L.head (Set.toList actors)
   instruction <- exercise instructionCid Instruction.GetView with viewer
   let holdingDescriptor = HoldingDescriptor with
@@ -176,4 +184,4 @@ allocateAndApproveHelper actors (holdingsMap, instructionsMap) (index, instructi
             batchId = passThroughInstruction.batchId
             id = passThroughInstruction.id
       exercise instructionCid Instruction.Approve with actors, approval = PassThroughTo (account, passThroughInstructionKey)
-  pure (holdingsMap, Map.insert index instructionCid instructionsMap)
+  pure (Map.insert index instructionCid instructionsMap, holdingsMap)

@@ -11,9 +11,9 @@ import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
 
 data View = View
   with
-    offerId : Id -- ^ Unique identifier of the offer
+    offerId : Id -- ^ Unique identifier of the offer to be used as the id of the 'Batch' if the offer is accepted
     offerers : Set Party -- ^ Parties who have signed the offer
-    offerees : Set Party -- ^ Parties whose authorisation is required to accept the offer
+    offeree : Party -- ^ Party with the choice to accept or reject this offer
     offerDescription : Text -- ^ Description of this offer
     settlementInstructors : Set Party -- ^ Parties who will act as instructors of the settlement if the offer is accepted
     settlers : Set Party -- ^ Parties who will act as settlers on the resulting 'Batch' if the offer is accepted
@@ -38,19 +38,18 @@ interface OneTimeOffer requires Disclosure.I where
   revoke : Revoke -> Update ()
 
   -- | Choice to allow the offerees to accept the offer and instruct the settlement (the settlement is not executed as
-  -- as result of this choice)
+  -- as a result of this choice)
   choice Accept : (ContractId Batch.I, [ContractId Instruction.I])
     with
-      id : Id -- ^ Unique identifier of the resuling 'Batch'
       quantity : Decimal -- ^ The quantity of each settlement step will be multiplied by this amount
-      description : Text -- ^ Description of the 'Batch'
-    controller (view this).offerees
+      description : Text -- ^ Description of the 'Batch' which can be used to add any comments or reference information
+    controller (view this).offeree
     do
       accept this arg
 
   -- | Choice to allow the offerees to reject the offer
   choice Reject : ()
-    controller (view this).offerees
+    controller (view this).offeree
     do
       reject this arg
 

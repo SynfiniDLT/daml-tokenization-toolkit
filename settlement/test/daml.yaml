@@ -20,3 +20,4 @@ data-dependencies:
   - ../../.build/settlement-one-time-offer-interface.dar
 
   - ../../.build/settlement-one-time-offer.dar
+  - ../../.build/tokenization-util.dar
