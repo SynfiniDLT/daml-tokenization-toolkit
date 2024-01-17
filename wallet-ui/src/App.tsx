@@ -17,6 +17,8 @@ import BalanceRedeemFormScreen from "./pages/BalanceRedeemFormScreen";
 import AccountOfferScreen from "./pages/AccountOfferScreen";
 import IssuersScreen from "./pages/IssuersScreen";
 import { InstrumentCreateFormScreen } from "./pages/InstrumentCreateFormScreen";
+import { OfferFormScreen } from "./pages/OfferFormScreen";
+import OffersScreen from "./pages/OffersScreen";
 
 export const userContext = createLedgerContext();
 
@@ -79,6 +81,7 @@ const App: React.FC = () => {
               <Route path="/fund" element={<AuthenticationGuard component={FundScreen} />} />
               <Route path="/fund/subscribe" element={<AuthenticationGuard component={FundSubscribeFormScreen} />} />
               <Route path="/account/create" element={<AuthenticationGuard component={AccountOfferScreen} />} />
+              <Route path="/offers" element={<AuthenticationGuard component={OffersScreen} />} />
             </>
           ) : walletMode===("fund") ? (
             <>
@@ -99,6 +102,8 @@ const App: React.FC = () => {
               <Route path="/issuers/" element={<AuthenticationGuard component={IssuersScreen} />} />
               <Route path="/issuers/instrument/create" element={<AuthenticationGuard component={InstrumentCreateFormScreen} />} />
               <Route path="/account/create" element={<AuthenticationGuard component={AccountOfferScreen} />} />
+              <Route path="/offers" element={<AuthenticationGuard component={OffersScreen} />} />
+              <Route path="/offers/create" element={<AuthenticationGuard component={OfferFormScreen} />} />
             </>
           ) : (
             <></>

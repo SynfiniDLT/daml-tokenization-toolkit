@@ -1,4 +1,6 @@
 import * as damlTypes from "@daml/types";
+import { emptyMap, Map } from "@daml/types";
+import { Set } from "@daml.js/97b883cd8a2b7f49f90d5d39c981cf6e110cf1f1c64427a28a6d58ec88c43657/lib/DA/Set/Types";
 
 export function formatCurrency(amountString: string, locale: string): string {
     const amount = parseFloat(amountString);
@@ -64,3 +66,11 @@ export function formatCurrency(amountString: string, locale: string): string {
 
 
   export const wait = (n: number) => new Promise((resolve) => setTimeout(resolve, n));
+
+  export function arrayToSet<T>(elements: T[]): Set<T> {
+    const empty: Map<T, {}> = emptyMap();
+  
+    return {
+      map: elements.reduce((m, x) => m.set(x, {}), empty),
+    };
+  }
