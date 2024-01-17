@@ -78,7 +78,7 @@ export const OfferFormScreen: React.FC = () => {
 
       .then((res) => {
         console.log("res", res);
-        setMessage("Offer created with sucess. \nOffer id: " + idUUID);
+        setMessage("Offer created with sucdess. \nOffer id: " + idUUID);
         setIsMessageOpen(true);
       })
       .catch((e) => {
