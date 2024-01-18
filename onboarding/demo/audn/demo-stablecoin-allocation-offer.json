@@ -1,0 +1,39 @@
+{
+  "readAs": ["Synfini_Public"],
+  "settlementOpenOfferSettings": [
+    {
+      "offerId": "AUDN@0.Allocate",
+      "offerers": ["AUDN_Issuer"],
+      "offerDescription": "Request stablecoin allocation",
+      "settlementInstructors": [{"party": "AUDN_Issuer"}],
+      "settlers": [{"party": "AUDN_Issuer"}],
+      "steps": [
+        {
+          "sender": {"party": "SynfiniValidator"},
+          "receiver": {"party": "AUDN_Issuer"},
+          "instrumentDepository": "AUDN_Depository",
+          "instrumentIssuer": "AUDN_Issuer",
+          "instrumentId": "AUDN",
+          "instrumentVersion": "0",
+          "amount": 1
+        },
+        {
+          "sender": {"party": "AUDN_Issuer"},
+          "receiver": {"taker": {}},
+          "instrumentDepository": "AUDN_Depository",
+          "instrumentIssuer": "AUDN_Issuer",
+          "instrumentId": "AUDN",
+          "instrumentVersion": "0",
+          "amount": 1
+        }
+      ],
+      "settlementOpenOfferFactory": "V1",
+      "routeProvider": "validatorCustodianV1",
+      "settlementFactory": "V1",
+      "observers" : [{
+        "context": "",
+        "parties": ["Synfini_Public", "WalletOperator"]
+      }]
+    }
+  ]
+}

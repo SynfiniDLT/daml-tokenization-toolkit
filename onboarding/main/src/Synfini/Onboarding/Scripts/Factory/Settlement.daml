@@ -13,6 +13,8 @@ import Synfini.Onboarding.Scripts.Types
 import Synfini.TrackableSettlement.Factory qualified as TrackableSettlementImpl
 
 import Synfini.Interface.Settlement.OneTimeOffer.Factory qualified as OneTimeOfferFactory
+import Synfini.Interface.Settlement.OpenOffer.Factory qualified as OpenOfferFactory
+import Synfini.Settlement.OpenOffer qualified as OpenOfferImpl
 import Synfini.Settlement.OneTimeOffer qualified as OneTimeOfferImpl
 
 data SettlementFactorySettings = SettlementFactorySettings
@@ -85,3 +87,34 @@ createSettlementOneTimeOfferFactories input = do
     cid <- toInterfaceContractId <$> submit provider do createCmd OneTimeOfferImpl.Factory with provider, observers
     pure OneTimeOfferFactory with label = settings.label, cid
   pure CreateOneTimeOfferFactoriesOutput with settlementOneTimeOfferFactories
+
+data OpenOfferFactorySettings = OpenOfferFactorySettings
+  with
+    label : Text
+    provider : Text
+    observers : [Observer]
+
+data CreateOpenOfferFactoriesInput = CreateOpenOfferFactoriesInput
+  with
+    parties : [PartyInfo]
+    settlementOpenOfferFactorySettings : [OpenOfferFactorySettings]
+
+data OpenOfferFactory = OpenOfferFactory
+  with
+    cid : ContractId OpenOfferFactory.I
+    label : Text
+
+data CreateOpenOfferFactoriesOutput = CreateOpenOfferFactoriesOutput
+  with
+    settlementOpenOfferFactories : [OpenOfferFactory]
+
+createSettlementOpenOfferFactories : CreateOpenOfferFactoriesInput -> Script CreateOpenOfferFactoriesOutput
+createSettlementOpenOfferFactories input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  settlementOpenOfferFactories <- forA input.settlementOpenOfferFactorySettings $ \settings -> do
+    let observers = asPartiesMap p settings.observers
+    let provider = p settings.provider
+    cid <- toInterfaceContractId <$> submit provider do createCmd OpenOfferImpl.Factory with provider, observers
+    pure OpenOfferFactory with label = settings.label, cid
+  pure CreateOpenOfferFactoriesOutput with settlementOpenOfferFactories

@@ -31,6 +31,10 @@ export DOPS_SETTLEMENT_ONE_TIME_OFFER_FACTORIES_FILE=${DOPS_INTERNAL}/settlement
 if [ ! -f "${DOPS_SETTLEMENT_ONE_TIME_OFFER_FACTORIES_FILE}" ]; then
   echo '{"settlementOneTimeOfferFactories": []}' > "${DOPS_SETTLEMENT_ONE_TIME_OFFER_FACTORIES_FILE}"
 fi
+export DOPS_SETTLEMENT_OPEN_OFFER_FACTORIES_FILE=${DOPS_INTERNAL}/settlement-open-offer-factories.json
+if [ ! -f "${DOPS_SETTLEMENT_OPEN_OFFER_FACTORIES_FILE}" ]; then
+  echo '{"settlementOpenOfferFactories": []}' > "${DOPS_SETTLEMENT_OPEN_OFFER_FACTORIES_FILE}"
+fi
 export DOPS_INSTRUMENT_FACTORIES_FILE=${DOPS_INTERNAL}/instrument-factories.json
 if [ ! -f "${DOPS_INSTRUMENT_FACTORIES_FILE}" ]; then
   echo '{"instrumentFactories": []}' > "${DOPS_INSTRUMENT_FACTORIES_FILE}"
@@ -112,6 +116,8 @@ elif [ "$command" = "create-settlement-factories" ]; then
   ${dops_commands}/create-settlement-factories.sh $@
 elif [ "$command" = "create-settlement-one-time-offer-factories" ]; then
   ${dops_commands}/create-settlement-one-time-offer-factories.sh $@
+elif [ "$command" = "create-settlement-open-offer-factories" ]; then
+  ${dops_commands}/create-settlement-open-offer-factories.sh $@
 elif [ "$command" = "create-instrument-factories" ]; then
   ${dops_commands}/create-instrument-factories.sh $@
 elif [ "$command" = "create-issuer-factories" ]; then
@@ -126,6 +132,10 @@ elif [ "$command" = "take-account-open-offers" ]; then
   ${dops_commands}/take-open-account-offer.sh $@
 elif [ "$command" = "create-pbas-unilateral" ]; then
   ${dops_commands}/create-pbas-unilateral.sh $@
+elif [ "$command" = "create-settlement-open-offers" ]; then
+  ${dops_commands}/create-settlement-open-offers.sh $@
+elif [ "$command" = "take-settlement-open-offer" ]; then
+  ${dops_commands}/take-settlement-open-offer.sh $@
 elif [ "$command" = "create-mint-unilateral" ]; then
   ${dops_commands}/create-mint-unilateral.sh $@
 elif [ "$command" = "create-mint-open-offers" ]; then

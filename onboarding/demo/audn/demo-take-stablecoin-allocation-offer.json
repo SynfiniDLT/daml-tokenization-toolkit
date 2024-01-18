@@ -1,0 +1,10 @@
+{
+  "readAs": ["Synfini_Public"],
+  "takeOpenOfferSettings": {
+    "offerId": "AUDN@0.Allocate",
+    "offerers": ["AUDN_Issuer"],
+    "taker": "InvestorA",
+    "description": "on ramp",
+    "quantity": 1e7
+  }
+}

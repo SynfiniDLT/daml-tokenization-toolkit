@@ -1,0 +1,14 @@
+{
+  "settlementOpenOfferFactorySettings": [
+    {
+      "label": "V1",
+      "provider": "SynfiniValidator",
+      "observers": [
+        {
+          "context": "deployment",
+          "parties": ["Synfini_Public"]
+        }
+      ]
+    }
+  ]
+}
