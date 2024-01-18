@@ -58,7 +58,7 @@ export const OfferFormScreen: React.FC = () => {
     const json_description = JSON.parse(description);
 
     let idUUID = uuid();
-    const observers: Map<string, Set<Party>> = emptyMap();
+    let observers: Party[] = [producerInput];
     await ledger
       .exercise(OneTimeOfferFactory.Create, oneTimeOfferFactory[0].contractId, {
         offerId: { unpack: idUUID },
@@ -67,7 +67,7 @@ export const OfferFormScreen: React.FC = () => {
         offeree: investorInput,
         settlementInstructors: arrayToSet([ctx.primaryParty]),
         settlers: arrayToSet([ctx.primaryParty, investorInput, producerInput]),
-        observers: observers,
+        observers: emptyMap<string, Set<Party>>().set("initialObservers", arrayToSet(observers)),
         settlementTime: null,
         steps: [],
         minQuantity: json_description.piePointQuantity,
@@ -93,6 +93,8 @@ export const OfferFormScreen: React.FC = () => {
     fetchDataForUserLedger(ctx, ledger);
   }, [ctx, ledger]);
 
+  console.log("state.instrument",state.instrument)
+
   return (
     <PageLayout>
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
@@ -101,8 +103,10 @@ export const OfferFormScreen: React.FC = () => {
       <DivBorderRoundContainer>
         <form onSubmit={handleSubmit}>
           <ContainerDiv>
-            <ContainerColumn>
+            <ContainerColumn style={{minWidth: "250px"}}>
               <ContainerColumnField>Instrument ID:</ContainerColumnField>
+              <ContainerColumnField>Instrument Depository:</ContainerColumnField>
+              <ContainerColumnField>Instrument Issuer:</ContainerColumnField>
               <ContainerColumnField>Producer Party:</ContainerColumnField>
               <ContainerColumnField>Investor Party:</ContainerColumnField>
               <p></p>
@@ -112,6 +116,8 @@ export const OfferFormScreen: React.FC = () => {
             </ContainerColumn>
             <ContainerColumn>
               <ContainerColumnField>{state.instrument.tokenView.token.instrument.id.unpack}</ContainerColumnField>
+              <ContainerColumnField>{state.instrument.tokenView.token.instrument.depository}</ContainerColumnField>
+              <ContainerColumnField>{state.instrument.tokenView.token.instrument.issuer}</ContainerColumnField>
               <ContainerColumnField>
                 <input
                   type="text"
@@ -139,7 +145,7 @@ export const OfferFormScreen: React.FC = () => {
         className="MessageModal"
         isOpen={isMessageOpen}
         onRequestClose={() => handleCloseMessageModal}
-        contentLabel="share SBT"
+        contentLabel="Create Offer"
       >
         <>
           <div>

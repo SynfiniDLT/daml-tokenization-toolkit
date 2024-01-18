@@ -12,7 +12,7 @@ export default function OfferDetails(props: IssuerDetailsProps) {
   const ctx = useContext(AuthContextStore);
 
   const handleAcceptOffer = (offer: any) => {
-    alert("accept offer");
+    nav("/offer/accept", { state: { offer: offer } });
   }
 
 

@@ -13,7 +13,7 @@ interface SettlementDetailsProps {
 
 export default function SettlementDetails(props: SettlementDetailsProps) {
   const location = useLocation();
-  const [toggleSteps, setToggleSteps] = useState(true);
+  const [toggleSteps, setToggleSteps] = useState(false);
 
   const setToggleCol = () => {
     setToggleSteps((prev) => {
