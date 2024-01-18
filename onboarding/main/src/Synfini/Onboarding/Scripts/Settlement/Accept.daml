@@ -1,0 +1,37 @@
+module Synfini.Onboarding.Scripts.Settlement.Accept where
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Synfini.Onboarding.Scripts.Types
+import Daml.Script
+
+data SettlementPreference = SettlementPreference
+  with
+    custodian : Text
+    depository : Optional Text
+    issuer : Optional Text
+    minterBurner : Optional Text
+    accountId : Optional Text
+    settleOffLedger : Bool
+
+-- data AcceptPreferences = AcceptPreferences
+--   with
+--     accounts : [AccountPreference]
+
+data AcceptSettlementSettings = AcceptSettlementSettings
+  with
+    acceptor : Text
+    batchId : Text
+    settlementPreferences : [SettlementPreference]
+
+data AcceptSettlementInput = AcceptSettlementInput
+  with
+    parties : [PartyInfo]
+    acceptSettlementSettings : AcceptSettlementSettings
+
+acceptSettlement : AcceptSettlementInput -> Script ()
+acceptSettlement input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+      settings = input.acceptSettlementSettings
+  pure ()
