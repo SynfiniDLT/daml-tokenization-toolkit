@@ -14,6 +14,7 @@ import {
   DivBorderRoundContainer,
 } from "../components/layout/general.styled";
 import { AcceptOneTimeOffer } from "@daml.js/settlement-helpers/lib/Synfini/Settlement/Helpers";
+import { OneTimeOffer } from "@daml.js/settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer";
 
 export const OfferAcceptFormScreen: React.FC = () => {
   const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
@@ -49,8 +50,12 @@ export const OfferAcceptFormScreen: React.FC = () => {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    alert("submit");
-    //await ledger.exerciseByKey(state.offer.payload.offerId,
+    //alert("submit");
+    const resp = await ledger.exercise(OneTimeOffer.Accept, state.offer.contractId, {
+      quantity: state.offer.payload.maxQuantity,
+      description: transactionRefInput,
+    });
+    console.log(resp);
   };
 
   useEffect(() => {
@@ -61,7 +66,7 @@ export const OfferAcceptFormScreen: React.FC = () => {
     fetchAccounts();
   }, []);
 
-    console.log("off", state.offer)
+  console.log("step", state.offer.payload.steps);
 
   return (
     <PageLayout>
@@ -71,7 +76,8 @@ export const OfferAcceptFormScreen: React.FC = () => {
           <ContainerDiv style={{ height: "200px" }}>
             <ContainerColumn>
               <ContainerColumnField>Offer: </ContainerColumnField>
-              <ContainerColumnField>Accounts: </ContainerColumnField>
+              <ContainerColumnField>Instruments: </ContainerColumnField>
+              <ContainerColumnField></ContainerColumnField>
               <ContainerColumnField>Transaction Reference: </ContainerColumnField>
               <p></p>
               <p></p>
@@ -83,11 +89,28 @@ export const OfferAcceptFormScreen: React.FC = () => {
               <ContainerColumnField style={{ width: "600px" }}>
                 {state.offer.payload.offerId.unpack}
               </ContainerColumnField>
-              <ContainerColumnField style={{ width: "600px" }}>
+              <ContainerColumnField style={{ width: "800px" }}>
                 {/* <AccountsSelect accounts={accounts} onChange={handleAccountChange} selectedAccount={selectAccountInput} /> */}
+                {state.offer.payload.steps.map((step: any) => {
+                  return (
+                    <>
+                      <div>{step.quantity.unit.id.unpack}</div>
+                      <div>Issuer: {step.quantity.unit.issuer }</div>
+                      <div>Sender: {step.sender }</div>
+                      <p></p>
+                    </>
+                  );
+                })}
               </ContainerColumnField>
+              <ContainerColumnField></ContainerColumnField>
               <ContainerColumnField>
-                <input type="text" name="transactionRef" style={{ width: "300px" }} onChange={handleTransactionRef} required/>
+                <input
+                  type="text"
+                  name="transactionRef"
+                  style={{ width: "300px" }}
+                  onChange={handleTransactionRef}
+                  required
+                />
               </ContainerColumnField>
             </ContainerColumn>
           </ContainerDiv>

@@ -59,6 +59,7 @@ export const OfferFormScreen: React.FC = () => {
 
     let idUUID = uuid();
     let observers: Party[] = [producerInput];
+    let steps;
     await ledger
       .exercise(OneTimeOfferFactory.Create, oneTimeOfferFactory[0].contractId, {
         offerId: { unpack: idUUID },
@@ -69,7 +70,9 @@ export const OfferFormScreen: React.FC = () => {
         settlers: arrayToSet([ctx.primaryParty, investorInput, producerInput]),
         observers: emptyMap<string, Set<Party>>().set("initialObservers", arrayToSet(observers)),
         settlementTime: null,
-        steps: [],
+        steps: [{
+          sender: ctx.primaryParty, receiver: investorInput, quantity: {amount: "1", unit: state.instrument.tokenView.token.instrument}
+        }],
         minQuantity: json_description.piePointQuantity,
         maxQuantity: json_description.piePointQuantity,
         routeProviderCid: routeProvider[0].contractId,
@@ -78,7 +81,7 @@ export const OfferFormScreen: React.FC = () => {
 
       .then((res) => {
         console.log("res", res);
-        setMessage("Offer created with sucdess. \nOffer id: " + idUUID);
+        setMessage("Offer created with success. \nOffer id: " + idUUID);
         setIsMessageOpen(true);
       })
       .catch((e) => {
