@@ -13,7 +13,6 @@ import {
   ContainerDiv,
   DivBorderRoundContainer,
 } from "../components/layout/general.styled";
-import { AcceptOneTimeOffer } from "@daml.js/settlement-helpers/lib/Synfini/Settlement/Helpers";
 import { OneTimeOffer } from "@daml.js/settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer";
 import Modal from "react-modal";
 

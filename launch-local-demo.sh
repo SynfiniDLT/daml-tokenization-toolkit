@@ -87,10 +87,11 @@ dops create-account-open-offers onboarding/demo/accounts/account-open-offers.jso
 
 # AUDN
 dops create-minter-burners onboarding/demo/audn/demo-minter-burner-input.json
-dops create-settlement-open-offers onboarding/demo/audn/demo-stablecoin-allocation-offer.json
+dops create-settlement-open-offers onboarding/demo/audn/demo-stablecoin-on-ramp-offer.json
 mint_id=$(uuidgen)
-dops take-settlement-open-offer onboarding/demo/audn/demo-take-stablecoin-allocation-offer.json $mint_id
+dops take-settlement-open-offer onboarding/demo/audn/demo-take-stablecoin-on-ramp-offer.json $mint_id
 dops accept-settlement onboarding/demo/settlement/investorA-preferences.json $mint_id
+dops accept-settlement onboarding/demo/settlement/audn-issuer-preferences.json $mint_id
 # dops create-mint-unilateral onboarding/demo/audn/demo-mint-input.json
 # dops create-minters onboarding/demo/audn/demo-minter-input.json
 # dops create-mint-receivers onboarding/demo/audn/demo-mint-receivers-input.json
