@@ -2,9 +2,9 @@
   "readAs": ["Synfini_Public"],
   "settlementOpenOfferSettings": [
     {
-      "offerId": "AUDN@0.Allocate",
+      "offerId": "AUDN@0.OnRamp",
       "offerers": ["AUDN_Issuer"],
-      "offerDescription": "Request stablecoin allocation",
+      "offerDescription": "Request stablecoin on-ramp from fiat",
       "settlementInstructors": [{"party": "AUDN_Issuer"}],
       "settlers": [{"party": "AUDN_Issuer"}],
       "steps": [

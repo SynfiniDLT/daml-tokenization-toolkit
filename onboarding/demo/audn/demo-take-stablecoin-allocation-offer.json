@@ -1,7 +1,7 @@
 {
   "readAs": ["Synfini_Public"],
   "takeOpenOfferSettings": {
-    "offerId": "AUDN@0.Allocate",
+    "offerId": "AUDN@0.OnRamp",
     "offerers": ["AUDN_Issuer"],
     "taker": "InvestorA",
     "description": "on ramp",

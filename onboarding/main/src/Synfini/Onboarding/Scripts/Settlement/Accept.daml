@@ -1,19 +1,23 @@
 module Synfini.Onboarding.Scripts.Settlement.Accept where
 
+import DA.Map (Map)
+import DA.Set (Set)
+
+import DA.List qualified as L
+import DA.Map qualified as Map
+import DA.Optional qualified as O
+import DA.Set qualified as Set
+
+import Daml.Script
+
+import Daml.Finance.Interface.Settlement.Types
 import Daml.Finance.Interface.Types.Common.Types
 
+import Daml.Finance.Interface.Holding.Base qualified as Holding
+import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
+
 import Synfini.Onboarding.Scripts.Types
-import Daml.Script
-import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
-import Daml.Finance.Interface.Settlement.Types
 import Synfini.Settlement.Helpers
-import DA.Map (Map)
-import qualified DA.Map as Map
-import qualified DA.Optional as O
-import DA.Set (Set)
-import qualified DA.Set as Set
-import qualified Daml.Finance.Interface.Holding.Base as Holding
-import qualified DA.List as L
 
 data SettlementPreferenceSettings = SettlementPreferenceSettings
   with
@@ -107,6 +111,8 @@ applyAllocationPreference acceptor (allocations, received, usePassThroughs) (ins
                     ),
                     None
                   )
+            None | instruction.routedStep.sender == instruction.routedStep.custodian ->
+              (Some (CreditReceiverHelp, None), None)
             None -> (None, None)
         | otherwise = (None, None)
   in
@@ -144,6 +150,7 @@ applyApprovalPreference acceptor usePassThroughs approvals (instruction, prefere
             (Some accId, Some (accountId, passThroughToInstruction)) ->
               Some (PassThroughToHelp accId passThroughToInstruction)
             (Some accId, _) -> Some (TakeDeliveryHelp accId)
+            (None, _) | instruction.routedStep.sender == instruction.routedStep.custodian -> Some DebitSenderHelp
             (None, _) -> None
         | otherwise = None
   in
@@ -182,7 +189,9 @@ acceptSettlement input = do
   let relevantHoldings = do
         (cid, h) <- holdings
         case h of
-          Some v | v.account.owner == acceptor && descriptor v `Set.member` holdingDescriptors -> [(cid, v)]
+          Some v | v.account.owner == acceptor &&
+            O.isNone v.lock &&
+            descriptor v `Set.member` holdingDescriptors -> [(cid, v)]
           _ -> []
   let groupedHoldings = L.groupOn (descriptor . snd) relevantHoldings
   let holdingsMap = Map.fromList $
