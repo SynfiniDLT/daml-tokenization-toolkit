@@ -31,7 +31,7 @@ export const OfferFormScreen: React.FC = () => {
 
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [isMessageOpen, setIsMessageOpen] = useState<boolean>(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const handleProducerInput = (event: any) => {
     setProducerInput(event.target.value);
@@ -42,8 +42,8 @@ export const OfferFormScreen: React.FC = () => {
   };
 
 
-  const handleCloseMessageModal = (path: string) => {
-    setIsMessageOpen(!isMessageOpen);
+  const handleCloseModal = (path: string) => {
+    setIsModalOpen(!isModalOpen);
     if (path !== "") nav("/" + path);
   };
 
@@ -82,12 +82,12 @@ export const OfferFormScreen: React.FC = () => {
       .then((res) => {
         console.log("res", res);
         setMessage("Offer created with success. \nOffer id: " + idUUID);
-        setIsMessageOpen(true);
+        setIsModalOpen(true);
       })
       .catch((e) => {
         console.log("error", e);
         setError("Error " + e.errors[0].toString());
-        setIsMessageOpen(true);
+        setIsModalOpen(true);
       });
   };
 
@@ -146,8 +146,8 @@ export const OfferFormScreen: React.FC = () => {
       <Modal
         id="handleCloseMessageModal"
         className="MessageModal"
-        isOpen={isMessageOpen}
-        onRequestClose={() => handleCloseMessageModal}
+        isOpen={isModalOpen}
+        onRequestClose={() => handleCloseModal}
         contentLabel="Create Offer"
       >
         <>
@@ -165,7 +165,7 @@ export const OfferFormScreen: React.FC = () => {
                 type="button"
                 className="button__login"
                 style={{ width: "150px" }}
-                onClick={() => handleCloseMessageModal("offers")}
+                onClick={() => handleCloseModal("offers")}
               >
                 OK
               </button>

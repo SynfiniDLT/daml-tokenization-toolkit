@@ -5,7 +5,7 @@ import { userContext } from "../App";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 import { PageLoader } from "../components/layout/page-loader";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import AccountsSelect from "../components/layout/accountsSelect";
 import {
   ContainerColumn,
@@ -15,9 +15,11 @@ import {
 } from "../components/layout/general.styled";
 import { AcceptOneTimeOffer } from "@daml.js/settlement-helpers/lib/Synfini/Settlement/Helpers";
 import { OneTimeOffer } from "@daml.js/settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer";
+import Modal from "react-modal";
 
 export const OfferAcceptFormScreen: React.FC = () => {
   const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
+  const nav = useNavigate();
   const { state } = useLocation();
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
@@ -25,6 +27,10 @@ export const OfferAcceptFormScreen: React.FC = () => {
   const [transactionRefInput, setTransactionRefInput] = useState("");
   const [selectAccountInput, setSelectAccountInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [message, setMessage] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [offerAccepted, setOfferAccepted] = useState<any>();
 
   let walletClient: WalletViewsClient;
 
@@ -44,18 +50,38 @@ export const OfferAcceptFormScreen: React.FC = () => {
   };
 
   const handleAccountChange = (event: any) => {
-    console.log("selected", selectAccountInput);
     setSelectAccountInput(event.target.value);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(!isModalOpen);
+    if (error=== ""){
+      nav("/settlements", { state: { transactionId: state.offer.payload.offerId.unpack } });
+    }else{
+      nav("/offers");
+    }
   };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    //alert("submit");
-    const resp = await ledger.exercise(OneTimeOffer.Accept, state.offer.contractId, {
+    await ledger.exercise(OneTimeOffer.Accept, state.offer.contractId, {
       quantity: state.offer.payload.maxQuantity,
       description: transactionRefInput,
+    }).then((resp => {
+      if (resp[0]["_2"]!== undefined){
+          setMessage("Offer Accepted with success!");
+          setOfferAccepted(resp);
+        }else{
+          setError("Error! Contract was not created. Please contact the admin");  
+        }
+        setIsModalOpen(true);
+    })).catch((err)=>{
+      setError("Error! Offer Not Accepted \n \n Error:" + JSON.stringify(err.errors[0]));
+      setIsModalOpen(true);
+    }).finally(()=>{
+      
     });
-    console.log(resp);
+    
   };
 
   useEffect(() => {
@@ -66,7 +92,6 @@ export const OfferAcceptFormScreen: React.FC = () => {
     fetchAccounts();
   }, []);
 
-  console.log("step", state.offer.payload.steps);
 
   return (
     <PageLayout>
@@ -116,6 +141,37 @@ export const OfferAcceptFormScreen: React.FC = () => {
           </ContainerDiv>
         </form>
       </DivBorderRoundContainer>
+      <Modal
+        id="handleCloseMessageModal"
+        className="MessageModal"
+        isOpen={isModalOpen}
+        onRequestClose={() => handleCloseModal}
+        contentLabel="Create Offer"
+      >
+        <>
+          <div>
+            {message !== "" ? (
+              <span style={{ color: "#66FF99", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{message}</span>
+            ) : (
+              <span style={{ color: "#FF6699", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{error}</span>
+            )}
+          </div>
+          <p></p>
+          <div className="containerButton">
+            <div>
+              <button
+                type="button"
+                className="button__login"
+                style={{ width: "150px" }}
+                onClick={() => handleCloseModal()}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+          <p></p>
+        </>
+      </Modal>
     </PageLayout>
   );
 };
