@@ -8,10 +8,12 @@ import { PageLayout } from "../components/PageLayout";
 import Settlements from "../components/layout/settlements";
 import { SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
+import { useLocation } from "react-router-dom";
 
 const SettlementScreen: React.FC = () => {
   //const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
   const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
+  const { state } = useLocation();
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 
@@ -48,10 +50,18 @@ const SettlementScreen: React.FC = () => {
     );
   }
 
+  let resultArray = settlements;
+
+  console.log("state",state)
+  if (state!== null && state.transactionId!== null ){
+    const settlement = settlements?.find(settlement => settlement.batchId.unpack === state.transactionId);
+    resultArray = settlement ? [settlement] : [];
+  }
+
   return (
     <PageLayout>
       <div>
-            <Settlements settlements={settlements} />
+            <Settlements settlements={resultArray} />
       </div>
     </PageLayout>
   );

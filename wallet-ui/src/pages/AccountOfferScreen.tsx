@@ -31,7 +31,6 @@ const AccountOfferScreen: React.FC = () => {
       setAccountOffers(resp.accountOpenOffers);
       const respAcc = await walletClient.getAccounts({ owner: ctx.primaryParty });
       setAccounts(respAcc.accounts);
-      return resp.accountOpenOffers;
     }
   };
 

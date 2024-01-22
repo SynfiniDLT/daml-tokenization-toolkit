@@ -383,6 +383,33 @@ ul.form-stepper li a .form-stepper-circle {
   color: white;
 }
 
+#assets-div {
+  font-family: Arial, Helvetica, sans-serif;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  width: 100%;
+}
+
+.cell {
+  flex: 1;
+  border: 1px solid #ddd;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.header-cell {
+  flex: 1;
+  padding: 12px;
+  background-color: #4e504f;
+  color: white;
+  box-sizing: border-box;
+}
+
 input {
   height: 2em;
   width: 2em;

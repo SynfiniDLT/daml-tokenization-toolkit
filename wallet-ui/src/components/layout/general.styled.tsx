@@ -51,7 +51,7 @@ export const ContainerColumnKey = styled.p`
   padding: 5px;
 `;
 
-export const ContainerColumnField = styled.p`
+export const ContainerColumnField = styled.div`
   margin: 5px;
   padding: 5px;
   height: 2em;

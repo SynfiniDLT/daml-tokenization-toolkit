@@ -14,7 +14,6 @@ const IssuersScreen: React.FC = () => {
   const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
-  const walletMode = process.env.REACT_APP_MODE || "";
   const wallet_depository = process.env.REACT_APP_LEDGER_WALLET_DEPOSITORY;
 
   const [isLoading, setIsLoading] = useState<boolean>(false);

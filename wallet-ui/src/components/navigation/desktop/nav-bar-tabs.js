@@ -5,10 +5,11 @@ export const NavBarTabs = () => {
   const walletMode = process.env.REACT_APP_MODE || "";
   const { isAuthenticated } = useAuth0();
 
-  const walletTab = (
+  const investorTab = (
     <>
       <NavBarTab path="/wallet" label="Wallet" />
       <NavBarTab path="/account/create" label="Accounts" />
+      <NavBarTab path="/offers" label="Offers" />
       <NavBarTab path="/fund" label="Invest" />
       <NavBarTab path="/settlements" label="Transactions" />
       <NavBarTab path="/directory" label="Directory" />
@@ -29,6 +30,7 @@ export const NavBarTabs = () => {
       <NavBarTab path="/" label="Home" />
       <NavBarTab path="/wallet" label="Wallet" />
       <NavBarTab path="/account/create" label="Accounts" />
+      <NavBarTab path="/offers" label="Offers" />
       <NavBarTab path="/issuers" label="Instruments" />
       <NavBarTab path="/settlements" label="Transactions" />
       <NavBarTab path="/directory" label="Directory" />
@@ -42,7 +44,7 @@ export const NavBarTabs = () => {
   let returnTab;
 
   if (walletMode===("investor")){
-    returnTab = walletTab;
+    returnTab = investorTab;
   }else if (walletMode===("fund")){
     returnTab = fundTab;
   }else if  (walletMode===("issuer")){
