@@ -170,8 +170,10 @@ $(onboarding_scripts_dar): $(daml_finance_dir) \
   $(account_onboarding_one_time_offer_dar) \
 	$(account_onboarding_open_offer_dar) \
 	$(issuer_onboarding_token_dar) \
+	$(minter_burner_dar) \
 	$(settlement_one_time_offer_dar) \
   $(settlement_open_offer_dar) \
+	$(settlement_helpers_dar) \
   $(trackable_holding_dar) \
 	$(trackable_settlement_dar) \
   .build/daml-mint.dar \

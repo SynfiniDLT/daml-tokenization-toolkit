@@ -3,9 +3,9 @@
 set -eu
 
 $DOPS_UTIL/add-json.sh $DOPS_PARTIES_FILE $1 | \
-  jq --arg id $2 '. * {"takeOpenOfferSettings": {"id": $id}}' | \
+  jq --arg id $2 '. * {"acceptSettlementSettings": {"batchId": $id}}' | \
   $DOPS_UTIL/daml-script.sh \
   --input-file /dev/stdin \
   --dar ${DOPS_DAR} \
-  --script-name Synfini.Onboarding.Scripts.Settlement.OpenOffer:takeOpenOffer \
+  --script-name Synfini.Onboarding.Scripts.Settlement.Accept:acceptSettlement \
   "${@:3}"

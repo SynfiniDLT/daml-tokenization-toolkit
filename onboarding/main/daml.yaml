@@ -25,6 +25,7 @@ data-dependencies:
   - ../../.build/account-onboarding-one-time-offer-interface.dar
   - ../../.build/account-onboarding-open-offer-interface.dar
   - ../../.build/issuer-onboarding-token-interface.dar
+  - ../../.build/issuer-onboarding-minter-burner-interface.dar
   - ../../.build/settlement-one-time-offer-interface.dar
   - ../../.build/settlement-open-offer-interface.dar
   - ../../.build/pbt-interface.dar
@@ -34,8 +35,10 @@ data-dependencies:
   - ../../.build/account-onboarding-one-time-offer.dar
   - ../../.build/account-onboarding-open-offer.dar
   - ../../.build/issuer-onboarding-token.dar
+  - ../../.build/issuer-onboarding-minter-burner.dar
   - ../../.build/settlement-one-time-offer.dar
   - ../../.build/settlement-open-offer.dar
+  - ../../.build/settlement-helpers.dar
   - ../../.build/daml-mint.dar
   - ../../.build/pbt.dar
   - ../../.build/fund-tokenization.dar
