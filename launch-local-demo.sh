@@ -65,48 +65,56 @@ dops create-account-factories onboarding/demo/factories/demo-account-factories-i
 dops create-holding-factories onboarding/demo/factories/demo-holding-factories-input.json
 dops create-settlement-factories onboarding/demo/factories/demo-settlement-factories-input.json
 dops create-settlement-one-time-offer-factories onboarding/demo/factories/demo-settlement-one-time-offer-factories-input.json
+dops create-settlement-open-offer-factories onboarding/demo/factories/demo-settlement-open-offer-factories-input.json
 dops create-instrument-factories onboarding/demo/factories/demo-instrument-factories-input.json
 dops create-account-open-offer-factories onboarding/demo/factories/account-open-offer-factories.json
 dops create-issuer-factories  onboarding/demo/factories/demo-issuer-factories-input.json
+dops create-minter-burner-factories onboarding/demo/factories/demo-minter-burner-factories.json
 
 # Route Providers
 dops create-route-providers onboarding/demo/route-providers/demo-route-providers-input.json
 
 # Accounts
-dops create-accounts-unilateral onboarding/demo/accounts/demo-accounts-input.json
-dops create-accounts-unilateral onboarding/demo/accounts/demo-new-account-input.json
-dops create-accounts-unilateral onboarding/demo/accounts/demo-fund-account-input.json 
-dops create-accounts-unilateral onboarding/demo/accounts/demo-fund-investor-account-input.json
-dops create-accounts-unilateral onboarding/demo/accounts/demo-fund-units-accounts-input.json
-dops create-accounts-unilateral onboarding/demo/accounts/demo-sbt-accounts-input.json
+dops create-accounts-unilateral onboarding/demo/accounts/demo-accounts-input-2.json
+# dops create-accounts-unilateral onboarding/demo/accounts/demo-new-account-input.json
+# dops create-accounts-unilateral onboarding/demo/accounts/demo-fund-account-input.json
+# dops create-accounts-unilateral onboarding/demo/accounts/demo-fund-investor-account-input.json
+# dops create-accounts-unilateral onboarding/demo/accounts/demo-fund-units-accounts-input.json
+# dops create-accounts-unilateral onboarding/demo/accounts/demo-sbt-accounts-input.json
 
 # Account Offer
 dops create-account-open-offers onboarding/demo/accounts/account-open-offers.json
 
 # AUDN
-dops create-mint-unilateral onboarding/demo/audn/demo-mint-input.json
-dops create-minters onboarding/demo/audn/demo-minter-input.json
-dops create-mint-receivers onboarding/demo/audn/demo-mint-receivers-input.json
-instruct_mint_output_file=$(mktemp)
-dops instruct-mint onboarding/demo/audn/demo-instruct-mint.json --output-file $instruct_mint_output_file
-dops execute-mint onboarding/demo/audn/demo-execute-mint-input.json $instruct_mint_output_file
-dops instruct-burn onboarding/demo/audn/demo-instruct-burn.json
-rm $instruct_mint_output_file
+dops create-minter-burners onboarding/demo/audn/demo-minter-burner-input.json
+dops create-settlement-open-offers onboarding/demo/audn/demo-stablecoin-on-ramp-offer.json
+mint_id=$(uuidgen)
+dops take-settlement-open-offer onboarding/demo/audn/demo-take-stablecoin-on-ramp-offer.json $mint_id
+dops accept-settlement onboarding/demo/settlement/investorA-preferences.json $mint_id
+dops accept-settlement onboarding/demo/settlement/audn-issuer-preferences.json $mint_id
+# dops create-mint-unilateral onboarding/demo/audn/demo-mint-input.json
+# dops create-minters onboarding/demo/audn/demo-minter-input.json
+# dops create-mint-receivers onboarding/demo/audn/demo-mint-receivers-input.json
+# instruct_mint_output_file=$(mktemp)
+# dops instruct-mint onboarding/demo/audn/demo-instruct-mint.json --output-file $instruct_mint_output_file
+# dops execute-mint onboarding/demo/audn/demo-execute-mint-input.json $instruct_mint_output_file
+# dops instruct-burn onboarding/demo/audn/demo-instruct-burn.json
+# rm $instruct_mint_output_file
 
-# SBT
-dops create-pbas-unilateral onboarding/demo/sbt/demo-pba-input.json
+# # SBT
+# dops create-pbas-unilateral onboarding/demo/sbt/demo-pba-input.json
 
-# Fund
-dops create-fund-offer-unilateral onboarding/demo/fund/demo-fund-offer-input.json
-dops create-fund-investors onboarding/demo/fund/fund-investors-input.json
-dops create-mint-unilateral onboarding/demo/fund/demo-fund-unit-mint-input.json
-dops create-mint-receivers onboarding/demo/fund/demo-fund-mint-receivers-input.json
-instruct_fund_mint_output_file=$(mktemp)
-dops instruct-mint onboarding/demo/fund/demo-fund-instruct-mint.json --output-file $instruct_fund_mint_output_file
-dops execute-mint onboarding/demo/fund/demo-execute-fund-mint-input.json $instruct_fund_mint_output_file
-rm $instruct_fund_mint_output_file
+# # Fund
+# dops create-fund-offer-unilateral onboarding/demo/fund/demo-fund-offer-input.json
+# dops create-fund-investors onboarding/demo/fund/fund-investors-input.json
+# dops create-mint-unilateral onboarding/demo/fund/demo-fund-unit-mint-input.json
+# dops create-mint-receivers onboarding/demo/fund/demo-fund-mint-receivers-input.json
+# instruct_fund_mint_output_file=$(mktemp)
+# dops instruct-mint onboarding/demo/fund/demo-fund-instruct-mint.json --output-file $instruct_fund_mint_output_file
+# dops execute-mint onboarding/demo/fund/demo-execute-fund-mint-input.json $instruct_fund_mint_output_file
+# rm $instruct_fund_mint_output_file
 
-# Issuer
-dops create-issuers onboarding/demo/issuers/demo-issuers-input.json
+# # Issuer
+# dops create-issuers onboarding/demo/issuers/demo-issuers-input.json
 
-cd ${tokenization_lib_home}
+# cd ${tokenization_lib_home}

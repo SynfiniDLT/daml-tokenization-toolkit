@@ -1,4 +1,4 @@
-module Synfini.Interface.Settlement.OneTimeOffer.Factory where
+module Synfini.Interface.Settlement.OpenOffer.Factory where
 
 import DA.Set (Set)
 
@@ -10,7 +10,8 @@ import Daml.Finance.Interface.Settlement.Factory qualified as SettlementFactory
 import Daml.Finance.Interface.Settlement.RouteProvider qualified as RouteProvider
 import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
-import Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer qualified as OneTimeOffer
+import Synfini.Interface.Settlement.OpenOffer.OpenOffer qualified as OpenOffer
+import DA.Time.Types (RelTime)
 
 data View = View
   with
@@ -22,7 +23,7 @@ type V = View
 interface Factory requires Disclosure.I where
   viewtype V
 
-  create' : Create -> Update (ContractId OneTimeOffer.I)
+  create' : Create -> Update (ContractId OpenOffer.I)
 
   nonconsuming choice GetView : V
     with
@@ -31,16 +32,16 @@ interface Factory requires Disclosure.I where
     do
       pure (view this)
 
-  nonconsuming choice Create : ContractId OneTimeOffer.I
+  nonconsuming choice Create : ContractId OpenOffer.I
     with
       offerId : Id
-      offerers : Set Party
-      offeree : Party
       offerDescription : Text
-      settlementInstructors : Set Party
-      settlers : Set Party
-      steps : [Step]
-      settlementTime : Optional Time
+      offerers : Set Party
+      settlementInstructors : Set OpenOffer.Entity
+      settlers : Set OpenOffer.Entity
+      permittedTakers : Optional (Set Party)
+      steps : [OpenOffer.OfferStep]
+      settlementTime : Optional (Either Time RelTime)
       minQuantity : Optional Decimal
       maxQuantity :  Optional Decimal
       routeProviderCid : ContractId RouteProvider.I

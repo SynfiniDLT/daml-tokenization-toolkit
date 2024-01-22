@@ -1,9 +1,11 @@
-module Synfini.Settlement.OneTimeOffer where
+module Synfini.Settlement.OpenOffer where
 
 import DA.Set (Set)
+import DA.Time.Types (RelTime)
 
 import DA.Optional qualified as O
 import DA.Set qualified as Set
+import DA.Time qualified as T
 
 import Daml.Finance.Util.Disclosure qualified as ImplUtil
 
@@ -14,19 +16,19 @@ import Daml.Finance.Interface.Settlement.Factory qualified as SettlementFactory
 import Daml.Finance.Interface.Settlement.RouteProvider qualified as RouteProvider
 import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
-import Synfini.Interface.Settlement.OneTimeOffer.Factory qualified as OneTimeOfferFactory
-import Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer qualified as OneTimeOffer
+import Synfini.Interface.Settlement.OpenOffer.Factory qualified as OpenOfferFactory
+import Synfini.Interface.Settlement.OpenOffer.OpenOffer qualified as OpenOffer
 
-template OneTimeOffer
+template OpenOffer
   with
     offerId : Id
-    offerers : Set Party
-    offeree : Party
     offerDescription : Text
-    settlementInstructors : Set Party
-    settlers : Set Party
-    steps : [Step]
-    settlementTime : Optional Time
+    offerers : Set Party
+    settlementInstructors : Set OpenOffer.Entity
+    settlers : Set OpenOffer.Entity
+    permittedTakers : Optional (Set Party)
+    steps : [OpenOffer.OfferStep]
+    settlementTime : Optional (Either Time RelTime)
     minQuantity : Optional Decimal
     maxQuantity :  Optional Decimal
     routeProviderCid : ContractId RouteProvider.I
@@ -38,39 +40,50 @@ template OneTimeOffer
     key (offerers, offerId) : (Set Party, Id)
     maintainer key._1
 
-    observer offeree, Disclosure.flattenObservers observers
+    observer O.fromOptional Set.empty permittedTakers, Disclosure.flattenObservers observers
 
-    ensure settlementInstructors `Set.isSubsetOf` (Set.insert offeree offerers)
-
-    interface instance Disclosure.I for OneTimeOffer where
+    interface instance Disclosure.I for OpenOffer where
       view = Disclosure.View with disclosureControllers = offerers, observers
       setObservers = ImplUtil.setObserversImpl @_ @Disclosure.I this None
       addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
       removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
 
-    interface instance OneTimeOffer.I for OneTimeOffer where
-      view = OneTimeOffer.View with ..
-      accept OneTimeOffer.Accept { quantity, description } = do
+    interface instance OpenOffer.I for OpenOffer where
+      view = OpenOffer.View with ..
+      take' OpenOffer.Take { id, taker, quantity, description } = do
         assertMsg
           "Quantity must be greater than or equal to permitted minimum"
           (O.optional True (quantity >=) minQuantity)
         assertMsg
           "Quantity must be less than or equal to permitted maximum"
           (O.optional True (quantity <=) maxQuantity)
-        let scaledSteps = (\step -> step with quantity.amount = quantity * step.quantity.amount) <$> steps
+        assertMsg "Must be a permitted offer taker" (O.optional True (taker `Set.member`) permittedTakers)
+        let resolveParty entity = case entity of
+              OpenOffer.PartyEntity p -> p
+              OpenOffer.TakerEntity -> taker
+        let adjustStep step = Step with
+              sender = resolveParty step.sender
+              receiver = resolveParty step.receiver
+              quantity = step.quantity with
+                amount = step.quantity.amount * quantity
         routedSteps <- exercise routeProviderCid RouteProvider.Discover with
-          discoverors = settlementInstructors
+          discoverors = Set.fromList (resolveParty <$> Set.toList settlementInstructors)
           contextId = Some offerId
-          steps = scaledSteps
+          steps = adjustStep <$> steps
+        actualSettlementTime <- case settlementTime of
+          None -> pure None
+          Some (Left time) -> pure (Some time)
+          Some (Right relTime) -> do
+            now <- getTime
+            pure $ Some (T.addRelTime now relTime)
         exercise settlementFactoryCid SettlementFactory.Instruct with
-          id = offerId
-          contextId = None
-          instructors = settlementInstructors
-          settlers
+          id
+          contextId = Some offerId
+          instructors = Set.fromList (resolveParty <$> Set.toList settlementInstructors)
+          settlers = Set.fromList (resolveParty <$> Set.toList settlers)
           description
           routedSteps
-          settlementTime
-      reject _ = pure ()
+          settlementTime = actualSettlementTime
       revoke _ = pure ()
 
 template Factory
@@ -88,15 +101,15 @@ template Factory
       addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
       removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
 
-    interface instance OneTimeOfferFactory.I for Factory where
-      view = OneTimeOfferFactory.View with provider
-      create' OneTimeOfferFactory.Create {
+    interface instance OpenOfferFactory.I for Factory where
+      view = OpenOfferFactory.View with provider
+      create' OpenOfferFactory.Create {
         offerId,
         offerers,
-        offeree,
         offerDescription,
         settlementInstructors,
         settlers,
+        permittedTakers,
         steps,
         settlementTime,
         minQuantity,
@@ -104,4 +117,4 @@ template Factory
         routeProviderCid,
         settlementFactoryCid,
         observers
-      } = toInterfaceContractId <$> create OneTimeOffer with ..
+      } = toInterfaceContractId <$> create OpenOffer with ..

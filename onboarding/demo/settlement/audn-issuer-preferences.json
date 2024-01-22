@@ -1,0 +1,12 @@
+{
+  "acceptSettlementSettings": {
+    "acceptor": "AUDN_Issuer",
+    "settlementPreferences": [
+      {
+        "custodian": "SynfiniValidator",
+        "accountId": "111",
+        "minterBurner": true
+      }
+    ]
+  }
+}

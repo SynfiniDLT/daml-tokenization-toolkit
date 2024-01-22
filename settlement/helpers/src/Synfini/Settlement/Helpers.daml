@@ -21,27 +21,27 @@ import Synfini.Tokenization.Util (mergeAndSplitHelper1)
 import Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner qualified as MinterBurner
 import Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer qualified as OneTimeOffer
 
-type InstructionIndex = Int
+type InstructionIndex = Id
 
 data AllocationHelp =
   UnallocatedHelp |
   PledgeFromFungiblesHelp |
   PledgeFromNonFungiblesHelp |
   CreditReceiverHelp |
-  IssuerCreditHelp (ContractId MinterBurner.I) |
-  UnallocateIssuerCreditHelp (ContractId MinterBurner.I) |
+  IssuerCreditHelp |
+  UnallocateIssuerCreditHelp |
   SettleOffledgerHelp |
-  PassThroughFromHelp with account : AccountKey, instructionIndex : InstructionIndex
+  PassThroughFromHelp with accountId : Id, instructionIndex : InstructionIndex
   deriving (Show, Eq)
 
 data ApprovalHelp =
   UnapprovedHelp |
-  TakeDeliveryHelp AccountKey |
+  TakeDeliveryHelp Id |
   DebitSenderHelp |
-  ApproveIssuerDebitHelp (ContractId MinterBurner.I) |
-  UnapproveIssuerDebitHelp (ContractId MinterBurner.I) |
+  ApproveIssuerDebitHelp |
+  UnapproveIssuerDebitHelp |
   SettleOffledgerAcknowledgeHelp |
-  PassThroughToHelp with account : AccountKey, instructionIndex : InstructionIndex
+  PassThroughToHelp with accountId : Id, instructionIndex : InstructionIndex
   deriving (Show, Eq)
 
 data HoldingDescriptor = HoldingDescriptor
@@ -54,33 +54,33 @@ type HoldingsMap = Map HoldingDescriptor [ContractId Holding.I]
 
 type InstructionsMap = Map InstructionIndex (ContractId Instruction.I)
 
-template OneTimeOfferAcceptHelper
-  with
-    acceptors : Set Party
-    holdings : HoldingsMap
-    allocations : Map InstructionIndex AllocationHelp
-    approvals : Map InstructionIndex ApprovalHelp
-    offerCid : ContractId OneTimeOffer.I
-    quantity : Decimal
-    description : Text
-  where
-    signatory acceptors
+-- template OneTimeOfferAcceptHelper
+--   with
+--     acceptors : Set Party
+--     holdings : HoldingsMap
+--     allocations : Map InstructionIndex AllocationHelp
+--     approvals : Map InstructionIndex ApprovalHelp
+--     offerCid : ContractId OneTimeOffer.I
+--     quantity : Decimal
+--     description : Text
+--   where
+--     signatory acceptors
 
-    choice AcceptOneTimeOffer : (ContractId Batch.I, [ContractId Instruction.I], HoldingsMap)
-      controller acceptors
-      do
-        (batchCid, instructionCids) <- exercise offerCid OneTimeOffer.Accept with quantity, description
-        let instructionsWithIndices = zip (enumFromTo 0 (length instructionCids - 1)) instructionCids
-        let instructionsMap = Map.fromList instructionsWithIndices
-        let instructionsWithActions =
-              (\(index, instructionCid) -> (index, instructionCid, Map.lookup index allocations, Map.lookup index approvals)) <$>
-              instructionsWithIndices
-        (instructionsMap, holdings) <- foldlA
-          (allocateAndApproveHelper acceptors)
-          (instructionsMap, holdings)
-          instructionsWithActions
-        let instructionCids = snd <$> Map.toList instructionsMap
-        pure (batchCid, instructionCids, holdings)
+--     choice AcceptOneTimeOffer : (ContractId Batch.I, [ContractId Instruction.I], HoldingsMap)
+--       controller acceptors
+--       do
+--         (batchCid, instructionCids) <- exercise offerCid OneTimeOffer.Accept with quantity, description
+--         let instructionsWithIndices = zip (enumFromTo 0 (length instructionCids - 1)) instructionCids
+--         let instructionsMap = Map.fromList instructionsWithIndices
+--         let instructionsWithActions =
+--               (\(index, instructionCid) -> (index, instructionCid, Map.lookup index allocations, Map.lookup index approvals)) <$>
+--               instructionsWithIndices
+--         (instructionsMap, holdings) <- foldlA
+--           (allocateAndApproveHelper acceptors)
+--           (instructionsMap, holdings)
+--           instructionsWithActions
+--         let instructionCids = snd <$> Map.toList instructionsMap
+--         pure (batchCid, instructionCids, holdings)
 
 template AllocateAndApproveHelper
   with
@@ -137,11 +137,17 @@ allocateAndApproveHelper actors (instructionsMap, holdingsMap) (index, instructi
           instructionCid'
         )
     Some PledgeFromNonFungiblesHelp -> error "Non-fungible settlement not supported"
-    Some (IssuerCreditHelp minterBurnerCid) -> do
-      (instructionCid', _) <- exercise minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid
+    Some IssuerCreditHelp -> do
+      (instructionCid', _) <- MinterBurner.exerciseInterfaceByKey @MinterBurner.I
+        (minterBurnerKey instruction)
+        viewer
+        MinterBurner.AllocateIssuerCredit with instructionCid
       pure (holdingsMap, instructionCid')
-    Some (UnallocateIssuerCreditHelp minterBurnerCid) -> do
-      (instructionCid', _) <- exercise minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid
+    Some UnallocateIssuerCreditHelp -> do
+      (instructionCid', _) <- MinterBurner.exerciseInterfaceByKey @MinterBurner.I
+        (minterBurnerKey instruction)
+        viewer
+        MinterBurner.UnallocateIssuerCredit with instructionCid
       pure (holdingsMap, instructionCid')
     Some CreditReceiverHelp -> do
       (instructionCid', _) <- exercise instructionCid Instruction.Allocate with
@@ -153,35 +159,55 @@ allocateAndApproveHelper actors (instructionsMap, holdingsMap) (index, instructi
         allocation = SettleOffledger
         actors
       pure (holdingsMap, instructionCid')
-    Some (PassThroughFromHelp account passThroughIndex) -> do
-      let passThroughInstructionCid = O.fromSomeNote
-            "Cannot find instruction"
-            (Map.lookup passThroughIndex instructionsMap)
-      passThroughInstruction <- exercise passThroughInstructionCid Instruction.GetView with viewer
+    Some (PassThroughFromHelp accountId passThroughIndex) -> do
       let passThroughInstructionKey = InstructionKey with
-            requestors = passThroughInstruction.requestors
-            batchId = passThroughInstruction.batchId
-            id = passThroughInstruction.id
+            requestors = instruction.requestors
+            batchId = instruction.batchId
+            id = passThroughIndex
+          passThroughFromAccount = AccountKey with
+            custodian = instruction.routedStep.custodian
+            owner = instruction.routedStep.sender
+            id = accountId
       (instructionCid', _) <- exercise instructionCid Instruction.Allocate with
-        allocation = PassThroughFrom (account, passThroughInstructionKey)
+        allocation = PassThroughFrom (passThroughFromAccount, passThroughInstructionKey)
         actors
       pure (holdingsMap, instructionCid')
   instructionCid <- case approval of
     None -> pure instructionCid
     Some UnapprovedHelp -> exercise instructionCid Instruction.Approve with actors, approval = Unapproved
-    Some (TakeDeliveryHelp account) -> exercise instructionCid Instruction.Approve with actors, approval = TakeDelivery account
+    Some (TakeDeliveryHelp accountId) -> do
+      let takeDeliveryAccount = AccountKey with
+            custodian = instruction.routedStep.custodian
+            owner = instruction.routedStep.receiver
+            id = accountId
+      exercise instructionCid Instruction.Approve with actors, approval = TakeDelivery takeDeliveryAccount
     Some DebitSenderHelp -> exercise instructionCid Instruction.Approve with actors, approval = DebitSender
-    Some (ApproveIssuerDebitHelp minterBurnerCid) -> exercise minterBurnerCid MinterBurner.ApproveIssuerDebit with instructionCid
-    Some (UnapproveIssuerDebitHelp minterBurnerCid) -> exercise minterBurnerCid MinterBurner.UnapproveIssuerDebit with instructionCid
-    Some SettleOffledgerAcknowledgeHelp -> exercise instructionCid Instruction.Approve with actors, approval = SettleOffledgerAcknowledge
-    Some (PassThroughToHelp account passThroughIndex) -> do
-      let passThroughInstructionCid = O.fromSomeNote
-            "Cannot find instruction"
-            (Map.lookup passThroughIndex instructionsMap)
-      passThroughInstruction <- exercise passThroughInstructionCid Instruction.GetView with viewer
+    Some ApproveIssuerDebitHelp -> MinterBurner.exerciseInterfaceByKey @MinterBurner.I
+      (minterBurnerKey instruction)
+      viewer
+      MinterBurner.ApproveIssuerDebit with instructionCid
+    Some UnapproveIssuerDebitHelp -> MinterBurner.exerciseInterfaceByKey @MinterBurner.I
+      (minterBurnerKey instruction)
+      viewer
+      MinterBurner.UnapproveIssuerDebit with instructionCid
+    Some SettleOffledgerAcknowledgeHelp ->
+      exercise instructionCid Instruction.Approve with actors, approval = SettleOffledgerAcknowledge
+    Some (PassThroughToHelp accountId passThroughIndex) -> do
       let passThroughInstructionKey = InstructionKey with
-            requestors = passThroughInstruction.requestors
-            batchId = passThroughInstruction.batchId
-            id = passThroughInstruction.id
-      exercise instructionCid Instruction.Approve with actors, approval = PassThroughTo (account, passThroughInstructionKey)
+            requestors = instruction.requestors
+            batchId = instruction.batchId
+            id = passThroughIndex
+          passThroughToAccount = AccountKey with
+            custodian = instruction.routedStep.custodian
+            owner = instruction.routedStep.receiver
+            id = accountId
+      exercise instructionCid Instruction.Approve with
+        actors
+        approval = PassThroughTo (passThroughToAccount, passThroughInstructionKey)
   pure (Map.insert index instructionCid instructionsMap, holdingsMap)
+
+minterBurnerKey : Instruction.V -> MinterBurner.V
+minterBurnerKey instruction = MinterBurner.View with
+  custodian = instruction.routedStep.custodian
+  depository = instruction.routedStep.quantity.unit.depository
+  issuer = instruction.routedStep.quantity.unit.issuer

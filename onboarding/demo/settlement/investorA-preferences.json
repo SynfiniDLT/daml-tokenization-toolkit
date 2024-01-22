@@ -1,0 +1,11 @@
+{
+  "acceptSettlementSettings": {
+    "acceptor": "InvestorA",
+    "settlementPreferences": [
+      {
+        "custodian": "SynfiniValidator",
+        "accountId": "111"
+      }
+    ]
+  }
+}

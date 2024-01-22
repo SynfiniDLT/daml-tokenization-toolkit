@@ -22,9 +22,9 @@
     },
     {
       "userId": "auth0|6502812f87540693daa0a66b",
-      "primaryParty": "AUDN_MinterBurner",
+      "primaryParty": "AUDN_Issuer",
       "actAs": [
-        "AUDN_MinterBurner"
+        "AUDN_Issuer"
       ],
       "readAs": [
         "Synfini_Public"
@@ -32,10 +32,10 @@
     },
     {
       "userId": "auth0|6502814dd572a3455f2cf5e1",
-      "primaryParty": "AUDN_MinterBurner",
+      "primaryParty": "AUDN_Issuer",
       "actAs": [],
       "readAs": [
-        "AUDN_MinterBurner",
+        "AUDN_Issuer",
         "Synfini_Public"
       ]
     },

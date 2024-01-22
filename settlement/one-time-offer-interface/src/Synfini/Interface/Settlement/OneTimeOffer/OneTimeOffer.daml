@@ -1,13 +1,16 @@
 module Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer where
 
-import Daml.Finance.Interface.Types.Common.Types
-import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
-import qualified Daml.Finance.Interface.Settlement.RouteProvider as RouteProvider
-import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
 import DA.Set (Set)
+
+import Daml.Finance.Interface.Types.Common.Types
+
 import Daml.Finance.Interface.Settlement.Types (Step)
-import qualified Daml.Finance.Interface.Settlement.Batch as Batch
-import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
+
+import Daml.Finance.Interface.Settlement.Batch qualified as Batch
+import Daml.Finance.Interface.Settlement.Factory qualified as SettlementFactory
+import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
+import Daml.Finance.Interface.Settlement.RouteProvider qualified as RouteProvider
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
 data View = View
   with
@@ -36,6 +39,13 @@ interface OneTimeOffer requires Disclosure.I where
   reject : Reject -> Update ()
 
   revoke : Revoke -> Update ()
+
+  nonconsuming choice GetView : V
+    with
+      viewer : Party
+    controller viewer
+    do
+      pure (view this)
 
   -- | Choice to allow the offerees to accept the offer and instruct the settlement (the settlement is not executed as
   -- as a result of this choice)

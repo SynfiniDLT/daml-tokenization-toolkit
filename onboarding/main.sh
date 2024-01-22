@@ -31,6 +31,10 @@ export DOPS_SETTLEMENT_ONE_TIME_OFFER_FACTORIES_FILE=${DOPS_INTERNAL}/settlement
 if [ ! -f "${DOPS_SETTLEMENT_ONE_TIME_OFFER_FACTORIES_FILE}" ]; then
   echo '{"settlementOneTimeOfferFactories": []}' > "${DOPS_SETTLEMENT_ONE_TIME_OFFER_FACTORIES_FILE}"
 fi
+export DOPS_SETTLEMENT_OPEN_OFFER_FACTORIES_FILE=${DOPS_INTERNAL}/settlement-open-offer-factories.json
+if [ ! -f "${DOPS_SETTLEMENT_OPEN_OFFER_FACTORIES_FILE}" ]; then
+  echo '{"settlementOpenOfferFactories": []}' > "${DOPS_SETTLEMENT_OPEN_OFFER_FACTORIES_FILE}"
+fi
 export DOPS_INSTRUMENT_FACTORIES_FILE=${DOPS_INTERNAL}/instrument-factories.json
 if [ ! -f "${DOPS_INSTRUMENT_FACTORIES_FILE}" ]; then
   echo '{"instrumentFactories": []}' > "${DOPS_INSTRUMENT_FACTORIES_FILE}"
@@ -38,6 +42,10 @@ fi
 export DOPS_ISSUER_FACTORIES_FILE=${DOPS_INTERNAL}/issuer-factories.json
 if [ ! -f "${DOPS_ISSUER_FACTORIES_FILE}" ]; then
   echo '{"issuerFactories": []}' > "${DOPS_ISSUER_FACTORIES_FILE}"
+fi
+export DOPS_MINTER_BURNER_FACTORIES_FILE=${DOPS_INTERNAL}/minter-burner-factories.json
+if [ ! -f "${DOPS_MINTER_BURNER_FACTORIES_FILE}" ]; then
+  echo '{"minterBurnerFactories": []}' > "${DOPS_MINTER_BURNER_FACTORIES_FILE}"
 fi
 export DOPS_ROUTE_PROVIDERS_FILE=${DOPS_INTERNAL}/route-providers.json
 if [ ! -f "${DOPS_ROUTE_PROVIDERS_FILE}" ]; then
@@ -112,10 +120,14 @@ elif [ "$command" = "create-settlement-factories" ]; then
   ${dops_commands}/create-settlement-factories.sh $@
 elif [ "$command" = "create-settlement-one-time-offer-factories" ]; then
   ${dops_commands}/create-settlement-one-time-offer-factories.sh $@
+elif [ "$command" = "create-settlement-open-offer-factories" ]; then
+  ${dops_commands}/create-settlement-open-offer-factories.sh $@
 elif [ "$command" = "create-instrument-factories" ]; then
   ${dops_commands}/create-instrument-factories.sh $@
 elif [ "$command" = "create-issuer-factories" ]; then
   ${dops_commands}/create-issuer-factories.sh $@
+elif [ "$command" = "create-minter-burner-factories" ]; then
+  ${dops_commands}/create-minter-burner-factories.sh $@
 elif [ "$command" = "create-route-providers" ]; then
   ${dops_commands}/create-route-providers.sh $@
 elif [ "$command" = "create-accounts-unilateral" ]; then
@@ -126,6 +138,12 @@ elif [ "$command" = "take-account-open-offers" ]; then
   ${dops_commands}/take-open-account-offer.sh $@
 elif [ "$command" = "create-pbas-unilateral" ]; then
   ${dops_commands}/create-pbas-unilateral.sh $@
+elif [ "$command" = "create-settlement-open-offers" ]; then
+  ${dops_commands}/create-settlement-open-offers.sh $@
+elif [ "$command" = "take-settlement-open-offer" ]; then
+  ${dops_commands}/take-settlement-open-offer.sh $@
+elif [ "$command" = "accept-settlement" ]; then
+  ${dops_commands}/accept-settlement.sh $@
 elif [ "$command" = "create-mint-unilateral" ]; then
   ${dops_commands}/create-mint-unilateral.sh $@
 elif [ "$command" = "create-mint-open-offers" ]; then
@@ -146,6 +164,8 @@ elif [ "$command" = "execute-burn" ]; then
   ${dops_commands}/execute-burn.sh $@
 elif [ "$command" = "create-issuers" ]; then
   ${dops_commands}/create-issuers.sh $@
+elif [ "$command" = "create-minter-burners" ]; then
+  ${dops_commands}/create-minter-burners.sh $@
 elif [ "$command" = "create-fund-offer-unilateral" ]; then
   ${dops_commands}/create-fund-offer.sh $@
 elif [ "$command" = "create-fund-issuer-open-offers" ]; then
