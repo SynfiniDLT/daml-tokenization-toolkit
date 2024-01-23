@@ -11,6 +11,10 @@ import { useLocation } from "react-router-dom";
 import SettlementDetails, { SettlementDetailsSimple } from "../components/layout/settlementDetails";
 import AccountsSelect from "../components/layout/accountsSelect";
 import { DivBorderRoundContainer } from "../components/layout/general.styled";
+import { AllocateAndApproveHelper } from "@daml.js/settlement-helpers/lib/Synfini/Settlement/Helpers";
+import { arrayToSet } from "../components/Util";
+import { emptyMap, Map } from "@daml/types";
+import * as damlTypes from "@daml/types";
 
 export const SettlementActionScreen: React.FC = () => {
   //const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
@@ -44,6 +48,12 @@ export const SettlementActionScreen: React.FC = () => {
   const handleSubmit = async (e: any) => {
     console.log("submit", selectAccountInput);
     e.preventDefault();
+    // ledger.createAndExercise(AllocateAndApproveHelper.AllocateAndApprove, 
+    //   {actors: arrayToSet([ctx.primaryParty]),
+    //   holdings: damlTypes.emptyMap<damlTypes.Party, {}>(),
+      
+    //   },
+    //   )
   }
 
   useEffect(() => {

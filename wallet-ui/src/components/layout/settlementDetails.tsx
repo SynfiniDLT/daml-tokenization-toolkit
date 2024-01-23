@@ -133,13 +133,13 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
                 <br />
                 Issuer: {nameFromParty(step.routedStep.quantity.unit.issuer)}
               </div>
-              <hr></hr>
               {props.settlement.execution===null && step.allocation === null && ((step.routedStep.receiver === ctx.primaryParty || step.routedStep.sender === ctx.primaryParty) && step.approval === null) && (
-               
-
-               <button onClick={() => handleSeeDetails(props.settlement)}>Action Required</button>
-               
-              )}
+                
+                
+                <button onClick={() => handleSeeDetails(props.settlement)}>Action Required</button>
+                
+                )}
+                <hr></hr>
             </div>
           </div>
         ))}
