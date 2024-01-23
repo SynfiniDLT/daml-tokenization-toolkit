@@ -54,7 +54,7 @@ export function formatCurrency(amountString: string, locale: string): string {
       fractionalSecondDigits: 3,
     });
   };
-
+  
   export const formatPercentage = (percentageString: string) => {
     const percentage = parseFloat(percentageString);
     if (isNaN(percentage)) {

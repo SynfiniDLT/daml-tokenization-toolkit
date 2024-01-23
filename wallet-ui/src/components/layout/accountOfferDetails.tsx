@@ -26,14 +26,14 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
   const ledger = userContext.useLedger();
   const wallet_operaton = process.env.REACT_APP_LEDGER_WALLET_OPERATOR;
 
-  const [isOpen, setIsOpen] = useState<boolean>(false);
   const [accountOffer, setAccountOffer] = useState<AccountOpenOfferSummary>();
   const [accountName, setAccountName] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
 
   const handleClick = (accountOffer: AccountOpenOfferSummary) => {
-    setIsOpen(!isOpen);
+    setIsModalOpen(!isModalOpen);
     setAccountOffer(accountOffer);
   };
 
@@ -42,7 +42,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
   };
 
   const handleCloseMessageModal = () => {
-    setIsOpen(!isOpen);
+    setIsModalOpen(!isModalOpen);
   };
 
   const handleConfirm = () => {
@@ -65,15 +65,15 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
             setMessage("");
             setError("Operation error!");
           }
-          setIsOpen(false);
+          setIsModalOpen(false);
         })
         .catch((err) => {
-          setIsOpen(false);
+          setIsModalOpen(false);
           setMessage("");
           setError("Operation error! \n \n Error:" + JSON.stringify(err.errors[0]));
         });
     }
-    setIsOpen(!isOpen);
+    setIsModalOpen(!isModalOpen);
   };
 
 
@@ -133,7 +133,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
       <Modal
         id="shareSbtModal"
         className="simpleModal"
-        isOpen={isOpen}
+        isOpen={isModalOpen}
         onRequestClose={handleCloseMessageModal}
         contentLabel="share SBT"
       >

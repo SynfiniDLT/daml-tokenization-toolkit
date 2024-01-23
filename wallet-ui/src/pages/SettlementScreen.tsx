@@ -50,18 +50,18 @@ const SettlementScreen: React.FC = () => {
     );
   }
 
-  let resultArray = settlements;
+  let settlementsFiltered = settlements;
 
-  console.log("state",state)
   if (state!== null && state.transactionId!== null ){
     const settlement = settlements?.find(settlement => settlement.batchId.unpack === state.transactionId);
-    resultArray = settlement ? [settlement] : [];
+    settlementsFiltered = settlement ? [settlement] : [];
   }
+  console.log("settlements",settlementsFiltered)
 
   return (
     <PageLayout>
       <div>
-            <Settlements settlements={resultArray} />
+            <Settlements settlements={settlementsFiltered} />
       </div>
     </PageLayout>
   );
