@@ -17,6 +17,7 @@
   "license": "ISC",
   "dependencies": {
     "@auth0/auth0-react": "^2.0.1",
+    "@daml.js/daml-finance-interface-types-common": "file:daml.js/daml-finance-interface-types-common-1.0.1",
     "@daml.js/daml-finance-interface-holding": "file:daml.js/daml-finance-interface-holding-2.0.0",
     "@daml.js/daml-finance-interface-util": "file:daml.js/daml-finance-interface-util-2.0.0",
     "@daml.js/daml-finance-interface-settlement": "file:daml.js/daml-finance-interface-settlement-2.0.0",
