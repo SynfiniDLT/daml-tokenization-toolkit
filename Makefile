@@ -275,6 +275,7 @@ $(wallet_ui_codegen): $(daml_finance_dir) \
 		$(minter_burner_interface_dar) \
 		$(settlement_one_time_offer_interface_dar) \
 		$(settlement_helpers_dar) \
+		$(daml_finance_dir)/daml-finance-interface-types-common.dar \
 		$(daml_finance_dir)/daml-finance-interface-util.dar \
 		.build/fund-tokenization.dar \
 		$(daml_finance_dir)/daml-finance-interface-holding.dar \

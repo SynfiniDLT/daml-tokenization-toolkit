@@ -11,10 +11,12 @@ import { useLocation } from "react-router-dom";
 import SettlementDetails, { SettlementDetailsSimple } from "../components/layout/settlementDetails";
 import AccountsSelect from "../components/layout/accountsSelect";
 import { DivBorderRoundContainer } from "../components/layout/general.styled";
-import { AllocateAndApproveHelper } from "@daml.js/settlement-helpers/lib/Synfini/Settlement/Helpers";
+import { AllocateAndApproveHelper, AllocationHelp, ApprovalHelp, HoldingDescriptor } from "@daml.js/settlement-helpers/lib/Synfini/Settlement/Helpers";
 import { arrayToSet } from "../components/Util";
-import { emptyMap, Map } from "@daml/types";
 import * as damlTypes from "@daml/types";
+import { Id, InstrumentKey, Quantity } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
+import { Base } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Base";
+import { Instruction } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Instruction";
 
 export const SettlementActionScreen: React.FC = () => {
   //const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
@@ -45,15 +47,142 @@ export const SettlementActionScreen: React.FC = () => {
     }
   };
 
+  function acceptanceActions(
+    accounts: damlTypes.Map<damlTypes.Party, Id>,
+    settlement: SettlementSummary
+  ): {
+    allocations: damlTypes.Map<Id, AllocationHelp>,
+    approvals: damlTypes.Map<Id, ApprovalHelp>,
+    pledgeDescriptors: HoldingDescriptor[]
+  } {
+    let custodianQuantitiesMap: damlTypes.Map<
+        {custodian: damlTypes.Party, quantity: Quantity<InstrumentKey, string>},
+        Id[]
+      > = damlTypes.emptyMap();
+    settlement.steps.forEach(step => {
+      if (step.routedStep.receiver == ctx.primaryParty) {
+        const k = {custodian: step.routedStep.custodian, quantity: step.routedStep.quantity };
+        const ids = custodianQuantitiesMap.get(k) || [];
+        ids.push(step.instructionId);
+        custodianQuantitiesMap = custodianQuantitiesMap.set(k, ids);
+      }
+    });
+    let allocations: damlTypes.Map<Id, AllocationHelp> = damlTypes.emptyMap();
+    let approvals: damlTypes.Map<Id, ApprovalHelp> = damlTypes.emptyMap();
+    const pledgeDescriptors: HoldingDescriptor[] = [];
+
+    // Update allocations
+    settlement.steps.forEach(step => {
+      if (step.routedStep.sender == ctx.primaryParty) {
+        const availablePassThroughFroms = custodianQuantitiesMap.get(
+          {custodian: step.routedStep.custodian, quantity: step.routedStep.quantity}
+        ) || [];
+        const accountId = accounts.get(step.routedStep.custodian);
+        if (accountId !== undefined) {
+          if (availablePassThroughFroms.length > 0) {
+            const passThroughFromId = availablePassThroughFroms.pop();
+            if (passThroughFromId == undefined) {
+              throw Error("Internal error");
+            }
+            allocations = allocations
+              .set(
+                step.instructionId,
+                { tag: 'PassThroughFromHelp', value: { accountId, instructionIndex: passThroughFromId } }
+              );
+            approvals = approvals
+              .set(
+                passThroughFromId,
+                { tag: 'PassThroughToHelp', value: { accountId, instructionIndex: step.instructionId } }
+              );
+          } else {
+            allocations = allocations
+              .set(
+                step.instructionId,
+                { tag: 'PledgeFromFungiblesHelp', value: { }}
+              );
+            const holdingDescriptor = {
+              custodian: step.routedStep.custodian,
+              instrument: step.routedStep.quantity.unit
+            };
+            pledgeDescriptors.push(holdingDescriptor);
+          }
+        }
+      } else if (
+        step.routedStep.sender == step.routedStep.custodian &&
+        step.routedStep.receiver == step.routedStep.quantity.unit.issuer &&
+        step.routedStep.quantity.unit.issuer == ctx.primaryParty
+      ) {
+        // This is a "mint" instruction to be approved by the issuer
+        allocations = allocations.set(step.instructionId, { tag: 'IssuerCreditHelp', value: {} });
+      }
+    });
+
+    // Update approvals
+    settlement
+      .steps
+      .filter(step => !approvals.has(step.instructionId))
+      .forEach(step => {
+      if (step.routedStep.receiver == ctx.primaryParty) {
+        const accountId = accounts.get(step.routedStep.custodian);
+        if (accountId !== undefined) {
+          approvals = approvals.set(step.instructionId, { tag: 'TakeDeliveryHelp', value : accountId });
+        }
+      } else if (
+        step.routedStep.receiver == step.routedStep.custodian &&
+        step.routedStep.sender == step.routedStep.quantity.unit.issuer &&
+        step.routedStep.quantity.unit.issuer == ctx.primaryParty
+      ) {
+        // This is a "burn" instruction to be approved by the issuer
+        approvals = approvals.set(step.instructionId, { tag: 'ApproveIssuerDebitHelp', value: {} });
+      }
+    });
+
+    return {
+      allocations, approvals, pledgeDescriptors
+    };
+  }
+
   const handleSubmit = async (e: any) => {
-    console.log("submit", selectAccountInput);
     e.preventDefault();
-    // ledger.createAndExercise(AllocateAndApproveHelper.AllocateAndApprove, 
-    //   {actors: arrayToSet([ctx.primaryParty]),
-    //   holdings: damlTypes.emptyMap<damlTypes.Party, {}>(),
-      
-    //   },
-    //   )
+    console.log("submit", selectAccountInput);
+    const splitAccountInput = selectAccountInput.split("@");
+    let custodianToAccount: damlTypes.Map<damlTypes.Party, Id> = emptyMap();
+    custodianToAccount = custodianToAccount.set(splitAccountInput[0], { unpack: splitAccountInput[1]})
+
+    const settlement: SettlementSummary = state.settlement;
+    const { allocations, approvals, pledgeDescriptors } = acceptanceActions(custodianToAccount, settlement);
+    const holdings: damlTypes.Map<HoldingDescriptor, damlTypes.ContractId<Base>[]> = damlTypes.emptyMap();
+
+    for (const holdingDescriptor of pledgeDescriptors) {
+      if (!holdings.has(holdingDescriptor)) {
+        const accountId = custodianToAccount.get(holdingDescriptor.custodian);
+        if (accountId !== undefined) {
+          const account = {
+            custodian: holdingDescriptor.custodian,
+            owner: ctx.primaryParty,
+            id: accountId
+          };
+          const activeHoldings = await walletClient.getHoldings({account, instrument: holdingDescriptor.instrument })
+          holdings.set(holdingDescriptor, activeHoldings.holdings.map(h => h.cid));
+        }
+      }
+    }
+
+    let instructions: damlTypes.Map<Id, damlTypes.ContractId<Instruction>> = damlTypes.emptyMap();
+    settlement.steps.forEach(step => instructions = instructions.set(step.instructionId, step.instructionCid));
+
+    // const
+    await ledger.createAndExercise(
+      AllocateAndApproveHelper.AllocateAndApprove, 
+      {
+        actors: arrayToSet([ctx.primaryParty]),
+        instructions,
+        holdings,
+        allocations,
+        approvals
+      },
+      {}
+    );
   }
 
   useEffect(() => {
