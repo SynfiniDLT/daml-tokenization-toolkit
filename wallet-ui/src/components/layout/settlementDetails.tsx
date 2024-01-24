@@ -135,10 +135,11 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
               </div>
               {/* {props.settlement.execution===null && step.allocation === null && ((step.routedStep.receiver === ctx.primaryParty || step.routedStep.sender === ctx.primaryParty) && step.approval === null) && ( */}
                 
-                
+                {props.settlement.execution === null && (
+                  
                 <button onClick={() => handleSeeDetails(props.settlement)}>Action Required</button>
                 
-                {/* )} */}
+                 )}
                 <hr></hr>
             </div>
           </div>

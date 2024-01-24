@@ -6,10 +6,22 @@ import { userContext } from "../../App";
 import { MinterBurner } from "@daml.js/issuer-onboarding-minter-burner-interface/lib/Synfini/Interface/Onboarding/Issuer/MinterBurner/MinterBurner";
 import { Factory as SettlementFactory } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Factory";
 import { v4 as uuid } from "uuid";
+import Modal from "react-modal";
+import { useState } from "react";
 
 export default function InstrumentsToken(props: { instruments?: InstrumentSummary[] }) {
   const nav = useNavigate();
   const ledger = userContext.useLedger();
+
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [message, setMessage] = useState<string>("");
+  const [error, setError] = useState<string>("");
+
+
+  const handleCloseModal = (path: string) => {
+    setIsModalOpen(!isModalOpen);
+    if (path !== "") nav("/" + path);
+  };
 
   const handleCreateOffer = (instrument: InstrumentSummary) => {
     nav("/offers/create", { state: { instrument: instrument } });
@@ -31,7 +43,6 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
           // TODO add filter for custodian here
         }
       );
-      console.log("Got minter burners", minterBurners);
 
       if (minterBurners.length < 1) {
         console.log("Error: user is not authorised to mint/burn tokens!");
@@ -64,7 +75,14 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
                 }
               ]
             }
-          );
+          ).then((res) => {
+            setMessage("Pre-mint completed with success!")
+            setIsModalOpen(!isModalOpen);
+            console.log("resp", res);
+          }).catch((err) => {
+            setError("error when executing pre-mint: " + err.errors[0]);
+            setIsModalOpen(!isModalOpen);
+          });
         }
       }
     }
@@ -156,6 +174,36 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
           </>
         )}
       </div>
+      <Modal
+        id="handleCloseMessageModal"
+        className="MessageModal"
+        isOpen={isModalOpen}
+        onRequestClose={() => handleCloseModal}
+        contentLabel="Settlement Modal"
+      >
+        <>
+          <div>
+            {message !== "" ? (
+              <span style={{ color: "#66FF99", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{message}</span>
+            ) : (
+              <span style={{ color: "#FF6699", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{error}</span>
+            )}
+          </div>
+          <p></p>
+          <div className="containerButton">
+            <div>
+              <button
+                type="button"
+                className="button__login"
+                style={{ width: "150px" }}
+                onClick={() => handleCloseModal("settlements")}
+              >OK</button>
+            </div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;</div>
+          </div>
+          <p></p>
+        </>
+      </Modal>
     </>
   );
 }
