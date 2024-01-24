@@ -69,6 +69,12 @@ const SettlementScreen: React.FC = () => {
 
   console.log("settlements", settlementsFiltered);
 
+  let transactionPendingStyle = "button__sign-up";
+  let transactionSettledStyle = "button__sign-up";
+  if (filter === 'pending') transactionPendingStyle = "button__sign-up-selected";
+  if (filter === 'settled') transactionSettledStyle = "button__sign-up-selected";
+  
+  
   return (
     <PageLayout>
       <div>
@@ -77,10 +83,10 @@ const SettlementScreen: React.FC = () => {
         </div>
         <div>
         <div style={{ marginLeft: "200px",display: "flex", justifyContent: "left"  }} >
-          <button type="button" className="button__sign-up" style={{width: "100px"}} onClick={() => setFilter("pending")}>
+          <button type="button" className={transactionPendingStyle} style={{width: "100px"}} onClick={() => setFilter("pending")}>
             Pending
           </button>
-          <button type="button" className="button__sign-up" style={{width: "100px"}} onClick={() => setFilter("settled")}>
+          <button type="button" className={transactionSettledStyle} style={{width: "100px"}} onClick={() => setFilter("settled")}>
             Settled
           </button>
         </div>

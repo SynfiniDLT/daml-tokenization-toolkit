@@ -6,7 +6,7 @@
         "instrumentFactory" : "token.V1",
         "instrumentType" : "Token",
         "depository" : "AUDN_Depository",
-        "issuer" : "AUDN_MinterBurner",
+        "issuer" : "AUDN_Issuer",
         "observers" : [
           {
             "context": "public",

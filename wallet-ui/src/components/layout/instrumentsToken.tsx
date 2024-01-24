@@ -2,12 +2,18 @@ import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfi
 import { BoxArrowUpRight } from "react-bootstrap-icons";
 import { toDateTimeString } from "../Util";
 import { useNavigate } from "react-router-dom";
+import { userContext } from "../../App";
 
 export default function InstrumentsToken(props: { instruments?: InstrumentSummary[] }) {
   const nav = useNavigate();
 
   const handleCreateOffer = (instrument: InstrumentSummary) => {
     nav("/offers/create", { state: { instrument: instrument } });
+  };
+
+  const handlePreMint = (instrument: InstrumentSummary) => {
+    const ledger = userContext.useLedger();
+    
   };
 
   return (
@@ -73,6 +79,14 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
                                   onClick={() => handleCreateOffer(instrument)}
                                 >
                                   Create Offer
+                                </button>
+                                <button
+                                  type="button"
+                                  name="createOffer"
+                                  style={{ width: "120px" }}
+                                  onClick={() => handlePreMint(instrument)}
+                                >
+                                  Pre-Mint
                                 </button>
                               </td>
                             </tr>
