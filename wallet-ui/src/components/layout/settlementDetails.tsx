@@ -30,7 +30,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
 
   const SettlementDetailsContainer = styled.div`
     border-radius: 12px;
-    margin: 5px;
+    margin: 15px;
     padding: 10px;
     background-color: #2a2b2f;
     box-shadow: 6.8px 13.6px 13.6px hsl(0deg 0% 0% / 0.29);
