@@ -22,8 +22,8 @@
       "custodian": "SynfiniValidator",
       "id": "222",
       "description": "transaction account",
-      "incomingControllers": ["InvestorA"],
-      "outgoingControllers": ["InvestorA"],
+      "incomingControllers": ["InvestorB"],
+      "outgoingControllers": ["InvestorB"],
       "holdingFactory": "FungibleV1",
       "observers": [
         {
