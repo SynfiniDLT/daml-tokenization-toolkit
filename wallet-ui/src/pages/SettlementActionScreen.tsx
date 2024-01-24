@@ -299,7 +299,7 @@ export const SettlementActionScreen: React.FC = () => {
                 type="button"
                 className="button__login"
                 style={{ width: "150px" }}
-                onClick={() => handleCloseModal("settlements")}
+                onClick={() => handleCloseModal(`settlements#${state.settlement.batchId.unpack}`)}
               >OK</button>
             </div>
             <div>&nbsp;&nbsp;&nbsp;&nbsp;</div>
