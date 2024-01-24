@@ -5,19 +5,24 @@ import { useNavigate } from "react-router-dom";
 import { userContext } from "../../App";
 import { MinterBurner } from "@daml.js/issuer-onboarding-minter-burner-interface/lib/Synfini/Interface/Onboarding/Issuer/MinterBurner/MinterBurner";
 import { Factory as SettlementFactory } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Factory";
+import { v4 as uuid } from "uuid";
 
 export default function InstrumentsToken(props: { instruments?: InstrumentSummary[] }) {
   const nav = useNavigate();
+  const ledger = userContext.useLedger();
 
   const handleCreateOffer = (instrument: InstrumentSummary) => {
     nav("/offers/create", { state: { instrument: instrument } });
   };
 
   const handlePreMint = async (instrument: InstrumentSummary) => {
-    const ledger = userContext.useLedger();
     if (instrument.tokenView == null) {
       console.log("Internal error: tokenView is null");
     } else {
+      // get piepoint quantity from instrument
+      const description = instrument.tokenView?.token.description;
+      let json_description = JSON.parse(description);
+
       const minterBurners = await ledger.query(
         MinterBurner,
         {
@@ -36,7 +41,7 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
         const settlementFactories = await ledger.query(SettlementFactory);
         if (settlementFactories.length > 0) {
           const settlementFactory = settlementFactories[0];
-          const batchId = "1234"; //TODO use uuid
+          const batchId = uuid();
           await ledger.exercise(
             SettlementFactory.Instruct,
             settlementFactory.contractId,
@@ -54,7 +59,7 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
                   receiver: instrument.tokenView.token.instrument.issuer,
                   quantity: {
                     unit: instrument.tokenView.token.instrument,
-                    amount: "999" // TODO Fix amount
+                    amount: json_description.piePointQuantity // PIE POINT QUANTITY 
                   }
                 }
               ]

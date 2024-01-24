@@ -71,7 +71,9 @@ export const OfferFormScreen: React.FC = () => {
         observers: emptyMap<string, Set<Party>>().set("initialObservers", arrayToSet(observers)),
         settlementTime: null,
         steps: [{
-          sender: ctx.primaryParty, receiver: investorInput, quantity: {amount: "1", unit: state.instrument.tokenView.token.instrument}
+          sender: ctx.primaryParty, receiver: producerInput, quantity: {amount: "1", unit: state.instrument.tokenView.token.instrument}
+        },{
+          sender: producerInput, receiver: investorInput, quantity: {amount: "1", unit: state.instrument.tokenView.token.instrument}
         }],
         minQuantity: json_description.piePointQuantity,
         maxQuantity: json_description.piePointQuantity,

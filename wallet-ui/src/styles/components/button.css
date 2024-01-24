@@ -117,10 +117,12 @@
 
 .button__sign-up-selected {
   min-width: 8.4rem;
-
   border: 0.1rem solid var(--black);
   color: var(--black);
   background-color: transparent;
+
+  background: var(--white);
+
   width: 50%;
   font-size: 1.6rem;
 

@@ -162,7 +162,7 @@ export const SettlementActionScreen: React.FC = () => {
 
     const settlement: SettlementSummary = state.settlement;
     const { allocations, approvals, pledgeDescriptors } = acceptanceActions(custodianToAccount, settlement);
-    const holdings: damlTypes.Map<HoldingDescriptor, damlTypes.ContractId<Base>[]> = damlTypes.emptyMap();
+    let holdings: damlTypes.Map<HoldingDescriptor, damlTypes.ContractId<Base>[]> = damlTypes.emptyMap();
 
     for (const holdingDescriptor of pledgeDescriptors) {
       if (!holdings.has(holdingDescriptor)) {
@@ -174,7 +174,7 @@ export const SettlementActionScreen: React.FC = () => {
             id: accountId,
           };
           const activeHoldings = await walletClient.getHoldings({ account, instrument: holdingDescriptor.instrument });
-          holdings.set(
+          holdings = holdings.set(
             holdingDescriptor,
             activeHoldings.holdings.map((h) => h.cid)
           );
