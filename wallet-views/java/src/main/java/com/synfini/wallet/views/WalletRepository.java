@@ -1,6 +1,7 @@
 package com.synfini.wallet.views;
 
 import com.daml.ledger.javaapi.data.Unit;
+import da.types.Tuple2;
 import daml.finance.interface$.account.account.Account;
 import daml.finance.interface$.account.account.Controllers;
 import daml.finance.interface$.holding.base.Base;
@@ -14,9 +15,10 @@ import daml.finance.interface$.settlement.batch.Batch;
 import daml.finance.interface$.settlement.instruction.Instruction;
 import daml.finance.interface$.settlement.types.Allocation;
 import daml.finance.interface$.settlement.types.Approval;
+import daml.finance.interface$.settlement.types.InstructionKey;
 import daml.finance.interface$.settlement.types.RoutedStep;
-import daml.finance.interface$.settlement.types.allocation.Pledge;
-import daml.finance.interface$.settlement.types.approval.TakeDelivery;
+import daml.finance.interface$.settlement.types.allocation.*;
+import daml.finance.interface$.settlement.types.approval.*;
 import daml.finance.interface$.types.common.types.AccountKey;
 import daml.finance.interface$.types.common.types.Id;
 import daml.finance.interface$.types.common.types.InstrumentKey;
@@ -316,10 +318,15 @@ public class WalletRepository {
       "  instructions.instrument_depository,\n" +
       "  instructions.instrument_id,\n" +
       "  instructions.instrument_version,\n" +
-      "  instructions.approval_take_delivery_account_custodian,\n" +
-      "  instructions.approval_take_delivery_account_owner,\n" +
-      "  instructions.approval_take_delivery_account_id,\n" +
       "  instructions.allocation_pledge_cid,\n" +
+      "  instructions.allocation_credit_receiver,\n" +
+      "  instructions.allocation_pass_through_from,\n" +
+      "  instructions.allocation_pass_through_from_account_id,\n" +
+      "  instructions.allocation_settle_off_ledger,\n" +
+      "  instructions.approval_account_id,\n" +
+      "  instructions.approval_pass_through_to,\n" +
+      "  instructions.approval_debit_sender,\n" +
+      "  instructions.approval_settle_off_ledger,\n" +
       "  instructions.create_offset instruction_create_offset,\n" +
       "  instructions.archive_offset instruction_archive_offset,\n" +
       "  instructions.archive_effective_time instruction_archive_effective_time,\n" +
@@ -492,27 +499,56 @@ public class WalletRepository {
           new Id(rs.getString("instrument_id")),
           rs.getString("instrument_version")
         );
+        final var routedStep = new RoutedStep(
+          rs.getString("sender"),
+          rs.getString("receiver"),
+          rs.getString("custodian"),
+          new Quantity<>(instrumentKey, rs.getBigDecimal("amount"))
+        );
         final var instructionCid = new Instruction.ContractId(rs.getString("instruction_cid"));
-        final var takeDeliveryOwner = rs.getString("approval_take_delivery_account_owner");
-        final var takeDeliveryCustodian = rs.getString("approval_take_delivery_account_custodian");
-        final var takeDeliveryId = rs.getString("approval_take_delivery_account_id");
-        final Optional<Approval> approval =
-          (takeDeliveryOwner != null && takeDeliveryCustodian != null && takeDeliveryId != null) ?
-            Optional.of(
-              new TakeDelivery(new AccountKey(takeDeliveryCustodian, takeDeliveryOwner, new Id(takeDeliveryId)))
-            ) :
-            Optional.empty();
+        final var deliveryAccountId = rs.getString("approval_account_id");
+        final var approvalPassThroughTo = rs.getString("approval_pass_through_to");
+        final var approvalDebitSender = rs.getBoolean("approval_debit_sender");
+        final var approvalSettleOffLedger = rs.getBoolean("approval_settle_off_ledger");
+        final Approval approval;
+        if (deliveryAccountId != null) {
+          final var deliveryAccount = new AccountKey(routedStep.custodian, routedStep.receiver, new Id(deliveryAccountId));
+          if (approvalPassThroughTo != null) {
+            approval = new PassThroughTo(
+              new Tuple2<>(deliveryAccount, new InstructionKey(requestors, batchId, new Id(approvalPassThroughTo)))
+            );
+          } else {
+            approval = new TakeDelivery(deliveryAccount);
+          }
+        } else if (approvalDebitSender) {
+          approval = new DebitSender(Unit.getInstance());
+        } else if (approvalSettleOffLedger) {
+          approval = new SettleOffledgerAcknowledge(Unit.getInstance());
+        } else {
+          approval = new Unapproved(Unit.getInstance());
+        }
         final var allocationPledgeCid = rs.getString("allocation_pledge_cid");
-        final Optional<Allocation> allocation = allocationPledgeCid != null ?
-          Optional.of(new Pledge(new Base.ContractId(allocationPledgeCid))) :
-          Optional.empty();
+        final var allocationCreditReceiver = rs.getBoolean("allocation_credit_receiver");
+        final var allocationPassThroughFrom = rs.getString("allocation_pass_through_from");
+        final var allocationPassThroughFromAccountId = rs.getString("allocation_pass_through_from_account_id");
+        final var allocationSettleOffLedger = rs.getBoolean("allocation_settle_off_ledger");
+        final Allocation allocation;
+        if (allocationPledgeCid != null) {
+          allocation = new Pledge(new Base.ContractId(allocationPledgeCid));
+        } else if (allocationCreditReceiver) {
+          allocation = new CreditReceiver(Unit.getInstance());
+        } else if (allocationPassThroughFrom != null && allocationPassThroughFromAccountId != null) {
+          final var account = new AccountKey(routedStep.custodian, routedStep.sender, new Id(allocationPassThroughFromAccountId));
+          allocation = new PassThroughFrom(
+            new Tuple2<>(account, new InstructionKey(requestors, batchId, new Id(allocationPassThroughFrom)))
+          );
+        } else if (allocationSettleOffLedger) {
+          allocation = new SettleOffledger(Unit.getInstance());
+        } else {
+          allocation = new Unallocated(Unit.getInstance());
+        }
         final var step = new SettlementStep(
-          new RoutedStep(
-            rs.getString("sender"),
-            rs.getString("receiver"),
-            rs.getString("custodian"),
-            new Quantity<>(instrumentKey, rs.getBigDecimal("amount"))
-          ),
+          routedStep,
           new Id(rs.getString("instruction_id")),
           instructionCid,
           allocation,

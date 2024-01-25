@@ -89,8 +89,8 @@ data SettlementStep = SettlementStep
     routedStep : RoutedStep
     instructionId : Id
     instructionCid : ContractId Instruction.I
-    allocation : Optional Allocation
-    approval : Optional Approval
+    allocation : Allocation
+    approval : Approval
   deriving (Show, Eq)
 
 data SettlementSummary = SettlementSummary

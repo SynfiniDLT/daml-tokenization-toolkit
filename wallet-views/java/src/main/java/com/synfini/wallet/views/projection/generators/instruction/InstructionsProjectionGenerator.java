@@ -84,8 +84,8 @@ public class InstructionsProjectionGenerator implements ProjectionGenerator<Even
     final var defaultRequestors = new da.set.types.Set<String>(Collections.emptyMap());
     final var bind = Sql.<InstructionEvent>binder(
       "INSERT INTO " + table.getName() + "\n" +
-      "        (batch_id,  requestors_hash,  requestors,  instruction_id,  cid,  sender,  receiver,  custodian,  amount,  instrument_depository,  instrument_issuer,  instrument_id,  instrument_version,  allocation_pledge_cid,  approval_take_delivery_account_custodian,  approval_take_delivery_account_owner,  approval_take_delivery_account_id,  create_offset,  create_effective_time)\n" +
-      "VALUES (:batch_id, :requestors_hash, :requestors, :instruction_id, :cid, :sender, :receiver, :custodian, :amount, :instrument_depository, :instrument_issuer, :instrument_id, :instrument_version, :allocation_pledge_cid, :approval_take_delivery_account_custodian, :approval_take_delivery_account_owner, :approval_take_delivery_account_id, :create_offset, :create_effective_time)\n" +
+      "        (batch_id,  requestors_hash,  requestors,  instruction_id,  cid,  sender,  receiver,  custodian,  amount,  instrument_depository,  instrument_issuer,  instrument_id,  instrument_version,  allocation_pledge_cid,  allocation_credit_receiver,  allocation_pass_through_from,  allocation_pass_through_from_account_id,  allocation_settle_off_ledger,  approval_account_id,  approval_pass_through_to,  approval_debit_sender,  approval_settle_off_ledger,  create_offset,  create_effective_time)\n" +
+      "VALUES (:batch_id, :requestors_hash, :requestors, :instruction_id, :cid, :sender, :receiver, :custodian, :amount, :instrument_depository, :instrument_issuer, :instrument_id, :instrument_version, :allocation_pledge_cid, :allocation_credit_receiver, :allocation_pass_through_from, :allocation_pass_through_from_account_id, :allocation_settle_off_ledger, :approval_account_id, :approval_pass_through_to, :approval_debit_sender, :approval_settle_off_ledger, :create_offset, :create_effective_time)\n" +
       "ON CONFLICT(cid) DO UPDATE SET\n" +
       "  archive_offset = CASE WHEN :update_archive_offset THEN :archive_offset ELSE " + table.getName() + ".archive_offset END,\n" +
       "  archive_effective_time = CASE WHEN :update_archive_effective_time THEN :archive_effective_time ELSE " + table.getName() + ".archive_effective_time END\n"
@@ -104,9 +104,14 @@ public class InstructionsProjectionGenerator implements ProjectionGenerator<Even
     .bind("instrument_id", e -> e.view.map(v -> v.routedStep.quantity.unit.id.unpack).orElse(""), Bind.String())
     .bind("instrument_version", e -> e.view.map(v -> v.routedStep.quantity.unit.version).orElse(""), Bind.String())
     .bind("allocation_pledge_cid", e -> e.getAllocationPledgeCid().map(cid -> cid.contractId), Bind.Optional(Bind.String()))
-    .bind("approval_take_delivery_account_custodian", e -> e.getApprovalTakeDeliveryAccount().map(a -> a.custodian), Bind.Optional(Bind.String()))
-    .bind("approval_take_delivery_account_owner", e -> e.getApprovalTakeDeliveryAccount().map(a -> a.owner), Bind.Optional(Bind.String()))
-    .bind("approval_take_delivery_account_id", e -> e.getApprovalTakeDeliveryAccount().map(a -> a.id.unpack), Bind.Optional(Bind.String()))
+    .bind("allocation_credit_receiver", InstructionEvent::getAllocationCreditReceiver, Bind.Boolean())
+    .bind("allocation_pass_through_from", e -> e.getAllocationPassThroughFrom().map(a -> a.tuple2Value._2.id.unpack), Bind.Optional(Bind.String()))
+    .bind("allocation_pass_through_from_account_id", e -> e.getAllocationPassThroughFrom().map(a -> a.tuple2Value._1.id.unpack), Bind.Optional(Bind.String()))
+    .bind("allocation_settle_off_ledger", InstructionEvent::getAllocationSettleOffLedger, Bind.Boolean())
+    .bind("approval_account_id", e -> e.getApprovalAccount().map(a -> a.id.unpack), Bind.Optional(Bind.String()))
+    .bind("approval_pass_through_to", e -> e.getApprovalPassThroughTo().map(a -> a.tuple2Value._2.id.unpack), Bind.Optional(Bind.String()))
+    .bind("approval_debit_sender", InstructionEvent::getApprovalDebitSender, Bind.Boolean())
+    .bind("approval_settle_off_ledger", InstructionEvent::getApprovalSettleOffLedger, Bind.Boolean())
     .bind("create_offset", e -> e.offset.map(o -> o.value()), Bind.Optional(Bind.String()))
     .bind("create_effective_time", e -> e.effectiveTime, Bind.Optional(Bind.Instant()))
     .bind("update_archive_offset",  e -> e.view.isEmpty(), Bind.Boolean())
