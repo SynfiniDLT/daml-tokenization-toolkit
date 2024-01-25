@@ -124,6 +124,7 @@ CREATE TABLE instructions
   instruction_id VARCHAR NOT NULL,
   requestors_hash INTEGER NOT NULL,
   requestors VARCHAR[] NOT NULL,
+  settlers VARCHAR[] NOT NULL,
   cid VARCHAR UNIQUE,
   sender VARCHAR NOT NULL,
   receiver VARCHAR NOT NULL,

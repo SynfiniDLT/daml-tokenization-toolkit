@@ -97,6 +97,7 @@ data SettlementSummary = SettlementSummary
   with
     batchId : Id
     requestors : Set Party
+    settlers : Set Party
     batchCid : Optional (ContractId Batch.I)
     contextId : Optional Id
     description : Optional Text

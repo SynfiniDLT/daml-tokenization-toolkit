@@ -84,8 +84,8 @@ public class InstructionsProjectionGenerator implements ProjectionGenerator<Even
     final var defaultRequestors = new da.set.types.Set<String>(Collections.emptyMap());
     final var bind = Sql.<InstructionEvent>binder(
       "INSERT INTO " + table.getName() + "\n" +
-      "        (batch_id,  requestors_hash,  requestors,  instruction_id,  cid,  sender,  receiver,  custodian,  amount,  instrument_depository,  instrument_issuer,  instrument_id,  instrument_version,  allocation_pledge_cid,  allocation_credit_receiver,  allocation_pass_through_from,  allocation_pass_through_from_account_id,  allocation_settle_off_ledger,  approval_account_id,  approval_pass_through_to,  approval_debit_sender,  approval_settle_off_ledger,  create_offset,  create_effective_time)\n" +
-      "VALUES (:batch_id, :requestors_hash, :requestors, :instruction_id, :cid, :sender, :receiver, :custodian, :amount, :instrument_depository, :instrument_issuer, :instrument_id, :instrument_version, :allocation_pledge_cid, :allocation_credit_receiver, :allocation_pass_through_from, :allocation_pass_through_from_account_id, :allocation_settle_off_ledger, :approval_account_id, :approval_pass_through_to, :approval_debit_sender, :approval_settle_off_ledger, :create_offset, :create_effective_time)\n" +
+      "        (batch_id,  requestors_hash,  requestors,  settlers,  instruction_id,  cid,  sender,  receiver,  custodian,  amount,  instrument_depository,  instrument_issuer,  instrument_id,  instrument_version,  allocation_pledge_cid,  allocation_credit_receiver,  allocation_pass_through_from,  allocation_pass_through_from_account_id,  allocation_settle_off_ledger,  approval_account_id,  approval_pass_through_to,  approval_debit_sender,  approval_settle_off_ledger,  create_offset,  create_effective_time)\n" +
+      "VALUES (:batch_id, :requestors_hash, :requestors, :settlers, :instruction_id, :cid, :sender, :receiver, :custodian, :amount, :instrument_depository, :instrument_issuer, :instrument_id, :instrument_version, :allocation_pledge_cid, :allocation_credit_receiver, :allocation_pass_through_from, :allocation_pass_through_from_account_id, :allocation_settle_off_ledger, :approval_account_id, :approval_pass_through_to, :approval_debit_sender, :approval_settle_off_ledger, :create_offset, :create_effective_time)\n" +
       "ON CONFLICT(cid) DO UPDATE SET\n" +
       "  archive_offset = CASE WHEN :update_archive_offset THEN :archive_offset ELSE " + table.getName() + ".archive_offset END,\n" +
       "  archive_effective_time = CASE WHEN :update_archive_effective_time THEN :archive_effective_time ELSE " + table.getName() + ".archive_effective_time END\n"
@@ -93,6 +93,7 @@ public class InstructionsProjectionGenerator implements ProjectionGenerator<Even
     .bind("batch_id", e -> e.view.map(v -> v.batchId.unpack).orElse(""), Bind.String())
     .bind("requestors_hash", e -> e.view.map(v -> v.requestors).orElse(defaultRequestors).hashCode(), Bind.Int())
     .bind("requestors", e -> Util.setToArray(e.view.map(v -> v.requestors), connection), Bind.Array())
+    .bind("settlers", e -> Util.setToArray(e.view.map(v -> v.settlers), connection), Bind.Array())
     .bind("instruction_id", e -> e.view.map(v -> v.id.unpack).orElse(""), Bind.String())
     .bind("cid", e -> e.contractId, Bind.String())
     .bind("sender", e -> e.view.map(v -> v.routedStep.sender).orElse(""), Bind.String())

@@ -1129,6 +1129,7 @@ public class IntegrationTest {
         new SettlementSummary(
           batchId,
           requestors,
+          settlers,
           Optional.empty(),
           contextId,
           Optional.empty(),
@@ -1282,6 +1283,7 @@ public class IntegrationTest {
     final var settlement1 = new SettlementSummary(
       batch1Id,
       requestors1,
+      settlers1,
       Optional.of(createBatchResult1.batchCid),
       contextId1,
       Optional.of(description1),
@@ -1301,6 +1303,7 @@ public class IntegrationTest {
     final var settlement2 = new SettlementSummary(
       batch2Id,
       requestors2,
+      settlers2,
       Optional.of(createBatchResult2.batchCid),
       contextId2,
       Optional.of(description2),
@@ -1319,6 +1322,7 @@ public class IntegrationTest {
     final var settlement2VisibleToCustodian = new SettlementSummary(
       settlement2.batchId,
       settlement2.requestors,
+      settlement2.settlers,
       Optional.empty(),
       Optional.empty(),
       Optional.empty(),

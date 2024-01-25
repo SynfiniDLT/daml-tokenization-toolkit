@@ -303,6 +303,7 @@ public class WalletRepository {
       "  instructions.batch_id,\n" +
       "  instructions.requestors,\n" +
       "  instructions.requestors_hash,\n" +
+      "  instructions.settlers,\n" +
       "  bs.cid batch_cid,\n" +
       "  bs.context_id,\n" +
       "  bs.description,\n" +
@@ -486,6 +487,7 @@ public class WalletRepository {
         final var batchId = new Id(rs.getString("batch_id"));
         final var requestorsHash = rs.getInt("requestors_hash");
         final var requestors = arrayToSet(rs.getArray("requestors"));
+        final var settlers = arrayToSet(rs.getArray("settlers"));
         final var batchCid = Optional.ofNullable(rs.getString("batch_cid")).map(Batch.ContractId::new);
         final var contextId = Optional.ofNullable(rs.getString("context_id")).map(Id::new);
         final var description = Optional.ofNullable(rs.getString("description"));
@@ -567,6 +569,7 @@ public class WalletRepository {
           current = new SettlementSummary(
             batchId,
             requestors,
+            settlers,
             batchCid,
             contextId,
             description,
@@ -580,6 +583,7 @@ public class WalletRepository {
           current = new SettlementSummary(
             current.batchId,
             current.requestors,
+            current.settlers,
             current.batchCid.or(() -> batchCid),
             current.contextId.or(() -> contextId),
             current.description.or(() -> description),
