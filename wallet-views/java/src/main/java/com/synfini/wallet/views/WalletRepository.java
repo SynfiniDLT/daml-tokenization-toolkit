@@ -52,7 +52,7 @@ public class WalletRepository {
     this.pgDataSource = pgDataSource;
   }
 
-  public List<AccountSummary> accountsByOwner(String owner) {
+  public List<AccountSummary> accounts(Optional<String> custodian, String owner) {
     final var queryAccounts =
       "SELECT DISTINCT ON (custodian, owner, account_id) *\n" +
       "FROM accounts\n" +
@@ -97,8 +97,12 @@ public class WalletRepository {
       "  latest_accounts.owner = removes.owner AND\n" +
       "  latest_accounts.custodian = removes.custodian AND\n" +
       "  latest_accounts.account_id = removes.account_id\n" +
-      "WHERE latest_accounts.owner = ?",
-      ps -> ps.setString(1, owner),
+      "WHERE (? IS NULL OR latest_accounts.custodian = ?) AND latest_accounts.owner = ?",
+      ps -> {
+        ps.setString(1, custodian.orElse(null));
+        ps.setString(2, custodian.orElse(null));
+        ps.setString(3, owner);
+      },
       new AccountRowMapper()
     );
   }

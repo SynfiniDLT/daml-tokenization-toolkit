@@ -62,6 +62,7 @@ data HoldingFilter = HoldingFilter
 
 data AccountFilter = AccountFilter
   with
+    custodian : Optional Party
     owner : Party
   deriving (Show, Eq)
 
