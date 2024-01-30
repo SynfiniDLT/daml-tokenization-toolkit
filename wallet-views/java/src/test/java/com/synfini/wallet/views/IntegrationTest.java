@@ -5,7 +5,6 @@ import com.daml.ledger.api.v1.admin.PackageManagementServiceOuterClass;
 import com.daml.ledger.api.v1.admin.PartyManagementServiceGrpc;
 import com.daml.ledger.api.v1.admin.PartyManagementServiceOuterClass;
 import com.daml.ledger.javaapi.data.*;
-import com.daml.ledger.javaapi.data.codegen.ContractId;
 import com.daml.ledger.javaapi.data.codegen.DefinedDataType;
 import com.daml.ledger.javaapi.data.codegen.HasCommands;
 import com.daml.ledger.javaapi.data.codegen.Update;
@@ -70,11 +69,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.time.temporal.TemporalUnit;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -745,7 +741,7 @@ public class IntegrationTest {
     delayForProjectionToStart();
 
     mvc
-      .perform(getAccountsBuilder(investor1).headers(userTokenHeader(investor1User)))
+      .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(content().json(toJson(new Accounts(Collections.emptyList()))));
 
@@ -753,37 +749,53 @@ public class IntegrationTest {
 
     final var accountCid = createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
     final var createOffset = getLedgerEnd();
-    delayForProjectionIngestion();
-
-    mvc
-      .perform(getAccountsBuilder(investor1).headers(userTokenHeader(investor1User)))
-      .andExpect(status().isOk())
-      .andExpect(
-        content().json(
-          toJson(
-            new Accounts(
-              Collections.singletonList(
-                new AccountSummary(
-                  accountCid,
-                  new daml.finance.interface$.account.account.View(
-                    account.custodian,
-                    account.owner,
-                    account.id,
-                    "Testing account",
-                    holdingFactoryCid,
-                    new Controllers(arrayToSet(investor1), arrayToSet())
-                  ),
-                  Optional.of(new TransactionDetail(createOffset, Instant.EPOCH)),
-                  Optional.empty()
-              )
-            )
-          )
+    final var investor1Accounts = new Accounts(
+      Collections.singletonList(
+        new AccountSummary(
+          accountCid,
+          new daml.finance.interface$.account.account.View(
+            account.custodian,
+            account.owner,
+            account.id,
+            "Testing account",
+            holdingFactoryCid,
+            new Controllers(arrayToSet(investor1), arrayToSet())
+          ),
+          Optional.of(new TransactionDetail(createOffset, Instant.EPOCH)),
+          Optional.empty()
         )
       )
     );
 
+    delayForProjectionIngestion();
     mvc
-      .perform(getAccountsBuilder(investor2).headers(userTokenHeader(investor2User)))
+      .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(toJson(investor1Accounts)
+      )
+    );
+    mvc
+      .perform(getAccountsBuilder(Optional.of(custodian), investor1).headers(userTokenHeader(investor1User)))
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(toJson(investor1Accounts))
+      );
+    mvc
+      .perform(getAccountsBuilder(Optional.of(custodian), investor1).headers(userTokenHeader(custodianUser)))
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(toJson(investor1Accounts))
+      );
+    mvc
+      .perform(getAccountsBuilder(Optional.of(investor1), investor1).headers(userTokenHeader(investor1User)))
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(toJson(new Accounts(List.of())))
+      );
+
+    mvc
+      .perform(getAccountsBuilder(Optional.empty(), investor2).headers(userTokenHeader(investor2User)))
       .andExpect(status().isOk())
       .andExpect(content().json(toJson(new Accounts(Collections.emptyList()))));
 
@@ -794,7 +806,7 @@ public class IntegrationTest {
     delayForProjectionIngestion();
 
     mvc
-      .perform(getAccountsBuilder(investor1).headers(userTokenHeader(investor1User)))
+      .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(
         content().json(
@@ -825,7 +837,7 @@ public class IntegrationTest {
     delayForProjectionIngestion();
 
     mvc
-      .perform(getAccountsBuilder(investor1).headers(userTokenHeader(investor1User)))
+      .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(
         content().json(
@@ -1634,7 +1646,7 @@ public class IntegrationTest {
   @Test
   void deniesAccessWithoutToken() throws Exception {
     mvc
-      .perform(getAccountsBuilder(investor1))
+      .perform(getAccountsBuilder(Optional.empty(), investor1))
       .andExpect(status().isUnauthorized());
 
     mvc
@@ -1655,7 +1667,7 @@ public class IntegrationTest {
   @Test
   void deniesAccessToOtherParties() throws Exception {
     mvc
-      .perform(getAccountsBuilder(investor1).headers(userTokenHeader(investor2User)))
+      .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor2User)))
       .andExpect(status().isForbidden());
 
     mvc
@@ -1896,10 +1908,10 @@ public class IntegrationTest {
     return headerAndPayload + "." + base64(signature);
   }
 
-  private static MockHttpServletRequestBuilder getAccountsBuilder(String owner) {
+  private static MockHttpServletRequestBuilder getAccountsBuilder(Optional<String> custodian, String owner) {
     return MockMvcRequestBuilders
       .post(walletViewsBasePath + "accounts")
-      .content(toJson(new AccountFilter(owner)))
+      .content(toJson(new AccountFilter(custodian, owner)))
       .contentType(MediaType.APPLICATION_JSON);
   }
 

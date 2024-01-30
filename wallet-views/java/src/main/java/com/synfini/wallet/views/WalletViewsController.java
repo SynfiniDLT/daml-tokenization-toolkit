@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import synfini.wallet.api.types.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -48,10 +50,13 @@ public class WalletViewsController {
     @RequestBody AccountFilter filter,
     @RequestHeader(value = HttpHeaders.AUTHORIZATION, defaultValue = "") String auth
   ) {
-    if (!WalletAuth.canReadAsAnyOf(ledgerApiConfig, auth, filter.owner)) {
+    final var permittedReaders = new ArrayList<>();
+    permittedReaders.add(filter.owner);
+    filter.custodian.ifPresent(permittedReaders::add);
+    if (!WalletAuth.canReadAsAnyOf(ledgerApiConfig, auth, permittedReaders.toArray(new String[]{}))) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     }
-    final var accounts = new Accounts(walletRepository.accountsByOwner(filter.owner));
+    final var accounts = new Accounts(walletRepository.accounts(filter.custodian, filter.owner));
     return ResponseEntity.ok(asJson(accounts));
   }
 
