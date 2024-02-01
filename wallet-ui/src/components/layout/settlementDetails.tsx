@@ -174,7 +174,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
   );
 }
 
-export function SettlementDetailsSimple(props: SettlementDetailsProps) {
+export function SettlementDetailsAction(props: SettlementDetailsProps) {
   const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
   const nav = useNavigate();
   const location = useLocation();
@@ -187,7 +187,6 @@ export function SettlementDetailsSimple(props: SettlementDetailsProps) {
   const [accounts, setAccounts] = useState<any>();
   const [selectAccountInput, setSelectAccountInput] = useState("");
   const [showExecute, setShowExecute] = useState<boolean>(false);
-  const [missingSteps, setMissingSteps] = useState<any>();
 
   let walletClient: WalletViewsClient;
 
@@ -406,7 +405,7 @@ export function SettlementDetailsSimple(props: SettlementDetailsProps) {
 
   useEffect(() => {
     // STEPS LOOP THROUGH
-    props.settlement.steps.map((step: SettlementStep, index: number) => {
+    props.settlement.steps.map((step: any, index: number) => {
       let inputSelected = "";
       const approval_values: {} | AccountKey | Tuple2<AccountKey, InstructionKey> = step.approval.value;
       let approvals_arr = Object.values(approval_values);
@@ -551,11 +550,9 @@ export function SettlementDetailsSimple(props: SettlementDetailsProps) {
             );
           })}
           <br></br>
-          {/* {showSubmit && ( */}
           <button type="submit" className="button__login" style={{ width: "150px" }}>
             Submit
           </button>
-          {/* )} */}
           {showExecute && (
             <button type="button" className="button__login" style={{ width: "150px" }} onClick={() => handleExecute()}>
               Execute
@@ -590,7 +587,6 @@ export function SettlementDetailsSimple(props: SettlementDetailsProps) {
                 OK
               </button>
             </div>
-            <div>&nbsp;&nbsp;&nbsp;&nbsp;</div>
           </div>
           <p></p>
         </>

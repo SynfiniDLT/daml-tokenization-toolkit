@@ -3,8 +3,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { PageLoader } from "../components/layout/page-loader";
 import { PageLayout } from "../components/PageLayout";
 import { useLocation } from "react-router-dom";
-import { SettlementDetailsSimple } from "../components/layout/settlementDetails";
-
+import { SettlementDetailsAction } from "../components/layout/settlementDetails";
 import { DivBorderRoundContainer } from "../components/layout/general.styled";
 
 
@@ -23,13 +22,12 @@ export const SettlementActionScreen: React.FC = () => {
   return (
     <PageLayout>
       <DivBorderRoundContainer>
-        
           <div>
             {state.settlement !== undefined && (
-              <SettlementDetailsSimple
+              <SettlementDetailsAction
                 settlement={state.settlement}
                 key={state.settlement?.batchCid}
-              ></SettlementDetailsSimple>
+              ></SettlementDetailsAction>
             )}
           </div>
       </DivBorderRoundContainer>

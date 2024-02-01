@@ -1,12 +1,5 @@
-import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  CardContainer,
-  ContainerColumn,
-  ContainerColumnKey,
-  ContainerColumnValue,
-  ContainerDiv,
-} from "./general.styled";
+import { ContainerColumn, ContainerDiv } from "./general.styled";
 import { IssuerSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 
 interface IssuerDetailsProps {
@@ -16,7 +9,7 @@ interface IssuerDetailsProps {
 export default function IssuerDetails(props: IssuerDetailsProps) {
   const nav = useNavigate();
   const handleClick = (issuer: IssuerSummary) => {
-    nav("/issuers/instrument/create", {state: {issuer: issuer}});
+    nav("/issuers/instrument/create", { state: { issuer: issuer } });
   };
   return (
     <>
