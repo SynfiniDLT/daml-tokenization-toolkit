@@ -13,13 +13,11 @@ import Daml.Finance.Interface.Settlement.Types
 import Daml.Finance.Interface.Types.Common.Types
 
 import Daml.Finance.Interface.Holding.Base qualified as Holding
-import Daml.Finance.Interface.Settlement.Batch qualified as Batch
 import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
 
 import Synfini.Tokenization.Util (mergeAndSplitHelper1)
 
 import Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner qualified as MinterBurner
-import Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer qualified as OneTimeOffer
 
 type InstructionIndex = Id
 
@@ -53,34 +51,6 @@ data HoldingDescriptor = HoldingDescriptor
 type HoldingsMap = Map HoldingDescriptor [ContractId Holding.I] 
 
 type InstructionsMap = Map InstructionIndex (ContractId Instruction.I)
-
--- template OneTimeOfferAcceptHelper
---   with
---     acceptors : Set Party
---     holdings : HoldingsMap
---     allocations : Map InstructionIndex AllocationHelp
---     approvals : Map InstructionIndex ApprovalHelp
---     offerCid : ContractId OneTimeOffer.I
---     quantity : Decimal
---     description : Text
---   where
---     signatory acceptors
-
---     choice AcceptOneTimeOffer : (ContractId Batch.I, [ContractId Instruction.I], HoldingsMap)
---       controller acceptors
---       do
---         (batchCid, instructionCids) <- exercise offerCid OneTimeOffer.Accept with quantity, description
---         let instructionsWithIndices = zip (enumFromTo 0 (length instructionCids - 1)) instructionCids
---         let instructionsMap = Map.fromList instructionsWithIndices
---         let instructionsWithActions =
---               (\(index, instructionCid) -> (index, instructionCid, Map.lookup index allocations, Map.lookup index approvals)) <$>
---               instructionsWithIndices
---         (instructionsMap, holdings) <- foldlA
---           (allocateAndApproveHelper acceptors)
---           (instructionsMap, holdings)
---           instructionsWithActions
---         let instructionCids = snd <$> Map.toList instructionsMap
---         pure (batchCid, instructionCids, holdings)
 
 template AllocateAndApproveHelper
   with
