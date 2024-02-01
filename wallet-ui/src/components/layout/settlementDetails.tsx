@@ -37,23 +37,10 @@ interface SettlementDetailsProps {
 }
 
 export default function SettlementDetails(props: SettlementDetailsProps) {
-  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
   const nav = useNavigate();
   const location = useLocation();
-  const ctx = useContext(AuthContextStore);
   const [toggleSteps, setToggleSteps] = useState(false);
-  const ledger = userContext.useLedger();
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [message, setMessage] = useState<string>("");
-  const [error, setError] = useState<string>("");
   const [isActionRequired, setIsActionRequired] = useState<boolean>(false);
-
-  let walletClient: WalletViewsClient;
-
-  walletClient = new WalletViewsClient({
-    baseUrl: walletViewsBaseUrl,
-    token: ctx.token,
-  });
 
   const setToggleCol = () => {
     setToggleSteps((prev) => {
@@ -88,7 +75,9 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
     }
 
     props.settlement.steps.map((step: SettlementStep, index: number) => {
-      if (props.settlement.execution === null) setIsActionRequired(true);
+      if (props.settlement.execution === null){
+        return setIsActionRequired(true);
+      } 
     });
   }, [location]);
 
@@ -228,7 +217,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
       Id[]
     > = damlTypes.emptyMap();
     settlement.steps.forEach((step) => {
-      if (step.routedStep.receiver == ctx.primaryParty) {
+      if (step.routedStep.receiver === ctx.primaryParty) {
         const k = { custodian: step.routedStep.custodian, quantity: step.routedStep.quantity };
         const ids = custodianQuantitiesMap.get(k) || [];
         ids.push(step.instructionId);
@@ -241,7 +230,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
 
     // Update allocations
     settlement.steps.forEach((step) => {
-      if (step.routedStep.sender == ctx.primaryParty) {
+      if (step.routedStep.sender === ctx.primaryParty) {
         const availablePassThroughFroms =
           custodianQuantitiesMap.get({ custodian: step.routedStep.custodian, quantity: step.routedStep.quantity }) ||
           [];
@@ -249,7 +238,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
         if (accountId !== undefined) {
           if (availablePassThroughFroms.length > 0) {
             const passThroughFromId = availablePassThroughFroms.pop();
-            if (passThroughFromId == undefined) {
+            if (passThroughFromId === undefined) {
               throw Error("Internal error");
             }
             allocations = allocations.set(step.instructionId, {
@@ -270,9 +259,9 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
           }
         }
       } else if (
-        step.routedStep.sender == step.routedStep.custodian &&
-        step.routedStep.receiver == step.routedStep.quantity.unit.issuer &&
-        step.routedStep.quantity.unit.issuer == ctx.primaryParty
+        step.routedStep.sender === step.routedStep.custodian &&
+        step.routedStep.receiver === step.routedStep.quantity.unit.issuer &&
+        step.routedStep.quantity.unit.issuer === ctx.primaryParty
       ) {
         // This is a "mint" instruction to be approved by the issuer
         allocations = allocations.set(step.instructionId, { tag: "IssuerCreditHelp", value: {} });
@@ -283,15 +272,15 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
     settlement.steps
       .filter((step) => !approvals.has(step.instructionId))
       .forEach((step) => {
-        if (step.routedStep.receiver == ctx.primaryParty) {
+        if (step.routedStep.receiver === ctx.primaryParty) {
           const accountId = accounts.get(step.routedStep.custodian);
           if (accountId !== undefined) {
             approvals = approvals.set(step.instructionId, { tag: "TakeDeliveryHelp", value: accountId });
           }
         } else if (
-          step.routedStep.receiver == step.routedStep.custodian &&
-          step.routedStep.sender == step.routedStep.quantity.unit.issuer &&
-          step.routedStep.quantity.unit.issuer == ctx.primaryParty
+          step.routedStep.receiver === step.routedStep.custodian &&
+          step.routedStep.sender === step.routedStep.quantity.unit.issuer &&
+          step.routedStep.quantity.unit.issuer === ctx.primaryParty
         ) {
           // This is a "burn" instruction to be approved by the issuer
           approvals = approvals.set(step.instructionId, { tag: "ApproveIssuerDebitHelp", value: {} });

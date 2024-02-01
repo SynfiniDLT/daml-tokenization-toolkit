@@ -10,14 +10,13 @@ import AccountOffers from "../components/layout/accountOffers";
 import Accounts from "../components/layout/accounts";
 
 const AccountOfferScreen: React.FC = () => {
-  //const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
   const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 
   const [accountOffers, setAccountOffers] = useState<AccountOpenOfferSummary[]>();
   const [accounts, setAccounts] = useState<any>();
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading] = useState<boolean>(false);
 
   let walletClient: WalletViewsClient;
 
