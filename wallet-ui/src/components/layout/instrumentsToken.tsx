@@ -17,7 +17,6 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
 
-
   const handleCloseModal = (path: string) => {
     setIsModalOpen(!isModalOpen);
     if (path !== "") nav("/" + path);
@@ -35,14 +34,11 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
       const description = instrument.tokenView?.token.description;
       let json_description = JSON.parse(description);
 
-      const minterBurners = await ledger.query(
-        MinterBurner,
-        {
-          issuer: instrument.tokenView.token.instrument.issuer,
-          depository: instrument.tokenView.token.instrument.depository
-          // TODO add filter for custodian here
-        }
-      );
+      const minterBurners = await ledger.query(MinterBurner, {
+        issuer: instrument.tokenView.token.instrument.issuer,
+        depository: instrument.tokenView.token.instrument.depository,
+        // TODO add filter for custodian here
+      });
 
       if (minterBurners.length < 1) {
         console.log("Error: user is not authorised to mint/burn tokens!");
@@ -53,10 +49,8 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
         if (settlementFactories.length > 0) {
           const settlementFactory = settlementFactories[0];
           const batchId = uuid();
-          await ledger.exercise(
-            SettlementFactory.Instruct,
-            settlementFactory.contractId,
-            {
+          await ledger
+            .exercise(SettlementFactory.Instruct, settlementFactory.contractId, {
               instructors: arrayToSet([instrument.tokenView.token.instrument.issuer]),
               settlers: arrayToSet([instrument.tokenView.token.instrument.issuer]),
               id: { unpack: batchId },
@@ -70,23 +64,23 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
                   receiver: instrument.tokenView.token.instrument.issuer,
                   quantity: {
                     unit: instrument.tokenView.token.instrument,
-                    amount: json_description.piePointQuantity // PIE POINT QUANTITY 
-                  }
-                }
-              ]
-            }
-          ).then((res) => {
-            setMessage("Pre-mint completed with success!")
-            setIsModalOpen(!isModalOpen);
-            console.log("resp", res);
-          }).catch((err) => {
-            setError("error when executing pre-mint: " + err.errors[0]);
-            setIsModalOpen(!isModalOpen);
-          });
+                    amount: json_description.piePointQuantity, // PIE POINT QUANTITY
+                  },
+                },
+              ],
+            })
+            .then((res) => {
+              setMessage("Pre-mint completed with success!");
+              setIsModalOpen(!isModalOpen);
+              console.log("resp", res);
+            })
+            .catch((err) => {
+              setError("error when executing pre-mint: " + err.errors[0]);
+              setIsModalOpen(!isModalOpen);
+            });
         }
       }
     }
-    
   };
 
   return (
@@ -149,17 +143,17 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
                                   type="button"
                                   name="createOffer"
                                   style={{ width: "120px" }}
-                                  onClick={() => handleCreateOffer(instrument)}
+                                  onClick={() => handlePreMint(instrument)}
                                 >
-                                  Create Offer
+                                  Pre-Mint
                                 </button>
                                 <button
                                   type="button"
                                   name="createOffer"
                                   style={{ width: "120px" }}
-                                  onClick={() => handlePreMint(instrument)}
+                                  onClick={() => handleCreateOffer(instrument)}
                                 >
-                                  Pre-Mint
+                                  Create Offer
                                 </button>
                               </td>
                             </tr>
@@ -197,7 +191,9 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
                 className="button__login"
                 style={{ width: "150px" }}
                 onClick={() => handleCloseModal("settlements")}
-              >OK</button>
+              >
+                OK
+              </button>
             </div>
             <div>&nbsp;&nbsp;&nbsp;&nbsp;</div>
           </div>

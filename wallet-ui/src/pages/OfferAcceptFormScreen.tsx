@@ -9,9 +9,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import AccountsSelect from "../components/layout/accountsSelect";
 import {
   ContainerColumn,
+  ContainerColumnAutoField,
   ContainerColumnField,
   ContainerDiv,
   DivBorderRoundContainer,
+  KeyColumn,
+  KeyValuePair,
+  ValueColumn,
 } from "../components/layout/general.styled";
 import { OneTimeOffer } from "@daml.js/settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer";
 import Modal from "react-modal";
@@ -39,7 +43,7 @@ export const OfferAcceptFormScreen: React.FC = () => {
   });
   const fetchAccounts = async () => {
     if (ctx.primaryParty !== "") {
-      const respAcc = await walletClient.getAccounts({ owner: ctx.primaryParty });
+      const respAcc = await walletClient.getAccounts({ owner: ctx.primaryParty, custodian: null });
       setAccounts(respAcc.accounts);
     }
   };
@@ -54,33 +58,34 @@ export const OfferAcceptFormScreen: React.FC = () => {
 
   const handleCloseModal = () => {
     setIsModalOpen(!isModalOpen);
-    if (error=== ""){
+    if (error === "") {
       nav("/settlements", { state: { transactionId: state.offer.payload.offerId.unpack } });
-    }else{
+    } else {
       nav("/offers");
     }
   };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    await ledger.exercise(OneTimeOffer.Accept, state.offer.contractId, {
-      quantity: state.offer.payload.maxQuantity,
-      description: transactionRefInput,
-    }).then((resp => {
-      if (resp[0]["_2"]!== undefined){
+    await ledger
+      .exercise(OneTimeOffer.Accept, state.offer.contractId, {
+        quantity: state.offer.payload.maxQuantity,
+        description: transactionRefInput,
+      })
+      .then((resp) => {
+        if (resp[0]["_2"] !== undefined) {
           setMessage("Offer Accepted with success!");
           setOfferAccepted(resp);
-        }else{
-          setError("Error! Contract was not created. Please contact the admin");  
+        } else {
+          setError("Error! Contract was not created. Please contact the admin");
         }
         setIsModalOpen(true);
-    })).catch((err)=>{
-      setError("Error! Offer Not Accepted \n \n Error:" + JSON.stringify(err.errors[0]));
-      setIsModalOpen(true);
-    }).finally(()=>{
-      
-    });
-    
+      })
+      .catch((err) => {
+        setError("Error! Offer Not Accepted \n \n Error:" + JSON.stringify(err.errors[0]));
+        setIsModalOpen(true);
+      })
+      .finally(() => {});
   };
 
   useEffect(() => {
@@ -91,18 +96,24 @@ export const OfferAcceptFormScreen: React.FC = () => {
     fetchAccounts();
   }, []);
 
-
   return (
     <PageLayout>
       <h3 className="profile__title">Accept Offer</h3>
-      <DivBorderRoundContainer>
+      <DivBorderRoundContainer style={{ height: "20em" }}>
         <form onSubmit={handleSubmit}>
           <ContainerDiv style={{ height: "200px" }}>
             <ContainerColumn>
               <ContainerColumnField>Offer: </ContainerColumnField>
-              <ContainerColumnField>Instruments: </ContainerColumnField>
-              <ContainerColumnField></ContainerColumnField>
-              <ContainerColumnField>Transaction Reference: </ContainerColumnField>
+              <ContainerColumnAutoField>Instruments: 
+              {state.offer.payload.steps.map((step: any) => {
+                  return (
+                    <>
+                      <p></p>
+                    </>
+                  );
+                })}
+              </ContainerColumnAutoField>
+              <ContainerColumnField style={{ width: "200px", height: "20em" }}>Transaction Reference: </ContainerColumnField>
               <p></p>
               <p></p>
               <button type="submit" className="button__login" disabled={isSubmitting}>
@@ -113,8 +124,7 @@ export const OfferAcceptFormScreen: React.FC = () => {
               <ContainerColumnField style={{ width: "600px" }}>
                 {state.offer.payload.offerId.unpack}
               </ContainerColumnField>
-              <ContainerColumnField style={{ width: "800px" }}>
-                {/* <AccountsSelect accounts={accounts} onChange={handleAccountChange} selectedAccount={selectAccountInput} /> */}
+              <ContainerColumnAutoField style={{ width: "800px" }}>
                 {state.offer.payload.steps.map((step: any) => {
                   return (
                     <>
@@ -125,7 +135,7 @@ export const OfferAcceptFormScreen: React.FC = () => {
                     </>
                   );
                 })}
-              </ContainerColumnField>
+              </ContainerColumnAutoField>
               <ContainerColumnField></ContainerColumnField>
               <ContainerColumnField>
                 <input
@@ -137,6 +147,16 @@ export const OfferAcceptFormScreen: React.FC = () => {
                 />
               </ContainerColumnField>
             </ContainerColumn>
+            {/* <ContainerColumn>
+              <KeyValuePair>
+                <ValueColumn>Offer:</ValueColumn>
+                <ValueColumn>Instruments:</ValueColumn>
+                <ValueColumn>Transaction Reference:</ValueColumn>
+                <KeyColumn>ff</KeyColumn>
+                <KeyColumn>,,</KeyColumn>
+                <KeyColumn>sss</KeyColumn>
+              </KeyValuePair>
+            </ContainerColumn> */}
           </ContainerDiv>
         </form>
       </DivBorderRoundContainer>

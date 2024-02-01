@@ -42,7 +42,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
 
   const fetchAccounts = async () => {
     if (ctx.primaryParty !== "") {
-      const resp = await walletClient.getAccounts({ owner: ctx.primaryParty });
+      const resp = await walletClient.getAccounts({ owner: ctx.primaryParty, custodian: null });
       setAccounts(resp.accounts);
       let isFundAccount = resp.accounts?.find(account => account.view.id.unpack.toLowerCase() ==='funds')
       if (isFundAccount === undefined){

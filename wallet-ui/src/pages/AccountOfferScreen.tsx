@@ -29,7 +29,7 @@ const AccountOfferScreen: React.FC = () => {
     if (ctx.primaryParty !== "") {
       const resp = await walletClient.getAccountOpenOffers({});
       setAccountOffers(resp.accountOpenOffers);
-      const respAcc = await walletClient.getAccounts({ owner: ctx.primaryParty });
+      const respAcc = await walletClient.getAccounts({ owner: ctx.primaryParty, custodian: null });
       setAccounts(respAcc.accounts);
     }
   };

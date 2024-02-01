@@ -17,7 +17,7 @@ import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
 const BalanceRedeemFormScreen: React.FC = () => {
   const nav = useNavigate();
-  const { state } = useLocation(); // TODO use strongly typed state instead of `any`
+  const { state } = useLocation();
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
   //const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
