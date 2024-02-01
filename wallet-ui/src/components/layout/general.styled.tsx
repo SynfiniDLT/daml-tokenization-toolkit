@@ -58,6 +58,13 @@ export const ContainerColumnField = styled.div`
   vertical-align: middle;
 `;
 
+export const ContainerColumnAutoField = styled.div`
+  margin: 5px;
+  padding: 5px;
+  height: auto;
+  vertical-align: middle;
+`;
+
 export const ContainerColumnValue = styled.p`
   margin-bottom: 5px;
   padding: 5px;
@@ -66,6 +73,21 @@ export const ContainerColumnValue = styled.p`
   white-space: nowrap;
 `;
 
+export const KeyValuePair = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end; /* Align content to the bottom */
+  margin: 5px;
+  padding: 5px;
+`;
+
+export const ValueColumn = styled.div`
+  text-align: left; /* Align text to the left for values */
+`;
+
+export const KeyColumn = styled.div`
+  text-align: right; /* Align text to the right for keys */
+`;
 
 export const DivBorderRoundContainer = styled.div`
   border: 2px solid white;

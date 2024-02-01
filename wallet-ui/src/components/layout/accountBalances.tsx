@@ -36,9 +36,9 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
     if (keyAccount.view.id.unpack !== "sbt") {
       valueBalance.forEach((balance: any) => {
         const trAsset = (
-          <>
           
-            <tr key={balance.account.id.unpack}>
+          
+            <tr key={balance.instrument.id.unpack}>
               <td>{balance.account.id.unpack} </td>
               <td>
                 {balance.instrument.id.unpack === "AUDN" && (
@@ -75,7 +75,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
                   )}
               </td>
             </tr>
-          </>
+          
         );
         trAssets.push(trAsset);
       });

@@ -64,6 +64,8 @@ const IssuersScreen: React.FC = () => {
     );
   }
 
+  console.log("instruments",instruments)
+
   return (
     <PageLayout>
       <>

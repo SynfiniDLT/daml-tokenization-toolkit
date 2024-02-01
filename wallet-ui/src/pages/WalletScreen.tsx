@@ -29,7 +29,7 @@ const WalletScreen: React.FC = () => {
 
   const fetchAccounts = async () => {
     if (ctx.primaryParty !== "") {
-      const resp = await walletClient.getAccounts({ owner: ctx.primaryParty });
+      const resp = await walletClient.getAccounts({ owner: ctx.primaryParty, custodian: null });
       return resp.accounts;
     }
   };
