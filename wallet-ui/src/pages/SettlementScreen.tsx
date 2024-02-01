@@ -34,14 +34,14 @@ const SettlementScreen: React.FC = () => {
       setSettlements(resp.settlements);
     }
   };
-
+  
   useEffect(() => {
     fetchDataForUserLedger(ctx, ledger);
   }, [ctx, ledger]);
-
+  
   useEffect(() => {
     fetchSettlements();
-  }, [ctx.primaryParty]);
+  }, []);
 
   if (isLoading) {
     return (

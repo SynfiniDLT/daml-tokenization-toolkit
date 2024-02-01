@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
 import AuthContextStore from "../store/AuthContextStore";
@@ -6,17 +6,14 @@ import { PageLayout } from "../components/PageLayout";
 import {
   ContainerColumn,
   ContainerColumnField,
-  ContainerColumnKey,
-  ContainerColumnValue,
   ContainerDiv,
   DivBorderRoundContainer,
 } from "../components/layout/general.styled";
-import { Party, emptyMap, Map } from "@daml/types";
+import { Party, emptyMap } from "@daml/types";
 import { arrayToSet, packageStringFromParty } from "../components/Util";
 import { Issuer as TokenIssuer } from "@daml.js/issuer-onboarding-instrument-token-interface/lib/Synfini/Interface/Onboarding/Issuer/Instrument/Token/Issuer";
 import { Set } from "@daml.js/97b883cd8a2b7f49f90d5d39c981cf6e110cf1f1c64427a28a6d58ec88c43657/lib/DA/Set/Types";
 import { v4 as uuid } from "uuid";
-import { WalletViewsClient } from "@synfini/wallet-views";
 import Modal from "react-modal";
 
 export const InstrumentCreateFormScreen: React.FC = () => {
@@ -26,6 +23,7 @@ export const InstrumentCreateFormScreen: React.FC = () => {
   const ctx = useContext(AuthContextStore);
   const wallet_depository = process.env.REACT_APP_LEDGER_WALLET_DEPOSITORY;
   const wallet_operator = process.env.REACT_APP_LEDGER_WALLET_OPERATOR;
+  const wallet_public = process.env.REACT_APP_LEDGER_WALLET_PUBLIC;
 
   const [productTypeInput, setProductTypeInput] = useState("");
   const [productVersionInput, setProductVersionInput] = useState("");
@@ -76,6 +74,7 @@ export const InstrumentCreateFormScreen: React.FC = () => {
       let observers: Party[] = [];
       observers.push(wallet_depository + "::" + packageStringFromParty(ctx.primaryParty));
       observers.push(wallet_operator + "::" + packageStringFromParty(ctx.primaryParty));
+      observers.push(wallet_public + "::" + packageStringFromParty(ctx.primaryParty));
       observers.push(ctx.primaryParty);
       if (observerInput!== undefined && observerInput!=="")
         observers.push(observerInput);
@@ -109,7 +108,7 @@ export const InstrumentCreateFormScreen: React.FC = () => {
         .catch((err) => {
           setIsMessageOpen(true);
           console.log("Caught error", e);
-          setError("Error " + "Contact the Administrator.");
+          setError("Error - Contact the Administrator.");
         });
     }
   };

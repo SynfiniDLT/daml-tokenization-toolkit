@@ -1,6 +1,5 @@
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 
-
 interface AccountsSelectProps {
   accounts?: AccountSummary[];
   onChange: (event: any) => void;

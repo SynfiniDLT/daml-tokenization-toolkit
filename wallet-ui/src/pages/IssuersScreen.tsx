@@ -16,7 +16,7 @@ const IssuersScreen: React.FC = () => {
   const ledger = userContext.useLedger();
   const wallet_depository = process.env.REACT_APP_LEDGER_WALLET_DEPOSITORY;
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading] = useState<boolean>(false);
   const [issuers, setIssuers] = useState<IssuerSummary[]>();
   const [instruments, setInstruments] = useState<InstrumentSummary[]>();
 
