@@ -1,10 +1,14 @@
 module Synfini.Onboarding.Scripts.RouteProvider where
 
+import DA.Set qualified as Set
+
 import Daml.Script
+
+import Daml.Finance.Settlement.RouteProvider.SingleCustodian qualified as RouteProviderImpl
+
+import Daml.Finance.Interface.Settlement.RouteProvider qualified as RouteProvider
+
 import Synfini.Onboarding.Scripts.Types
-import qualified Daml.Finance.Interface.Settlement.RouteProvider as RouteProvider
-import qualified Daml.Finance.Settlement.RouteProvider.SingleCustodian as RouteProviderImpl
-import qualified DA.Set as Set
 
 data RouteProviderSettings = RouteProviderSettings
   with

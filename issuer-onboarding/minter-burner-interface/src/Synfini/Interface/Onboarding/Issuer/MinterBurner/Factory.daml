@@ -1,8 +1,10 @@
 module Synfini.Interface.Onboarding.Issuer.MinterBurner.Factory where
 
-import qualified Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner as MinterBurner
-import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
 import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner qualified as MinterBurner
 
 data View = View
   with
