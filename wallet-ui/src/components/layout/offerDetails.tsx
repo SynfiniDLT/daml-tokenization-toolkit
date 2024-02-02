@@ -26,20 +26,22 @@ export default function OfferDetails(props: IssuerDetailsProps) {
     <>
       {props.offer !== undefined && (
         <div className="row" key={props.offer.payload.offerId.unpack}>
-          <div className="cell">{props.offer.payload.offerId.unpack}</div>
+          <div className="cell">{props.offer.payload.offerId.unpack.substring(0,20)+"..."}</div>
           <div className="cell">
             <HoverPopUp
-              triggerText={props.offer.payload.offeree.substring(0, 30) + "..."}
+              triggerText={props.offer.payload.offeree.substring(0, 20) + "..."}
               popUpContent={props.offer.payload.offeree}
             />
           </div>
           <div className="cell">
             {offerers_arr.map((element: any, index: React.Key) => (
               <div key={index}>
-                <HoverPopUp triggerText={element.substring(0, 30) + "..."} popUpContent={element} /> <br />
+                <HoverPopUp triggerText={element.substring(0, 20) + "..."} popUpContent={element} /> <br />
               </div>
             ))}
           </div>
+          <div className="cell">{props.offer.payload.offerDescription}</div>
+          <div className="cell">{props.offer.payload.maxQuantity}</div>
           <div className="cell">
             {props.offer.payload.offeree === ctx.primaryParty && (
               <button onClick={() => handleAcceptOffer(props.offer)}>Accept Offer</button>

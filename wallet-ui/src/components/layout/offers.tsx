@@ -10,6 +10,8 @@ export default function Offers(props: { offers?: any[] }) {
                 <div className="header-cell">Offer ID</div>
                 <div className="header-cell">Offeree</div>
                 <div className="header-cell">Offerers</div>
+                <div className="header-cell">Description</div>
+                <div className="header-cell">Quantity</div>
                 <div className="header-cell">Actions</div>
               </div>
               {props.offers.map((offer: any, index: number) => (
