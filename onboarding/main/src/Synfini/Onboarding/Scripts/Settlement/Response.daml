@@ -1,5 +1,6 @@
-module Synfini.Onboarding.Scripts.Settlement.Accept where
+module Synfini.Onboarding.Scripts.Settlement.Response where
 
+import DA.Action (when)
 import DA.Map (Map)
 import DA.Set (Set)
 
@@ -14,6 +15,7 @@ import Daml.Finance.Interface.Settlement.Types
 import Daml.Finance.Interface.Types.Common.Types
 
 import Daml.Finance.Interface.Holding.Base qualified as Holding
+import Daml.Finance.Interface.Settlement.Batch qualified as Batch
 import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
 
 import Synfini.Onboarding.Scripts.Types
@@ -53,6 +55,7 @@ data AcceptSettlementSettings = AcceptSettlementSettings
   with
     acceptor : Text
     batchId : Text
+    requestors : [Text]
     settlementPreferences : [SettlementPreferenceSettings]
 
 data AcceptSettlementInput = AcceptSettlementInput
@@ -87,9 +90,7 @@ applyAllocationPreference : Party ->
 applyAllocationPreference acceptor (allocations, received, usePassThroughs) (instruction, preference) =
   let custodianQuantity = (instruction.routedStep.custodian, instruction.routedStep.quantity) in
   let (newAllocation, passThroughFrom)
-        | preference.minterBurner &&
-          instruction.routedStep.sender == instruction.routedStep.custodian &&
-          instruction.routedStep.receiver == instruction.routedStep.quantity.unit.issuer =
+        | preference.minterBurner && instruction.routedStep.sender == instruction.routedStep.custodian =
           (Some (IssuerCreditHelp, None), None)
         | preference.settleOffLedger && instruction.routedStep.sender == acceptor =
           (Some (SettleOffledgerHelp, None), None)
@@ -139,9 +140,7 @@ type Approvals = [(Id, ApprovalHelp)]
 applyApprovalPreference : Party -> Map Id (Id, Id) -> Approvals -> (Instruction.V, SettlementPreference) -> Approvals
 applyApprovalPreference acceptor usePassThroughs approvals (instruction, preference) =
   let newApproval
-        | preference.minterBurner &&
-          instruction.routedStep.sender == instruction.routedStep.quantity.unit.issuer &&
-          instruction.routedStep.receiver == instruction.routedStep.custodian =
+        | preference.minterBurner && instruction.routedStep.receiver == instruction.routedStep.custodian =
           Some ApproveIssuerDebitHelp
         | preference.settleOffLedger && instruction.routedStep.receiver == acceptor =
           Some SettleOffledgerAcknowledgeHelp
@@ -162,13 +161,15 @@ acceptSettlement input = do
   let p = getPartyId pm
       settings = input.acceptSettlementSettings
   let acceptor = p settings.acceptor
+      requestors = Set.fromList (p <$> settings.requestors)
   let preferences = asPreference p <$> settings.settlementPreferences
   instructions <- queryInterface @Instruction.I acceptor
   let relevantInstructions = do
         (cid, instr) <- instructions
         case instr of
-          Some v | v.batchId == Id settings.batchId -> [(cid, v)]
+          Some v | v.batchId == Id settings.batchId && v.requestors == requestors -> [(cid, v)]
           _ -> []
+  when (null relevantInstructions) (error "No settlement instructions found")
   let instructionsMap = Map.fromList $ (\(cid, instr) -> (instr.id, cid)) <$> relevantInstructions
   let updateReceivedKey instrId instrSet = Some $ O.optional (Set.singleton instrId) (Set.insert instrId) instrSet
   let insertReceived m (_, instr)
@@ -212,3 +213,37 @@ acceptSettlement input = do
 
 descriptor : Holding.V -> HoldingDescriptor
 descriptor h = HoldingDescriptor with custodian = h.account.custodian, instrument = h.instrument
+
+data SettleSettings = SettleSettings
+  with
+    batchId : Text
+    requestors : [Text]
+    settler : Text
+
+data SettleInput = SettleInput
+  with
+    parties : [PartyInfo]
+    readAs : [Text]
+    settleSettings : SettleSettings
+
+settle : SettleInput -> Script ()
+settle input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+      settings = input.settleSettings
+  let readAs = p <$> input.readAs
+      settler = p settings.settler
+      requestors = Set.fromList (p <$> settings.requestors)
+  batches <- queryInterface @Batch.I settler
+  let relevantBatchCids = do
+        (cid, batch) <- batches
+        case batch of
+          Some v | v.id == Id settings.batchId && v.requestors == requestors -> pure cid
+          _ -> []
+  let batchCid = case relevantBatchCids of
+        [] -> error "No matching batches found"
+        [cid] -> cid
+        _ -> error "More than one batch found"
+  submitMulti [settler] readAs do
+    exerciseCmd batchCid Batch.Settle with actors = Set.fromList [settler]
+  pure ()

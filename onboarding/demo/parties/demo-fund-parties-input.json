@@ -1,6 +1,11 @@
 {
   "partySettings": [
     {
+      "label": "Fund_Depository",
+      "displayName": "Fund Depository",
+      "partyIdHint": "Fund_Depository"
+    },
+    {
       "label": "FundA",
       "displayName": "Fund A",
       "partyIdHint": "FundA"

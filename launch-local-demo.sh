@@ -86,25 +86,30 @@ dops create-accounts-unilateral onboarding/demo/accounts/demo-accounts-input-2.j
 dops create-account-open-offers onboarding/demo/accounts/account-open-offers.json
 
 # AUDN
-dops create-minter-burners onboarding/demo/audn/demo-minter-burner-input.json
-dops create-settlement-open-offers onboarding/demo/audn/demo-stablecoin-on-ramp-offer.json
-# mint_id=$(uuidgen)
-# dops take-settlement-open-offer onboarding/demo/audn/demo-take-stablecoin-on-ramp-offer.json $mint_id
-# dops accept-settlement onboarding/demo/settlement/investorA-preferences.json $mint_id
-# dops accept-settlement onboarding/demo/settlement/audn-issuer-preferences.json $mint_id
-# dops create-mint-unilateral onboarding/demo/audn/demo-mint-input.json
-# dops create-minters onboarding/demo/audn/demo-minter-input.json
-# dops create-mint-receivers onboarding/demo/audn/demo-mint-receivers-input.json
-# instruct_mint_output_file=$(mktemp)
-# dops instruct-mint onboarding/demo/audn/demo-instruct-mint.json --output-file $instruct_mint_output_file
-# dops execute-mint onboarding/demo/audn/demo-execute-mint-input.json $instruct_mint_output_file
-# dops instruct-burn onboarding/demo/audn/demo-instruct-burn.json
-# rm $instruct_mint_output_file
+dops create-minter-burners onboarding/demo/audn/minter-burner.json
+dops create-settlement-open-offers onboarding/demo/audn/on-ramp-offer.json
+mint_id=$(uuidgen)
+dops take-settlement-open-offer onboarding/demo/audn/take-on-ramp-offer.json $mint_id
+dops accept-settlement onboarding/demo/settlement/investorA-settlement-preferences.json AUDN_Issuer,InvestorA $mint_id
+dops accept-settlement onboarding/demo/settlement/AUDN-issuer-settlement-preferences.json AUDN_Issuer,InvestorA $mint_id
+dops execute-settlement onboarding/demo/settlement/AUDN-issuer-execute.json AUDN_Issuer,InvestorA $mint_id
+dops create-settlement-open-offers onboarding/demo/audn/off-ramp-offer.json
+burn_id=$(uuidgen)
+dops take-settlement-open-offer onboarding/demo/audn/take-off-ramp-offer.json $burn_id
 
 # # SBT
 # dops create-pbas-unilateral onboarding/demo/sbt/demo-pba-input.json
 
-# # Fund
+# Fund
+dops create-minter-burners onboarding/demo/fund/fundA-minter-burner.json
+dops create-settlement-open-offers onboarding/demo/fund/fundA-invest-offer.json
+invest_id=$(uuidgen)
+dops take-settlement-open-offer onboarding/demo/fund/take-fundA-invest-offer.json $invest_id
+dops accept-settlement onboarding/demo/settlement/investorA-settlement-preferences.json FundA,InvestorA $invest_id
+dops accept-settlement onboarding/demo/settlement/FundA-settlement-preferences.json FundA,InvestorA $invest_id
+dops accept-settlement onboarding/demo/settlement/FundManagerA-settlement-preferences.json FundA,InvestorA $invest_id
+dops execute-settlement onboarding/demo/settlement/FundA-execute.json FundA,InvestorA $invest_id
+
 # dops create-fund-offer-unilateral onboarding/demo/fund/demo-fund-offer-input.json
 # dops create-fund-investors onboarding/demo/fund/fund-investors-input.json
 # dops create-mint-unilateral onboarding/demo/fund/demo-fund-unit-mint-input.json
@@ -114,7 +119,5 @@ dops create-settlement-open-offers onboarding/demo/audn/demo-stablecoin-on-ramp-
 # dops execute-mint onboarding/demo/fund/demo-execute-fund-mint-input.json $instruct_fund_mint_output_file
 # rm $instruct_fund_mint_output_file
 
-# # Issuer
+# Issuer
 dops create-issuers onboarding/demo/issuers/demo-issuers-input.json
-
-# cd ${tokenization_lib_home}

@@ -4,7 +4,8 @@
     "settlementPreferences": [
       {
         "custodian": "SynfiniValidator",
-        "accountId": "111",
+        "depository": "AUDN_Depository",
+        "issuer": "AUDN_Issuer",
         "minterBurner": true
       }
     ]

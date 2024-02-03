@@ -2,29 +2,38 @@
   "readAs": ["Synfini_Public"],
   "settlementOpenOfferSettings": [
     {
-      "offerId": "AUDN@0.OnRamp",
-      "offerers": ["AUDN_Issuer"],
-      "offerDescription": "Request stablecoin on-ramp from fiat",
-      "settlementInstructors": [{"party": "AUDN_Issuer"}],
-      "settlers": [{"party": "AUDN_Issuer"}],
+      "offerId": "FundA@0.Invest",
+      "offerers": ["FundA"],
+      "offerDescription": "Purchase units in FundA",
+      "settlementInstructors": [{"party": "FundA"}, {"taker": {}}],
+      "settlers": [{"party": "FundA"}],
       "steps": [
         {
           "sender": {"party": "SynfiniValidator"},
-          "receiver": {"party": "AUDN_Issuer"},
-          "instrumentDepository": "AUDN_Depository",
-          "instrumentIssuer": "AUDN_Issuer",
-          "instrumentId": "AUDN",
+          "receiver": {"taker": {}},
+          "instrumentDepository": "Fund_Depository",
+          "instrumentIssuer": "FundA",
+          "instrumentId": "FundA",
           "instrumentVersion": "0",
           "amount": 1
         },
         {
-          "sender": {"party": "AUDN_Issuer"},
-          "receiver": {"taker": {}},
+          "sender": {"taker": {}},
+          "receiver": {"party": "FundA"},
           "instrumentDepository": "AUDN_Depository",
           "instrumentIssuer": "AUDN_Issuer",
           "instrumentId": "AUDN",
           "instrumentVersion": "0",
-          "amount": 1
+          "amount": 42
+        },
+        {
+          "sender": {"taker": {}},
+          "receiver": {"party": "FundManagerA"},
+          "instrumentDepository": "AUDN_Depository",
+          "instrumentIssuer": "AUDN_Issuer",
+          "instrumentId": "AUDN",
+          "instrumentVersion": "0",
+          "amount": 0.42
         }
       ],
       "settlementOpenOfferFactory": "V1",

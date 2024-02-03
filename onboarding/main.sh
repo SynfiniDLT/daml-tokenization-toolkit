@@ -144,6 +144,8 @@ elif [ "$command" = "take-settlement-open-offer" ]; then
   ${dops_commands}/take-settlement-open-offer.sh $@
 elif [ "$command" = "accept-settlement" ]; then
   ${dops_commands}/accept-settlement.sh $@
+elif [ "$command" = "execute-settlement" ]; then
+  ${dops_commands}/execute-settlement.sh $@
 elif [ "$command" = "create-mint-unilateral" ]; then
   ${dops_commands}/create-mint-unilateral.sh $@
 elif [ "$command" = "create-mint-open-offers" ]; then
