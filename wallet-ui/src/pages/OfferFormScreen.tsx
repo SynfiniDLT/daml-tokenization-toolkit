@@ -13,7 +13,7 @@ import {
 import { Factory as OneTimeOfferFactory } from "@daml.js/settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/Factory";
 import { Factory as SettlementFactory } from "@daml.js/daml-finance-interface-settlement-2.0.0/lib/Daml/Finance/Interface/Settlement/Factory";
 import { RouteProvider } from "@daml.js/daml-finance-interface-settlement-2.0.0/lib/Daml/Finance/Interface/Settlement/RouteProvider";
-import { Party, emptyMap, Map } from "@daml/types";
+import { Party, emptyMap } from "@daml/types";
 import { Set } from "@daml.js/97b883cd8a2b7f49f90d5d39c981cf6e110cf1f1c64427a28a6d58ec88c43657/lib/DA/Set/Types";
 import { v4 as uuid } from "uuid";
 import { arrayToSet } from "../components/Util";
@@ -49,6 +49,7 @@ export const OfferFormScreen: React.FC = () => {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     let oneTimeOfferFactory = await ledger.query(OneTimeOfferFactory);
     let settlementFactory = await ledger.query(SettlementFactory);
@@ -59,7 +60,6 @@ export const OfferFormScreen: React.FC = () => {
 
     let idUUID = uuid();
     let observers: Party[] = [producerInput];
-    let steps;
     await ledger
       .exercise(OneTimeOfferFactory.Create, oneTimeOfferFactory[0].contractId, {
         offerId: { unpack: idUUID },

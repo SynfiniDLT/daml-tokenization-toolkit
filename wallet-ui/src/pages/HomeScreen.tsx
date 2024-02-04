@@ -4,25 +4,15 @@ import { PageLayout } from "../components/PageLayout";
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 import AuthContextStore from "../store/AuthContextStore";
 import { userContext } from "../App";
-import { WalletViewsClient } from "@synfini/wallet-views";
 import { wait } from "../components/Util";
 
 const HomeScreen: React.FC = () => {
   const walletMode = process.env.REACT_APP_MODE || "";
-  //const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
-  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
   const { isAuthenticated, user } = useAuth0();
   const [ready, setReady] = useState<boolean>();
   
-
-  let walletClient: WalletViewsClient;
-
-  walletClient = new WalletViewsClient({
-    baseUrl: walletViewsBaseUrl,
-    token: ctx.token,
-  });
 
   const setLoadingReady = async () => {
     if (ctx.primaryParty !== "") {

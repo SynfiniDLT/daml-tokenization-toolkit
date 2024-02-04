@@ -94,7 +94,6 @@ const App: React.FC = () => {
               <Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />
               <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
               <Route path="/funds" element={<AuthenticationGuard component={HomeScreen} />} />
-              {/* <Route path="/asset/create" element={<AuthenticationGuard component={AssetCreateScreen} />} /> */}
             </>
           ) : walletMode===("issuer") ? (
             <>

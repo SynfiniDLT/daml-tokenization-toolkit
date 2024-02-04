@@ -173,7 +173,7 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
         className="MessageModal"
         isOpen={isModalOpen}
         onRequestClose={() => handleCloseModal}
-        contentLabel="Settlement Modal"
+        contentLabel="Instrument Modal"
       >
         <>
           <div>
@@ -195,7 +195,6 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
                 OK
               </button>
             </div>
-            <div>&nbsp;&nbsp;&nbsp;&nbsp;</div>
           </div>
           <p></p>
         </>

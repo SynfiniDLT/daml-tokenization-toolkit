@@ -11,7 +11,7 @@ import { AccountOpenOfferSummary } from "@daml.js/synfini-wallet-views-types/lib
 import { OpenOffer } from "@daml.js/account-onboarding-open-offer-interface/lib/Synfini/Interface/Onboarding/Account/OpenOffer/OpenOffer";
 import AuthContextStore from "../../store/AuthContextStore";
 import { userContext } from "../../App";
-import { Party, emptyMap, Map } from "@daml/types";
+import { Party, emptyMap } from "@daml/types";
 import { Set } from "@daml.js/97b883cd8a2b7f49f90d5d39c981cf6e110cf1f1c64427a28a6d58ec88c43657/lib/DA/Set/Types";
 import { v4 as uuid } from "uuid";
 import { packageStringFromParty, nameFromParty, arrayToSet } from "../Util";
@@ -135,7 +135,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
         className="simpleModal"
         isOpen={isModalOpen}
         onRequestClose={handleCloseMessageModal}
-        contentLabel="share SBT"
+        contentLabel="Account Offer Details"
       >
         <>
           <h4 style={{ color: "white", fontSize: "1.5rem" }}></h4>

@@ -50,7 +50,6 @@ const BalanceRedeemFormScreen: React.FC = () => {
   };
 
   const handleSubmit = async (e: any) => {
-    console.log("submit");
     e.preventDefault();
     let holdings: HoldingSummary[] = [];
     let holdingUnlockedCidArr: damlTypes.ContractId<damlHoldingFungible.Fungible>[] = [];
@@ -169,7 +168,7 @@ const BalanceRedeemFormScreen: React.FC = () => {
         className="MessageModal"
         isOpen={isMessageOpen}
         onRequestClose={() => handleCloseMessageModal}
-        contentLabel="share SBT"
+        contentLabel="Redeem Balance"
       >
         <>
           <div>
