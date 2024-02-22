@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import styled from "styled-components";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { nameFromParty } from "../Util";
 import HoverPopUp from "./hoverPopUp";
@@ -17,16 +16,6 @@ interface AccountDetailsProps {
 
 export default function AccountDetails(props: AccountDetailsProps) {
   const nav = useNavigate();
-
-  const AccountDetailsContainer = styled.div`
-    border-radius: 12px;
-    margin: 5px;
-    padding: 10px;
-    cursor: pointer;
-    background-color: #2a2b2f;
-    box-shadow: inset 0 0 0.5px 1px hsla(0, 0%, 100%, 0.075), 0 0 0 1px hsla(0, 0%, 0%, 0.05),
-      0 0.3px 0.4px hsla(0, 0%, 0%, 0.02), 0 0.9px 1.5px hsla(0, 0%, 0%, 0.045), 0 3.5px 6px hsla(0, 0%, 0%, 0.09);
-  `;
 
   const handleClick = (account: AccountSummary) => {
     if (account.view.id.unpack === "sbt") {

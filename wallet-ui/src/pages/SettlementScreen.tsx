@@ -11,7 +11,6 @@ import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 import { useLocation } from "react-router-dom";
 
 const SettlementScreen: React.FC = () => {
-  //const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
   const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
   const { state } = useLocation();
   const ctx = useContext(AuthContextStore);

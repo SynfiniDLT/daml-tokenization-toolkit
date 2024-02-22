@@ -14,7 +14,6 @@ export default function BalanceDetails(props: BalanceDetailsProps) {
   `;
 
 
-  // TODO add locked/unlocked balance display as per business requirements
   return (
     <BalanceDetailsContainer>
       <div>

@@ -11,7 +11,6 @@ import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
 const WalletScreen: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
-  //const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
   const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
