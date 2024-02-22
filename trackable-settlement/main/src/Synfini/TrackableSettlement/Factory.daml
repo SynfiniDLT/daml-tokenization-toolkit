@@ -1,13 +1,15 @@
 module Synfini.TrackableSettlement.Factory where
 
+import DA.Map qualified as Map
+
+import Daml.Finance.Settlement.Factory qualified as Default
+import Daml.Finance.Settlement.Instruction qualified as Default
+
 import Daml.Finance.Interface.Types.Common.Types
-import qualified Daml.Finance.Interface.Settlement.Batch as Batch
-import qualified Daml.Finance.Interface.Settlement.Factory as Factory
-import qualified Daml.Finance.Settlement.Factory as Default
-import qualified Daml.Finance.Settlement.Instruction as Default
-import qualified Synfini.TrackableSettlement.Batch as Custom
-import Synfini.TrackableSettlement.Batch (Batch(..))
-import qualified DA.Map as Map
+
+import Daml.Finance.Interface.Settlement.Factory qualified as Factory
+
+import Synfini.TrackableSettlement.Batch qualified as Custom
 
 template Factory
   with

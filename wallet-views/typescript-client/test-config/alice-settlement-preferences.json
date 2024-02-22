@@ -1,0 +1,11 @@
+{
+  "acceptSettlementSettings": {
+    "acceptor": "alice",
+    "settlementPreferences": [
+      {
+        "custodian": "custodian",
+        "accountId": "alice@custodian"
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "acceptSettlementSettings": {
+    "acceptor": "custodian",
+    "settlementPreferences": [
+      {
+        "custodian": "custodian"
+      }
+    ]
+  }
+}

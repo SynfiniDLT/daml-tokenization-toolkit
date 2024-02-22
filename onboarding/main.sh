@@ -55,10 +55,6 @@ export DOPS_ACCOUNT_OPEN_OFFERS_FILE=${DOPS_INTERNAL}/account-open-offers.json
 if [ ! -f "${DOPS_ACCOUNT_OPEN_OFFERS_FILE}" ]; then
   echo '{"accountOpenOffers": []}' > "${DOPS_ACCOUNT_OPEN_OFFERS_FILE}"
 fi
-export DOPS_MINT_OPEN_OFFERS_FILE=${DOPS_INTERNAL}/mint-open-offers.json
-if [ ! -f "${DOPS_MINT_OPEN_OFFERS_FILE}" ]; then
-  echo '{"mintOpenOffers": []}' > "${DOPS_MINT_OPEN_OFFERS_FILE}"
-fi
 export DOPS_FUND_ISSUER_OPEN_OFFERS_FILE=${DOPS_INTERNAL}/fund-issuer-open-offers.json
 if [ ! -f "${DOPS_FUND_ISSUER_OPEN_OFFERS_FILE}" ]; then
   echo '{"fundIssuerOpenOffers": []}' > "${DOPS_FUND_ISSUER_OPEN_OFFERS_FILE}"
@@ -146,24 +142,6 @@ elif [ "$command" = "accept-settlement" ]; then
   ${dops_commands}/accept-settlement.sh $@
 elif [ "$command" = "execute-settlement" ]; then
   ${dops_commands}/execute-settlement.sh $@
-elif [ "$command" = "create-mint-unilateral" ]; then
-  ${dops_commands}/create-mint-unilateral.sh $@
-elif [ "$command" = "create-mint-open-offers" ]; then
-  ${dops_commands}/create-open-mint-offer.sh $@
-elif [ "$command" = "take-mint-open-offer" ]; then
-  ${dops_commands}/take-open-mint-offer.sh $@
-elif [ "$command" = "create-mint-receivers" ]; then
-  ${dops_commands}/create-mint-receivers.sh $@
-elif [ "$command" = "create-minters" ]; then
-  ${dops_commands}/create-minters.sh $@
-elif [ "$command" = "instruct-mint" ]; then
-  ${dops_commands}/instruct-mint.sh $@
-elif [ "$command" = "execute-mint" ]; then
-  ${dops_commands}/execute-mint.sh $@
-elif [ "$command" = "instruct-burn" ]; then
-  ${dops_commands}/instruct-burn.sh $@
-elif [ "$command" = "execute-burn" ]; then
-  ${dops_commands}/execute-burn.sh $@
 elif [ "$command" = "create-issuers" ]; then
   ${dops_commands}/create-issuers.sh $@
 elif [ "$command" = "create-minter-burners" ]; then

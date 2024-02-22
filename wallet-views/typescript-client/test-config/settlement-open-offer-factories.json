@@ -1,0 +1,14 @@
+{
+  "settlementOpenOfferFactorySettings": [
+    {
+      "label": "default",
+      "provider": "custodian",
+      "observers": [
+        {
+          "context": "o",
+          "parties": ["alice", "issuer", "depository"]
+        }
+      ]
+    }
+  ]
+}

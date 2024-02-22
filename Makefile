@@ -86,27 +86,7 @@ $(settlement_helpers_dar): $(settlement_one_time_offer_interface_dar) \
 
 .PHONY: test-settlement
 test-settlement: $(settlement_one_time_offer_dar) $(util_dar)
-	cd settlement/test && daml test 
-
-.build/daml-mint.dar: $(daml_finance_dir) $(util_dar) $(shell ./find-daml-project-files.sh mint/main)
-	cd mint/main && daml build -o $(proj_root)/.build/daml-mint.dar
-
-.PHONY: build-mint
-build-mint: .build/daml-mint.dar
-
-# Codegen
-mint/java-example/src/generated-main/java: .build/daml-mint.dar
-	rm -rf mint/java-example/src/generated-main/java
-	daml codegen java -o mint/java-example/src/generated-main/java .build/daml-mint.dar
-
-.PHONY: build-mint-java-example
-build-mint-java-example: mint/java-example/src/generated-main/java $(shell ./find-java-project-files.sh mint/java-example)
-	cd mint/java-example && mvn compile
-
-.PHONY: test-mint
-test-mint: .build/daml-mint.dar
-	cd mint/test && daml test
-## END mint
+	cd settlement/test && daml test
 
 ## BEGIN fund
 .build/fund-tokenization.dar: $(daml_finance_dir) $(util_dar) $(shell ./find-daml-project-files.sh fund/main)
@@ -176,7 +156,6 @@ $(onboarding_scripts_dar): $(daml_finance_dir) \
   $(settlement_helpers_dar) \
   $(trackable_holding_dar) \
   $(trackable_settlement_dar) \
-  .build/daml-mint.dar \
   .build/fund-tokenization.dar \
   $(pbt_dar) \
   $(shell ./find-daml-project-files.sh onboarding/main)
@@ -242,7 +221,8 @@ test-wallet-views: $(wallet_views_main_codegen) $(wallet_views_test_codegen)
 	cd wallet-views/java && mvn test ${TEST_WALLET_VIEWS_ARGS}
 
 # Codegen - TypeScript
-$(wallet_views_client_codegen): $(wallet_views_types_dar)
+$(wallet_views_client_codegen): wallet-views/typescript-client/package.json \
+  $(wallet_views_types_dar)
 	rm -rf $(wallet_views_client_codegen)
 	daml codegen js $(wallet_views_types_dar) -o $(wallet_views_client_codegen)
 
@@ -259,14 +239,15 @@ test-wallet-views-client: install-onboarding compile-wallet-views $(wallet_views
 ## END wallet-views
 
 ## BEGIN wallet ui
-$(wallet_ui_codegen): $(daml_finance_dir) \
+$(wallet_ui_codegen): wallet-ui/package.json \
+  $(daml_finance_dir) \
   $(account_onboarding_open_offer_interface_dar) \
   $(issuer_onboarding_token_interface_dar) \
   $(minter_burner_interface_dar) \
   $(settlement_one_time_offer_interface_dar) \
+  $(settlement_open_offer_interface_dar) \
   $(settlement_helpers_dar) \
   .build/fund-tokenization.dar \
-  .build/daml-mint.dar \
   $(pbt_interface_dar) 
 	rm -rf $(wallet_ui_codegen)
 	daml codegen js \
@@ -274,13 +255,13 @@ $(wallet_ui_codegen): $(daml_finance_dir) \
 		$(issuer_onboarding_token_interface_dar) \
 		$(minter_burner_interface_dar) \
 		$(settlement_one_time_offer_interface_dar) \
+		$(settlement_open_offer_interface_dar) \
 		$(settlement_helpers_dar) \
 		$(daml_finance_dir)/daml-finance-interface-types-common.dar \
 		$(daml_finance_dir)/daml-finance-interface-util.dar \
 		.build/fund-tokenization.dar \
 		$(daml_finance_dir)/daml-finance-interface-holding.dar \
 		$(daml_finance_dir)/daml-finance-interface-settlement.dar \
-		.build/daml-mint.dar \
 		$(pbt_interface_dar) -o $(wallet_ui_codegen)
 
 .PHONY: build-wallet-ui

@@ -30,7 +30,7 @@ import Modal from "react-modal";
 import AccountsSelect from "./accountsSelect";
 import { fetchDataForUserLedger } from "../UserLedgerFetcher";
 import { Tuple2 } from "@daml.js/40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7/lib/DA/Types";
-import { InstructionKey } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Types";
+import { Approval, InstructionKey } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Types";
 
 interface SettlementDetailsProps {
   settlement: any;
@@ -260,7 +260,6 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
         }
       } else if (
         step.routedStep.sender === step.routedStep.custodian &&
-        step.routedStep.receiver === step.routedStep.quantity.unit.issuer &&
         step.routedStep.quantity.unit.issuer === ctx.primaryParty
       ) {
         // This is a "mint" instruction to be approved by the issuer
@@ -279,7 +278,6 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
           }
         } else if (
           step.routedStep.receiver === step.routedStep.custodian &&
-          step.routedStep.sender === step.routedStep.quantity.unit.issuer &&
           step.routedStep.quantity.unit.issuer === ctx.primaryParty
         ) {
           // This is a "burn" instruction to be approved by the issuer
@@ -303,6 +301,8 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
 
     const settlement: SettlementSummary = props.settlement;
     const { allocations, approvals, pledgeDescriptors } = acceptanceActions(custodianToAccount, settlement);
+    console.log("allocations", allocations);
+    console.log("approvals", approvals);
     let holdings: damlTypes.Map<HoldingDescriptor, damlTypes.ContractId<Base>[]> = damlTypes.emptyMap();
 
     for (const holdingDescriptor of pledgeDescriptors) {
@@ -317,7 +317,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
           const activeHoldings = await walletClient.getHoldings({ account, instrument: holdingDescriptor.instrument });
           holdings = holdings.set(
             holdingDescriptor,
-            activeHoldings.holdings.map((h) => h.cid)
+            activeHoldings.holdings.filter(h => h.view.lock === null).map((h) => h.cid)
           );
         }
       }
@@ -339,12 +339,11 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
         {}
       )
       .then((res) => {
-        console.log("res??", res);
-        setMessage("Account allocated with success!");
+        setMessage("Transaction accepted with success!");
         setIsModalOpen(!isModalOpen);
       })
       .catch((err) => {
-        setError("error when allocating account!" + err.errors[0]);
+        setError("Error accepting transaction!" + err.errors[0]);
         setIsModalOpen(!isModalOpen);
       });
   };
@@ -394,30 +393,30 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
 
   useEffect(() => {
     // STEPS LOOP THROUGH
-    props.settlement.steps.map((step: any, index: number) => {
+    props.settlement.steps.map((step: SettlementStep, index: number) => {
       let inputSelected = "";
-      const approval_values: {} | AccountKey | Tuple2<AccountKey, InstructionKey> = step.approval.value;
-      let approvals_arr = Object.values(approval_values);
 
       // CHECK STEPS APPROVAL / ALLOCATION
       if (step.approval.tag !== "Unapproved" && step.routedStep.receiver === ctx.primaryParty) {
         if (selectAccountInput === "") {
-          if (typeof approvals_arr[0] === "string") {
-            fetchAccounts(approvals_arr[0]);
-            inputSelected = approvals_arr[0] + "@" + approvals_arr[2].unpack;
-            setSelectAccountInput(inputSelected);
-          } else {
-            fetchAccounts(approvals_arr[0].custodian);
-            inputSelected = approvals_arr[0].custodian + "@" + approvals_arr[0].id.unpack;
+          fetchAccounts(step.routedStep.custodian);
+          if (step.approval.tag == "TakeDelivery") {
+            inputSelected = step.routedStep.custodian + "@" + step.approval.value.id.unpack;
+          } else if (step.approval.tag == "PassThroughTo") {
+            inputSelected = step.routedStep.custodian + "@" + step.approval.value._1.id.unpack;
+          }
+          if (inputSelected !== "") {
             setSelectAccountInput(inputSelected);
           }
         }
       } else if (step.routedStep.sender === ctx.primaryParty) {
         fetchAccounts(step.routedStep.custodian);
-        ledger.fetch(Base, step.allocation.value).then((res) => {
-          inputSelected = res?.payload.account.custodian + "@" + res?.payload.account.id.unpack;
-          setSelectAccountInput(inputSelected);
-        });
+        if (step.allocation.tag == "Pledge") {
+          ledger.fetch(Base, step.allocation.value).then((res) => {
+            inputSelected = res?.payload.account.custodian + "@" + res?.payload.account.id.unpack;
+            setSelectAccountInput(inputSelected);
+          });
+        }
       } else {
         fetchAccounts(step.routedStep.custodian);
       }
@@ -425,10 +424,9 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
       // CHECK IF CAN EXECUTE
       if (
         step.approval.tag !== "Unapproved" &&
-        step.allocation.tag !== "Unallocated" &&
-        (step.allocation.tag === "Pledge" || step.allocation.tag === "CreditReceiver")
+        step.allocation.tag !== "Unallocated"
       ) {
-        fetchAccounts(approvals_arr[0].custodian);
+        fetchAccounts(step.routedStep.custodian);
         setShowExecute(true);
       } else if (step.approval.tag === "Unapproved" || step.allocation.tag === "Unallocated") {
         setShowExecute(false);
@@ -540,7 +538,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
           })}
           <br></br>
           <button type="submit" className="button__login" style={{ width: "150px" }}>
-            Submit
+            Accept
           </button>
           {showExecute && (
             <button type="button" className="button__login" style={{ width: "150px" }} onClick={() => handleExecute()}>
