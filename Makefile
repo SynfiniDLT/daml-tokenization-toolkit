@@ -61,7 +61,7 @@ $(trackable_holding_dar): $(daml_finance_dir) $(shell ./find-daml-project-files.
 $(trackable_settlement_dar): $(daml_finance_dir) $(shell ./find-daml-project-files.sh trackable-settlement/main)
 	cd trackable-settlement/main && daml build -o $(proj_root)/$(trackable_settlement_dar)
 
-## BEGIN mint
+## BEGIN settlement
 $(settlement_one_time_offer_interface_dar): $(daml_finance_dir) \
   $(shell ./find-daml-project-files.sh settlement/one-time-offer-interface)
 	cd settlement/one-time-offer-interface && daml build -o $(proj_root)/$(settlement_one_time_offer_interface_dar)
@@ -87,18 +87,7 @@ $(settlement_helpers_dar): $(settlement_one_time_offer_interface_dar) \
 .PHONY: test-settlement
 test-settlement: $(settlement_one_time_offer_dar) $(util_dar)
 	cd settlement/test && daml test
-
-## BEGIN fund
-.build/fund-tokenization.dar: $(daml_finance_dir) $(util_dar) $(shell ./find-daml-project-files.sh fund/main)
-	cd fund/main && daml build -o $(proj_root)/.build/fund-tokenization.dar
-
-.PHONY: build-fund
-build-fund: .build/fund-tokenization.dar
-
-.PHONY: test-fund
-test-fund: .build/fund-tokenization.dar
-	cd fund/test && daml test
-## END fund
+## END settlement
 
 ## BEGIN onboarding
 # Account
@@ -156,13 +145,9 @@ $(onboarding_scripts_dar): $(daml_finance_dir) \
   $(settlement_helpers_dar) \
   $(trackable_holding_dar) \
   $(trackable_settlement_dar) \
-  .build/fund-tokenization.dar \
   $(pbt_dar) \
   $(shell ./find-daml-project-files.sh onboarding/main)
 	cd onboarding/main && daml build -o $(proj_root)/$(onboarding_scripts_dar)
-
-.PHONY: build-onboarding
-build-onboarding: $(onboarding_scripts_dar)
 
 .PHONY: install-onboarding
 install-onboarding: $(onboarding_scripts_dar)
@@ -175,9 +160,6 @@ $(pbt_interface_dar): $(daml_finance_dir) $(shell ./find-daml-project-files.sh p
 
 $(pbt_dar): $(daml_finance_dir) $(pbt_interface_dar) $(shell ./find-daml-project-files.sh pbt/implementation)
 	cd pbt/implementation && daml build -o $(proj_root)/$(pbt_dar)
-
-.PHONY: build-pbt
-build-pbt: $(pbt_dar)
 ## END pbt
 
 ## BEGIN wallet-views
@@ -247,7 +229,6 @@ $(wallet_ui_codegen): wallet-ui/package.json \
   $(settlement_one_time_offer_interface_dar) \
   $(settlement_open_offer_interface_dar) \
   $(settlement_helpers_dar) \
-  .build/fund-tokenization.dar \
   $(pbt_interface_dar) 
 	rm -rf $(wallet_ui_codegen)
 	daml codegen js \
@@ -259,7 +240,6 @@ $(wallet_ui_codegen): wallet-ui/package.json \
 		$(settlement_helpers_dar) \
 		$(daml_finance_dir)/daml-finance-interface-types-common.dar \
 		$(daml_finance_dir)/daml-finance-interface-util.dar \
-		.build/fund-tokenization.dar \
 		$(daml_finance_dir)/daml-finance-interface-holding.dar \
 		$(daml_finance_dir)/daml-finance-interface-settlement.dar \
 		$(pbt_interface_dar) -o $(wallet_ui_codegen)
@@ -276,7 +256,6 @@ start-wallet-ui: $(wallet_ui_codegen) $(wallet_views_typescript_client_build)
 .PHONY: clean
 clean:
 	./clean-daml-projects.sh
-	cd mint/java-example && mvn clean && rm -rf src/generated-main
 	cd wallet-views/java && mvn clean
 	rm -rf $(wallet_views_main_codegen) $(wallet_views_test_codegen)
 	rm -rf $(wallet_views_client_codegen) wallet-views/typescript-client/node_modules $(wallet_views_typescript_client_build)
