@@ -3,16 +3,17 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { CardContainer, ContainerColumn, ContainerColumnKey, ContainerDiv, ContainerColumnValue } from "./general.styled";
 import { formatCurrency, formatPercentage } from "../Util";
 import { CreateEvent } from "@daml/ledger";
-import { FundOffer } from "@daml.js/fund-tokenization/lib/Synfini/Fund/Offer";
+import { OpenOffer as SettlementOpenOffer } from "@daml.js/settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
 import { Coin } from "react-bootstrap-icons";
 
 interface FundDetailsProps {
-  fund: CreateEvent<FundOffer, undefined, string>;
+  fund: CreateEvent<SettlementOpenOffer, undefined, string>;
 }
 
 export default function FundDetails(props: FundDetailsProps) {
   const nav = useNavigate();
   const location = useLocation();
+  console.log("FundDetailsProps:", props);
 
   const handleClick = (fund: any) => {
     nav("/fund/subscribe", { state: { fund: fund } });
@@ -35,13 +36,10 @@ export default function FundDetails(props: FundDetailsProps) {
 
   return (
     <CardContainer pointer>
-      <ContainerDiv id={props.fund.payload.fundManager}>
+      <ContainerDiv id={props.fund.contractId}>
         <ContainerColumn>
-          <ContainerColumnKey>Issuer:</ContainerColumnKey>
-          <ContainerColumnKey>Fund Manager:</ContainerColumnKey>
-          <ContainerColumnKey>Cost Per Unit:</ContainerColumnKey>
-          <ContainerColumnKey>Minimal Investment:</ContainerColumnKey>
-          <ContainerColumnKey>Commission:</ContainerColumnKey>
+          <ContainerColumnKey>Offered by:</ContainerColumnKey>
+          <ContainerColumnKey>Description:</ContainerColumnKey>
           <p>
             <br />
           </p>
@@ -56,20 +54,19 @@ export default function FundDetails(props: FundDetailsProps) {
         </ContainerColumn>
         <ContainerColumn>
           <ContainerColumnValue>
-            <a href={`http://${window.location.host}/directory#${props.fund.payload.unitsInstrument.issuer}`} style={{color: "#7B68EE", textDecoration: "underline"}}>
-              {props.fund.payload.unitsInstrument.issuer}
-            </a>
+            {props.fund.payload.offerers.map.entriesArray().map(entry =>
+              <a href={`http://${window.location.host}/directory#${entry[0]}`} style={{color: "#7B68EE", textDecoration: "underline"}}>
+                {entry[0]}
+              </a>)}
           </ContainerColumnValue>
           <ContainerColumnValue>
-            <a href={`http://${window.location.host}/directory#${props.fund.payload.fundManager}`} style={{color: "#7B68EE", textDecoration: "underline"}}>
-            {props.fund.payload.fundManager}
-            </a>
+            {props.fund.payload.offerDescription}
           </ContainerColumnValue>
-          <ContainerColumnValue>
+          {/* <ContainerColumnValue>
             {props.fund.payload.costPerUnit} {props.fund.payload.paymentInstrument.id.unpack} <Coin />
           </ContainerColumnValue>
           <ContainerColumnValue>{formatCurrency(props.fund.payload.minInvesment, "en-US")} {props.fund.payload.paymentInstrument.id.unpack} <Coin /></ContainerColumnValue>
-          <ContainerColumnValue>{formatPercentage(props.fund.payload.commission)}</ContainerColumnValue>
+          <ContainerColumnValue>{formatPercentage(props.fund.payload.commission)}</ContainerColumnValue> */}
         </ContainerColumn>
       </ContainerDiv>
     </CardContainer>

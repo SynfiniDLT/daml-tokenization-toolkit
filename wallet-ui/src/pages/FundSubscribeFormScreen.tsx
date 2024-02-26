@@ -8,7 +8,7 @@ import { AccountSummary, HoldingSummary } from "@daml.js/synfini-wallet-views-ty
 import { WalletViewsClient } from "@synfini/wallet-views";
 import * as damlTypes from "@daml/types";
 import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
-import { FundInvestor } from "@daml.js/fund-tokenization/lib/Synfini/Fund/Offer/Delegation";
+import { OpenOffer as SettlementOpenOffer } from "@daml.js/settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
 import { v4 as uuid } from "uuid";
 import {
   ContainerColumn,
@@ -19,18 +19,24 @@ import {
 } from "../components/layout/general.styled";
 import { Coin, BoxArrowUpRight } from "react-bootstrap-icons";
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
+import { CreateEvent } from "@daml/ledger";
+import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
+
+type S = {
+  fund: CreateEvent<SettlementOpenOffer, undefined, string>
+}
 
 export const FundSubscribeFormScreen: React.FC = () => {
   const nav = useNavigate();
-  const { state } = useLocation();
+  const { state } = useLocation() as { state: S };
+  console.log("FundSubscribeFormScreen state: ", state);
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
   //const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
   const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
-  const [accounts, setAccounts] = useState<AccountSummary[]>();
   const [inputQtd, setInputQtd] = useState(0);
   const [referenceId, setReferenceId] = useState<string>("");
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState(damlTypes.emptyMap<InstrumentKey, number>());
   const [error, setError] = useState("");
 
   let walletClient: WalletViewsClient;
@@ -40,91 +46,54 @@ export const FundSubscribeFormScreen: React.FC = () => {
     token: ctx.token,
   });
 
-  const fetchAccounts = async () => {
-    if (ctx.primaryParty !== "") {
-      const resp = await walletClient.getAccounts({ owner: ctx.primaryParty, custodian: null });
-      setAccounts(resp.accounts);
-      let isFundAccount = resp.accounts?.find(account => account.view.id.unpack.toLowerCase() ==='funds')
-      if (isFundAccount === undefined){
-        setError("Your Fund Account is not yet prepared for use. Kindly get in touch with the administrator.")
-      }
-      return resp.accounts;
-    }
-  };
-
   const handleChangeInputQtd = (event: any) => {
     setInputQtd(event.target.value);
-    let perc = 1 + parseFloat(state.fund.payload.commission);
-    let subTotal =
-      event.target.value * perc * parseFloat(state.fund.payload.costPerUnit);
-
-    setTotal(subTotal);
+    setTotal(costForQuantity(event.target.value));
   };
+
+  function costForQuantity(q: number): damlTypes.Map<InstrumentKey, number> {
+    let costsMap = damlTypes.emptyMap<InstrumentKey, number>();
+
+    for (const step of state.fund.payload.steps) {
+      if (step.sender.tag == 'TakerEntity') {
+        const existingCost = costsMap.get(step.quantity.unit) || 0;
+        costsMap = costsMap.set(
+          step.quantity.unit, existingCost + parseFloat(step.quantity.amount) * q
+        );
+      }
+    }
+
+    return costsMap;
+  }
 
   useEffect(() => {
     fetchDataForUserLedger(ctx, ledger);
   }, [ctx, ledger]);
 
-  useEffect(() => {
-    fetchAccounts();
-  }, [ctx.primaryParty]);
-
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    const accountFund = accounts?.find(account => account.view.id.unpack.toLowerCase() ==='funds');
-    const accountAUDN = accounts?.find(account => account.view.id.unpack.toLowerCase() !=='funds' && account.view.id.unpack.toLowerCase() !=='sbt');
-    let holdings: HoldingSummary[] = [];
-    let holdingUnlockedCidArr: damlTypes.ContractId<damlHoldingFungible.Fungible>[] = [];
-
-
-    if (accountFund !== undefined && accountAUDN !== undefined) {
-      holdings = (
-        await walletClient.getHoldings({
-          account: accountAUDN.view,
-          instrument: state.fund.payload.paymentInstrument,
-        })
-      ).holdings;
-      holdings
-        .filter((holding) => holding.view.lock == null)
-        .map((holdingUnlocked) => {
-          holdingUnlockedCidArr.push(
-            holdingUnlocked.cid.toString() as damlTypes.ContractId<damlHoldingFungible.Fungible>
-          );
-        });
-
-      if (holdingUnlockedCidArr.length > 0) {
-        const operators = {
-          map: accountAUDN.view.controllers.outgoing.map.delete(accountAUDN.view.owner)
-        };
-        let referenceIdUUID = uuid();
-        try {
-          await ledger.exerciseByKey(
-            FundInvestor.RequestInvestment,
-            {
-              investorAccount: accountFund.view,
-              unitsInstrument: state.fund.payload.unitsInstrument,
-              operators: operators
-            },
-            {
-              numUnits: inputQtd.toString(),
-              paymentCids: holdingUnlockedCidArr,
-              offerCid: state.fund.contractId,
-              investmentId: { unpack: referenceIdUUID },
-            }
-          );
-          setReferenceId(referenceIdUUID);
-        } catch (e: any) {
-          setError("{" + e.errors[0] + "}");
+    let referenceIdUUID = uuid();
+    try {
+      await ledger.exercise(
+        SettlementOpenOffer.Take,
+        state.fund.contractId,
+        {
+          id: { unpack: referenceIdUUID },
+          taker: ctx.primaryParty,
+          quantity: inputQtd.toString(),
+          description: "Investment request"
         }
-      }
+      );
+      setReferenceId(referenceIdUUID);
+    } catch (e: any) {
+      setError("{" + e.errors[0] + "}");
     }
   };
-
 
   return (
     <PageLayout>
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
-        Subscribe to {nameFromParty(state.fund.payload.unitsInstrument.issuer)}
+        Subscribe to fund
       </h3>
       {error !== "" && 
         <>
@@ -148,25 +117,37 @@ export const FundSubscribeFormScreen: React.FC = () => {
           <form onSubmit={handleSubmit}>
             <ContainerDiv>
               <ContainerColumn>
-                <ContainerColumnKey>Issuer:</ContainerColumnKey>
-                <ContainerColumnKey>Fund Manager:</ContainerColumnKey>
+                <ContainerColumnKey>Offered by:</ContainerColumnKey>
                 <ContainerColumnKey>Cost Per Unit:</ContainerColumnKey>
-                <ContainerColumnKey>Minimal Investment:</ContainerColumnKey>
-                <ContainerColumnKey>Commission:</ContainerColumnKey>
-                <ContainerColumnKey>Quantity:</ContainerColumnKey>
-                <ContainerColumnKey></ContainerColumnKey>
-                <p><br/></p>
+                <ContainerColumnKey>Receivable assets:</ContainerColumnKey>
+                <ContainerColumnKey>Minimum Purchase quantity:</ContainerColumnKey>
+                <ContainerColumnKey>Maximum Purchase quantity:</ContainerColumnKey>
+                <ContainerColumnKey>Units to buy:</ContainerColumnKey>
+                {/* <ContainerColumnKey></ContainerColumnKey> */}
+                {/* <p><br/></p> */}
                 
-                <ContainerColumnKey>Total:</ContainerColumnKey>
+                <ContainerColumnKey>Total cost:</ContainerColumnKey>
               </ContainerColumn>
               <ContainerColumn>
-                <ContainerColumnValue>{state.fund.payload.unitsInstrument.issuer}</ContainerColumnValue>
-                <ContainerColumnValue>{state.fund.payload.fundManager}</ContainerColumnValue>
+                {/* TODO: React does not copy down the functions available on state variables, hence
+                `state.fund.payload.map.entriesArray()` is not a function! Therefore we use the below hack to access the
+                keys of the map but there should be a better way to do this */}
                 <ContainerColumnValue>
-                  {state.fund.payload.costPerUnit} {state.fund.payload.paymentInstrument.id.unpack} <Coin />
+                  {(state.fund.payload.offerers.map as any)._keys.map((offerer: string) => nameFromParty(offerer)).join(", ")}
                 </ContainerColumnValue>
-                <ContainerColumnValue>{formatCurrency(state.fund.payload.minInvesment, "en-US")} {state.fund.payload.paymentInstrument.id.unpack} <Coin /></ContainerColumnValue>
-                <ContainerColumnValue>{formatPercentage(state.fund.payload.commission)}</ContainerColumnValue>
+                <ContainerColumnValue>
+                  {costForQuantity(1).entriesArray().map(entry => <>{formatCurrency(entry[1].toString(), "en-US") + " " + entry[0].id.unpack + " "}<Coin/></>)}
+                </ContainerColumnValue>
+                <ContainerColumnValue>
+                  {
+                    state.fund.payload.steps
+                      .filter(step => step.receiver.tag == "TakerEntity")
+                      .map(step =>
+                        <p>{formatCurrency((parseFloat(step.quantity.amount) * inputQtd).toString(), "en-US") + " " + step.quantity.unit.id.unpack}</p>)
+                  }
+                </ContainerColumnValue>
+                <ContainerColumnValue>{formatCurrency(state.fund.payload.minQuantity || "0", "en-US")} </ContainerColumnValue>
+                <ContainerColumnValue>{formatCurrency(state.fund.payload.maxQuantity || "0", "en-US")} </ContainerColumnValue>
                 <ContainerColumnValue>
                   <input
                     type="number"
@@ -180,7 +161,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
                   />
                 </ContainerColumnValue>
                 <p><br/></p>
-                <ContainerColumnValue style={{verticalAlign:"-10px"}}>{formatCurrency(total.toString(), "en-US")} {state.fund.payload.paymentInstrument.id.unpack}  <Coin /></ContainerColumnValue>
+                <ContainerColumnValue style={{verticalAlign:"-10px"}}>{total.entriesArray().map(entry => <>{formatCurrency(entry[1].toString(), "en-US") + " " + entry[0].id.unpack + " "}<Coin/></>)}</ContainerColumnValue>
               </ContainerColumn>
             </ContainerDiv>
             
@@ -198,8 +179,8 @@ export const FundSubscribeFormScreen: React.FC = () => {
 
             <ContainerColumn>
             <ContainerColumnKey>Transaction Id:</ContainerColumnKey>
-            <ContainerColumnKey>Quantity:</ContainerColumnKey>
-            <ContainerColumnKey>Total:</ContainerColumnKey>
+            {/* <ContainerColumnKey>Quantity:</ContainerColumnKey>
+            <ContainerColumnKey>Total:</ContainerColumnKey> */}
             <ContainerColumnKey></ContainerColumnKey>
             <ContainerColumnKey></ContainerColumnKey>
             <ContainerColumnKey></ContainerColumnKey>
@@ -214,8 +195,8 @@ export const FundSubscribeFormScreen: React.FC = () => {
                   {referenceId} {"    "}<BoxArrowUpRight />
                 </a>
               </ContainerColumnValue>
-              <ContainerColumnValue> {inputQtd}</ContainerColumnValue>
-              <ContainerColumnValue>{formatCurrency(total.toString(), "en-US")} {state.fund.payload.paymentInstrument.id.unpack}  <Coin /></ContainerColumnValue>
+              {/* <ContainerColumnValue> {inputQtd}</ContainerColumnValue>
+              <ContainerColumnValue>{formatCurrency(total.toString(), "en-US")} {state.fund.payload.paymentInstrument.id.unpack}  <Coin /></ContainerColumnValue> */}
               <ContainerColumnValue>
                 
               </ContainerColumnValue>

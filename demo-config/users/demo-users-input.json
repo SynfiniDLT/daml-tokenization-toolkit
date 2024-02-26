@@ -48,6 +48,16 @@
       "readAs": [
         "Synfini_Public"
       ]
+    },
+    {
+      "userId": "auth0|65641a6c58d9a1107831cf3b",
+      "primaryParty": "FundManagerA",
+      "actAs": [
+        "FundManagerA"
+      ],
+      "readAs": [
+        "Synfini_Public"
+      ]
     }
   ]
 }
