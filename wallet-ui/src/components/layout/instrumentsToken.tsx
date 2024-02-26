@@ -64,7 +64,7 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
                   receiver: instrument.tokenView.token.instrument.issuer,
                   quantity: {
                     unit: instrument.tokenView.token.instrument,
-                    amount: json_description.piePointQuantity, // PIE POINT QUANTITY
+                    amount: json_description.piePointQuantity, 
                   },
                 },
               ],
@@ -72,7 +72,6 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
             .then((res) => {
               setMessage("Pre-mint completed with success!");
               setIsModalOpen(!isModalOpen);
-              console.log("resp", res);
             })
             .catch((err) => {
               setError("error when executing pre-mint: " + err.errors[0]);

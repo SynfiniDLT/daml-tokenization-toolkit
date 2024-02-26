@@ -58,15 +58,11 @@ const SettlementScreen: React.FC = () => {
   }
 
   if (filter!== "" && settlementsFiltered!== undefined){
-    console.log("filter",filter)
-
     if (filter==="pending")
       settlementsFiltered = settlementsFiltered.filter(settlement => settlement.execution === null);
       if (filter==="settled")
       settlementsFiltered = settlementsFiltered.filter(settlement => settlement.execution !== null);
   }
-
-  console.log("settlements", settlementsFiltered);
 
   let transactionPendingStyle = "button__sign-up";
   let transactionSettledStyle = "button__sign-up";

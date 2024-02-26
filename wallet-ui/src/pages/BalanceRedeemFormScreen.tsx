@@ -100,17 +100,14 @@ const BalanceRedeemFormScreen: React.FC = () => {
           }
         )
         .then((res) => {
-          console.log('res', res);
           setMessage("Your request has been successfully completed. \nTransaction id: " + referenceIdUUID);
         })
         .catch((e) => {
-          console.log("error", e)
           setError("Error " + e.errors[0].toString());
         });
       setIsMessageOpen(true);
     } catch (e: any) {
       setIsMessageOpen(true);
-      console.log("Caught error", e);
       setError("Error " + e.toString());
     }
   };

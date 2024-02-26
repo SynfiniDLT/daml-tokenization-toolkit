@@ -107,7 +107,6 @@ export const InstrumentCreateFormScreen: React.FC = () => {
         })
         .catch((err) => {
           setIsMessageOpen(true);
-          console.log("Caught error", e);
           setError("Error - Contact the Administrator.");
         });
     }
