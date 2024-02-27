@@ -16,4 +16,4 @@ data-dependencies:
 
   - ../../.build/issuer-onboarding-token-interface.dar
 
-  - ../../.build/tokenization-util.dar
+  - ../../.build/synfini-assert.dar

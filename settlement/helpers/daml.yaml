@@ -14,4 +14,4 @@ data-dependencies:
 
   - ../../.build/issuer-onboarding-minter-burner-interface.dar
 
-  - ../../.build/tokenization-util.dar
+  - ../../.build/synfini-assert.dar

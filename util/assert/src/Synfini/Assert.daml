@@ -1,0 +1,6 @@
+module Synfini.Assert where
+
+import DA.Action (when)
+
+assertEqMsg : (CanAssert m, Show a, Eq a) => Text -> a -> a -> m ()
+assertEqMsg msg a b = when (a /= b) (assertFail (msg <> ": expected " <> show a <> " == " <> show b))

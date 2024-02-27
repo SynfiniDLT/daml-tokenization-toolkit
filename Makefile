@@ -5,7 +5,7 @@ daml_finance_dir = .lib
 
 # Dar build outputs
 build_dir = .build
-util_dar = $(build_dir)/tokenization-util.dar
+assert_dar = $(build_dir)/synfini-assert.dar
 trackable_holding_dar = $(build_dir)/trackable-holding.dar
 trackable_settlement_dar = $(build_dir)/trackable-settlement.dar
 account_onboarding_one_time_offer_interface_dar = $(build_dir)/account-onboarding-one-time-offer-interface.dar
@@ -52,8 +52,8 @@ install-custom-views:
 		-Dpackaging=jar \
 		-DgeneratePom=true
 
-$(util_dar): $(daml_finance_dir) $(shell ./find-daml-project-files.sh util/main)
-	cd util/main && daml build -o $(proj_root)/$(util_dar)
+$(assert_dar): $(daml_finance_dir) $(shell ./find-daml-project-files.sh util/assert)
+	cd util/assert && daml build -o $(proj_root)/$(assert_dar)
 
 $(trackable_holding_dar): $(daml_finance_dir) $(shell ./find-daml-project-files.sh trackable-holding/main)
 	cd trackable-holding/main && daml build -o $(proj_root)/$(trackable_holding_dar)
@@ -80,12 +80,12 @@ $(settlement_open_offer_dar): $(settlement_open_offer_interface_dar) \
 
 $(settlement_helpers_dar): $(settlement_one_time_offer_interface_dar) \
   $(minter_burner_interface_dar) \
-  $(util_dar) \
+  $(assert_dar) \
   $(shell ./find-daml-project-files.sh settlement/helpers)
 	cd settlement/helpers && daml build -o $(proj_root)/$(settlement_helpers_dar)
 
 .PHONY: test-settlement
-test-settlement: $(settlement_one_time_offer_dar) $(util_dar)
+test-settlement: $(settlement_one_time_offer_dar) $(assert_dar)
 	cd settlement/test && daml test
 ## END settlement
 
@@ -108,7 +108,7 @@ $(account_onboarding_open_offer_dar): $(account_onboarding_open_offer_interface_
 	cd account-onboarding/open-offer-implementation && daml build -o $(proj_root)/$(account_onboarding_open_offer_dar)
 
 .PHONY: test-account-onboarding
-test-account-onboarding: $(account_onboarding_open_offer_dar) $(util_dar)
+test-account-onboarding: $(account_onboarding_open_offer_dar) $(assert_dar)
 	cd account-onboarding/test && daml test
 
 # Issuer
@@ -117,7 +117,7 @@ $(issuer_onboarding_token_interface_dar): $(daml_finance_dir) \
 	cd issuer-onboarding/instrument-token-interface && daml build -o $(proj_root)/$(issuer_onboarding_token_interface_dar)
 
 $(issuer_onboarding_token_dar): $(issuer_onboarding_token_interface_dar) \
-  $(util_dar) \
+  $(assert_dar) \
   $(shell ./find-daml-project-files.sh issuer-onboarding/instrument-token-implementation)
 	cd issuer-onboarding/instrument-token-implementation && daml build -o $(proj_root)/$(issuer_onboarding_token_dar)
 
@@ -126,12 +126,12 @@ $(minter_burner_interface_dar): $(daml_finance_dir) \
 	cd issuer-onboarding/minter-burner-interface && daml build -o $(proj_root)/$(minter_burner_interface_dar)
 
 $(minter_burner_dar): $(minter_burner_interface_dar) \
-  $(util_dar) \
+  $(assert_dar) \
   $(shell ./find-daml-project-files.sh issuer-onboarding/minter-burner-implementation)
 	cd issuer-onboarding/minter-burner-implementation && daml build -o $(proj_root)/$(minter_burner_dar)
 
 .PHONY: test-issuer-onboarding
-test-issuer-onboarding: $(issuer_onboarding_token_dar) $(minter_burner_dar) $(util_dar)
+test-issuer-onboarding: $(issuer_onboarding_token_dar) $(minter_burner_dar) $(assert_dar)
 	cd issuer-onboarding/test && daml test
 
 # Scripts
