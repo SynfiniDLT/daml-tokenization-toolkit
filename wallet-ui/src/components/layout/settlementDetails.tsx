@@ -75,9 +75,9 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
     }
 
     props.settlement.steps.map((step: SettlementStep, index: number) => {
-      if (props.settlement.execution === null){
+      if (props.settlement.execution === null) {
         return setIsActionRequired(true);
-      } 
+      }
     });
   }, [location]);
 
@@ -296,7 +296,6 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    console.log("submit", selectAccountInput);
     const splitAccountInput = selectAccountInput.split("@");
     let custodianToAccount: damlTypes.Map<damlTypes.Party, Id> = damlTypes.emptyMap();
     custodianToAccount = custodianToAccount.set(splitAccountInput[0], { unpack: splitAccountInput[1] });
@@ -339,7 +338,6 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
         {}
       )
       .then((res) => {
-        console.log("res??", res);
         setMessage("Account allocated with success!");
         setIsModalOpen(!isModalOpen);
       })
@@ -357,10 +355,8 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
       .then((res) => {
         setMessage("Settlement submitted with success!");
         setIsModalOpen(!isModalOpen);
-        console.log("resp", res);
       })
       .catch((err) => {
-        console.log("err", err);
         setError("error when executing!" + err.errors[0]);
         setIsModalOpen(!isModalOpen);
       });
@@ -436,7 +432,6 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
     });
   }, []);
 
-  console.log("settlement", props.settlement);
   return (
     <SettlementDetailsContainer>
       <form onSubmit={handleSubmit}>
@@ -497,13 +492,47 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
                       <Field>Instrument:</Field>
                       {step.routedStep.quantity.unit.id.unpack}
                       <Field>Version:</Field>
-                      {step.routedStep.quantity.unit.version} <br />
-                      <Field>Sender: </Field>
-                      {nameFromParty(step.routedStep.sender)}
+                      {step.routedStep.quantity.unit.version}
                       <br />
-                      <Field>Receiver: </Field>
-                      {nameFromParty(step.routedStep.receiver)}
-                      <br />
+                      <div
+                        style={{
+                          ...(nameFromParty(step.routedStep.sender) === nameFromParty(ctx.primaryParty) && step.allocation.tag === "Unallocated"
+                            ? { border: "1px solid", width: "300px" }
+                            : {}),
+                        }}
+                      >
+                        <Field>Sender: </Field>
+                        <span
+                          style={{
+                            fontWeight:
+                              nameFromParty(step.routedStep.sender) === nameFromParty(ctx.primaryParty)
+                                ? "bold"
+                                : "normal",
+                          }}
+                        >
+                          {nameFromParty(step.routedStep.sender)}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          ...(nameFromParty(step.routedStep.receiver) === nameFromParty(ctx.primaryParty) && step.approval.tag === "Unapproved"
+                          
+                            ? { border: "1px solid", width: "300px" }
+                            : {}),
+                        }}
+                      >
+                        <Field>Receiver: </Field>
+                        <span
+                          style={{
+                            fontWeight:
+                              nameFromParty(step.routedStep.receiver) === nameFromParty(ctx.primaryParty)
+                                ? "bold"
+                                : "normal",
+                          }}
+                        >
+                          {nameFromParty(step.routedStep.receiver)}
+                        </span>
+                      </div>
                       <Field>Custodian: </Field>
                       {nameFromParty(step.routedStep.custodian)}
                       <br />

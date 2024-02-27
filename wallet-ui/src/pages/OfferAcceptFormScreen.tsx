@@ -17,6 +17,7 @@ export const OfferAcceptFormScreen: React.FC = () => {
   const { state } = useLocation();
   const ledger = userContext.useLedger();
   const [transactionRefInput, setTransactionRefInput] = useState("");
+  const [maxAmountInput, setMaxAmountInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
@@ -26,62 +27,78 @@ export const OfferAcceptFormScreen: React.FC = () => {
     setTransactionRefInput(event.target.value);
   };
 
+  const handleMaxAmountInput = (event: any) => {
+    setMaxAmountInput(event.target.value);
+  };
+
+
   const handleCloseModal = () => {
     setIsModalOpen(!isModalOpen);
     if (error === "") {
       nav("/settlements", { state: { transactionId: state.offer.payload.offerId.unpack } });
     } else {
-      nav("/offers");
+      nav("/offer/accept", { state: { offer: state.offer } });
     }
   };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    await ledger
-      .exercise(OneTimeOffer.Accept, state.offer.contractId, {
-        quantity: state.offer.payload.maxQuantity,
-        description: transactionRefInput,
-      })
-      .then((resp) => {
-        if (resp[0]["_2"] !== undefined) {
-          setMessage("Offer Accepted with success!");
-        } else {
-          setError("Error! Contract was not created. Please contact the admin");
-        }
-        setIsModalOpen(true);
-      })
-      .catch((err) => {
-        setError("Error! Offer Not Accepted \n \n Error:" + JSON.stringify(err.errors[0]));
-        setIsModalOpen(true);
-      })
-      .finally(() => {});
+
+    if (Number(maxAmountInput) > Number(state.offer.payload.maxQuantity)) {
+      setError("Error! Quantity cannot be higher than the Max Quantity Offer.");
+      setIsModalOpen(true);
+      setIsSubmitting(false);
+    } else {
+      setIsSubmitting(true);
+      await ledger
+        .exercise(OneTimeOffer.Accept, state.offer.contractId, {
+          quantity: maxAmountInput,
+          description: transactionRefInput,
+        })
+        .then((resp) => {
+          if (resp[0]["_2"] !== undefined) {
+            setError("");
+            setMessage("Offer Accepted with success!");
+          } else {
+            setError("Error! Contract was not created. Please contact the admin");
+          }
+          setIsModalOpen(true);
+        })
+        .catch((err) => {
+          setError("Error! Offer Not Accepted \n \n Error:" + JSON.stringify(err.errors[0]));
+          setIsModalOpen(true);
+        })
+        .finally(() => {
+          setIsSubmitting(false);
+        });
+    }
   };
-
-  // useEffect(() => {
-  //   fetchDataForUserLedger(ctx, ledger);
-  // }, [ctx, ledger]);
-
-
 
   return (
     <PageLayout>
       <h3 className="profile__title">Accept Offer</h3>
-      <DivBorderRoundContainer style={{ height: "20em" }}>
+      <DivBorderRoundContainer style={{ height: "31em" }}>
         <form onSubmit={handleSubmit}>
           <ContainerDiv style={{ height: "200px" }}>
             <ContainerColumn>
               <ContainerColumnField>Offer: </ContainerColumnField>
-              <ContainerColumnAutoField>Instruments: 
-              {state.offer.payload.steps.map((step: any) => {
+              <ContainerColumnAutoField>
+                Instruments:
+                {state.offer.payload.steps.map((step: any) => {
                   return (
                     <>
-                      <p></p>
+                      <p>
+                        <br />
+                        <br />
+                        <br />
+                      </p>
                     </>
                   );
                 })}
               </ContainerColumnAutoField>
-              <ContainerColumnField style={{ width: "200px", height: "20em" }}>Transaction Reference: </ContainerColumnField>
+              <ContainerColumnField>Offer quantity: </ContainerColumnField>
+              <ContainerColumnField>Accept quantity: </ContainerColumnField>
+              <ContainerColumnField style={{ width: "200px", height: "20em" }}>Txn Reference: </ContainerColumnField>
               <p></p>
               <p></p>
               <button type="submit" className="button__login" disabled={isSubmitting}>
@@ -97,14 +114,18 @@ export const OfferAcceptFormScreen: React.FC = () => {
                   return (
                     <>
                       <div>{step.quantity.unit.id.unpack}</div>
-                      <div>Issuer: {step.quantity.unit.issuer }</div>
-                      <div>Sender: {step.sender }</div>
+                      <div>Issuer: {step.quantity.unit.issuer}</div>
+                      <div>Sender: {step.sender}</div>
                       <p></p>
                     </>
                   );
                 })}
               </ContainerColumnAutoField>
               <ContainerColumnField></ContainerColumnField>
+              <ContainerColumnField>{state.offer.payload.maxQuantity}</ContainerColumnField>
+              <ContainerColumnField>
+                <input type="number" name="maxAmount" style={{ width: "100px" }} onChange={handleMaxAmountInput} required />
+              </ContainerColumnField>
               <ContainerColumnField>
                 <input
                   type="text"
