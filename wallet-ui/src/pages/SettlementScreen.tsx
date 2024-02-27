@@ -11,7 +11,6 @@ import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 import { useLocation } from "react-router-dom";
 
 const SettlementScreen: React.FC = () => {
-  //const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
   const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
   const { state } = useLocation();
   const ctx = useContext(AuthContextStore);
@@ -59,15 +58,11 @@ const SettlementScreen: React.FC = () => {
   }
 
   if (filter!== "" && settlementsFiltered!== undefined){
-    console.log("filter",filter)
-
     if (filter==="pending")
       settlementsFiltered = settlementsFiltered.filter(settlement => settlement.execution === null);
       if (filter==="settled")
       settlementsFiltered = settlementsFiltered.filter(settlement => settlement.execution !== null);
   }
-
-  console.log("settlements", settlementsFiltered);
 
   let transactionPendingStyle = "button__sign-up";
   let transactionSettledStyle = "button__sign-up";

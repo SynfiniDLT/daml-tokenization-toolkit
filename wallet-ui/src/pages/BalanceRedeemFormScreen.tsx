@@ -20,7 +20,6 @@ const BalanceRedeemFormScreen: React.FC = () => {
   const { state } = useLocation();
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
-  //const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
   const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
 
   const [amountInput, setAmountInput] = useState("");
@@ -84,17 +83,14 @@ const BalanceRedeemFormScreen: React.FC = () => {
           }
         )
         .then((res) => {
-          console.log('res', res);
           setMessage("Your request has been successfully completed. \nTransaction id: " + referenceIdUUID);
         })
         .catch((e) => {
-          console.log("error", e)
           setError("Error " + e.errors[0].toString());
         });
       setIsMessageOpen(true);
     } catch (e: any) {
       setIsMessageOpen(true);
-      console.log("Caught error", e);
       setError("Error " + e.toString());
     }
   };

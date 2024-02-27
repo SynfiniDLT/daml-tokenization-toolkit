@@ -27,8 +27,6 @@ const OffersScreen: React.FC = () => {
     fetchOffers();
   }, []);
   
-  console.log("offers", offers)
-
   if (isLoading) {
     return (
       <div>

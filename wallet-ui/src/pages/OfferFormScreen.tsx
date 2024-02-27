@@ -75,19 +75,17 @@ export const OfferFormScreen: React.FC = () => {
         },{
           sender: producerInput, receiver: investorInput, quantity: {amount: "1", unit: state.instrument.tokenView.token.instrument}
         }],
-        minQuantity: json_description.piePointQuantity,
+        minQuantity: "1",
         maxQuantity: json_description.piePointQuantity,
         routeProviderCid: routeProvider[0].contractId,
         settlementFactoryCid: settlementFactory[0].contractId,
       })
 
       .then((res) => {
-        console.log("res", res);
         setMessage("Offer created with success. \nOffer id: " + idUUID);
         setIsModalOpen(true);
       })
       .catch((e) => {
-        console.log("error", e);
         setError("Error " + e.errors[0].toString());
         setIsModalOpen(true);
       });
@@ -97,8 +95,6 @@ export const OfferFormScreen: React.FC = () => {
   useEffect(() => {
     fetchDataForUserLedger(ctx, ledger);
   }, [ctx, ledger]);
-
-  console.log("state.instrument",state.instrument)
 
   return (
     <PageLayout>

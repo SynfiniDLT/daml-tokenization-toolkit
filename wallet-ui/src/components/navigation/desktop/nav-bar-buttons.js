@@ -8,6 +8,7 @@ import HoverPopUp from "../../layout/hoverPopUp";
 export const NavBarButtons = () => {
   const { isAuthenticated, user } = useAuth0();
   const ctx = useContext(AuthContextStore);
+  const walletMode = process.env.REACT_APP_MODE || "";
 
   return (
     <div className="nav-bar__buttons">
@@ -22,6 +23,8 @@ export const NavBarButtons = () => {
             {user !== undefined && user.email} <br />
             <HoverPopUp popUpContent={ctx.primaryParty} triggerText={ctx.primaryParty !== '' && (ctx.primaryParty.substring(0,30) + "...")}></HoverPopUp>
             <br />
+            {walletMode[0].toUpperCase() + walletMode.substring(1)} Wallet 
+            <br/>
             {ctx.readOnly && ("Observer mode")}
           </div>
           <div>

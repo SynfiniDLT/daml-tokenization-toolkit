@@ -44,7 +44,7 @@ const HomeScreen: React.FC = () => {
               <div className="profile__headline">
                 <h2 className="profile__title">{user.name}</h2>
                 <span className="profile__description">{user.email}</span>
-                <span className="profile__description">Mode: {walletMode}</span>
+                <span className="profile__description">{walletMode[0].toUpperCase() + walletMode.substring(1)} Wallet</span>
               </div>
             </div>
           </div>
