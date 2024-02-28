@@ -3,11 +3,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
 import AuthContextStore from "../store/AuthContextStore";
 import { PageLayout } from "../components/PageLayout";
-import { formatCurrency, formatPercentage, nameFromParty } from "../components/Util";
-import { AccountSummary, HoldingSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { formatCurrency, nameFromParty } from "../components/Util";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import * as damlTypes from "@daml/types";
-import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
 import { OpenOffer as SettlementOpenOffer } from "@daml.js/settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
 import { v4 as uuid } from "uuid";
 import {
@@ -114,16 +112,14 @@ export const FundSubscribeFormScreen: React.FC = () => {
         <DivBorderRoundContainer>
           <form onSubmit={handleSubmit}>
             <ContainerDiv>
-              <ContainerColumn>
+              <ContainerColumn style={{width: "600px"}}>
                 <ContainerColumnKey>Offered by:</ContainerColumnKey>
                 <ContainerColumnKey>Cost Per Unit:</ContainerColumnKey>
                 <ContainerColumnKey>Receivable assets:</ContainerColumnKey>
                 <ContainerColumnKey>Minimum Purchase quantity:</ContainerColumnKey>
                 <ContainerColumnKey>Maximum Purchase quantity:</ContainerColumnKey>
                 <ContainerColumnKey>Units to buy:</ContainerColumnKey>
-                {/* <ContainerColumnKey></ContainerColumnKey> */}
-                {/* <p><br/></p> */}
-                
+                <p><br/></p>
                 <ContainerColumnKey>Total cost:</ContainerColumnKey>
               </ContainerColumn>
               <ContainerColumn>

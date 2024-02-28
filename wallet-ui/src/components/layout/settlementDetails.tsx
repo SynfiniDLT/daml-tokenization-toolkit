@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { formatCurrency, nameFromParty, toDateTimeString } from "../Util";
@@ -30,7 +30,10 @@ import Modal from "react-modal";
 import AccountsSelect from "./accountsSelect";
 import { fetchDataForUserLedger } from "../UserLedgerFetcher";
 import { Tuple2 } from "@daml.js/40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7/lib/DA/Types";
-import { Approval, InstructionKey } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Types";
+import {
+  Approval,
+  InstructionKey,
+} from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Types";
 
 interface SettlementDetailsProps {
   settlement: any;
@@ -314,7 +317,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
           const activeHoldings = await walletClient.getHoldings({ account, instrument: holdingDescriptor.instrument });
           holdings = holdings.set(
             holdingDescriptor,
-            activeHoldings.holdings.filter(h => h.view.lock === null).map((h) => h.cid)
+            activeHoldings.holdings.filter((h) => h.view.lock === null).map((h) => h.cid)
           );
         }
       }
@@ -388,6 +391,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
 
   useEffect(() => {
     // STEPS LOOP THROUGH
+    let stepNotReady = false;
     props.settlement.steps.map((step: SettlementStep, index: number) => {
       let inputSelected = "";
 
@@ -417,16 +421,15 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
       }
 
       // CHECK IF CAN EXECUTE
-      if (
-        step.approval.tag !== "Unapproved" &&
-        step.allocation.tag !== "Unallocated"
-      ) {
-        fetchAccounts(step.routedStep.custodian);
-        setShowExecute(true);
-      } else if (step.approval.tag === "Unapproved" || step.allocation.tag === "Unallocated") {
-        setShowExecute(false);
+      fetchAccounts(step.routedStep.custodian);
+      if (step.approval.tag === "Unapproved" || step.allocation.tag === "Unallocated") {
+        stepNotReady = true;
       }
     });
+
+    if (stepNotReady===false && props.settlement.settlers.map._keys.includes(ctx.primaryParty)) {
+      setShowExecute(true);
+    }
   }, []);
 
   return (
@@ -493,7 +496,8 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
                       <br />
                       <div
                         style={{
-                          ...(nameFromParty(step.routedStep.sender) === nameFromParty(ctx.primaryParty) && step.allocation.tag === "Unallocated"
+                          ...(nameFromParty(step.routedStep.sender) === nameFromParty(ctx.primaryParty) &&
+                          step.allocation.tag === "Unallocated"
                             ? { border: "1px solid", width: "300px" }
                             : {}),
                         }}
@@ -512,8 +516,8 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
                       </div>
                       <div
                         style={{
-                          ...(nameFromParty(step.routedStep.receiver) === nameFromParty(ctx.primaryParty) && step.approval.tag === "Unapproved"
-                          
+                          ...(nameFromParty(step.routedStep.receiver) === nameFromParty(ctx.primaryParty) &&
+                          step.approval.tag === "Unapproved"
                             ? { border: "1px solid", width: "300px" }
                             : {}),
                         }}

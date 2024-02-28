@@ -43,7 +43,7 @@ export const ContainerDiv = styled.div`
 export const ContainerColumn = styled.div`
   display: flex;
   flex-direction: column;
-  min-width: 150px;
+  min-width: 250px;
 `;
 
 export const ContainerColumnKey = styled.p`
