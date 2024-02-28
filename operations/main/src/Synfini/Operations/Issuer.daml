@@ -1,0 +1,85 @@
+module Synfini.Operations.Issuer where
+
+import DA.Foldable (forA_)
+
+import Daml.Script
+
+import Daml.Finance.Interface.Instrument.Token.Factory qualified as TokenFactory
+
+import Synfini.Operations.Factory.Instrument
+import Synfini.Operations.Types
+import Synfini.Operations.Factory.MinterBurner (MinterBurnerFactory)
+
+import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Factory qualified as TokenIssuerFactory
+import qualified Synfini.Interface.Onboarding.Issuer.MinterBurner.Factory as MinterBurnerFactory
+
+data IssuerSettings = IssuerSettings
+  with
+    issuerFactory : Text
+    instrumentFactory : Text
+    instrumentType : Text
+    depository : Text
+    issuer : Text
+    observers : [Observer]
+
+data CreateIssuersInput = CreateIssuersInput
+  with
+    parties : [PartyInfo]
+    readAs : [Text]
+    issuerFactories : [IssuerFactory]
+    instrumentFactories : [InstrumentFactory]
+    issuerSettings : [IssuerSettings]
+
+createIssuers : CreateIssuersInput -> Script ()
+createIssuers input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let readAs = p <$> input.readAs
+  forA_ input.issuerSettings $ \settings -> do
+    let depository = p settings.depository
+        issuer = p  settings.issuer
+        issuerFactoryCid = findFactoryContractId settings.issuerFactory input.issuerFactories
+        instrumentFactoryCid = findFactoryContractId settings.instrumentFactory input.instrumentFactories
+        observers = asPartiesMap p settings.observers
+    case settings.instrumentType of
+      "Token" -> do
+        let tokenIssuerFactoryCid : ContractId TokenIssuerFactory.I = coerceContractId issuerFactoryCid
+            tokenInstrumentFactoryCid : ContractId TokenFactory.F = coerceContractId instrumentFactoryCid
+        submitMulti [depository] readAs do
+          exerciseCmd tokenIssuerFactoryCid TokenIssuerFactory.Create with
+            depository
+            issuer
+            instrumentFactoryCid = tokenInstrumentFactoryCid
+            observers
+      other -> error ("Unsupported token type: " <> other)
+
+data MinterBurnerSettings = MinterBurnerSettings
+  with
+    custodian : Text
+    depository : Text
+    issuer : Text
+    minterBurnerFactory : Text
+    observers : [Observer]
+
+data CreateMinterBurnersInput = CreateMinterBurnersInput
+  with
+    parties : [PartyInfo]
+    minterBurnerFactories : [MinterBurnerFactory]
+    minterBurnerSettings : [MinterBurnerSettings]
+
+createMinterBurners : CreateMinterBurnersInput -> Script ()
+createMinterBurners input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  forA_ input.minterBurnerSettings $ \settings -> do
+    let custodian = p settings.custodian
+        depository = p settings.depository
+        issuer = p settings.issuer
+        minterBurnerFactoryCid = findFactoryContractId settings.minterBurnerFactory input.minterBurnerFactories
+        observers = asPartiesMap p settings.observers
+    submit custodian do
+      exerciseCmd minterBurnerFactoryCid MinterBurnerFactory.Create with
+        custodian
+        depository
+        issuer
+        observers

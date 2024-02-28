@@ -8,7 +8,7 @@ import { v4 as uuid } from "uuid";
 import * as damlTypes from "@daml/types";
 import { HoldingSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
-import { OpenOffer, OpenOffer as SettlementOpenOffer } from "@daml.js/settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer";
+import { OpenOffer, OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { ContainerColumn, ContainerDiv, ContainerColumnKey, DivBorderRoundContainer, ContainerColumnValue } from "../components/layout/general.styled";
 import Modal from "react-modal";

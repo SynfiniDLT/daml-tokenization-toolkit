@@ -1,7 +1,7 @@
 # Warning: make sure to keep this sdk version updated to be the same as the other daml.yaml files
 # and the daml version in the java pom.xml
 sdk-version: 2.6.3
-name: account-onboarding-test
+name: synfini-account-onboarding-test
 source: src
 version: 0.0.1
 dependencies:
@@ -17,7 +17,7 @@ data-dependencies:
   - ../../.lib/daml-finance-account.dar
   - ../../.lib/daml-finance-holding.dar
 
-  - ../../.build/account-onboarding-open-offer-interface.dar
+  - ../../.build/synfini-account-onboarding-open-offer-interface.dar
 
-  - ../../.build/account-onboarding-open-offer.dar
+  - ../../.build/synfini-account-onboarding-open-offer.dar
   - ../../.build/synfini-assert.dar

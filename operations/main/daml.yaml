@@ -1,0 +1,42 @@
+# Warning: make sure to keep this sdk version updated to be the same as the other daml.yaml files
+# and the daml version in the java pom.xml
+sdk-version: 2.6.3
+name: synfini-operations
+source: src
+version: 0.0.1
+dependencies:
+  - daml-prim
+  - daml-stdlib
+  - daml-script
+data-dependencies:
+  - ../../.lib/daml-finance-interface-account.dar
+  - ../../.lib/daml-finance-interface-holding.dar
+  - ../../.lib/daml-finance-interface-instrument-base.dar
+  - ../../.lib/daml-finance-interface-instrument-token.dar
+  - ../../.lib/daml-finance-interface-settlement.dar
+  - ../../.lib/daml-finance-interface-types-common.dar
+  - ../../.lib/daml-finance-interface-util.dar
+
+  - ../../.lib/daml-finance-account.dar
+  - ../../.lib/daml-finance-holding.dar
+  - ../../.lib/daml-finance-instrument-token.dar
+  - ../../.lib/daml-finance-settlement.dar
+
+  - ../../.build/synfini-account-onboarding-one-time-offer-interface.dar
+  - ../../.build/synfini-account-onboarding-open-offer-interface.dar
+  - ../../.build/synfini-issuer-onboarding-token-interface.dar
+  - ../../.build/synfini-issuer-onboarding-minter-burner-interface.dar
+  - ../../.build/synfini-settlement-one-time-offer-interface.dar
+  - ../../.build/synfini-settlement-open-offer-interface.dar
+  - ../../.build/synfini-pbt-interface.dar
+
+  - ../../.build/synfini-trackable-holding.dar
+  - ../../.build/synfini-trackable-settlement.dar
+  - ../../.build/synfini-account-onboarding-one-time-offer.dar
+  - ../../.build/synfini-account-onboarding-open-offer.dar
+  - ../../.build/synfini-issuer-onboarding-token.dar
+  - ../../.build/synfini-issuer-onboarding-minter-burner.dar
+  - ../../.build/synfini-settlement-one-time-offer.dar
+  - ../../.build/synfini-settlement-open-offer.dar
+  - ../../.build/synfini-settlement-helpers.dar
+  - ../../.build/synfini-pbt.dar

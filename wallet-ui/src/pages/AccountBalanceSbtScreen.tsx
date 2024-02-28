@@ -11,7 +11,7 @@ import {
   InstrumentSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import BalanceSbts from "../components/layout/balanceSbts";
-import {Instrument as PartyBoundAttributes}  from "@daml.js/daml-pbt/lib/Synfini/Interface/Instrument/PartyBoundAttributes/Instrument";
+import {Instrument as PartyBoundAttributes}  from "@daml.js/synfini-pbt/lib/Synfini/Interface/Instrument/PartyBoundAttributes/Instrument";
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
 const AccountBalanceSbtScreen: React.FC = () => {

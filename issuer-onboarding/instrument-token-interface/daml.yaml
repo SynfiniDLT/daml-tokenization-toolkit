@@ -1,7 +1,7 @@
 # Warning: make sure to keep this sdk version updated to be the same as the other daml.yaml files
 # and the daml version in the java pom.xml
 sdk-version: 2.6.3
-name: issuer-onboarding-instrument-token-interface
+name: synfini-issuer-onboarding-instrument-token-interface
 source: src
 version: 0.0.1
 dependencies:

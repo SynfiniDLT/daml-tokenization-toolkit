@@ -4,7 +4,7 @@ import AuthContextStore from "../store/AuthContextStore";
 import { userContext } from "../App";
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 import { PageLoader } from "../components/layout/page-loader";
-import { OneTimeOffer } from "@daml.js/settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer";
+import { OneTimeOffer } from "@daml.js/synfini-settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer";
 import Offers from "../components/layout/offers";
 
 const OffersScreen: React.FC = () => {

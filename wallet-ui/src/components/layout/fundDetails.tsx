@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { CardContainer, ContainerColumn, ContainerColumnKey, ContainerDiv, ContainerColumnValue } from "./general.styled";
 import { formatCurrency, formatPercentage } from "../Util";
 import { CreateEvent } from "@daml/ledger";
-import { OpenOffer as SettlementOpenOffer } from "@daml.js/settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
+import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
 import { Coin } from "react-bootstrap-icons";
 
 interface FundDetailsProps {

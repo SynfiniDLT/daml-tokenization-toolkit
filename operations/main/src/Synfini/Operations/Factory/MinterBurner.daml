@@ -1,0 +1,39 @@
+module Synfini.Operations.Factory.MinterBurner where
+
+import Synfini.Operations.Types
+import qualified Synfini.Interface.Onboarding.Issuer.MinterBurner.Factory as MinterBurnerFactory
+import qualified Synfini.Onboarding.Issuer.MinterBurner as MinterBurnerImpl
+
+import Daml.Script
+
+data MinterBurnerFactorySettings = MinterBurnerFactorySettings
+  with
+    label : Text
+    provider : Text
+    observers : [Observer]
+
+data CreateMinterBurnerFactoriesInput = CreateMinterBurnerFactoriesInput
+  with
+    parties : [PartyInfo]
+    minterBurnerFactorySettings : [MinterBurnerFactorySettings]
+
+data MinterBurnerFactory = MinterBurnerFactory
+  with
+    label : Text
+    cid : ContractId MinterBurnerFactory.I
+
+data CreateMinterBurnerFactoriesOutput = CreateMinterBurnerFactoriesOutput
+  with
+    minterBurnerFactories : [MinterBurnerFactory]
+
+createMinterBurnerFactories : CreateMinterBurnerFactoriesInput -> Script CreateMinterBurnerFactoriesOutput
+createMinterBurnerFactories input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  minterBurnerFactories <- forA input.minterBurnerFactorySettings $ \settings -> do
+    let observers = asPartiesMap p settings.observers
+    let provider = p settings.provider
+    cid <- toInterfaceContractId <$> submit provider do
+      createCmd MinterBurnerImpl.Factory with provider, observers
+    pure MinterBurnerFactory with label = settings.label, cid
+  pure CreateMinterBurnerFactoriesOutput with minterBurnerFactories

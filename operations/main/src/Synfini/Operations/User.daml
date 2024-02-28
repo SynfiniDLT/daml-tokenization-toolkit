@@ -1,0 +1,31 @@
+module Synfini.Operations.User where
+
+import DA.Foldable (forA_)
+
+import Daml.Script
+
+import Synfini.Operations.Types
+
+data UserSettings = UserSettings
+  with
+    userId : Text
+    primaryParty : Optional Text
+    readAs : [Text]
+    actAs : [Text]
+
+data SetupUsersInput = SetupUsersInput
+  with
+    parties : [PartyInfo]
+    users : [UserSettings]
+
+setupUsers : SetupUsersInput -> Script ()
+setupUsers input = do
+  let nameToPartyId = partyTable input.parties
+  let p = getPartyId nameToPartyId 
+  forA_ input.users $ \user -> do
+    userId <- validateUserId user.userId
+
+    let actAs = (CanActAs . p) <$> user.actAs
+        readAs = (CanReadAs . p) <$> user.readAs
+    createUser (User userId (p <$> user.primaryParty)) (actAs <> readAs)
+    pure ()

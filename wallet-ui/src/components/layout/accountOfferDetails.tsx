@@ -8,7 +8,7 @@ import {
   ContainerColumnValue,
 } from "./general.styled";
 import { AccountOpenOfferSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { OpenOffer } from "@daml.js/account-onboarding-open-offer-interface/lib/Synfini/Interface/Onboarding/Account/OpenOffer/OpenOffer";
+import { OpenOffer } from "@daml.js/synfini-account-onboarding-open-offer-interface/lib/Synfini/Interface/Onboarding/Account/OpenOffer/OpenOffer";
 import AuthContextStore from "../../store/AuthContextStore";
 import { userContext } from "../../App";
 import { Party, emptyMap } from "@daml/types";

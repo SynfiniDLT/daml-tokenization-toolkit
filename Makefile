@@ -6,25 +6,25 @@ daml_finance_dir = .lib
 # Dar build outputs
 build_dir = .build
 assert_dar = $(build_dir)/synfini-assert.dar
-trackable_holding_dar = $(build_dir)/trackable-holding.dar
-trackable_settlement_dar = $(build_dir)/trackable-settlement.dar
-account_onboarding_one_time_offer_interface_dar = $(build_dir)/account-onboarding-one-time-offer-interface.dar
-account_onboarding_one_time_offer_dar = $(build_dir)/account-onboarding-one-time-offer.dar
-account_onboarding_open_offer_interface_dar = $(build_dir)/account-onboarding-open-offer-interface.dar
-account_onboarding_open_offer_dar = $(build_dir)/account-onboarding-open-offer.dar
-issuer_onboarding_token_interface_dar = $(build_dir)/issuer-onboarding-token-interface.dar
-issuer_onboarding_token_dar = $(build_dir)/issuer-onboarding-token.dar
-onboarding_scripts_dar = $(build_dir)/tokenization-onboarding.dar
-minter_burner_interface_dar = $(build_dir)/issuer-onboarding-minter-burner-interface.dar
-minter_burner_dar = $(build_dir)/issuer-onboarding-minter-burner.dar
-settlement_one_time_offer_interface_dar = $(build_dir)/settlement-one-time-offer-interface.dar
-settlement_one_time_offer_dar = $(build_dir)/settlement-one-time-offer.dar
-settlement_open_offer_interface_dar = $(build_dir)/settlement-open-offer-interface.dar
-settlement_open_offer_dar = $(build_dir)/settlement-open-offer.dar
-settlement_helpers_dar = $(build_dir)/settlement-helpers.dar
-pbt_dar = $(build_dir)/pbt.dar
-pbt_interface_dar = $(build_dir)/pbt-interface.dar
-wallet_views_types_dar = $(build_dir)/daml-wallet-views-types.dar
+trackable_holding_dar = $(build_dir)/synfini-trackable-holding.dar
+trackable_settlement_dar = $(build_dir)/synfini-trackable-settlement.dar
+account_onboarding_one_time_offer_interface_dar = $(build_dir)/synfini-account-onboarding-one-time-offer-interface.dar
+account_onboarding_one_time_offer_dar = $(build_dir)/synfini-account-onboarding-one-time-offer.dar
+account_onboarding_open_offer_interface_dar = $(build_dir)/synfini-account-onboarding-open-offer-interface.dar
+account_onboarding_open_offer_dar = $(build_dir)/synfini-account-onboarding-open-offer.dar
+issuer_onboarding_token_interface_dar = $(build_dir)/synfini-issuer-onboarding-token-interface.dar
+issuer_onboarding_token_dar = $(build_dir)/synfini-issuer-onboarding-token.dar
+operations_scripts_dar = $(build_dir)/synfini-operations.dar
+minter_burner_interface_dar = $(build_dir)/synfini-issuer-onboarding-minter-burner-interface.dar
+minter_burner_dar = $(build_dir)/synfini-issuer-onboarding-minter-burner.dar
+settlement_one_time_offer_interface_dar = $(build_dir)/synfini-settlement-one-time-offer-interface.dar
+settlement_one_time_offer_dar = $(build_dir)/synfini-settlement-one-time-offer.dar
+settlement_open_offer_interface_dar = $(build_dir)/synfini-settlement-open-offer-interface.dar
+settlement_open_offer_dar = $(build_dir)/synfini-settlement-open-offer.dar
+settlement_helpers_dar = $(build_dir)/synfini-settlement-helpers.dar
+pbt_dar = $(build_dir)/synfini-pbt.dar
+pbt_interface_dar = $(build_dir)/synfini-pbt-interface.dar
+wallet_views_types_dar = $(build_dir)/synfini-wallet-views-types.dar
 
 # Codegen outputs
 wallet_views_main_codegen = wallet-views/java/src/generated-main/java
@@ -135,7 +135,7 @@ test-issuer-onboarding: $(issuer_onboarding_token_dar) $(minter_burner_dar) $(as
 	cd issuer-onboarding/test && daml test
 
 # Scripts
-$(onboarding_scripts_dar): $(daml_finance_dir) \
+$(operations_scripts_dar): $(daml_finance_dir) \
   $(account_onboarding_one_time_offer_dar) \
   $(account_onboarding_open_offer_dar) \
   $(issuer_onboarding_token_dar) \
@@ -146,12 +146,12 @@ $(onboarding_scripts_dar): $(daml_finance_dir) \
   $(trackable_holding_dar) \
   $(trackable_settlement_dar) \
   $(pbt_dar) \
-  $(shell ./find-daml-project-files.sh onboarding/main)
-	cd onboarding/main && daml build -o $(proj_root)/$(onboarding_scripts_dar)
+  $(shell ./find-daml-project-files.sh operations/main)
+	cd operations/main && daml build -o $(proj_root)/$(operations_scripts_dar)
 
 .PHONY: install-onboarding
-install-onboarding: $(onboarding_scripts_dar)
-	export DOPS_DAR=$(proj_root)/$(onboarding_scripts_dar) && cd onboarding && ./install.sh
+install-onboarding: $(operations_scripts_dar)
+	export DOPS_DAR=$(proj_root)/$(operations_scripts_dar) && cd operations && ./install.sh
 ## END onboarding
 
 ## BEGIN pbt

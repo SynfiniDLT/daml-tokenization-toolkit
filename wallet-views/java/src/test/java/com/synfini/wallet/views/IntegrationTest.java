@@ -170,9 +170,9 @@ public class IntegrationTest {
             "daml-finance-account.dar",
             "daml-finance-settlement.dar",
             "daml-finance-instrument-token.dar",
-            "account-onboarding-open-offer.dar",
-            "issuer-onboarding-token.dar",
-            "pbt.dar"
+            "synfini-account-onboarding-open-offer.dar",
+            "synfini-issuer-onboarding-token.dar",
+            "synfini-pbt.dar"
           )
         ) {
           uploadDarFile(darFileName, adminChannel);
