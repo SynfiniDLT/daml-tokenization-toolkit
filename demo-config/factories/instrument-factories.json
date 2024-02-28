@@ -7,7 +7,7 @@
       "observers": [
         {
           "context": "public",
-          "parties": ["Synfini_Public"]
+          "parties": ["SynfiniPublic"]
         }
       ]
     },
@@ -18,7 +18,7 @@
       "observers": [
         {
           "context": "public",
-          "parties": ["Synfini_Public"]
+          "parties": ["SynfiniPublic"]
         }
       ]
     }

@@ -1,5 +1,5 @@
 {
-  "readAs": ["Synfini_Public"],
+  "readAs": ["SynfiniPublic"],
   "takeOpenOfferSettings": {
     "offerId": "AUDN@0.OffRamp",
     "offerers": ["AUDN_Issuer"],

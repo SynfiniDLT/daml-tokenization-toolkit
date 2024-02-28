@@ -33,9 +33,9 @@ echo $json_api_pg_id > $tokenization_lib_home/json-api.pgid
 rm -rf .dops
 config_dir=${tokenization_lib_home}/demo-config
 dops upload-dar
-dops allocate-parties ${config_dir}/parties/demo-parties-input.json
+dops allocate-parties ${config_dir}/parties/parties.json
 read_as=$(jq -r '.parties[] | select(.label == "WalletOperator") | .partyId' .dops/parties.json)
-dops create-users ${config_dir}/users/demo-users-input.json
+dops create-users ${config_dir}/users/users.json
 
 cd ${tokenization_lib_home}/wallet-views/java
 nohup mvn -Dmaven.test.skip=true spring-boot:run \
@@ -62,24 +62,21 @@ sleep 20s
 cd ${tokenization_lib_home}
 
 # Factories
-dops create-account-factories ${config_dir}/factories/demo-account-factories-input.json
-dops create-holding-factories ${config_dir}/factories/demo-holding-factories-input.json
-dops create-settlement-factories ${config_dir}/factories/demo-settlement-factories-input.json
-dops create-settlement-one-time-offer-factories ${config_dir}/factories/demo-settlement-one-time-offer-factories-input.json
-dops create-settlement-open-offer-factories ${config_dir}/factories/demo-settlement-open-offer-factories-input.json
-dops create-instrument-factories ${config_dir}/factories/demo-instrument-factories-input.json
+dops create-account-factories ${config_dir}/factories/account-factories.json
+dops create-holding-factories ${config_dir}/factories/holding-factories.json
+dops create-settlement-factories ${config_dir}/factories/settlement-factories.json
+dops create-settlement-one-time-offer-factories ${config_dir}/factories/settlement-one-time-offer-factories.json
+dops create-settlement-open-offer-factories ${config_dir}/factories/settlement-open-offer-factories.json
+dops create-instrument-factories ${config_dir}/factories/instrument-factories.json
 dops create-account-open-offer-factories ${config_dir}/factories/account-open-offer-factories.json
-dops create-issuer-factories  ${config_dir}/factories/demo-issuer-factories-input.json
-dops create-minter-burner-factories ${config_dir}/factories/demo-minter-burner-factories.json
+dops create-issuer-factories  ${config_dir}/factories/issuer-factories.json
+dops create-minter-burner-factories ${config_dir}/factories/minter-burner-factories.json
 
 # Route Providers
-dops create-route-providers ${config_dir}/route-providers/demo-route-providers-input.json
+dops create-route-providers ${config_dir}/route-providers/route-providers.json
 
 # Accounts
-dops create-accounts-unilateral ${config_dir}/accounts/demo-accounts-input.json
-dops create-accounts-unilateral ${config_dir}/accounts/demo-sbt-accounts-input.json
-
-# Account Offer
+dops create-accounts-unilateral ${config_dir}/accounts/accounts.json
 dops create-account-open-offers ${config_dir}/accounts/account-open-offers.json
 
 # AUDN
@@ -95,7 +92,7 @@ burn_id=$(uuidgen)
 dops take-settlement-open-offer ${config_dir}/audn/take-off-ramp-offer.json $burn_id
 
 # SBT
-dops create-pbas-unilateral ${config_dir}/sbt/demo-pba-input.json
+dops create-pbas-unilateral ${config_dir}/sbt/pba.json
 
 # Fund
 dops create-minter-burners ${config_dir}/fund/fundA-minter-burner.json
@@ -108,4 +105,4 @@ dops accept-settlement ${config_dir}/settlement/FundManagerA-settlement-preferen
 dops execute-settlement ${config_dir}/settlement/FundA-execute.json FundA,InvestorA $invest_id
 
 # Issuer
-dops create-issuers ${config_dir}/issuers/demo-issuers-input.json
+dops create-issuers ${config_dir}/issuers/issuers.json

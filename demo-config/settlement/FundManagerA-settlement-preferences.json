@@ -6,7 +6,7 @@
         "custodian": "SynfiniValidator",
         "depository": "AUDN_Depository",
         "issuer": "AUDN_Issuer",
-        "accountId": "AUDN"
+        "accountId": "001"
       }
     ]
   }

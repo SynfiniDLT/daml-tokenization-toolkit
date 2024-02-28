@@ -6,9 +6,9 @@
       "partyIdHint": "SynfiniValidator"
     },
     {
-      "label": "Synfini_Public",
-      "displayName": "Synfini_Public",
-      "partyIdHint": "Synfini_Public"
+      "label": "SynfiniPublic",
+      "displayName": "SynfiniPublic",
+      "partyIdHint": "SynfiniPublic"
     },
     {
       "label": "AUDN_Issuer",

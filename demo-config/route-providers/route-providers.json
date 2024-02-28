@@ -3,7 +3,7 @@
     {
       "label": "validatorCustodianV1",
       "provider": "SynfiniValidator",
-      "observers": ["Synfini_Public", "WalletOperator"],
+      "observers": ["SynfiniPublic", "WalletOperator"],
       "singleCustodian": "SynfiniValidator"
     }
   ]

@@ -13,7 +13,7 @@
       "observers": [
         {
           "context": "o",
-          "parties": ["Synfini_Public","WalletOperator"]
+          "parties": ["SynfiniPublic","WalletOperator"]
         }
       ],
       "accountOpenOfferFactory": "v1"
@@ -31,7 +31,7 @@
       "observers": [
         {
           "context": "o",
-          "parties": ["Synfini_Public","WalletOperator"]
+          "parties": ["SynfiniPublic","WalletOperator"]
         }
       ],
       "accountOpenOfferFactory": "v1"

@@ -6,7 +6,7 @@
       "observers": [
         {
           "context": "o",
-          "parties": ["Synfini_Public"]
+          "parties": ["SynfiniPublic"]
         }
       ]
     }

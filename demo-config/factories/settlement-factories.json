@@ -4,7 +4,7 @@
       "label": "V1",
       "provider": "SynfiniValidator",
       "observers": [
-        "Synfini_Public"
+        "SynfiniPublic"
       ],
       "settlementTrackers": ["WalletOperator"]
     }

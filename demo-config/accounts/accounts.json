@@ -1,12 +1,12 @@
 {
-  "readAs": ["Synfini_Public"],
+  "readAs": ["SynfiniPublic"],
   "accountFactory": "v1",
   "accountSettings": [
     {
       "owner": "InvestorA",
       "custodian": "SynfiniValidator",
-      "id": "AUDN",
-      "description": "AUDN account",
+      "id": "001",
+      "description": "Synfini account 1",
       "incomingControllers": ["InvestorA"],
       "outgoingControllers": ["InvestorA"],
       "holdingFactory": "FungibleV1",
@@ -20,8 +20,8 @@
     {
       "owner": "InvestorB",
       "custodian": "SynfiniValidator",
-      "id": "AUDN",
-      "description": "AUDN account",
+      "id": "001",
+      "description": "Synfini account 1",
       "incomingControllers": ["InvestorB"],
       "outgoingControllers": ["InvestorB"],
       "holdingFactory": "FungibleV1",
@@ -35,8 +35,8 @@
     {
       "owner": "FundA",
       "custodian": "SynfiniValidator",
-      "id": "AUDN",
-      "description": "AUDN account",
+      "id": "001",
+      "description": "Synfini account 1",
       "incomingControllers": ["FundA"],
       "outgoingControllers": ["FundA"],
       "holdingFactory": "FungibleV1",
@@ -50,8 +50,8 @@
     {
       "owner": "FundManagerA",
       "custodian": "SynfiniValidator",
-      "id": "AUDN",
-      "description": "AUDN account",
+      "id": "001",
+      "description": "Synfini account 1",
       "incomingControllers": ["FundManagerA"],
       "outgoingControllers": ["FundManagerA"],
       "holdingFactory": "FungibleV1",
@@ -65,8 +65,8 @@
     {
       "owner": "InvestorA",
       "custodian": "SynfiniValidator",
-      "id": "Funds",
-      "description": "Account to hold Fund units",
+      "id": "002",
+      "description": "Synfini account 2",
       "incomingControllers": ["InvestorA"],
       "outgoingControllers": ["InvestorA"],
       "holdingFactory": "FungibleV1",
@@ -74,6 +74,48 @@
         {
           "context": "",
           "parties": ["WalletOperator"]
+        }
+      ]
+    },
+    {
+      "owner": "InvestorA",
+      "custodian": "SBT_Issuer",
+      "id": "sbt",
+      "description": "sbt account",
+      "incomingControllers": [
+        "SBT_Issuer"
+      ],
+      "outgoingControllers": [
+        "SBT_Issuer"
+      ],
+      "holdingFactory": "NonTransferableV1",
+      "observers": [
+        {
+          "context": "o",
+          "parties": [
+            "SynfiniValidator", "WalletOperator"
+          ]
+        }
+      ]
+    },
+    {
+      "owner": "InvestorB",
+      "custodian": "SBT_Issuer",
+      "id": "sbt",
+      "description": "sbt account",
+      "incomingControllers": [
+        "SBT_Issuer"
+      ],
+      "outgoingControllers": [
+        "SBT_Issuer"
+      ],
+      "holdingFactory": "NonTransferableV1",
+      "observers": [
+        {
+          "context": "o",
+          "parties": [
+            "SynfiniValidator", "WalletOperator"
+          ]
         }
       ]
     }
