@@ -5,7 +5,7 @@ set -eu
 tokenization_lib_home=$(pwd)
 
 make compile-wallet-views
-make install-onboarding
+make install-operations
 export DOPS_HOME=~/.dops
 export PATH=$PATH:$DOPS_HOME/bin
 

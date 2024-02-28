@@ -149,8 +149,8 @@ $(operations_scripts_dar): $(daml_finance_dir) \
   $(shell ./find-daml-project-files.sh operations/main)
 	cd operations/main && daml build -o $(proj_root)/$(operations_scripts_dar)
 
-.PHONY: install-onboarding
-install-onboarding: $(operations_scripts_dar)
+.PHONY: install-operations
+install-operations: $(operations_scripts_dar)
 	export DOPS_DAR=$(proj_root)/$(operations_scripts_dar) && cd operations && ./install.sh
 ## END onboarding
 
@@ -216,7 +216,7 @@ $(wallet_views_typescript_client_build): $(wallet_views_client_codegen) \
 build-wallet-views-client: $(wallet_views_typescript_client_build)
 
 .PHONY: test-wallet-views-client
-test-wallet-views-client: install-onboarding compile-wallet-views $(wallet_views_typescript_client_build)
+test-wallet-views-client: install-operations compile-wallet-views $(wallet_views_typescript_client_build)
 	cd wallet-views/typescript-client && ./test.sh
 ## END wallet-views
 
