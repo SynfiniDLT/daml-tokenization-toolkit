@@ -1,0 +1,48 @@
+{
+  "readAs": ["Synfini_Public"],
+  "settlementOpenOfferSettings": [
+    {
+      "offerId": "FundInvestment",
+      "offerers": ["FundA"],
+      "offerDescription": "Purchase units in FundA",
+      "settlementInstructors": [{"party": "FundA"}, {"taker": {}}],
+      "settlers": [{"party": "FundA"}],
+      "steps": [
+        {
+          "sender": {"party": "SynfiniValidator"},
+          "receiver": {"taker": {}},
+          "instrumentDepository": "Fund_Depository",
+          "instrumentIssuer": "FundA",
+          "instrumentId": "FundA",
+          "instrumentVersion": "0",
+          "amount": 1
+        },
+        {
+          "sender": {"taker": {}},
+          "receiver": {"party": "FundA"},
+          "instrumentDepository": "AUDN_Depository",
+          "instrumentIssuer": "AUDN_Issuer",
+          "instrumentId": "AUDN",
+          "instrumentVersion": "0",
+          "amount": 42
+        },
+        {
+          "sender": {"taker": {}},
+          "receiver": {"party": "FundManagerA"},
+          "instrumentDepository": "AUDN_Depository",
+          "instrumentIssuer": "AUDN_Issuer",
+          "instrumentId": "AUDN",
+          "instrumentVersion": "0",
+          "amount": 0.42
+        }
+      ],
+      "settlementOpenOfferFactory": "V1",
+      "routeProvider": "validatorCustodianV1",
+      "settlementFactory": "V1",
+      "observers" : [{
+        "context": "",
+        "parties": ["Synfini_Public", "WalletOperator"]
+      }]
+    }
+  ]
+}

@@ -6,9 +6,9 @@ import AuthContextStore from "../store/AuthContextStore";
 import { formatCurrency } from "../components/Util";
 import { v4 as uuid } from "uuid";
 import * as damlTypes from "@daml/types";
-import { MintReceiver } from "@daml.js/daml-mint/lib/Synfini/Mint/Delegation";
 import { HoldingSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
+import { OpenOffer, OpenOffer as SettlementOpenOffer } from "@daml.js/settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { ContainerColumn, ContainerDiv, ContainerColumnKey, DivBorderRoundContainer, ContainerColumnValue } from "../components/layout/general.styled";
 import Modal from "react-modal";
@@ -67,36 +67,19 @@ const BalanceRedeemFormScreen: React.FC = () => {
       });
 
     try {
+      const offerId = state.balance.instrument.id.unpack + "@" + state.balance.instrument.version + ".OffRamp"
+      const offers = await ledger.query(SettlementOpenOffer, { offerId: { unpack: offerId } });
+      const offersByIssuer = offers.filter(o => o.payload.offerers.map.has(state.balance.instrument.issuer));
       let referenceIdUUID = uuid();
-      let operators = state
-          .account
-          .operatorsArray
-          .reduce(
-            (mp: damlTypes.Map<damlTypes.Party, {}>, o: damlTypes.Party) => mp.set(o, {}),
-            damlTypes.emptyMap<damlTypes.Party, {}>()
-          );
-      console.log("key", {
-        operators: {
-          map: operators
-        },
-        receiverAccount: state.balance.account,
-        instrument: state.balance.instrument
-      });
       await ledger
-        .exerciseByKey(
-          MintReceiver.ReceiverInstructBurn,
+        .exercise(
+          OpenOffer.Take,
+          offersByIssuer[0].contractId,
           {
-            operators: {
-              map: operators
-            },
-            receiverAccount: state.balance.account,
-            instrument: state.balance.instrument
-          },
-          {
-            amount: amountInput,
-            holdingCids: holdingUnlockedCidArr,
             id: { unpack: referenceIdUUID },
             description: "Redeem for fiat",
+            taker: ctx.primaryParty,
+            quantity: amountInput
           }
         )
         .then((res) => {

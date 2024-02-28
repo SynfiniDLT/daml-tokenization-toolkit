@@ -19,7 +19,7 @@ import Daml.Finance.Interface.Instrument.Token.Types (Token (..))
 import Daml.Finance.Interface.Instrument.Token.Factory qualified as Token
 import Daml.Finance.Interface.Instrument.Token.Instrument qualified as Token
 
-import Synfini.Tokenization.Util (assertEqMsg)
+import Synfini.Assert (assertEqMsg)
 
 import Synfini.Onboarding.Issuer.Instrument.Token qualified as TokenIssuerImpl
 

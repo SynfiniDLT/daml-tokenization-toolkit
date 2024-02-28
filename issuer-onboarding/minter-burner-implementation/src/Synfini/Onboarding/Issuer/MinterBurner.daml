@@ -10,7 +10,7 @@ import Daml.Finance.Interface.Types.Common.Types
 import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
 import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
-import Synfini.Tokenization.Util (assertEqMsg)
+import Synfini.Assert (assertEqMsg)
 
 import Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner qualified as MinterBurner
 import Synfini.Interface.Onboarding.Issuer.MinterBurner.Factory qualified as MinterBurnerFactory
@@ -71,12 +71,10 @@ checkStep MinterBurner { custodian, depository, issuer } isCredit instruction = 
   assertEqMsg "Must have expected custodian" instruction.routedStep.custodian custodian
   assertEqMsg "Must have expected depository" instruction.routedStep.quantity.unit.depository depository
   assertEqMsg "Must have expected issuer" instruction.routedStep.quantity.unit.issuer issuer
-  if isCredit then do
+  if isCredit then
     assertEqMsg "Custodian must be sender for credit" instruction.routedStep.sender custodian
-    assertEqMsg "Issuer must be receiver for credits" instruction.routedStep.receiver issuer
-  else do
-    assertEqMsg "Issuer must be sender for debits" instruction.routedStep.sender issuer
-    assertEqMsg "Custodian must be receiver for credits" instruction.routedStep.receiver custodian
+  else
+    assertEqMsg "Custodian must be receiver for debits" instruction.routedStep.receiver custodian
 
 template Factory
   with

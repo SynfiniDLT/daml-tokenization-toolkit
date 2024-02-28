@@ -13,7 +13,7 @@ import Daml.Finance.Interface.Types.Common.Types
 import Daml.Finance.Interface.Settlement.Factory qualified as SettlementFactory
 import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
 
-import Synfini.Tokenization.Util (assertEqMsg)
+import Synfini.Assert (assertEqMsg)
 
 import Synfini.Onboarding.Issuer.MinterBurner qualified as MinterBurnerImpl
 
@@ -129,7 +129,6 @@ test_cannot_allocate_issuer_credit_to_invalid_instructions = withSetup $
     instructionCid,
     instructionSenderCustodian2Cid,
     instructionCustodian2Cid,
-    instructionReceiverIssuer2Cid,
     instructionDepository2Cid,
     instructionIssuer2Cid]) <- submit issuer1 do
     exerciseCmd settlementFactoryCid SettlementFactory.Instruct with
@@ -138,7 +137,7 @@ test_cannot_allocate_issuer_credit_to_invalid_instructions = withSetup $
       id = Id "1"
       description = ""
       contextId = None
-      routedSteps = [routedStep, stepSenderCustodian2, stepCustodian2, stepReceiverIssuer2, stepDepository2, stepIssuer2]
+      routedSteps = [routedStep, stepSenderCustodian2, stepCustodian2, stepDepository2, stepIssuer2]
       settlementTime = None
   -- Allocation
   (instructionCid, _) <- submit issuer1 do
@@ -147,8 +146,6 @@ test_cannot_allocate_issuer_credit_to_invalid_instructions = withSetup $
     exerciseCmd minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid = instructionSenderCustodian2Cid
   submitMustFail issuer1 do
     exerciseCmd minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid = instructionCustodian2Cid
-  submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid = instructionReceiverIssuer2Cid
   submitMustFail issuer1 do
     exerciseCmd minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid = instructionDepository2Cid
   submitMustFail issuer1 do
@@ -161,8 +158,6 @@ test_cannot_allocate_issuer_credit_to_invalid_instructions = withSetup $
     exerciseCmd instructionSenderCustodian2Cid Instruction.Allocate with actors = allActorsSet, allocation = CreditReceiver
   (instructionCustodian2Cid, _) <- submitMulti allActors [] do
     exerciseCmd instructionCustodian2Cid Instruction.Allocate with actors = allActorsSet, allocation = CreditReceiver
-  (instructionReceiverIssuer2Cid, _) <- submitMulti allActors [] do
-    exerciseCmd instructionReceiverIssuer2Cid Instruction.Allocate with actors = allActorsSet, allocation = CreditReceiver
   (instructionDepository2Cid, _) <- submitMulti allActors [] do
     exerciseCmd instructionDepository2Cid Instruction.Allocate with actors = allActorsSet, allocation = CreditReceiver
   (instructionIssuer2Cid, _) <- submitMulti allActors [] do
@@ -174,8 +169,6 @@ test_cannot_allocate_issuer_credit_to_invalid_instructions = withSetup $
     exerciseCmd minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid = instructionSenderCustodian2Cid
   submitMustFail issuer1 do
     exerciseCmd minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid = instructionCustodian2Cid
-  submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid = instructionReceiverIssuer2Cid
   submitMustFail issuer1 do
     exerciseCmd minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid = instructionDepository2Cid
   submitMustFail issuer1 do
@@ -257,7 +250,6 @@ test_cannot_approve_issuer_debit_to_invalid_instructions = withSetup $
         quantity = routedStep.quantity with unit = unit with issuer = issuer2
   (_, [
     instructionCid,
-    instructionSenderIssuer2Cid,
     instructionCustodian2Cid,
     instructionReceiverCustodian2Cid,
     instructionDepository2Cid,
@@ -268,13 +260,11 @@ test_cannot_approve_issuer_debit_to_invalid_instructions = withSetup $
       id = Id "1"
       description = ""
       contextId = None
-      routedSteps = [routedStep, stepSenderIssuer2, stepCustodian2, stepReceiverCustodian2, stepDepository2, stepIssuer2]
+      routedSteps = [routedStep, stepCustodian2, stepReceiverCustodian2, stepDepository2, stepIssuer2]
       settlementTime = None
   -- Approval
   instructionCid <- submit issuer1 do
     exerciseCmd minterBurnerCid MinterBurner.ApproveIssuerDebit with instructionCid = instructionCid
-  submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.ApproveIssuerDebit with instructionCid = instructionSenderIssuer2Cid
   submitMustFail issuer1 do
     exerciseCmd minterBurnerCid MinterBurner.ApproveIssuerDebit with instructionCid = instructionCustodian2Cid
   submitMustFail issuer1 do
@@ -287,8 +277,6 @@ test_cannot_approve_issuer_debit_to_invalid_instructions = withSetup $
   -- Unapproval
   let allActors = [issuer1, issuer2, custodian1, custodian2]
   let allActorsSet = Set.fromList allActors
-  instructionSenderIssuer2Cid <- submitMulti allActors [] do
-    exerciseCmd instructionSenderIssuer2Cid Instruction.Approve with actors = allActorsSet, approval = SettleOffledgerAcknowledge
   instructionCustodian2Cid <- submitMulti allActors [] do
     exerciseCmd instructionCustodian2Cid Instruction.Approve with actors = allActorsSet, approval = SettleOffledgerAcknowledge
   instructionReceiverCustodian2Cid <- submitMulti allActors [] do
@@ -300,8 +288,6 @@ test_cannot_approve_issuer_debit_to_invalid_instructions = withSetup $
 
   submit issuer1 do
     exerciseCmd minterBurnerCid MinterBurner.UnapproveIssuerDebit with instructionCid
-  submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.UnapproveIssuerDebit with instructionCid = instructionSenderIssuer2Cid
   submitMustFail issuer1 do
     exerciseCmd minterBurnerCid MinterBurner.UnapproveIssuerDebit with instructionCid = instructionCustodian2Cid
   submitMustFail issuer1 do

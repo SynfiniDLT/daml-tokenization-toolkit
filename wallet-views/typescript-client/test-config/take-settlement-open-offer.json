@@ -1,0 +1,10 @@
+{
+  "readAs": [],
+  "takeOpenOfferSettings": {
+    "offerId": "test",
+    "offerers": ["issuer"],
+    "taker": "alice",
+    "description": "description",
+    "quantity": 100000
+  }
+}

@@ -13,6 +13,5 @@ data-dependencies:
   - ../../.lib/daml-finance-interface-settlement.dar
 
   - ../../.build/issuer-onboarding-minter-burner-interface.dar
-  - ../../.build/settlement-one-time-offer-interface.dar
 
-  - ../../.build/tokenization-util.dar
+  - ../../.build/synfini-assert.dar

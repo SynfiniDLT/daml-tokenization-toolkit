@@ -39,6 +39,4 @@ data-dependencies:
   - ../../.build/settlement-one-time-offer.dar
   - ../../.build/settlement-open-offer.dar
   - ../../.build/settlement-helpers.dar
-  - ../../.build/daml-mint.dar
   - ../../.build/pbt.dar
-  - ../../.build/fund-tokenization.dar

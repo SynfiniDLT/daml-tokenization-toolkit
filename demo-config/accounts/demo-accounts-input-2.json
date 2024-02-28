@@ -1,0 +1,81 @@
+{
+  "readAs": ["Synfini_Public"],
+  "accountFactory": "v1",
+  "accountSettings": [
+    {
+      "owner": "InvestorA",
+      "custodian": "SynfiniValidator",
+      "id": "AUDN",
+      "description": "AUDN account",
+      "incomingControllers": ["InvestorA"],
+      "outgoingControllers": ["InvestorA"],
+      "holdingFactory": "FungibleV1",
+      "observers": [
+        {
+          "context": "o",
+          "parties": ["WalletOperator"]
+        }
+      ]
+    },
+    {
+      "owner": "InvestorB",
+      "custodian": "SynfiniValidator",
+      "id": "AUDN",
+      "description": "AUDN account",
+      "incomingControllers": ["InvestorB"],
+      "outgoingControllers": ["InvestorB"],
+      "holdingFactory": "FungibleV1",
+      "observers": [
+        {
+          "context": "o",
+          "parties": ["WalletOperator"]
+        }
+      ]
+    },
+    {
+      "owner": "FundA",
+      "custodian": "SynfiniValidator",
+      "id": "AUDN",
+      "description": "AUDN account",
+      "incomingControllers": ["FundA"],
+      "outgoingControllers": ["FundA"],
+      "holdingFactory": "FungibleV1",
+      "observers": [
+        {
+          "context": "",
+          "parties": ["WalletOperator"]
+        }
+      ]
+    },
+    {
+      "owner": "FundManagerA",
+      "custodian": "SynfiniValidator",
+      "id": "AUDN",
+      "description": "AUDN account",
+      "incomingControllers": ["FundManagerA"],
+      "outgoingControllers": ["FundManagerA"],
+      "holdingFactory": "FungibleV1",
+      "observers": [
+        {
+          "context": "",
+          "parties": ["WalletOperator"]
+        }
+      ]
+    },
+    {
+      "owner": "InvestorA",
+      "custodian": "SynfiniValidator",
+      "id": "Funds",
+      "description": "Account to hold Fund units",
+      "incomingControllers": ["InvestorA"],
+      "outgoingControllers": ["InvestorA"],
+      "holdingFactory": "FungibleV1",
+      "observers": [
+        {
+          "context": "",
+          "parties": ["WalletOperator"]
+        }
+      ]
+    }
+  ]
+}

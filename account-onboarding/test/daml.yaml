@@ -20,4 +20,4 @@ data-dependencies:
   - ../../.build/account-onboarding-open-offer-interface.dar
 
   - ../../.build/account-onboarding-open-offer.dar
-  - ../../.build/tokenization-util.dar
+  - ../../.build/synfini-assert.dar

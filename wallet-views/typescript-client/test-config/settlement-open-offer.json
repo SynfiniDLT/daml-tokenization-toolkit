@@ -1,0 +1,30 @@
+{
+  "readAs": [],
+  "settlementOpenOfferSettings": [
+    {
+      "offerId": "test",
+      "offerers": ["issuer"],
+      "offerDescription": "Test offer",
+      "settlementInstructors": [{"party": "issuer"}, {"taker": {}}],
+      "settlers": [{"party": "issuer"}],
+      "steps": [
+        {
+          "sender": {"party": "custodian"},
+          "receiver": {"taker": {}},
+          "instrumentDepository": "depository",
+          "instrumentIssuer": "issuer",
+          "instrumentId": "Instrument1",
+          "instrumentVersion": "0",
+          "amount": 1
+        }
+      ],
+      "settlementOpenOfferFactory": "default",
+      "routeProvider": "default",
+      "settlementFactory": "default",
+      "observers" : [{
+        "context": "o",
+        "parties": ["alice"]
+      }]
+    }
+  ]
+}

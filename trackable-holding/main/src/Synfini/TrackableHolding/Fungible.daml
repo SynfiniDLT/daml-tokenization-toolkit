@@ -1,14 +1,16 @@
 module Synfini.TrackableHolding.Fungible where
 
-import qualified Daml.Finance.Holding.Fungible as Default
-import qualified Daml.Finance.Holding.Util as ImplUtil
-import qualified Daml.Finance.Util.Disclosure as ImplUtil
-import qualified Daml.Finance.Interface.Holding.Fungible as Fungible
-import qualified Daml.Finance.Interface.Holding.Transferable as Transferable
-import qualified Daml.Finance.Interface.Holding.Factory as Base
-import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
+import Daml.Finance.Holding.Fungible qualified as Default
+import Daml.Finance.Holding.Util qualified as ImplUtil
+import Daml.Finance.Util.Disclosure qualified as ImplUtil
+
 import Daml.Finance.Interface.Types.Common.Types
-import qualified Daml.Finance.Interface.Holding.Base as Base
+
+import Daml.Finance.Interface.Holding.Base qualified as Base
+import Daml.Finance.Interface.Holding.Factory qualified as Base
+import Daml.Finance.Interface.Holding.Fungible qualified as Fungible
+import Daml.Finance.Interface.Holding.Transferable qualified as Transferable
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
 -- HasField observers instance needed to make the implementation of Disclosure.I compile
 instance HasField "observers" Fungible PartiesMap where

@@ -77,8 +77,12 @@ dops create-holding-factories test-config/holding-factories.json
 dops create-account-factories test-config/account-factories.json
 dops create-account-open-offer-factories test-config/account-open-offer-factories.json
 dops create-settlement-factories test-config/settlement-factories.json
+dops create-settlement-open-offer-factories test-config/settlement-open-offer-factories.json
 dops create-instrument-factories test-config/instrument-factories.json
 dops create-issuer-factories test-config/issuer-factories.json
+
+# Route provider
+dops create-route-providers test-config/route-providers.json
 
 # Accounts
 dops create-account-open-offers test-config/account-open-offers.json
@@ -87,13 +91,13 @@ dops create-accounts-unilateral test-config/accounts.json
 # Instrument
 dops create-issuers test-config/issuers.json
 
-# Mint
-dops create-mint-unilateral test-config/mint.json
-dops create-mint-receivers test-config/mint-receivers.json
-instruct_mint_output_file=$(mktemp)
-dops instruct-mint test-config/instruct-mint.json --output-file $instruct_mint_output_file
-dops execute-mint test-config/execute-mint.json $instruct_mint_output_file
-rm $instruct_mint_output_file
+# Settlement
+dops create-settlement-open-offers test-config/settlement-open-offer.json
+batch_id=$(uuidgen)
+dops take-settlement-open-offer test-config/take-settlement-open-offer.json $batch_id
+dops accept-settlement test-config/alice-settlement-preferences.json issuer,alice $batch_id
+dops accept-settlement test-config/custodian-settlement-preferences.json issuer,alice $batch_id
+dops execute-settlement test-config/execute-settlement.json issuer,alice $batch_id
 
 npm test
 exit_code=$?

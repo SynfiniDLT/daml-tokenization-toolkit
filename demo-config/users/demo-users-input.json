@@ -1,0 +1,63 @@
+{
+  "users": [
+    {
+      "userId": "auth0|650280f1c095c872cb1aaf03",
+      "primaryParty": "InvestorA",
+      "actAs": [
+        "InvestorA"
+      ],
+      "readAs": [
+        "Synfini_Public"
+      ]
+    },
+    {
+      "userId": "auth0|65028110be549c74406d2f74",
+      "primaryParty": "InvestorB",
+      "actAs": [
+        "InvestorB"
+      ],
+      "readAs": [
+        "Synfini_Public"
+      ]
+    },
+    {
+      "userId": "auth0|6502812f87540693daa0a66b",
+      "primaryParty": "AUDN_Issuer",
+      "actAs": [
+        "AUDN_Issuer"
+      ],
+      "readAs": [
+        "Synfini_Public"
+      ]
+    },
+    {
+      "userId": "auth0|6502814dd572a3455f2cf5e1",
+      "primaryParty": "AUDN_Issuer",
+      "actAs": [],
+      "readAs": [
+        "AUDN_Issuer",
+        "Synfini_Public"
+      ]
+    },
+    {
+      "userId": "auth0|6539e1a7025cc8f4268a128b",
+      "primaryParty": "FundA",
+      "actAs": [
+        "FundA"
+      ],
+      "readAs": [
+        "Synfini_Public"
+      ]
+    },
+    {
+      "userId": "auth0|65641a6c58d9a1107831cf3b",
+      "primaryParty": "FundManagerA",
+      "actAs": [
+        "FundManagerA"
+      ],
+      "readAs": [
+        "Synfini_Public"
+      ]
+    }
+  ]
+}

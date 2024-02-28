@@ -16,7 +16,7 @@ import Daml.Finance.Interface.Account.Factory qualified as Account
 import Daml.Finance.Interface.Holding.Factory qualified as Holding
 import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
-import Synfini.Tokenization.Util (assertEqMsg)
+import Synfini.Assert (assertEqMsg)
 
 import Synfini.Onboarding.Account.OpenOffer qualified as OpenOfferImpl
 

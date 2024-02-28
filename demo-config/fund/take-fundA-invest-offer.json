@@ -1,0 +1,10 @@
+{
+  "readAs": ["Synfini_Public"],
+  "takeOpenOfferSettings": {
+    "offerId": "FundInvestment",
+    "offerers": ["FundA"],
+    "taker": "InvestorA",
+    "description": "Request investment",
+    "quantity": 1e3
+  }
+}

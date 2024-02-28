@@ -97,7 +97,7 @@ make clean
 The `dops` ("Daml Ops") CLI can be used for various operations on the ledger, such as party allocation, creation of
 users and Daml Finance account setup.
 
-To install it and it to your `PATH`, run:
+To install it and add it to your `PATH`, run:
 
 ```
 make install-onboarding

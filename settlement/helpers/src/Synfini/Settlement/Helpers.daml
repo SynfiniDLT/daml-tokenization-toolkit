@@ -5,6 +5,7 @@ import DA.Map (Map)
 import DA.Set (Set)
 
 import DA.List qualified as L
+import DA.List.Total qualified as List
 import DA.Map qualified as Map
 import DA.Optional qualified as O
 import DA.Set qualified as Set
@@ -13,13 +14,10 @@ import Daml.Finance.Interface.Settlement.Types
 import Daml.Finance.Interface.Types.Common.Types
 
 import Daml.Finance.Interface.Holding.Base qualified as Holding
-import Daml.Finance.Interface.Settlement.Batch qualified as Batch
+import Daml.Finance.Interface.Holding.Fungible qualified as Fungible
 import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
 
-import Synfini.Tokenization.Util (mergeAndSplitHelper1)
-
 import Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner qualified as MinterBurner
-import Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer qualified as OneTimeOffer
 
 type InstructionIndex = Id
 
@@ -53,34 +51,6 @@ data HoldingDescriptor = HoldingDescriptor
 type HoldingsMap = Map HoldingDescriptor [ContractId Holding.I] 
 
 type InstructionsMap = Map InstructionIndex (ContractId Instruction.I)
-
--- template OneTimeOfferAcceptHelper
---   with
---     acceptors : Set Party
---     holdings : HoldingsMap
---     allocations : Map InstructionIndex AllocationHelp
---     approvals : Map InstructionIndex ApprovalHelp
---     offerCid : ContractId OneTimeOffer.I
---     quantity : Decimal
---     description : Text
---   where
---     signatory acceptors
-
---     choice AcceptOneTimeOffer : (ContractId Batch.I, [ContractId Instruction.I], HoldingsMap)
---       controller acceptors
---       do
---         (batchCid, instructionCids) <- exercise offerCid OneTimeOffer.Accept with quantity, description
---         let instructionsWithIndices = zip (enumFromTo 0 (length instructionCids - 1)) instructionCids
---         let instructionsMap = Map.fromList instructionsWithIndices
---         let instructionsWithActions =
---               (\(index, instructionCid) -> (index, instructionCid, Map.lookup index allocations, Map.lookup index approvals)) <$>
---               instructionsWithIndices
---         (instructionsMap, holdings) <- foldlA
---           (allocateAndApproveHelper acceptors)
---           (instructionsMap, holdings)
---           instructionsWithActions
---         let instructionCids = snd <$> Map.toList instructionsMap
---         pure (batchCid, instructionCids, holdings)
 
 template AllocateAndApproveHelper
   with
@@ -125,7 +95,7 @@ allocateAndApproveHelper actors (instructionsMap, holdingsMap) (index, instructi
       pure (holdingsMap, instructionCid')
     Some PledgeFromFungiblesHelp -> do
       let holdings = O.fromSomeNote "Holdings not provided" (Map.lookup holdingDescriptor holdingsMap)
-      (holdingCid, remainingHoldingCid) <- mergeAndSplitHelper1
+      (holdingCid, remainingHoldingCid) <- mergeAndSplitHelper
         (coerceContractId <$> holdings)
         instruction.routedStep.quantity.amount
       (instructionCid', _) <- exercise instructionCid Instruction.Allocate with
@@ -211,3 +181,17 @@ minterBurnerKey instruction = MinterBurner.View with
   custodian = instruction.routedStep.custodian
   depository = instruction.routedStep.quantity.unit.depository
   issuer = instruction.routedStep.quantity.unit.issuer
+
+mergeAndSplitHelper : [ContractId Fungible.I] ->
+                      Decimal ->
+                      Update (ContractId Fungible.I, Optional (ContractId Fungible.I))
+mergeAndSplitHelper holdingCids amount = do
+  mergedHoldingCid <- case holdingCids of
+    [] -> error "Cannot merge/split empty holdings" 
+    [firstHoldingCid] -> pure firstHoldingCid
+    firstHoldingCid :: others -> exercise firstHoldingCid Fungible.Merge with fungibleCids = others
+  splitResult <- exercise mergedHoldingCid Fungible.Split with amounts = [amount]
+  pure (
+      O.fromSomeNote "Internal error: unexpected empty split result" (List.head splitResult.splitCids),
+      splitResult.rest
+    )

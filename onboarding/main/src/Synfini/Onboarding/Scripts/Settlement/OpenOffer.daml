@@ -1,15 +1,21 @@
 module Synfini.Onboarding.Scripts.Settlement.OpenOffer where
 
-import Synfini.Onboarding.Scripts.Factory.Settlement (OpenOfferFactory, SettlementFactory)
-import Synfini.Onboarding.Scripts.Types
-import Synfini.Onboarding.Scripts.RouteProvider (RouteProvider)
-import qualified Synfini.Interface.Settlement.OpenOffer.OpenOffer as OpenOffer
-import Daml.Script
-import Daml.Finance.Interface.Types.Common.Types
-import qualified DA.Set as Set
-import qualified Synfini.Interface.Settlement.OpenOffer.Factory as OpenOfferFactory
 import DA.Foldable (forA_)
-import qualified DA.Optional as O
+
+import DA.Optional qualified as O
+import DA.Set qualified as Set
+
+import Daml.Script
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Synfini.Onboarding.Scripts.Types
+
+import Synfini.Onboarding.Scripts.Factory.Settlement (OpenOfferFactory, SettlementFactory)
+import Synfini.Onboarding.Scripts.RouteProvider (RouteProvider)
+
+import Synfini.Interface.Settlement.OpenOffer.Factory qualified as OpenOfferFactory
+import Synfini.Interface.Settlement.OpenOffer.OpenOffer qualified as OpenOffer
 
 data Entity = Entity
   with

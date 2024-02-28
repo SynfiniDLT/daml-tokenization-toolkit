@@ -1,0 +1,13 @@
+{
+  "acceptSettlementSettings": {
+    "acceptor": "FundManagerA",
+    "settlementPreferences": [
+      {
+        "custodian": "SynfiniValidator",
+        "depository": "AUDN_Depository",
+        "issuer": "AUDN_Issuer",
+        "accountId": "AUDN"
+      }
+    ]
+  }
+}
