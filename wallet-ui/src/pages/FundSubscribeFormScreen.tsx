@@ -22,14 +22,13 @@ import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 import { CreateEvent } from "@daml/ledger";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 
-type S = {
+type FundSubscribeFormScreenState = {
   fund: CreateEvent<SettlementOpenOffer, undefined, string>
 }
 
 export const FundSubscribeFormScreen: React.FC = () => {
   const nav = useNavigate();
-  const { state } = useLocation() as { state: S };
-  console.log("FundSubscribeFormScreen state: ", state);
+  const { state } = useLocation() as { state: FundSubscribeFormScreenState };
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
   const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';

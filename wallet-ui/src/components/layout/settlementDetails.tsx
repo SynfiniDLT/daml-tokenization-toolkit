@@ -300,8 +300,6 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
 
     const settlement: SettlementSummary = props.settlement;
     const { allocations, approvals, pledgeDescriptors } = acceptanceActions(custodianToAccount, settlement);
-    console.log("allocations", allocations);
-    console.log("approvals", approvals);
     let holdings: damlTypes.Map<HoldingDescriptor, damlTypes.ContractId<Base>[]> = damlTypes.emptyMap();
 
     for (const holdingDescriptor of pledgeDescriptors) {
