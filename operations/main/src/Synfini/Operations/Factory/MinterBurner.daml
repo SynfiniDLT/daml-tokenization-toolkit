@@ -1,10 +1,12 @@
 module Synfini.Operations.Factory.MinterBurner where
 
-import Synfini.Operations.Types
-import qualified Synfini.Interface.Onboarding.Issuer.MinterBurner.Factory as MinterBurnerFactory
-import qualified Synfini.Onboarding.Issuer.MinterBurner as MinterBurnerImpl
-
 import Daml.Script
+
+import Synfini.Operations.Types
+
+import Synfini.Onboarding.Issuer.MinterBurner qualified as MinterBurnerImpl
+
+import Synfini.Interface.Onboarding.Issuer.MinterBurner.Factory qualified as MinterBurnerFactory
 
 data MinterBurnerFactorySettings = MinterBurnerFactorySettings
   with

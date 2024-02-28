@@ -1,9 +1,10 @@
 module Synfini.Interface.Instrument.PartyBoundAttributes.Factory where
 
--- import Daml.Finance.Interface.Instrument.Token.Types (Token)
-import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
-import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Instrument as Instrument
 import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Synfini.Interface.Instrument.PartyBoundAttributes.Instrument qualified as Instrument
 
 -- | Type synonym for `Factory`.
 type F = Factory

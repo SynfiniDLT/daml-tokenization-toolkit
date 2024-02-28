@@ -8,10 +8,11 @@ import Daml.Finance.Interface.Instrument.Token.Factory qualified as TokenFactory
 
 import Synfini.Operations.Factory.Instrument
 import Synfini.Operations.Types
+
 import Synfini.Operations.Factory.MinterBurner (MinterBurnerFactory)
 
 import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Factory qualified as TokenIssuerFactory
-import qualified Synfini.Interface.Onboarding.Issuer.MinterBurner.Factory as MinterBurnerFactory
+import Synfini.Interface.Onboarding.Issuer.MinterBurner.Factory qualified as MinterBurnerFactory
 
 data IssuerSettings = IssuerSettings
   with

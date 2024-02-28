@@ -1,21 +1,28 @@
 {-# LANGUAGE ApplicativeDo #-}
+
 module Synfini.Operations.PartyBoundAttributes.Unilateral where
 
-import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Factory as Pba
+import DA.Foldable (forA_)
+import DA.Map (Map)
+
+import DA.Set qualified as Set
+import DA.Text qualified as TX
+
+import Daml.Script
+
+import Daml.Finance.Interface.Settlement.Types
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Settlement.Batch qualified as Batch
+import Daml.Finance.Interface.Settlement.Factory qualified as SettlementFactory
+import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
 import Synfini.Operations.Factory.Instrument
 import Synfini.Operations.Factory.Settlement
-import DA.Map (Map)
 import Synfini.Operations.Types
-import Daml.Script
-import qualified DA.Set as Set
-import Daml.Finance.Interface.Settlement.Types
-import qualified Daml.Finance.Interface.Settlement.Factory as SettlementFactory
-import Daml.Finance.Interface.Types.Common.Types
-import DA.Foldable (forA_)
-import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
-import qualified Daml.Finance.Interface.Settlement.Batch as Batch
-import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
-import qualified DA.Text as TX
+
+import Synfini.Interface.Instrument.PartyBoundAttributes.Factory qualified as Pba
 
 data PbaSettings = PbaSettings
   with
