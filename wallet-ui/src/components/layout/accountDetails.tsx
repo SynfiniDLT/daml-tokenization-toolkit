@@ -62,7 +62,7 @@ export function AccountDetailsSimple(props: AccountDetailsProps) {
   };
 
   return (
-    <CardContainer pointer style={{width: "40%"}}>
+    <CardContainer pointer style={{width: "50%"}}>
       <ContainerDiv onClick={() => handleClick(props.account)} key={props.account.cid}>
         <ContainerColumn>
           <ContainerColumnKey>Account ID:</ContainerColumnKey>
