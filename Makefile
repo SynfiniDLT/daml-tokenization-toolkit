@@ -52,7 +52,7 @@ install-custom-views:
 		-Dpackaging=jar \
 		-DgeneratePom=true
 
-$(assert_dar): $(daml_finance_dir) $(shell ./find-daml-project-files.sh util/assert)
+$(assert_dar): $(shell ./find-daml-project-files.sh util/assert)
 	cd util/assert && daml build -o $(proj_root)/$(assert_dar)
 
 $(trackable_holding_dar): $(daml_finance_dir) $(shell ./find-daml-project-files.sh trackable-holding/main)

@@ -76,12 +76,8 @@ dops create-minter-burner-factories ${config_dir}/factories/demo-minter-burner-f
 dops create-route-providers ${config_dir}/route-providers/demo-route-providers-input.json
 
 # Accounts
-dops create-accounts-unilateral ${config_dir}/accounts/demo-accounts-input-2.json
-# dops create-accounts-unilateral ${config_dir}/accounts/demo-new-account-input.json
-# dops create-accounts-unilateral ${config_dir}/accounts/demo-fund-account-input.json
-# dops create-accounts-unilateral ${config_dir}/accounts/demo-fund-investor-account-input.json
-# dops create-accounts-unilateral ${config_dir}/accounts/demo-fund-units-accounts-input.json
-# dops create-accounts-unilateral ${config_dir}/accounts/demo-sbt-accounts-input.json
+dops create-accounts-unilateral ${config_dir}/accounts/demo-accounts-input.json
+dops create-accounts-unilateral ${config_dir}/accounts/demo-sbt-accounts-input.json
 
 # Account Offer
 dops create-account-open-offers ${config_dir}/accounts/account-open-offers.json
@@ -98,8 +94,8 @@ dops create-settlement-open-offers ${config_dir}/audn/off-ramp-offer.json
 burn_id=$(uuidgen)
 dops take-settlement-open-offer ${config_dir}/audn/take-off-ramp-offer.json $burn_id
 
-# # SBT
-# dops create-pbas-unilateral ${config_dir}/sbt/demo-pba-input.json
+# SBT
+dops create-pbas-unilateral ${config_dir}/sbt/demo-pba-input.json
 
 # Fund
 dops create-minter-burners ${config_dir}/fund/fundA-minter-burner.json
