@@ -3,7 +3,7 @@ import { BoxArrowUpRight } from "react-bootstrap-icons";
 import { arrayToSet, toDateTimeString } from "../Util";
 import { useNavigate } from "react-router-dom";
 import { userContext } from "../../App";
-import { MinterBurner } from "@daml.js/issuer-onboarding-minter-burner-interface/lib/Synfini/Interface/Onboarding/Issuer/MinterBurner/MinterBurner";
+import { MinterBurner } from "@daml.js/synfini-issuer-onboarding-minter-burner-interface/lib/Synfini/Interface/Onboarding/Issuer/MinterBurner/MinterBurner";
 import { Factory as SettlementFactory } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Factory";
 import { v4 as uuid } from "uuid";
 import Modal from "react-modal";

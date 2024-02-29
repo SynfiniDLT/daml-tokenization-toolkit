@@ -3,5 +3,5 @@
 # Warning: make sure to keep this sdk version updated to be the same as the other daml.yaml files
 # and the daml version in the java pom.xml
 sdk-version: 2.6.3
-name: tokenization-util-root
+name: synfini-tokenization-util-root
 source: unused

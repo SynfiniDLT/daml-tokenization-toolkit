@@ -1,7 +1,7 @@
 # Warning: make sure to keep this sdk version updated to be the same as the other daml.yaml files
 # and the daml version in the java pom.xml
 sdk-version: 2.6.3
-name: issuer-onboarding-test
+name: synfini-issuer-onboarding-test
 source: src
 version: 0.0.1
 dependencies:
@@ -16,9 +16,9 @@ data-dependencies:
   - ../../.lib/daml-finance-instrument-token.dar
   - ../../.lib/daml-finance-settlement.dar
 
-  - ../../.build/issuer-onboarding-token-interface.dar
-  - ../../.build/issuer-onboarding-minter-burner-interface.dar
+  - ../../.build/synfini-issuer-onboarding-token-interface.dar
+  - ../../.build/synfini-issuer-onboarding-minter-burner-interface.dar
 
-  - ../../.build/issuer-onboarding-token.dar
-  - ../../.build/issuer-onboarding-minter-burner.dar
+  - ../../.build/synfini-issuer-onboarding-token.dar
+  - ../../.build/synfini-issuer-onboarding-minter-burner.dar
   - ../../.build/synfini-assert.dar

@@ -12,7 +12,7 @@ import {
   AllocationHelp,
   ApprovalHelp,
   HoldingDescriptor,
-} from "@daml.js/settlement-helpers/lib/Synfini/Settlement/Helpers";
+} from "@daml.js/synfini-settlement-helpers/lib/Synfini/Settlement/Helpers";
 import { arrayToSet } from "../../components/Util";
 import * as damlTypes from "@daml/types";
 import {

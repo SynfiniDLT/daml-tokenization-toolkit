@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@daml.js/daml-wallet-views-types": "file:daml.js/daml-wallet-views-types-0.0.1",
+    "@daml.js/synfini-wallet-views-types": "file:daml.js/synfini-wallet-views-types-0.0.1",
     "@daml/ledger": "2.6.3",
     "@daml/types": "2.6.3",
     "@mojotech/json-type-validation": "^3.1.0",

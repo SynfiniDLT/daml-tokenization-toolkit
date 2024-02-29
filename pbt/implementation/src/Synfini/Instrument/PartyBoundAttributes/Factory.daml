@@ -1,13 +1,18 @@
 module Synfini.Instrument.PartyBoundAttributes.Factory where
 
+import DA.Set qualified as Set
+
+import Daml.Finance.Util.Disclosure qualified as DisclosureUtil
+
 import Daml.Finance.Interface.Types.Common.Types (PartiesMap)
-import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
-import qualified Synfini.Instrument.PartyBoundAttributes.Instrument as PbtImpl
-import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Factory as PbtFactory
-import qualified Daml.Finance.Util.Disclosure as DisclosureUtil
-import qualified DA.Set as Set
-import qualified Daml.Finance.Interface.Instrument.Base.Instrument as Instrument
-import qualified Daml.Finance.Interface.Instrument.Base.Instrument as BaseInstrument
+
+import Daml.Finance.Interface.Instrument.Base.Instrument qualified as Instrument
+import Daml.Finance.Interface.Instrument.Base.Instrument qualified as BaseInstrument
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Synfini.Instrument.PartyBoundAttributes.Instrument qualified as PbtImpl
+
+import Synfini.Interface.Instrument.PartyBoundAttributes.Factory qualified as PbtFactory
 
 -- | Type synonym for `Factory`.
 type F = Factory

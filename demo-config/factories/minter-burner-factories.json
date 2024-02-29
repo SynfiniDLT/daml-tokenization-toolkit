@@ -1,0 +1,14 @@
+{
+  "minterBurnerFactorySettings": [
+    {
+      "label": "v1",
+      "provider": "SynfiniValidator",
+      "observers": [
+        {
+          "context": "o",
+          "parties": ["SynfiniPublic"]
+        }
+      ]
+    }
+  ]
+}

@@ -10,7 +10,7 @@ import {
   ContainerDiv,
   DivBorderRoundContainer,
 } from "../components/layout/general.styled";
-import { Factory as OneTimeOfferFactory } from "@daml.js/settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/Factory";
+import { Factory as OneTimeOfferFactory } from "@daml.js/synfini-settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/Factory";
 import { Factory as SettlementFactory } from "@daml.js/daml-finance-interface-settlement-2.0.0/lib/Daml/Finance/Interface/Settlement/Factory";
 import { RouteProvider } from "@daml.js/daml-finance-interface-settlement-2.0.0/lib/Daml/Finance/Interface/Settlement/RouteProvider";
 import { Party, emptyMap } from "@daml/types";

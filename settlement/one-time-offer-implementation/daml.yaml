@@ -1,7 +1,7 @@
 # Warning: make sure to keep this sdk version updated to be the same as the other daml.yaml files
 # and the daml version in the java pom.xml
 sdk-version: 2.6.3
-name: settlement-one-time-offer
+name: synfini-settlement-one-time-offer
 source: src
 version: 0.0.1
 dependencies:
@@ -14,4 +14,4 @@ data-dependencies:
 
   - ../../.lib/daml-finance-util.dar
 
-  - ../../.build/settlement-one-time-offer-interface.dar
+  - ../../.build/synfini-settlement-one-time-offer-interface.dar

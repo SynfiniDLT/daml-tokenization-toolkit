@@ -1,0 +1,150 @@
+module Synfini.Operations.Settlement.OpenOffer where
+
+import DA.Foldable (forA_)
+
+import DA.Optional qualified as O
+import DA.Set qualified as Set
+
+import Daml.Script
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Synfini.Operations.Types
+
+import Synfini.Operations.Factory.Settlement (OpenOfferFactory, SettlementFactory)
+import Synfini.Operations.RouteProvider (RouteProvider)
+
+import Synfini.Interface.Settlement.OpenOffer.Factory qualified as OpenOfferFactory
+import Synfini.Interface.Settlement.OpenOffer.OpenOffer qualified as OpenOffer
+
+data Entity = Entity
+  with
+    party : Optional Text
+    taker : Optional ()
+
+asEntity : (Text -> Party) -> Entity -> OpenOffer.Entity
+asEntity p e = case (e.party, e.taker) of
+  (Some party, None) -> OpenOffer.PartyEntity (p party)
+  (None, Some ()) -> OpenOffer.TakerEntity
+  _ -> error "Set one of 'party' or 'taker'"
+
+data StepSettings = StepSettings
+  with
+    sender : Entity
+    receiver : Entity
+    instrumentDepository : Text
+    instrumentIssuer : Text
+    instrumentId : Text
+    instrumentVersion : Text
+    amount : Decimal
+
+asStep : (Text -> Party) -> StepSettings -> OpenOffer.OfferStep
+asStep p settings = OpenOffer.OfferStep with
+  sender = asEntity p settings.sender
+  receiver = asEntity p settings.receiver
+  quantity = Quantity with
+    unit = InstrumentKey with
+      depository = p settings.instrumentDepository
+      issuer = p settings.instrumentIssuer
+      id = Id settings.instrumentId
+      version =  settings.instrumentVersion
+    amount = settings.amount
+
+data OpenOfferSettings = OpenOfferSettings
+  with
+    offerId : Text
+    offerers : [Text]
+    offerDescription : Text
+    permittedTakers : Optional [Text]
+    settlementInstructors : [Entity]
+    settlers : [Entity]
+    steps : [StepSettings]
+    minQuantity : Optional Decimal
+    maxQuantity : Optional Decimal
+    settlementOpenOfferFactory : Text
+    routeProvider : Text
+    settlementFactory : Text
+    observers : [Observer]
+
+data CreateSettlementOpenOffersInput = CreateSettlementOpenOffersInput
+  with
+    readAs : [Text]
+    parties : [PartyInfo]
+    settlementOpenOfferFactories : [OpenOfferFactory]
+    routeProviders : [RouteProvider]
+    settlementFactories : [SettlementFactory]
+    settlementOpenOfferSettings : [OpenOfferSettings]
+
+createSettlementOpenOffers : CreateSettlementOpenOffersInput -> Script ()
+createSettlementOpenOffers input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let readAs = p <$> input.readAs
+  forA_ input.settlementOpenOfferSettings $ \settings -> do
+    let offerId = Id settings.offerId
+        offerers = Set.fromList (p <$> settings.offerers)
+        permittedTakers = (\parties -> Set.fromList (p <$> parties)) <$> settings.permittedTakers
+        settlementInstructors = Set.fromList (asEntity p <$> settings.settlementInstructors)
+        settlers = Set.fromList (asEntity p <$> settings.settlers)
+        steps = asStep p <$> settings.steps
+        openOfferFactoryCid = findFactoryContractId settings.settlementOpenOfferFactory input.settlementOpenOfferFactories
+        routeProviderCid = findFactoryContractId settings.routeProvider input.routeProviders
+        settlementFactoryCid = findFactoryContractId settings.settlementFactory input.settlementFactories
+        observers = asPartiesMap p settings.observers
+    submitMulti (Set.toList offerers) readAs do
+      exerciseCmd openOfferFactoryCid OpenOfferFactory.Create with
+        offerId
+        offerDescription = settings.offerDescription
+        offerers
+        permittedTakers
+        settlementInstructors
+        settlers
+        steps
+        minQuantity = settings.minQuantity
+        maxQuantity = settings.maxQuantity
+        settlementTime = None
+        routeProviderCid
+        settlementFactoryCid
+        observers
+
+data TakeOpenOfferSettings = TakeOpenOfferSettings
+  with
+    offerId : Text
+    offerers : [Text]
+    taker : Text
+    quantity : Decimal
+    id : Text
+    description : Text
+
+data TakeOpenOfferInput = TakeOpenOfferInput
+  with
+    readAs : [Text]
+    parties : [PartyInfo]
+    takeOpenOfferSettings : TakeOpenOfferSettings
+
+takeOpenOffer : TakeOpenOfferInput -> Script ()
+takeOpenOffer input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+      settings = input.takeOpenOfferSettings
+  let readAs = p <$> input.readAs
+      offerers = Set.fromList (p <$> settings.offerers)
+      taker = p settings.taker
+  let filterOffer (cid, offer) = do
+        o <- offer
+        if o.offerers == offerers && o.offerId == Id settings.offerId then
+          Some (cid, o)
+        else
+          None
+  openOffers <- O.mapOptional filterOffer <$> queryInterface @OpenOffer.I (taker :: readAs)
+  let (offerCid, offer) = case openOffers of
+        [o] -> o
+        [] -> error "No matching offer found"
+        _ -> error ("Multiple matching offers found: " <> show openOffers)
+  submitMulti [taker] readAs do
+    exerciseCmd offerCid OpenOffer.Take with
+      taker
+      quantity = settings.quantity
+      id = Id settings.id
+      description = settings.description
+  pure ()

@@ -13,7 +13,7 @@ import {
   AccountOpenOffers,
   IssuersFilter,
   Issuers
-} from '@daml.js/daml-wallet-views-types/lib/Synfini/Wallet/Api/Types';
+} from '@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types';
 import fetch from 'cross-fetch';
 
 type WalletViewsClientParams = {

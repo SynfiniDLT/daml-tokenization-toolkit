@@ -1,5 +1,5 @@
 {
-  "readAs": ["Synfini_Public"],
+  "readAs": ["SynfiniPublic"],
   "settlementOpenOfferSettings": [
     {
       "offerId": "AUDN@0.OnRamp",
@@ -23,7 +23,7 @@
       "settlementFactory": "V1",
       "observers" : [{
         "context": "",
-        "parties": ["Synfini_Public", "WalletOperator"]
+        "parties": ["SynfiniPublic", "WalletOperator"]
       }]
     }
   ]

@@ -1,0 +1,62 @@
+module Synfini.Operations.Account.Unilateral where
+
+import DA.Foldable qualified as F
+import DA.Map qualified as Map
+import DA.Optional qualified as O
+import DA.Set qualified as Set
+
+import Daml.Script
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Account.Account qualified as Account
+import Daml.Finance.Interface.Account.Factory qualified as Account
+
+import Synfini.Operations.Factory.Account
+import Synfini.Operations.Factory.Holding
+import Synfini.Operations.Types
+
+data AccountSettings = AccountSettings
+  with
+    custodian : Text
+    owner : Text
+    id : Text
+    description : Text
+    holdingFactory : Text
+    incomingControllers : [Text]
+    outgoingControllers : [Text]
+    observers : [Observer]
+
+data CreateAccountsInput = CreateAccountsInput
+  with
+    parties : [PartyInfo]
+    readAs : [Text]
+    accountFactories : [AccountFactory]
+    holdingFactories : [HoldingFactory]
+    accountFactory : Text
+    accountSettings : [AccountSettings]
+
+createAccounts : CreateAccountsInput -> Script ()
+createAccounts input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let readAs = p <$> input.readAs
+  let hfm = Map.fromList $ (\f -> (f.label, f.cid)) <$> input.holdingFactories
+      afm = Map.fromList $ (\f -> (f.label, f.cid)) <$> input.accountFactories
+  let hf label = O.fromSomeNote "Unknown holding factory" (Map.lookup label hfm)
+      afCid = O.fromSomeNote "Unknown account factory" (Map.lookup input.accountFactory afm)
+  F.forA_ input.accountSettings $ \account -> do
+    let custodian = p account.custodian
+        owner = p account.owner
+        holdingFactoryCid = hf account.holdingFactory
+        controllers = Account.Controllers with
+          incoming = Set.fromList (p <$> account.incomingControllers)
+          outgoing = Set.fromList (p <$> account.outgoingControllers)
+        observers = asPartiesMap p account.observers
+    submitMulti [custodian, owner] readAs do
+      exerciseCmd afCid Account.Create with
+        account = AccountKey with custodian, owner, id = Id account.id
+        holdingFactoryCid
+        controllers
+        description = account.description
+        observers

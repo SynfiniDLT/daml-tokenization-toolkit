@@ -1,12 +1,16 @@
 module Synfini.Instrument.PartyBoundAttributes.Instrument where
 
-import qualified Daml.Finance.Interface.Instrument.Base.Instrument as BaseInstrument
+import DA.Set qualified as Set
+
+import Daml.Finance.Lifecycle.Event.Replacement qualified as Replacement
+import Daml.Finance.Util.Disclosure qualified as DisclosureUtil
+
 import Daml.Finance.Interface.Types.Common.Types
-import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
-import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Instrument as Pbt
-import qualified Daml.Finance.Lifecycle.Event.Replacement as Replacement
-import qualified Daml.Finance.Util.Disclosure as DisclosureUtil
-import qualified DA.Set as Set
+
+import Daml.Finance.Interface.Instrument.Base.Instrument qualified as BaseInstrument
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Synfini.Interface.Instrument.PartyBoundAttributes.Instrument qualified as Pbt
 
 type T = Instrument
 

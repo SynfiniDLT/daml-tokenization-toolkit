@@ -3,10 +3,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
 import AuthContextStore from "../store/AuthContextStore";
 import { PageLayout } from "../components/PageLayout";
-import { formatCurrency, nameFromParty } from "../components/Util";
+import { formatCurrency, formatOptionalCurrency, nameFromParty } from "../components/Util";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import * as damlTypes from "@daml/types";
-import { OpenOffer as SettlementOpenOffer } from "@daml.js/settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
+import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
 import { v4 as uuid } from "uuid";
 import {
   ContainerColumn,
@@ -140,8 +140,8 @@ export const FundSubscribeFormScreen: React.FC = () => {
                         <p>{formatCurrency((parseFloat(step.quantity.amount) * inputQtd).toString(), "en-US") + " " + step.quantity.unit.id.unpack}</p>)
                   }
                 </ContainerColumnValue>
-                <ContainerColumnValue>{formatCurrency(state.fund.payload.minQuantity || "0", "en-US")} </ContainerColumnValue>
-                <ContainerColumnValue>{formatCurrency(state.fund.payload.maxQuantity || "0", "en-US")} </ContainerColumnValue>
+                <ContainerColumnValue>{formatOptionalCurrency(state.fund.payload.minQuantity, "en-US")} </ContainerColumnValue>
+                <ContainerColumnValue>{formatOptionalCurrency(state.fund.payload.maxQuantity, "en-US")} </ContainerColumnValue>
                 <ContainerColumnValue>
                   <input
                     type="number"

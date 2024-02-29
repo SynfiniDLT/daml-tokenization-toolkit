@@ -9,7 +9,7 @@ import {
   ContainerDiv,
   DivBorderRoundContainer,
 } from "../components/layout/general.styled";
-import { OneTimeOffer } from "@daml.js/settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer";
+import { OneTimeOffer } from "@daml.js/synfini-settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer";
 import Modal from "react-modal";
 
 export const OfferAcceptFormScreen: React.FC = () => {
