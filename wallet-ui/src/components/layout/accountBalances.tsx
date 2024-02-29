@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
-import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { AccountSummary, InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { formatCurrency, nameFromParty } from "../Util";
 import { Coin } from "react-bootstrap-icons";
 import HoverPopUp from "./hoverPopUp";
@@ -11,7 +11,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
   const { user } = useAuth0();
   const nav = useNavigate();
   const accountBalanceEntries = Array.from(props.accountBalancesMap.entries());
-  const [instrument, setInstrument] = useState<any>();
+  const [instrument, setInstrument] = useState<InstrumentSummary>();
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
 
@@ -70,7 +70,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
                 </>
               )}
               <td>
-                {balance.instrument.id.unpack === "AUDN" && !user?.name?.toLowerCase().includes("employee") && (
+                {balance.instrument.id.unpack === "AUDN" && (
                   <button onClick={() => handleRedeem(balance, keyAccount)}>Redeem</button>
                   )}
               </td>
@@ -84,7 +84,6 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
     if (keyAccount.view.id.unpack === "sbt") {
       valueBalance.forEach((balance: any) => {
         const trSbt = (
-          <>
           <tr key={balance.instrument.id.unpack}>
             <td>
               {balance.instrument.id.unpack} | {balance.instrument.version}
@@ -96,7 +95,6 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
               <button onClick={() => handleSeeDetails(keyAccount)}>See Details</button>
             </td>
           </tr>
-          </>
         );
         trSbts.push(trSbt);
       });

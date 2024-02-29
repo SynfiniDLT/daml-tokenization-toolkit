@@ -28,7 +28,49 @@ most likely be replaced with the Daml Participant Query Store feature. To instal
 make install-custom-views
 ```
 
-### Start the demo on local sandbox
+## Setting up Auth0 Authentication for Your React App
+This will guide you through the steps to set up Auth0 authentication in your React app as a Single Page Application (SPA).  
+
+### Step 1: Create an Auth0 Account
+1. Go to Auth0 and sign up for a free account.
+2. Once logged in, go to the Dashboard.
+3. lick on the "Create Application" button.
+4. Choose "Single Page Web Applications" as the application type.
+5. Configure your application settings, including the Allowed Callback URLs, Allowed Logout URLs, and Allowed Web Origins. Typically, for development, you can set these to http://localhost:3000.
+6. Save the changes.
+
+### Step 2: Edit the .env file at the wallet-ui folder with the following: 
+
+```bash
+REACT_APP_AUTH0_DOMAIN=your-auth0-domain
+REACT_APP_AUTH0_CLIENT_ID=your-auth0-client-id
+```
+Replace your-auth0-domain and your-auth0-client-id with the values from your Auth0 application settings.
+
+### Step 3: Create an Auth0 API Resource (Audience)
+1. In your Auth0 Dashboard, navigate to the APIs section.
+2. Click on the "Create API" button.
+
+3. Fill in the required information:
+
+	Name: Choose a name for your API.
+	Identifier (Audience): This is a unique identifier for your API. It can be a URL, such as https://your-api.com.
+	Signing Algorithm: RS256 is commonly used.
+	Click on the "Create" button to create your API.
+
+	Once the API is created, you'll see the details on the API settings page.
+
+	Take note of the "Identifier" (Audience). This value will be used in your React app to specify the audience when making authentication requests.
+
+
+4. Update your React app's .env file to include the API Identifier:
+```bash
+REACT_APP_AUTH0_AUDIENCE=your-api-identifier
+```
+Replace your-api-identifier with the audience identifier you obtained from the Auth0 Dashboard.
+
+
+## Start the demo on local sandbox
 
 1. Start a local postgres DB by running: `cd wallet-views/java && docker compose up -d db && cd ../..`
 1. Run: `./launch-local-demo.sh`.

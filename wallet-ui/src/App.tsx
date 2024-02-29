@@ -87,14 +87,6 @@ const App: React.FC = () => {
               <Route path="/offer/accept" element={<AuthenticationGuard component={OfferAcceptFormScreen} />} />
               <Route path="/settlement/action" element={<AuthenticationGuard component={SettlementActionScreen} />} />
             </>
-          ) : walletMode===("fund") ? (
-            <>
-              <Route path="/" element={<AuthenticationGuard component={HomeScreen} />} />
-              <Route path="/wallet" element={<AuthenticationGuard component={WalletScreen} />} />
-              <Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />
-              <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
-              <Route path="/funds" element={<AuthenticationGuard component={HomeScreen} />} />
-            </>
           ) : walletMode===("issuer") ? (
             <>
               <Route path="/" element={<AuthenticationGuard component={HomeScreen} />} />
