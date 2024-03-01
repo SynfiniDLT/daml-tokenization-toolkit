@@ -33,11 +33,11 @@ This will guide you through the steps to set up Auth0 authentication in your Rea
 
 ### Step 1: Create an Auth0 Account
 1. Go to Auth0 and sign up for a free account.
-2. Once logged in, go to the Dashboard.
-3. lick on the "Create Application" button.
-4. Choose "Single Page Web Applications" as the application type.
-5. Configure your application settings, including the Allowed Callback URLs, Allowed Logout URLs, and Allowed Web Origins. Typically, for development, you can set these to http://localhost:3000.
-6. Save the changes.
+1. Once logged in, go to the Dashboard.
+1. Click on the "Create Application" button.
+1. Choose "Single Page Web Applications" as the application type.
+1. Configure your application settings, including the Allowed Callback URLs, Allowed Logout URLs, and Allowed Web Origins. Typically, for development, you can set these to http://localhost:3000.
+1. Save the changes.
 
 ### Step 2: Edit the .env file at the wallet-ui folder with the following: 
 
@@ -49,9 +49,9 @@ Replace your-auth0-domain and your-auth0-client-id with the values from your Aut
 
 ### Step 3: Create an Auth0 API Resource (Audience)
 1. In your Auth0 Dashboard, navigate to the APIs section.
-2. Click on the "Create API" button.
+1. Click on the "Create API" button.
 
-3. Fill in the required information:
+1. Fill in the required information:
 
 	Name: Choose a name for your API.
 	Identifier (Audience): This is a unique identifier for your API. It can be a URL, such as https://your-api.com.
@@ -63,11 +63,21 @@ Replace your-auth0-domain and your-auth0-client-id with the values from your Aut
 	Take note of the "Identifier" (Audience). This value will be used in your React app to specify the audience when making authentication requests.
 
 
-4. Update your React app's .env file to include the API Identifier:
+1. Update your React app's .env file to include the API Identifier:
 ```bash
 REACT_APP_AUTH0_AUDIENCE=your-api-identifier
 ```
 Replace your-api-identifier with the audience identifier you obtained from the Auth0 Dashboard.
+
+### Step 4: Edit the users.json File for Ledger Identification
+1.	In the ~/demo-config/users folder, there is a users.json file to store user information for ledger identification.
+1. The users.json file has an array of user objects, each containing the userId from Auth0 and the corresponding primaryParty for ledger identification. Replace your-auth0-user-id and another-auth0-user-id with the actual user IDs from Auth0.
+1. Ensure that the userId in each object corresponds to the sub (subject) field in the Auth0 user profile. You can find the userId in the Auth0 ID Token received during authentication.
+1. The primaryParty field is a unique identifier for each user in your ledger. Customize it based on your application's requirements.
+1. Save and commit the users.json file to your version control system (e.g., Git) to keep it in sync with your codebase.
+1. Whenever a user logs in, retrieve their userId from the Auth0 user profile, and use it to look up the corresponding primaryParty from the users.json file for ledger identification.
+
+This step ensures that your ledger can correctly identify users based on their Auth0 userId and associate them with the appropriate primaryParty. Update your application logic to use this mapping whenever you need to interact with the ledger.
 
 
 ## Start the demo on local sandbox
