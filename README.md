@@ -28,6 +28,21 @@ most likely be replaced with the Daml Participant Query Store feature. To instal
 make install-custom-views
 ```
 
+## Components
+The project contains a number of components
+| Folder  | Content | Dependency |
+| ------------- | ------------- | ------------- |
+| account-onboarding  | Daml templates that support account setup | Daml Finance |
+| issuer-onboarding  | Daml templates that support issuer setup | Daml Finance |
+| pbt  | Daml templates that support pbt/sbt | Daml Finance |
+| settlement  | Daml templates that support settlement function | Daml Finance |
+| trackable-settlement  | Daml templates that support issuers to observe customer holdings  | Daml Finance |
+| demo-config | Configurations files for the initial smart contract setup. The file contains data required to onboard users to the ledger    | Daml solution packages |
+| operations  | Scripts that support initial contract setup | Daml Finance |
+| wallet-views  | API for the UI |  |
+| wallet-ui  | UI app |  |
+
+ 
 ## Setting up Auth0 Authentication for Your React App
 This will guide you through the steps to set up Auth0 authentication in your React app as a Single Page Application (SPA).  
 
@@ -137,6 +152,20 @@ For front end:
 ```bash
 make build-wallet-ui
 ```
+
+If the following error occurs
+```
+  opensslErrorStack: [ 'error:03000086:digital envelope routines::initialization error' ],
+  library: 'digital envelope routines',
+  reason: 'unsupported',
+  code: 'ERR_OSSL_EVP_UNSUPPORTED'
+
+```
+Set up the following node option and try again
+```
+export NODE_OPTIONS=--openssl-legacy-provider
+```
+
 
 To clean the build state:
 
