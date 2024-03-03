@@ -40,12 +40,13 @@ wallet_views_typescript_client_build = wallet-views/typescript-client/lib
 $(daml_finance_dir): dependencies.conf
 	./get-dependencies.sh
 
+CUSTOM_VIEWS_JAR = custom-views-assembly-LOCAL-SNAPSHOT.jar
 .PHONY: install-custom-views
 install-custom-views:
 	cd custom-views && \
-	sbt 'set assembly / test := {}' 'set assembly / assemblyOutputPath := file("custom-views-assembly-LOCAL-SNAPSHOT.jar")' clean assembly && \
+	sbt 'set assembly / test := {}' 'set assembly / assemblyOutputPath := file("${CUSTOM_VIEWS_JAR}")' clean assembly && \
 	mvn install:install-file \
-		-Dfile=custom-views-assembly-LOCAL-SNAPSHOT.jar \
+		-Dfile=${CUSTOM_VIEWS_JAR} \
 		-DgroupId=com.daml \
 		-DartifactId=custom-views_2.13 \
 		-Dversion=assembly-LOCAL-SNAPSHOT \
