@@ -1,0 +1,14 @@
+{
+  "accountOpenOfferFactorySettings": [
+    {
+      "label": "v1",
+      "provider": "SynfiniValidator",
+      "observers": [
+        {
+          "context": "o",
+          "parties": ["SynfiniPublic"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "settlementFactorySettings": [
+    {
+      "label": "V1",
+      "provider": "SynfiniValidator",
+      "observers": [
+        "SynfiniPublic"
+      ],
+      "settlementTrackers": ["WalletOperator"]
+    }
+  ]
+}

@@ -115,16 +115,51 @@
   user-select: none;
 }
 
+.button__sign-up-selected {
+  min-width: 8.4rem;
+  border: 0.1rem solid var(--black);
+  color: var(--black);
+  background-color: transparent;
+
+  background: var(--white);
+
+  width: 50%;
+  font-size: 1.6rem;
+
+  margin-right: 1.6rem;
+
+  font-style: normal;
+  font-weight: 500;
+  line-height: 3.2rem;
+  padding: 0.8rem 0;
+  border-radius: 0.8rem;
+  text-align: center;
+
+  cursor: pointer;
+  user-select: none;
+}
+
 .button__login:last-child,
 .button__logout:last-child,
 .button__sign-up:last-child {
   margin-right: 0;
 }
 
+.button__sign-up-selected:last-child {
+  margin-right: 0;
+}
+
+
 @media only screen and (min-width: 641px) {
   .button__login,
   .button__logout,
   .button__sign-up {
+    padding: 0.8rem 1.2rem;
+
+    font-size: 1.4rem;
+    line-height: 1.6rem;
+  }
+  .button__sign-up-selected {
     padding: 0.8rem 1.2rem;
 
     font-size: 1.4rem;

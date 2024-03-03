@@ -1,0 +1,129 @@
+module Synfini.Onboarding.Issuer.Instrument.Test where
+
+import DA.Date (date)
+import DA.Date.Types (Month(Jan))
+import DA.Time (time)
+
+import DA.Map qualified as Map
+import DA.Optional qualified as O
+import DA.Set qualified as Set
+
+import Daml.Script
+
+import Daml.Finance.Instrument.Token.Factory qualified as TokenImpl
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Instrument.Token.Types (Token (..))
+
+import Daml.Finance.Interface.Instrument.Token.Factory qualified as Token
+import Daml.Finance.Interface.Instrument.Token.Instrument qualified as Token
+
+import Synfini.Assert (assertEqMsg)
+
+import Synfini.Onboarding.Issuer.Instrument.Token qualified as TokenIssuerImpl
+
+import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Factory qualified as TokenIssuerFactory
+import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Issuer qualified as TokenIssuer
+
+data Setup = Setup
+  with
+    depository : Party
+    issuer : Party
+    alice : Party
+    tokenFactoryCid : ContractId Token.F
+    tokenIssuerFactoryCid : ContractId TokenIssuerFactory.I
+
+withSetup : (Setup -> Script ()) -> Script ()
+withSetup test = do
+  provider <- allocateParty "provider"
+  depository <- allocateParty "depository"
+  issuer <- allocateParty "issuer"
+  alice <- allocateParty "alice"
+  tokenFactoryCid <- toInterfaceContractId <$> submit provider do
+    createCmd TokenImpl.Factory with
+      provider
+      observers = Map.fromList [("obs", Set.fromList [issuer, depository])]
+  tokenIssuerFactoryCid <- toInterfaceContractId <$> submit provider do
+    createCmd TokenIssuerImpl.Factory with
+      provider
+      observers = Map.fromList [("obs", Set.fromList [issuer, depository])]
+  test (Setup with depository, issuer, alice, tokenFactoryCid, tokenIssuerFactoryCid)
+
+test_signatory : Script ()
+test_signatory = withSetup $
+  \Setup { depository, issuer, tokenFactoryCid, tokenIssuerFactoryCid } -> do
+  submitMustFail issuer do
+    exerciseCmd tokenIssuerFactoryCid TokenIssuerFactory.Create with
+      depository
+      issuer
+      instrumentFactoryCid = tokenFactoryCid
+      observers = Map.empty
+
+test_invalid_issuer_depository : Script ()
+test_invalid_issuer_depository = withSetup $
+  \Setup { depository, issuer, alice, tokenFactoryCid, tokenIssuerFactoryCid } -> do
+  tokenIssuerCid <- submit depository do
+    exerciseCmd tokenIssuerFactoryCid TokenIssuerFactory.Create with
+      depository
+      issuer
+      instrumentFactoryCid = tokenFactoryCid
+      observers = Map.empty
+  submitMustFail issuer do
+    exerciseCmd tokenIssuerCid TokenIssuer.CreateInstrument with
+      token = Token with
+        instrument = InstrumentKey with depository = issuer, issuer = depository, id = Id "id", version = "1"
+        description = "description"
+        validAsOf = time (date 2000 Jan 1) 0 0 0
+      observers = Map.fromList [("obs", Set.fromList [alice])]
+
+test_create_token_instrument : Script ()
+test_create_token_instrument = withSetup $
+  \Setup { depository, issuer, alice, tokenFactoryCid, tokenIssuerFactoryCid } -> do
+  tokenIssuerCid <- submit depository do
+    exerciseCmd tokenIssuerFactoryCid TokenIssuerFactory.Create with
+      depository
+      issuer
+      instrumentFactoryCid = tokenFactoryCid
+      observers = Map.empty
+  let token = Token with
+        instrument = InstrumentKey with depository, issuer, id = Id "id", version = "1"
+        description = "description"
+        validAsOf = time (date 2000 Jan 1) 0 0 0
+      observers = Map.fromList [("obs", Set.fromList [alice])]
+  instrumentCid <- submit issuer do
+    exerciseCmd tokenIssuerCid TokenIssuer.CreateInstrument with
+      token
+      observers
+  instrument <- O.fromSomeNote "Error getting token instrument interface view" <$>
+    queryInterfaceContractId alice instrumentCid
+  assertEqMsg "Must have expected token" instrument.token token
+  activeIssuers <- fmap fst <$> queryInterface @TokenIssuer.I issuer
+  assertEqMsg "TokenIssuer contract must not be archived" activeIssuers [tokenIssuerCid]
+
+test_remove_token_instrument : Script ()
+test_remove_token_instrument = withSetup $
+  \Setup { depository, issuer, alice, tokenFactoryCid, tokenIssuerFactoryCid } -> do
+  tokenIssuerCid <- submit depository do
+    exerciseCmd tokenIssuerFactoryCid TokenIssuerFactory.Create with
+      depository
+      issuer
+      instrumentFactoryCid = tokenFactoryCid
+      observers = Map.empty
+  let token = Token with
+        instrument = InstrumentKey with depository, issuer, id = Id "id", version = "1"
+        description = "description"
+        validAsOf = time (date 2000 Jan 1) 0 0 0
+      observers = Map.fromList [("obs", Set.fromList [alice])]
+  instrumentCid <- submit issuer do
+    exerciseCmd tokenIssuerCid TokenIssuer.CreateInstrument with
+      token
+      observers
+  submit issuer do
+    exerciseCmd tokenIssuerCid TokenIssuer.RemoveInstrument with
+      id = token.instrument.id
+      version = token.instrument.version
+  activeInstruments <- queryInterface @Token.I depository
+  assertEqMsg "Must have archived all instruments" activeInstruments []
+  activeIssuers <- fmap fst <$> queryInterface @TokenIssuer.I issuer
+  assertEqMsg "TokenIssuer contract must not be archived" activeIssuers [tokenIssuerCid]

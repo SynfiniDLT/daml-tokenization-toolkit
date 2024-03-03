@@ -1,6 +1,32 @@
 -- Hstore (key/value) data type must be enabled
 CREATE EXTENSION hstore;
 
+CREATE TABLE account_open_offers
+(
+  cid VARCHAR NOT NULL,
+  custodian VARCHAR NOT NULL,
+  owner_incoming_controlled BOOLEAN NOT NULL,
+  owner_outgoing_controlled BOOLEAN NOT NULL,
+  additional_controllers_incoming VARCHAR[] NOT NULL,
+  additional_controllers_outgoing VARCHAR[] NOT NULL,
+  permitted_owners VARCHAR[],
+  account_factory_cid VARCHAR NOT NULL,
+  holding_factory_cid VARCHAR NOT NULL,
+  description VARCHAR NOT NULL,
+  create_offset VARCHAR,
+  create_effective_time TIMESTAMP,
+  archive_offset VARCHAR,
+  archive_effective_time TIMESTAMP,
+  PRIMARY KEY (cid)
+);
+
+CREATE TABLE account_open_offer_witnesses
+(
+  cid VARCHAR NOT NULL,
+  party VARCHAR NOT NULL,
+  PRIMARY KEY (cid, party)
+);
+
 CREATE TABLE accounts
 (
   cid VARCHAR NOT NULL,
@@ -98,6 +124,7 @@ CREATE TABLE instructions
   instruction_id VARCHAR NOT NULL,
   requestors_hash INTEGER NOT NULL,
   requestors VARCHAR[] NOT NULL,
+  settlers VARCHAR[] NOT NULL,
   cid VARCHAR UNIQUE,
   sender VARCHAR NOT NULL,
   receiver VARCHAR NOT NULL,
@@ -108,9 +135,14 @@ CREATE TABLE instructions
   instrument_id VARCHAR NOT NULL,
   instrument_version VARCHAR NOT NULL,
   allocation_pledge_cid VARCHAR,
-  approval_take_delivery_account_custodian VARCHAR,
-  approval_take_delivery_account_owner VARCHAR,
-  approval_take_delivery_account_id VARCHAR,
+  allocation_credit_receiver BOOLEAN NOT NULL,
+  allocation_pass_through_from VARCHAR,
+  allocation_pass_through_from_account_id VARCHAR,
+  allocation_settle_off_ledger BOOLEAN NOT NULL,
+  approval_account_id VARCHAR,
+  approval_pass_through_to VARCHAR,
+  approval_debit_sender BOOLEAN NOT NULL,
+  approval_settle_off_ledger BOOLEAN NOT NULL,
   create_offset VARCHAR,
   create_effective_time TIMESTAMP,
   archive_offset VARCHAR,
@@ -172,6 +204,29 @@ CREATE INDEX pba_instruments_key_index ON pba_instruments
   (instrument_depository, instrument_id, instrument_issuer, instrument_version);
 
 CREATE TABLE instrument_witnesses
+(
+  cid VARCHAR NOT NULL,
+  party VARCHAR NOT NULL,
+  PRIMARY KEY (cid, party)
+);
+
+CREATE TABLE token_instrument_issuers
+(
+  cid VARCHAR NOT NULL,
+  issuer VARCHAR NOT NULL,
+  depository VARCHAR NOT NULL,
+  instrument_factory_cid VARCHAR NOT NULL,
+  create_offset VARCHAR,
+  create_effective_time TIMESTAMP,
+  archive_offset VARCHAR,
+  archive_effective_time TIMESTAMP,
+  PRIMARY KEY (cid)
+);
+
+CREATE INDEX token_instrument_issuers_issuer_index ON token_instrument_issuers (issuer);
+CREATE INDEX token_instrument_issuers_depository_index ON token_instrument_issuers (depository);
+
+CREATE TABLE token_instrument_issuer_witnesses
 (
   cid VARCHAR NOT NULL,
   party VARCHAR NOT NULL,

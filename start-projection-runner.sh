@@ -3,9 +3,10 @@
 # sleep for 30s to wait for server fully started
 sleep 30s
 
-echo "DEPLOYMENT_GROUP_NAME = $DEPLOYMENT_GROUP_NAME"
+ENV=$DEPLOYMENT_GROUP_NAME
+echo "ENV = ${ENV}"
 
-if [ "$DEPLOYMENT_GROUP_NAME" == "dev" ]
+if [ "$ENV" == "dev" ]
 then
     projection_url="http://localhost:8091/wallet-views/v1/projection/start"
     token_url="https://asx-dev.au.auth0.com/oauth/token"

@@ -1,0 +1,42 @@
+module Synfini.Interface.Onboarding.Issuer.MinterBurner.Factory where
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner qualified as MinterBurner
+
+data View = View
+  with
+    provider : Party
+  deriving (Show, Eq)
+
+type V = View
+
+interface Factory requires Disclosure.I where
+  viewtype V
+
+  create' : Create -> Update (ContractId MinterBurner.I)
+
+  remove : Remove -> Update ()
+
+  nonconsuming choice Create : ContractId MinterBurner.I
+    with
+      custodian : Party
+      depository : Party
+      issuer : Party
+      observers : PartiesMap
+    controller custodian
+    do
+      create' this arg
+
+  nonconsuming choice Remove : ()
+    with
+      custodian : Party
+      depository : Party
+      issuer : Party
+    controller custodian
+    do
+      remove this arg
+
+type I = Factory

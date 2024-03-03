@@ -1,7 +1,0 @@
-{
-  "readAs": ["Synfini_Public"],
-  "executeBurnSettings": {
-    "issuer": "AUDN_Issuer",
-    "minterBurner": "AUDN_MinterBurner"
-  }
-}

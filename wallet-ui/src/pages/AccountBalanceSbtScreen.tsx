@@ -11,7 +11,7 @@ import {
   InstrumentSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import BalanceSbts from "../components/layout/balanceSbts";
-import {Instrument as PartyBoundAttributes}  from "@daml.js/daml-pbt/lib/Synfini/Interface/Instrument/PartyBoundAttributes/Instrument";
+import {Instrument as PartyBoundAttributes}  from "@daml.js/synfini-pbt/lib/Synfini/Interface/Instrument/PartyBoundAttributes/Instrument";
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
 const AccountBalanceSbtScreen: React.FC = () => {
@@ -19,7 +19,7 @@ const AccountBalanceSbtScreen: React.FC = () => {
   const { state } = useLocation();
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
-  const walletViewsBaseUrl: string = `${window.location.protocol}//${window.location.host}`;
+  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
 
   const [balances, setBalances] = useState<Balance[]>([]);
   const [instruments, setInstruments] = useState<InstrumentSummary[]>();

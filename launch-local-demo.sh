@@ -5,7 +5,7 @@ set -eu
 tokenization_lib_home=$(pwd)
 
 make compile-wallet-views
-make install-onboarding
+make install-operations
 export DOPS_HOME=~/.dops
 export PATH=$PATH:$DOPS_HOME/bin
 
@@ -31,10 +31,11 @@ json_api_pg_id=$(ps --pid $json_api_pid -o "pgid" --no-headers)
 echo $json_api_pg_id > $tokenization_lib_home/json-api.pgid
 
 rm -rf .dops
+config_dir=${tokenization_lib_home}/demo-config
 dops upload-dar
-dops allocate-parties onboarding/demo/parties/demo-parties-input.json
+dops allocate-parties ${config_dir}/parties/parties.json
 read_as=$(jq -r '.parties[] | select(.label == "WalletOperator") | .partyId' .dops/parties.json)
-dops create-users onboarding/demo/users/demo-users-input.json
+dops create-users ${config_dir}/users/users.json
 
 cd ${tokenization_lib_home}/wallet-views/java
 nohup mvn -Dmaven.test.skip=true spring-boot:run \
@@ -61,40 +62,47 @@ sleep 20s
 cd ${tokenization_lib_home}
 
 # Factories
-dops create-account-factories onboarding/demo/factories/demo-account-factories-input.json
-dops create-holding-factories onboarding/demo/factories/demo-holding-factories-input.json
-dops create-settlement-factories onboarding/demo/factories/demo-settlement-factories-input.json
-dops create-instrument-factories onboarding/demo/factories/demo-instrument-factories-input.json
+dops create-account-factories ${config_dir}/factories/account-factories.json
+dops create-holding-factories ${config_dir}/factories/holding-factories.json
+dops create-settlement-factories ${config_dir}/factories/settlement-factories.json
+dops create-settlement-one-time-offer-factories ${config_dir}/factories/settlement-one-time-offer-factories.json
+dops create-settlement-open-offer-factories ${config_dir}/factories/settlement-open-offer-factories.json
+dops create-instrument-factories ${config_dir}/factories/instrument-factories.json
+dops create-account-open-offer-factories ${config_dir}/factories/account-open-offer-factories.json
+dops create-issuer-factories  ${config_dir}/factories/issuer-factories.json
+dops create-minter-burner-factories ${config_dir}/factories/minter-burner-factories.json
+
+# Route Providers
+dops create-route-providers ${config_dir}/route-providers/route-providers.json
 
 # Accounts
-dops create-accounts-unilateral onboarding/demo/accounts/demo-accounts-input.json
-dops create-accounts-unilateral onboarding/demo/accounts/demo-new-account-input.json
-dops create-accounts-unilateral onboarding/demo/accounts/demo-fund-account-input.json 
-dops create-accounts-unilateral onboarding/demo/accounts/demo-fund-investor-account-input.json
-dops create-accounts-unilateral onboarding/demo/accounts/demo-fund-units-accounts-input.json
-dops create-accounts-unilateral onboarding/demo/accounts/demo-sbt-accounts-input.json
+dops create-accounts-unilateral ${config_dir}/accounts/accounts.json
+dops create-account-open-offers ${config_dir}/accounts/account-open-offers.json
 
 # AUDN
-dops create-mint-unilateral onboarding/demo/audn/demo-mint-input.json
-dops create-minters onboarding/demo/audn/demo-minter-input.json
-dops create-mint-receivers onboarding/demo/audn/demo-mint-receivers-input.json
-instruct_mint_output_file=$(mktemp)
-dops instruct-mint onboarding/demo/audn/demo-instruct-mint.json --output-file $instruct_mint_output_file
-dops execute-mint onboarding/demo/audn/demo-execute-mint-input.json $instruct_mint_output_file
-dops instruct-burn onboarding/demo/audn/demo-instruct-burn.json
-rm $instruct_mint_output_file
+dops create-minter-burners ${config_dir}/audn/minter-burner.json
+dops create-settlement-open-offers ${config_dir}/audn/on-ramp-offer.json
+mint_id=$(uuidgen)
+dops take-settlement-open-offer ${config_dir}/audn/take-on-ramp-offer.json $mint_id
+dops accept-settlement ${config_dir}/settlement/investorA-settlement-preferences.json AUDN_Issuer,InvestorA $mint_id
+dops accept-settlement ${config_dir}/settlement/AUDN-issuer-settlement-preferences.json AUDN_Issuer,InvestorA $mint_id
+dops execute-settlement ${config_dir}/settlement/AUDN-issuer-execute.json AUDN_Issuer,InvestorA $mint_id
+dops create-settlement-open-offers ${config_dir}/audn/off-ramp-offer.json
+burn_id=$(uuidgen)
+dops take-settlement-open-offer ${config_dir}/audn/take-off-ramp-offer.json $burn_id
 
 # SBT
-dops create-pbas-unilateral onboarding/demo/sbt/demo-pba-input.json
+dops create-pbas-unilateral ${config_dir}/sbt/pba.json
 
 # Fund
-dops create-fund-offer-unilateral onboarding/demo/fund/demo-fund-offer-input.json
-dops create-fund-investors onboarding/demo/fund/fund-investors-input.json
-dops create-mint-unilateral onboarding/demo/fund/demo-fund-unit-mint-input.json
-dops create-mint-receivers onboarding/demo/fund/demo-fund-mint-receivers-input.json
-instruct_fund_mint_output_file=$(mktemp)
-dops instruct-mint onboarding/demo/fund/demo-fund-instruct-mint.json --output-file $instruct_fund_mint_output_file
-dops execute-mint onboarding/demo/fund/demo-execute-fund-mint-input.json $instruct_fund_mint_output_file
-rm $instruct_fund_mint_output_file
+dops create-minter-burners ${config_dir}/fund/fundA-minter-burner.json
+dops create-settlement-open-offers ${config_dir}/fund/fundA-invest-offer.json
+invest_id=$(uuidgen)
+dops take-settlement-open-offer ${config_dir}/fund/take-fundA-invest-offer.json $invest_id
+dops accept-settlement ${config_dir}/settlement/investorA-settlement-preferences.json FundA,InvestorA $invest_id
+dops accept-settlement ${config_dir}/settlement/FundA-settlement-preferences.json FundA,InvestorA $invest_id
+dops accept-settlement ${config_dir}/settlement/FundManagerA-settlement-preferences.json FundA,InvestorA $invest_id
+dops execute-settlement ${config_dir}/settlement/FundA-execute.json FundA,InvestorA $invest_id
 
-cd ${tokenization_lib_home}
+# Issuer
+dops create-issuers ${config_dir}/issuers/issuers.json

@@ -2,16 +2,21 @@
 -- Synfini.Wallet.Api.Types.Internal, otherwise they will not appear in the codegen output
 module Synfini.Wallet.Api.Types where
 
-import qualified Daml.Finance.Interface.Account.Account as Account
-import qualified Daml.Finance.Interface.Holding.Base as Holding
-import qualified Daml.Finance.Interface.Settlement.Batch as Batch
-import qualified Daml.Finance.Interface.Settlement.Instruction as Instruction
-import qualified Daml.Finance.Interface.Instrument.Base.Instrument as Instrument
-import qualified Daml.Finance.Interface.Instrument.Token.Instrument as Token
-import qualified Synfini.Interface.Instrument.PartyBoundAttributes.Instrument as Pbt
+import DA.Set (Set)
+
 import Daml.Finance.Interface.Settlement.Types
 import Daml.Finance.Interface.Types.Common.Types
-import DA.Set (Set)
+
+import Daml.Finance.Interface.Account.Account qualified as Account
+import Daml.Finance.Interface.Holding.Base qualified as Holding
+import Daml.Finance.Interface.Instrument.Base.Instrument qualified as Instrument
+import Daml.Finance.Interface.Instrument.Token.Instrument qualified as Token
+import Daml.Finance.Interface.Settlement.Batch qualified as Batch
+import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
+
+import Synfini.Interface.Instrument.PartyBoundAttributes.Instrument qualified as Pbt
+import Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer qualified as AccountOpenOffer
+import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Issuer qualified as TokenIssuer
 
 data Balance = Balance
   with
@@ -57,6 +62,7 @@ data HoldingFilter = HoldingFilter
 
 data AccountFilter = AccountFilter
   with
+    custodian : Optional Party
     owner : Party
   deriving (Show, Eq)
 
@@ -84,14 +90,15 @@ data SettlementStep = SettlementStep
     routedStep : RoutedStep
     instructionId : Id
     instructionCid : ContractId Instruction.I
-    allocation : Optional Allocation
-    approval : Optional Approval
+    allocation : Allocation
+    approval : Approval
   deriving (Show, Eq)
 
 data SettlementSummary = SettlementSummary
   with
     batchId : Id
     requestors : Set Party
+    settlers : Set Party
     batchCid : Optional (ContractId Batch.I)
     contextId : Optional Id
     description : Optional Text
@@ -109,8 +116,8 @@ data Settlements = Settlements
 data InstrumentSummary = InstrumentSummary
   with
     cid : ContractId Instrument.I
-    tokenView : Optional Token.View
-    pbaView : Optional Pbt.View
+    tokenView : Optional Token.V
+    pbaView : Optional Pbt.V
   deriving (Show, Eq)
 
 data Instruments = Instruments
@@ -122,6 +129,45 @@ data InstrumentsFilter = InstrumentsFilter
   with
     depository : Party
     issuer : Party
-    id : Id
+    id : Optional Id
     version : Optional Text
+  deriving (Show, Eq)
+
+-- TODO may need to add filter parameters here
+data AccountOpenOffersFilter = AccountOpenOffersFilter
+  with
+  deriving (Show, Eq)
+
+data AccountOpenOfferSummary = AccountOpenOfferSummary
+  with
+    cid : ContractId AccountOpenOffer.I
+    view : AccountOpenOffer.V
+    create : Optional TransactionDetail
+  deriving (Show, Eq)
+
+data AccountOpenOffers = AccountOpenOffers
+  with
+    accountOpenOffers : [AccountOpenOfferSummary]
+  deriving (Show, Eq)
+
+data IssuersFilter = IssuersFilter
+  with
+    depository : Optional Party
+    issuer : Optional Party
+  deriving (Show, Eq)
+
+data TokenIssuerSummary = TokenIssuerSummary
+  with
+    cid : ContractId TokenIssuer.I
+    view : TokenIssuer.V
+  deriving (Show, Eq)
+
+data IssuerSummary = IssuerSummary
+  with
+    token : Optional TokenIssuerSummary -- In future, there may be issuer contracts for other instrument types, so this is an optional field
+  deriving (Show, Eq)
+
+data Issuers = Issuers
+  with
+    issuers : [IssuerSummary]
   deriving (Show, Eq)

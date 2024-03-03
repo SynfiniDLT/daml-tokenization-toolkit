@@ -1,0 +1,30 @@
+{
+  "readAs": ["SynfiniPublic"],
+  "settlementOpenOfferSettings": [
+    {
+      "offerId": "AUDN@0.OnRamp",
+      "offerers": ["AUDN_Issuer"],
+      "offerDescription": "Request stablecoin on-ramp from fiat",
+      "settlementInstructors": [{"party": "AUDN_Issuer"}, {"taker": {}}],
+      "settlers": [{"party": "AUDN_Issuer"}],
+      "steps": [
+        {
+          "sender": {"party": "SynfiniValidator"},
+          "receiver": {"taker": {}},
+          "instrumentDepository": "AUDN_Depository",
+          "instrumentIssuer": "AUDN_Issuer",
+          "instrumentId": "AUDN",
+          "instrumentVersion": "0",
+          "amount": 1
+        }
+      ],
+      "settlementOpenOfferFactory": "V1",
+      "routeProvider": "validatorCustodianV1",
+      "settlementFactory": "V1",
+      "observers" : [{
+        "context": "",
+        "parties": ["SynfiniPublic", "WalletOperator"]
+      }]
+    }
+  ]
+}

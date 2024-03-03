@@ -1,0 +1,68 @@
+module Synfini.Onboarding.Issuer.Instrument.Token where
+
+import DA.Set qualified as Set
+
+import Daml.Finance.Util.Disclosure qualified as ImplUtil
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Instrument.Token.Factory qualified as Token
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Synfini.Assert (assertEqMsg)
+
+import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Factory qualified as TokenIssuerFactory
+import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Issuer qualified as TokenIssuer
+
+template Issuer
+  with
+    depository : Party
+    issuer : Party
+    instrumentFactoryCid : ContractId Token.F
+    observers : PartiesMap
+  where
+    signatory depository
+
+    observer issuer, Disclosure.flattenObservers observers
+
+    interface instance Disclosure.I for Issuer where
+      view = Disclosure.View with disclosureControllers = Set.fromList [depository, issuer], observers
+      setObservers = ImplUtil.setObserversImpl @_ @Disclosure.I this None
+      addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
+      removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
+
+    interface instance TokenIssuer.I for Issuer where
+      view = TokenIssuer.View with depository, issuer, instrumentFactoryCid
+      createInstrument args = do
+        assertEqMsg "Token to be created by have expected issuer" args.token.instrument.issuer issuer
+        assertEqMsg "Token to be created by have expected depository" args.token.instrument.depository depository
+        exercise instrumentFactoryCid Token.Create with
+          token = args.token
+          observers = args.observers
+      removeInstrument TokenIssuer.RemoveInstrument { id, version } = do
+        exercise instrumentFactoryCid Token.Remove with
+          instrument = InstrumentKey with depository, issuer, id, version
+
+template Factory
+  with
+    provider : Party
+    observers : PartiesMap
+  where
+    signatory provider
+
+    observer Disclosure.flattenObservers observers
+
+    interface instance Disclosure.I for Factory where
+      view = Disclosure.View with disclosureControllers = Set.fromList [provider], observers
+      setObservers = ImplUtil.setObserversImpl @_ @Disclosure.I this None
+      addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
+      removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
+
+    interface instance TokenIssuerFactory.I for Factory where
+      view = TokenIssuerFactory.View with provider
+      create' args = toInterfaceContractId <$>
+        create Issuer with
+          depository = args.depository
+          issuer = args.issuer
+          instrumentFactoryCid = args.instrumentFactoryCid
+          observers = args.observers

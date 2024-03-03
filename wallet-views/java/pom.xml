@@ -11,7 +11,7 @@
     <groupId>com.synfini</groupId>
     <artifactId>wallet-views</artifactId>
     <packaging>jar</packaging>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -25,7 +25,9 @@
         <daml-lib-account-file>daml-finance-account.dar</daml-lib-account-file>
         <daml-lib-settlement-file>daml-finance-settlement.dar</daml-lib-settlement-file>
         <daml-lib-instrument-token-file>daml-finance-instrument-token.dar</daml-lib-instrument-token-file>
-        <daml-lib-instrument-pbt-file>pbt.dar</daml-lib-instrument-pbt-file>
+        <daml-lib-account-open-offer-file>synfini-account-onboarding-open-offer.dar</daml-lib-account-open-offer-file>
+        <daml-lib-token-issuer-file>synfini-issuer-onboarding-token.dar</daml-lib-token-issuer-file>
+        <daml-lib-instrument-pbt-file>synfini-pbt.dar</daml-lib-instrument-pbt-file>
         <daml-codegen-java-main.output>${project.basedir}/src/generated-main/java</daml-codegen-java-main.output>
         <daml-codegen-java-test.output>${project.basedir}/src/generated-test/java</daml-codegen-java-test.output>
         <restport>8080</restport>
@@ -221,6 +223,12 @@
                                     <directory>${daml-build-dir}</directory>
                                     <includes>
                                         <include>
+                                            ${daml-lib-account-open-offer-file}
+                                        </include>
+                                        <include>
+                                            ${daml-lib-token-issuer-file}
+                                        </include>
+                                        <include>
                                             ${daml-lib-instrument-pbt-file}
                                         </include>
                                     </includes>
@@ -243,6 +251,8 @@
                                 <include>${daml-lib-account-file}</include>
                                 <include>${daml-lib-settlement-file}</include>
                                 <include>${daml-lib-instrument-token-file}</include>
+                                <include>${daml-lib-account-open-offer-file}</include>
+                                <include>${daml-lib-token-issuer-file}</include>
                                 <include>${daml-lib-instrument-pbt-file}</include>
                             </includes>
                         </fileset>

@@ -4,9 +4,6 @@ import InstrumentDetails from "./instrumentDetails";
 export default function Instruments(props: { instruments?: InstrumentSummary[] }) {
   return (
     <>
-      <div style={{ marginTop: "15px" }}>
-        <h4 className="profile__title">SBT Contents</h4>
-      </div>
       <div style={{ margin: "10px", padding: "10px" }}>
         {props.instruments !== undefined && (
           <>

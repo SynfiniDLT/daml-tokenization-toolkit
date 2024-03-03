@@ -4,9 +4,6 @@ import AccountDetails from "./accountDetails";
 export default function Accounts(props: { accounts?: AccountSummary[] }) {
   return (
     <>
-      <div style={{ marginTop: "15px" }}>
-        <h4 className="profile__title">Accounts</h4>
-      </div>
       <div style={{ margin: "10px", padding: "10px" }}>
         {props.accounts !== undefined && (
           <>

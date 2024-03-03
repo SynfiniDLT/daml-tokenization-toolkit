@@ -1,0 +1,19 @@
+{
+  "acceptSettlementSettings": {
+    "acceptor": "FundA",
+    "settlementPreferences": [
+      {
+        "custodian": "SynfiniValidator",
+        "depository": "AUDN_Depository",
+        "issuer": "AUDN_Issuer",
+        "accountId": "001"
+      },
+      {
+        "custodian": "SynfiniValidator",
+        "depository": "Fund_Depository",
+        "issuer": "FundA",
+        "minterBurner": true
+      }
+    ]
+  }
+}

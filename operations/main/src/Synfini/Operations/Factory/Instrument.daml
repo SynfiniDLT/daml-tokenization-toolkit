@@ -1,0 +1,84 @@
+module Synfini.Operations.Factory.Instrument where
+
+import Daml.Script
+
+import Daml.Finance.Instrument.Token.Factory qualified as TokenImpl
+
+import Synfini.Operations.Types
+
+import Synfini.Instrument.PartyBoundAttributes.Factory qualified as PbaImpl
+import Synfini.Onboarding.Issuer.Instrument.Token qualified as TokenIssuerImpl
+
+data InstrumentFactorySettings = InstrumentFactorySettings
+  with
+    label : Text
+    instrumentType : Text
+    provider : Text
+    observers : [Observer]
+
+data CreateInstrumentFactoriesInput = CreateInstrumentFactoriesInput
+  with
+    parties : [PartyInfo]
+    instrumentFactorySettings : [InstrumentFactorySettings]
+
+data InstrumentFactory = InstrumentFactory
+  with
+    label : Text
+    cid : ContractId ()
+
+data CreateInstrumentFactoriesOutput = CreateInstrumentFactoriesOutput
+  with
+    instrumentFactories : [InstrumentFactory]
+
+createInstrumentFactories : CreateInstrumentFactoriesInput -> Script CreateInstrumentFactoriesOutput
+createInstrumentFactories CreateInstrumentFactoriesInput { parties, instrumentFactorySettings } = do
+  let pm = partyTable parties
+  let p = getPartyId pm
+  instrumentFactories <- forA instrumentFactorySettings $ \settings -> do
+    let observers = asPartiesMap p settings.observers
+    let provider = p settings.provider
+    cid <- case settings.instrumentType of
+      "Token" ->
+        coerceContractId <$> submit provider do
+          createCmd TokenImpl.Factory with provider, observers
+      "Pba" ->
+        coerceContractId <$> submit provider do
+          createCmd PbaImpl.Factory with provider, observers
+      other -> error ("Unsupported instrument type: " <> show other)
+    pure InstrumentFactory with label = settings.label, cid
+  pure CreateInstrumentFactoriesOutput with instrumentFactories
+
+data IssuerFactorySettings = IssuerFactorySettings
+  with
+    label : Text
+    provider : Text
+    instrumentType : Text
+    observers : [Observer]
+
+data CreateIssuerFactoriesInput = CreateIssuerFactoriesInput
+  with
+    parties : [PartyInfo]
+    issuerFactorySettings : [IssuerFactorySettings]
+
+data IssuerFactory = IssuerFactory
+  with
+    label : Text
+    cid : ContractId ()
+
+data CreateIssuerFactoriesOutput = CreateIssuerFactoriesOutput
+  with
+    issuerFactories : [IssuerFactory]
+
+createIssuerFactories : CreateIssuerFactoriesInput -> Script CreateIssuerFactoriesOutput
+createIssuerFactories input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  issuerFactories <- forA input.issuerFactorySettings $ \settings -> do
+    let observers = asPartiesMap p settings.observers
+    let provider = p settings.provider
+    cid <- case settings.instrumentType of
+      "Token" -> coerceContractId <$> submit provider do
+        createCmd TokenIssuerImpl.Factory with provider, observers
+      other -> error ("Unsupported instrument type: " <> show other)
+    pure IssuerFactory with label = settings.label, cid
+  pure CreateIssuerFactoriesOutput with issuerFactories

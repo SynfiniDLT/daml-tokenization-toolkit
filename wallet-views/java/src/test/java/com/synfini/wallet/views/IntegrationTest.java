@@ -14,7 +14,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.protobuf.ByteString;
+import da.internal.template.Archive;
 import da.set.types.Set;
+import da.types.Tuple2;
 import daml.finance.interface$.account.account.Account;
 import daml.finance.interface$.account.account.Controllers;
 import daml.finance.interface$.account.account.Credit;
@@ -30,9 +32,10 @@ import daml.finance.interface$.settlement.factory.Instruct;
 import daml.finance.interface$.settlement.instruction.Instruction;
 import daml.finance.interface$.settlement.types.Allocation;
 import daml.finance.interface$.settlement.types.Approval;
+import daml.finance.interface$.settlement.types.InstructionKey;
 import daml.finance.interface$.settlement.types.RoutedStep;
-import daml.finance.interface$.settlement.types.allocation.Pledge;
-import daml.finance.interface$.settlement.types.approval.TakeDelivery;
+import daml.finance.interface$.settlement.types.allocation.*;
+import daml.finance.interface$.settlement.types.approval.*;
 import daml.finance.interface$.types.common.types.AccountKey;
 import daml.finance.interface$.types.common.types.Id;
 import daml.finance.interface$.types.common.types.InstrumentKey;
@@ -68,6 +71,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -95,15 +99,18 @@ public class IntegrationTest {
   private static String investor1User;
   private static String investor2;
   private static String investor2User;
+  private static String issuerUser;
   private static String allPartiesUser;
   private static ManagedChannel allPartiesChannel;
   private static ManagedChannel adminChannel;
   private static DamlLedgerClient allPartiesLedgerClient;
   private static daml.finance.interface$.account.factory.Factory.ContractId accountFactoryCid;
+  private static synfini.interface$.onboarding.account.openoffer.factory.Factory.ContractId accountOpenOfferFactoryCid;
   private static daml.finance.interface$.holding.factory.Factory.ContractId holdingFactoryCid;
   private static daml.finance.interface$.settlement.factory.Factory.ContractId settlementFactoryCid;
   private static daml.finance.interface$.instrument.token.factory.Factory.ContractId tokenInstrumentFactoryCid;
   private static synfini.interface$.instrument.partyboundattributes.factory.Factory.ContractId  pbaInstrumentFactoryCid;
+  private static synfini.interface$.onboarding.issuer.instrument.token.factory.Factory.ContractId tokenInstrumentIssuerFactoryCid;
 
   @Autowired
   private MockMvc mvc;
@@ -163,7 +170,9 @@ public class IntegrationTest {
             "daml-finance-account.dar",
             "daml-finance-settlement.dar",
             "daml-finance-instrument-token.dar",
-            "pbt.dar"
+            "synfini-account-onboarding-open-offer.dar",
+            "synfini-issuer-onboarding-token.dar",
+            "synfini-pbt.dar"
           )
         ) {
           uploadDarFile(darFileName, adminChannel);
@@ -195,7 +204,7 @@ public class IntegrationTest {
   }
 
   @AfterAll
-  static void afterAll() throws InterruptedException, IOException {
+  static void afterAll() throws InterruptedException {
     if (adminChannel != null) {
       shutdownChannel(adminChannel);
     }
@@ -227,6 +236,7 @@ public class IntegrationTest {
     custodianUser = "custodian-" + entropy;
     investor1User = "investor1-" + entropy;
     investor2User = "investor2-" + entropy;
+    issuerUser = "issuer-" + entropy;
     allPartiesUser = "all-parties-user-" + entropy;
     final var adminLedgerClient = DamlLedgerClient.newBuilder(adminChannelBuilder()).build();
     adminLedgerClient.connect();
@@ -234,6 +244,7 @@ public class IntegrationTest {
     userManagementClient.createUser(new CreateUserRequest(custodianUser, custodian)).blockingGet();
     userManagementClient.createUser(new CreateUserRequest(investor1User, investor1)).blockingGet();
     userManagementClient.createUser(new CreateUserRequest(investor2User, investor2)).blockingGet();
+    userManagementClient.createUser(new CreateUserRequest(issuerUser, issuer)).blockingGet();
     userManagementClient.createUser(
       new CreateUserRequest(
         new User(allPartiesUser, custodian),
@@ -255,14 +266,24 @@ public class IntegrationTest {
     final var obs = arrayToSet(investor1, investor2, depository, issuer);
     final var obsMap = Collections.singletonMap("everyone", obs);
     final var accountFactory = new daml.finance.account.account.Factory(custodian, obsMap);
+    final var accountOpenOfferFactory = new synfini.onboarding.account.openoffer.Factory(custodian, obsMap);
     final var holdingFactory = new daml.finance.holding.fungible.Factory(custodian, obsMap);
     final var settlementFactory = new daml.finance.settlement.factory.Factory(custodian, obs);
     final var tokenInstrumentFactory = new daml.finance.instrument.token.factory.Factory(custodian, obsMap);
     final var pbaInstrumentFactory = new synfini.instrument.partyboundattributes.factory.Factory(custodian, obsMap);
+    final var tokenIssuerFactory = new synfini.onboarding.issuer.instrument.token.Factory(custodian, obsMap);
     accountFactoryCid = new daml.finance.interface$.account.factory.Factory.ContractId(
       allPartiesLedgerClient
         .getCommandClient()
         .submitAndWaitForResult(allPartiesUpdateSubmission(accountFactory.create()))
+        .blockingGet()
+        .contractId
+        .contractId
+    );
+    accountOpenOfferFactoryCid = new synfini.interface$.onboarding.account.openoffer.factory.Factory.ContractId(
+      allPartiesLedgerClient
+        .getCommandClient()
+        .submitAndWaitForResult(allPartiesUpdateSubmission(accountOpenOfferFactory.create()))
         .blockingGet()
         .contractId
         .contractId
@@ -295,6 +316,14 @@ public class IntegrationTest {
       allPartiesLedgerClient
         .getCommandClient()
         .submitAndWaitForResult(allPartiesUpdateSubmission(pbaInstrumentFactory.create()))
+        .blockingGet()
+        .contractId
+        .contractId
+    );
+    tokenInstrumentIssuerFactoryCid = new synfini.interface$.onboarding.issuer.instrument.token.factory.Factory.ContractId(
+      allPartiesLedgerClient
+        .getCommandClient()
+        .submitAndWaitForResult(allPartiesUpdateSubmission(tokenIssuerFactory.create()))
         .blockingGet()
         .contractId
         .contractId
@@ -712,7 +741,7 @@ public class IntegrationTest {
     delayForProjectionToStart();
 
     mvc
-      .perform(getAccountsBuilder(investor1).headers(userTokenHeader(investor1User)))
+      .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(content().json(toJson(new Accounts(Collections.emptyList()))));
 
@@ -720,37 +749,53 @@ public class IntegrationTest {
 
     final var accountCid = createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
     final var createOffset = getLedgerEnd();
-    delayForProjectionIngestion();
-
-    mvc
-      .perform(getAccountsBuilder(investor1).headers(userTokenHeader(investor1User)))
-      .andExpect(status().isOk())
-      .andExpect(
-        content().json(
-          toJson(
-            new Accounts(
-              Collections.singletonList(
-                new AccountSummary(
-                  accountCid,
-                  new daml.finance.interface$.account.account.View(
-                    account.custodian,
-                    account.owner,
-                    account.id,
-                    "Testing account",
-                    holdingFactoryCid,
-                    new Controllers(arrayToSet(investor1), arrayToSet())
-                  ),
-                  Optional.of(new TransactionDetail(createOffset, Instant.EPOCH)),
-                  Optional.empty()
-              )
-            )
-          )
+    final var investor1Accounts = new Accounts(
+      Collections.singletonList(
+        new AccountSummary(
+          accountCid,
+          new daml.finance.interface$.account.account.View(
+            account.custodian,
+            account.owner,
+            account.id,
+            "Testing account",
+            holdingFactoryCid,
+            new Controllers(arrayToSet(investor1), arrayToSet())
+          ),
+          Optional.of(new TransactionDetail(createOffset, Instant.EPOCH)),
+          Optional.empty()
         )
       )
     );
 
+    delayForProjectionIngestion();
     mvc
-      .perform(getAccountsBuilder(investor2).headers(userTokenHeader(investor2User)))
+      .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(toJson(investor1Accounts)
+      )
+    );
+    mvc
+      .perform(getAccountsBuilder(Optional.of(custodian), investor1).headers(userTokenHeader(investor1User)))
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(toJson(investor1Accounts))
+      );
+    mvc
+      .perform(getAccountsBuilder(Optional.of(custodian), investor1).headers(userTokenHeader(custodianUser)))
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(toJson(investor1Accounts))
+      );
+    mvc
+      .perform(getAccountsBuilder(Optional.of(investor1), investor1).headers(userTokenHeader(investor1User)))
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(toJson(new Accounts(List.of())))
+      );
+
+    mvc
+      .perform(getAccountsBuilder(Optional.empty(), investor2).headers(userTokenHeader(investor2User)))
       .andExpect(status().isOk())
       .andExpect(content().json(toJson(new Accounts(Collections.emptyList()))));
 
@@ -761,7 +806,7 @@ public class IntegrationTest {
     delayForProjectionIngestion();
 
     mvc
-      .perform(getAccountsBuilder(investor1).headers(userTokenHeader(investor1User)))
+      .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(
         content().json(
@@ -792,7 +837,7 @@ public class IntegrationTest {
     delayForProjectionIngestion();
 
     mvc
-      .perform(getAccountsBuilder(investor1).headers(userTokenHeader(investor1User)))
+      .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(
         content().json(
@@ -820,71 +865,80 @@ public class IntegrationTest {
   }
 
   @Test
-  void returnsSingleSettlement() throws Exception {
-    registerAuthMock(investor2User, 60 * 60 * 24);
-    startProjectionDaemon(investor2, investor2User);
+  void returnsAccountOpenOffers() throws Exception {
+    registerAuthMock(custodianUser, 60 * 60 * 24);
+    startProjectionDaemon(custodian, custodianUser);
     delayForProjectionToStart();
 
-    final var investor1Account = new AccountKey(custodian, investor1, new Id("1"));
-    final var investor1AccountCid = createAccount(investor1Account, List.of(investor1), List.of(), List.of());
-    final var investor2Account = new AccountKey(custodian, investor2, new Id("2"));
-    createAccount(investor2Account, List.of(investor2), List.of(), List.of(investor1));
-    final var amount = new BigDecimal("100.0");
-    final var investor1HoldingCid = creditAccount(investor1AccountCid, instrument1(), amount);
-
-    final var batchId = new Id("batch1");
-    final var description = "tx description";
-    final Optional<Id> contextId = Optional.empty();
-    final var routedStep = new RoutedStep(investor1, investor2, custodian, new Quantity<>(instrument1(), amount));
-    final var requestors = arrayToSet(investor1);
-    final var settlers = requestors;
-    final var createBatchResult = createBatch(
-      new Instruct(
-        requestors,
-        settlers,
-        batchId,
-        description,
-        contextId,
-        List.of(routedStep),
-        Optional.empty()
-      )
+    final var ownerIncomingControlled = false;
+    final var ownerOutgoingControlled = true;
+    final var additionalControllers = new Controllers(
+      listToSet(List.of(custodian)),
+      listToSet(List.of(custodian, investor2))
     );
-    final var allocation = new Pledge(investor1HoldingCid);
-    final var allocationResult = allocate(createBatchResult.instructionCids.get(0), allocation, List.of(investor1));
-    final var approval = new TakeDelivery(investor2Account);
-    final var approvedInstructionCid = approve(allocationResult.instructionCid, approval, List.of(investor2));
-    settleBatch(createBatchResult.batchCid, List.of(investor1));
-    final var settleOffset = getLedgerEnd();
+    final var description = "description";
+    final var cid1 = allPartiesLedgerClient
+      .getCommandClient()
+      .submitAndWaitForResult(
+        allPartiesUpdateSubmission(
+          accountOpenOfferFactoryCid.exerciseCreate(
+            custodian,
+            ownerIncomingControlled,
+            ownerOutgoingControlled,
+            additionalControllers,
+            Optional.empty(),
+            accountFactoryCid,
+            holdingFactoryCid,
+            description,
+            Map.of("obs", listToSet(List.of(investor1, investor2)))
+          )
+        )
+      )
+      .blockingGet().exerciseResult;
+    final var offset1 = getLedgerEnd();
+    final Optional<da.set.types.Set<String>> permittedOwnersInvestor2 = Optional.of(arrayToSet(investor2));
+    final var cid2 = allPartiesLedgerClient
+      .getCommandClient()
+      .submitAndWaitForResult(
+        allPartiesUpdateSubmission(
+          accountOpenOfferFactoryCid.exerciseCreate(
+            custodian,
+            ownerIncomingControlled,
+            ownerOutgoingControlled,
+            additionalControllers,
+            permittedOwnersInvestor2,
+            accountFactoryCid,
+            holdingFactoryCid,
+            description,
+            Map.of()
+          )
+        )
+      )
+      .blockingGet().exerciseResult;
+    final var offset2 = getLedgerEnd();
     delayForProjectionIngestion();
 
     mvc
-      .perform(
-        getSettlementsBuilder(Optional.empty(), Optional.empty())
-          .headers(userTokenHeader(investor2User))
-      )
+      .perform(getAccountOpenOffersBuilder().headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(
         content().json(
           toJson(
-            new Settlements(
+            new AccountOpenOffers(
               List.of(
-                new SettlementSummary(
-                  batchId,
-                  requestors,
-                  Optional.empty(),
-                  contextId,
-                  Optional.empty(),
-                  List.of(
-                    new SettlementStep(
-                      routedStep,
-                      createBatchResult.instructionIds.get(0),
-                      approvedInstructionCid,
-                      Optional.of(new Pledge(allocationResult.allocatedHoldingCid.get())),
-                      Optional.of(approval)
-                    )
+                new AccountOpenOfferSummary(
+                  cid1,
+                  new synfini.interface$.onboarding.account.openoffer.openoffer.View(
+                    custodian,
+                    ownerIncomingControlled,
+                    ownerOutgoingControlled,
+                    additionalControllers,
+                    Optional.empty(),
+                    accountFactoryCid,
+                    holdingFactoryCid,
+                    description
                   ),
-                  new TransactionDetail(createBatchResult.offset, Instant.EPOCH),
-                  Optional.of(new TransactionDetail(settleOffset, Instant.EPOCH))
+                  Optional.of(new TransactionDetail(offset1, Instant.EPOCH))
                 )
               )
             )
@@ -893,9 +947,397 @@ public class IntegrationTest {
       );
 
     mvc
+      .perform(getAccountOpenOffersBuilder().headers(userTokenHeader(investor2User)))
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(
+          toJson(
+            new AccountOpenOffers(
+              List.of(
+                new AccountOpenOfferSummary(
+                  cid1,
+                  new synfini.interface$.onboarding.account.openoffer.openoffer.View(
+                    custodian,
+                    ownerIncomingControlled,
+                    ownerOutgoingControlled,
+                    additionalControllers,
+                    Optional.empty(),
+                    accountFactoryCid,
+                    holdingFactoryCid,
+                    description
+                  ),
+                  Optional.of(new TransactionDetail(offset1, Instant.EPOCH))
+                ),
+                new AccountOpenOfferSummary(
+                  cid2,
+                  new synfini.interface$.onboarding.account.openoffer.openoffer.View(
+                    custodian,
+                    ownerIncomingControlled,
+                    ownerOutgoingControlled,
+                    additionalControllers,
+                    permittedOwnersInvestor2,
+                    accountFactoryCid,
+                    holdingFactoryCid,
+                    description
+                  ),
+                  Optional.of(new TransactionDetail(offset2, Instant.EPOCH))
+                )
+              )
+            )
+          )
+        )
+      );
+
+    allPartiesLedgerClient
+      .getCommandClient()
+      .submitAndWait(allPartiesCommandSubmission(List.of(cid1.exerciseArchive(new Archive()))))
+      .blockingGet();
+    delayForProjectionIngestion();
+
+    mvc
+      .perform(getAccountOpenOffersBuilder().headers(userTokenHeader(investor1User)))
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(new AccountOpenOffers(List.of()))));
+  }
+
+  @Test
+  void returnsIssuers() throws Exception {
+    registerAuthMock(issuerUser, 60 * 60 * 24);
+    startProjectionDaemon(issuer, issuerUser);
+    delayForProjectionToStart();
+
+    final var tokenIssuerCid = allPartiesLedgerClient
+      .getCommandClient()
+      .submitAndWaitForResult(
+        allPartiesUpdateSubmission(
+          tokenInstrumentIssuerFactoryCid.exerciseCreate(
+            depository,
+            issuer,
+            tokenInstrumentFactoryCid,
+            Map.of("obs", arrayToSet(investor1))
+          )
+        )
+      ).blockingGet().exerciseResult;
+    delayForProjectionIngestion();
+
+    final var tokenIssuerSummary = new IssuerSummary(
+      Optional.of(
+        new TokenIssuerSummary(
+          tokenIssuerCid,
+          new synfini.interface$.onboarding.issuer.instrument.token.issuer.View(
+            depository,
+            issuer,
+            tokenInstrumentFactoryCid
+          )
+        )
+      )
+    );
+
+    mvc
+      .perform(
+        getIssuersBuilder(Optional.empty(), Optional.empty()).headers(userTokenHeader(issuerUser))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(new Issuers(List.of(tokenIssuerSummary)))));
+
+    mvc
+      .perform(
+        getIssuersBuilder(Optional.of(depository), Optional.empty()).headers(userTokenHeader(issuerUser))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(new Issuers(List.of(tokenIssuerSummary)))));
+
+    mvc
+      .perform(
+        getIssuersBuilder(Optional.empty(), Optional.of(issuer)).headers(userTokenHeader(issuerUser))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(new Issuers(List.of(tokenIssuerSummary)))));
+
+    mvc
+      .perform(
+        getIssuersBuilder(
+          Optional.of("other depository"),
+          Optional.empty()
+        ).headers(userTokenHeader(issuerUser))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(new Issuers(List.of()))));
+
+    mvc
+      .perform(
+        getIssuersBuilder(
+          Optional.empty(),
+          Optional.of("other issuer")
+        ).headers(userTokenHeader(issuerUser))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(new Issuers(List.of()))));
+
+    mvc
+      .perform(
+        getIssuersBuilder(Optional.empty(), Optional.empty()).headers(userTokenHeader(investor1User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(new Issuers(List.of(tokenIssuerSummary)))));
+
+    mvc
+      .perform(
+        getIssuersBuilder(Optional.empty(), Optional.empty()).headers(userTokenHeader(investor2User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(new Issuers(List.of()))));
+  }
+
+  @Test
+  void returnsSingleSettlement() throws Exception {
+    registerAuthMock(investor2User, 60 * 60 * 24);
+    startProjectionDaemon(investor2, investor2User);
+    delayForProjectionToStart();
+
+    final var investor1Account = new AccountKey(custodian, investor1, new Id("1"));
+    final var investor1AccountCid = createAccount(investor1Account, List.of(investor1), List.of(), List.of());
+    final var investor2Account = new AccountKey(custodian, investor2, new Id("2"));
+    final var investor2AccountCid = createAccount(investor2Account, List.of(investor2), List.of(), List.of());
+    final var amount = new BigDecimal("100.0");
+    final var investor1HoldingCid = creditAccount(investor1AccountCid, instrument1(), amount);
+    final var investor2HoldingCid = creditAccount(investor2AccountCid, instrument1(), amount);
+
+    final var batchId = new Id("batch1");
+    final var description = "tx description";
+    final Optional<Id> contextId = Optional.empty();
+    final Quantity<InstrumentKey, BigDecimal> q = new Quantity<>(instrument1(), amount);
+    // To test all possible allocation/approval types we create settlement with the below instructions, and allocation/approvals
+    // I0: Custodian -> Inv2: CreditReceiver, TakeDelivery
+    // I1: Inv2 -> Custodian: Pledge, DebitSender
+    // I2: Inv1 -> Inv2: Pledge, PassThroughTo(I3)
+    // I3: Inv2 -> Inv2: PassThroughFrom(I2), TakeDelivery
+    // I4: Inv1 -> Inv2: SettleOffledger, SettleOffledgerAcknowledge
+    final var s0 = new RoutedStep(custodian, investor2, custodian, q);
+    final var s1 = new RoutedStep(investor2, custodian, custodian, q);
+    final var s2 = new RoutedStep(investor1, investor2, custodian, q);
+    final var s3 = new RoutedStep(investor2, investor2, custodian, q);
+    final var s4 = new RoutedStep(investor1, investor2, custodian, q);
+    final var requestors = arrayToSet(investor1);
+    final var settlers = arrayToSet(custodian);
+
+    final var createBatchResult = createBatch(
+      new Instruct(
+        requestors,
+        settlers,
+        batchId,
+        description,
+        contextId,
+        List.of(s0, s1, s2, s3, s4),
+        Optional.empty()
+      )
+    );
+
+    final List<SettlementStep> expectedSteps = new ArrayList<>();
+    expectedSteps.addAll(
+      List.of(
+        new SettlementStep(
+          s0,
+          createBatchResult.instructionIds.get(0),
+          createBatchResult.instructionCids.get(0),
+          new Unallocated(Unit.getInstance()),
+          new Unapproved(Unit.getInstance())
+        ),
+        new SettlementStep(
+          s1,
+          createBatchResult.instructionIds.get(1),
+          createBatchResult.instructionCids.get(1),
+          new Unallocated(Unit.getInstance()),
+          new Unapproved(Unit.getInstance())
+        ),
+        new SettlementStep(
+          s2,
+          createBatchResult.instructionIds.get(2),
+          createBatchResult.instructionCids.get(2),
+          new Unallocated(Unit.getInstance()),
+          new Unapproved(Unit.getInstance())
+        ),
+        new SettlementStep(
+          s3,
+          createBatchResult.instructionIds.get(3),
+          createBatchResult.instructionCids.get(3),
+          new Unallocated(Unit.getInstance()),
+          new Unapproved(Unit.getInstance())
+        ),
+        new SettlementStep(
+          s4,
+          createBatchResult.instructionIds.get(4),
+          createBatchResult.instructionCids.get(4),
+          new Unallocated(Unit.getInstance()),
+          new Unapproved(Unit.getInstance())
+        )
+      )
+    );
+
+    // Return expected settlements given the optional settlement transaction detail
+    final Function<Optional<TransactionDetail>, Settlements> expectedSettlements = (settle) -> new Settlements(
+      List.of(
+        new SettlementSummary(
+          batchId,
+          requestors,
+          settlers,
+          Optional.empty(),
+          Optional.empty(),
+          Optional.empty(),
+          expectedSteps,
+          new TransactionDetail(createBatchResult.offset, Instant.EPOCH),
+          settle
+        )
+      )
+    );
+
+    delayForProjectionIngestion();
+    // Check unallocated/unapproved settlement
+    mvc
       .perform(
         getSettlementsBuilder(Optional.empty(), Optional.empty())
-          .headers(userTokenHeader(custodianUser))
+          .headers(userTokenHeader(investor2User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(expectedSettlements.apply(Optional.empty()))));
+
+    // Instruction 0
+    final var instruction0Allocation = new CreditReceiver(Unit.getInstance());
+    final var instruction0AllocationResult = allocate(
+      createBatchResult.instructionCids.get(0),
+      instruction0Allocation,
+      List.of(custodian)
+    );
+    final var instruction0Approval = new TakeDelivery(investor2Account);
+    final var instructionCid0 = approve(
+      instruction0AllocationResult.instructionCid,
+      instruction0Approval,
+      List.of(investor2)
+    );
+    expectedSteps.set(
+      0,
+      new SettlementStep(
+        expectedSteps.get(0).routedStep,
+        expectedSteps.get(0).instructionId,
+        instructionCid0,
+        instruction0Allocation,
+        instruction0Approval
+      )
+    );
+
+    // Instruction 1
+    final var instruction1AllocationResult = allocate(
+      createBatchResult.instructionCids.get(1),
+      new Pledge(investor2HoldingCid),
+      List.of(investor2)
+    );
+    final var instruction1Approval = new DebitSender(Unit.getInstance());
+    final var instructionCid1 = approve(
+      instruction1AllocationResult.instructionCid,
+      instruction1Approval,
+      List.of(custodian)
+    );
+    expectedSteps.set(
+      1,
+      new SettlementStep(
+        expectedSteps.get(1).routedStep,
+        expectedSteps.get(1).instructionId,
+        instructionCid1,
+        new Pledge(instruction1AllocationResult.allocatedHoldingCid.get()),
+        instruction1Approval
+      )
+    );
+
+    // Instruction 2
+    final var instruction2AllocationResult = allocate(
+      createBatchResult.instructionCids.get(2),
+      new Pledge(investor1HoldingCid),
+      List.of(investor1)
+    );
+    final var instruction2Approval = new PassThroughTo(
+      new Tuple2<>(investor2Account, new InstructionKey(requestors, batchId, createBatchResult.instructionIds.get(3)))
+    );
+    final var instructionCid2 = approve(
+      instruction2AllocationResult.instructionCid,
+      instruction2Approval,
+      List.of(investor2)
+    );
+    expectedSteps.set(
+      2,
+      new SettlementStep(
+        expectedSteps.get(2).routedStep,
+        expectedSteps.get(2).instructionId,
+        instructionCid2,
+        new Pledge(instruction2AllocationResult.allocatedHoldingCid.get()),
+        instruction2Approval
+      )
+    );
+
+    // Instruction 3
+    final var instruction3Allocation = new PassThroughFrom(
+      new Tuple2<>(investor2Account, new InstructionKey(requestors, batchId, createBatchResult.instructionIds.get(2)))
+    );
+    final var instruction3AllocationResult = allocate(
+      createBatchResult.instructionCids.get(3),
+      instruction3Allocation,
+      List.of(investor2)
+    );
+    final var instruction3Approval = new TakeDelivery(investor2Account);
+    final var instructionCid3 = approve(
+      instruction3AllocationResult.instructionCid,
+      instruction3Approval,
+      List.of(investor2)
+    );
+    expectedSteps.set(
+      3,
+      new SettlementStep(
+        expectedSteps.get(3).routedStep,
+        expectedSteps.get(3).instructionId,
+        instructionCid3,
+        instruction3Allocation,
+        instruction3Approval
+      )
+    );
+
+    // Instruction 4
+    final var instruction4Allocation = new SettleOffledger(Unit.getInstance());
+    final var instruction4AllocationResult = allocate(
+      createBatchResult.instructionCids.get(4),
+      instruction4Allocation,
+      List.of(investor1, custodian)
+    );
+    final var instruction4Approval = new SettleOffledgerAcknowledge(Unit.getInstance());
+    final var instructionCid4 = approve(
+      instruction4AllocationResult.instructionCid,
+      instruction4Approval,
+      List.of(investor2, custodian)
+    );
+    expectedSteps.set(
+      4,
+      new SettlementStep(
+        expectedSteps.get(4).routedStep,
+        expectedSteps.get(4).instructionId,
+        instructionCid4,
+        instruction4Allocation,
+        instruction4Approval
+      )
+    );
+
+    // Check allocated/approved instructions
+    delayForProjectionIngestion();
+    mvc
+      .perform(
+        getSettlementsBuilder(Optional.empty(), Optional.empty())
+          .headers(userTokenHeader(investor2User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toJson(expectedSettlements.apply(Optional.empty()))));
+
+    // Check that other party cannot see the batch/instructions
+    mvc
+      .perform(
+        getSettlementsBuilder(Optional.empty(), Optional.empty())
+          .headers(userTokenHeader(issuerUser))
       )
       .andExpect(status().isOk())
       .andExpect(
@@ -973,6 +1415,7 @@ public class IntegrationTest {
     final var settlement1 = new SettlementSummary(
       batch1Id,
       requestors1,
+      settlers1,
       Optional.of(createBatchResult1.batchCid),
       contextId1,
       Optional.of(description1),
@@ -981,8 +1424,8 @@ public class IntegrationTest {
           routedStep1,
           createBatchResult1.instructionIds.get(0),
           approvedInstructionCid1,
-          Optional.of(new Pledge(allocationResult1.allocatedHoldingCid.get())),
-          Optional.of(approval1)
+          new Pledge(allocationResult1.allocatedHoldingCid.get()),
+          approval1
         )
       ),
       new TransactionDetail(createBatchResult1.offset, Instant.EPOCH),
@@ -992,6 +1435,7 @@ public class IntegrationTest {
     final var settlement2 = new SettlementSummary(
       batch2Id,
       requestors2,
+      settlers2,
       Optional.of(createBatchResult2.batchCid),
       contextId2,
       Optional.of(description2),
@@ -1000,8 +1444,8 @@ public class IntegrationTest {
           routedStep2,
           createBatchResult2.instructionIds.get(0),
           approvedInstruction2Cid,
-          Optional.empty(),
-          Optional.of(approval2)
+          new Unallocated(Unit.getInstance()),
+          approval2
         )
       ),
       new TransactionDetail(createBatchResult2.offset, Instant.EPOCH),
@@ -1010,6 +1454,7 @@ public class IntegrationTest {
     final var settlement2VisibleToCustodian = new SettlementSummary(
       settlement2.batchId,
       settlement2.requestors,
+      settlement2.settlers,
       Optional.empty(),
       Optional.empty(),
       Optional.empty(),
@@ -1073,49 +1518,69 @@ public class IntegrationTest {
     startProjectionDaemon(investor1, investor1User);
     delayForProjectionToStart();
 
-    final var token = new Token(instrument1(), "my desc", Instant.EPOCH);
+    final var token1 = new Token(instrument1(), "my desc", Instant.EPOCH);
+    final var token2 = new Token(instrument2(), "my desc 2", Instant.EPOCH);
     final var obs = Collections.singletonMap("o", arrayToSet(investor1));
-    final var tokenCid = allPartiesLedgerClient
+    final var token1Cid = allPartiesLedgerClient
       .getCommandClient()
       .submitAndWaitForResult(
-        allPartiesUpdateSubmission(tokenInstrumentFactoryCid.exerciseCreate(token, obs))
+        allPartiesUpdateSubmission(tokenInstrumentFactoryCid.exerciseCreate(token1, obs))
+      ).blockingGet().exerciseResult;
+    final var token2Cid = allPartiesLedgerClient
+      .getCommandClient()
+      .submitAndWaitForResult(
+        allPartiesUpdateSubmission(tokenInstrumentFactoryCid.exerciseCreate(token2, obs))
       ).blockingGet().exerciseResult;
     delayForProjectionIngestion();
 
-    final var expectedInstruments = new Instruments(
-      List.of(
-        new InstrumentSummary(
-          new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(tokenCid.contractId),
-          Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token)),
-          Optional.empty()
-        )
-      )
+    final var instrument1Summary = new InstrumentSummary(
+      new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(token1Cid.contractId),
+      Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token1)),
+      Optional.empty()
+    );
+    final var instrument2Summary = new InstrumentSummary(
+      new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(token2Cid.contractId),
+      Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token2)),
+      Optional.empty()
     );
     mvc
       .perform(
         getInstrumentsBuilder(
-          token.instrument.depository,
-          token.instrument.issuer,
-          token.instrument.id,
-          Optional.of(token.instrument.version)
+          token1.instrument.depository,
+          token1.instrument.issuer,
+          Optional.of(token1.instrument.id),
+          Optional.of(token1.instrument.version)
         ).headers(userTokenHeader(investor1User))
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(expectedInstruments))
+        content().json(toJson(new Instruments(List.of(instrument1Summary))))
       );
     mvc
       .perform(
         getInstrumentsBuilder(
-          token.instrument.depository,
-          token.instrument.issuer,
-          token.instrument.id,
+          token1.instrument.depository,
+          token1.instrument.issuer,
+          Optional.of(token1.instrument.id),
           Optional.empty()
         ).headers(userTokenHeader(investor1User))
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(expectedInstruments))
+        content().json(toJson(new Instruments(List.of(instrument1Summary, instrument2Summary))))
+      );
+    mvc
+      .perform(
+        getInstrumentsBuilder(
+          token1.instrument.depository,
+          token1.instrument.issuer,
+          Optional.empty(),
+          Optional.empty()
+        ).headers(userTokenHeader(investor1User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(toJson(new Instruments(List.of(instrument1Summary, instrument2Summary))))
       );
   }
 
@@ -1148,7 +1613,7 @@ public class IntegrationTest {
         getInstrumentsBuilder(
           instr.depository,
           instr.issuer,
-          instr.id,
+          Optional.of(instr.id),
           Optional.of(instr.version)
         ).headers(userTokenHeader(investor1User))
       )
@@ -1181,7 +1646,7 @@ public class IntegrationTest {
   @Test
   void deniesAccessWithoutToken() throws Exception {
     mvc
-      .perform(getAccountsBuilder(investor1))
+      .perform(getAccountsBuilder(Optional.empty(), investor1))
       .andExpect(status().isUnauthorized());
 
     mvc
@@ -1202,7 +1667,7 @@ public class IntegrationTest {
   @Test
   void deniesAccessToOtherParties() throws Exception {
     mvc
-      .perform(getAccountsBuilder(investor1).headers(userTokenHeader(investor2User)))
+      .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor2User)))
       .andExpect(status().isForbidden());
 
     mvc
@@ -1443,10 +1908,17 @@ public class IntegrationTest {
     return headerAndPayload + "." + base64(signature);
   }
 
-  private static MockHttpServletRequestBuilder getAccountsBuilder(String owner) {
+  private static MockHttpServletRequestBuilder getAccountsBuilder(Optional<String> custodian, String owner) {
     return MockMvcRequestBuilders
       .post(walletViewsBasePath + "accounts")
-      .content(toJson(new AccountFilter(owner)))
+      .content(toJson(new AccountFilter(custodian, owner)))
+      .contentType(MediaType.APPLICATION_JSON);
+  }
+
+  private static MockHttpServletRequestBuilder getAccountOpenOffersBuilder() {
+    return MockMvcRequestBuilders
+      .post(walletViewsBasePath + "account-open-offers")
+      .content(toJson(new AccountOpenOffersFilter()))
       .contentType(MediaType.APPLICATION_JSON);
   }
 
@@ -1467,12 +1939,19 @@ public class IntegrationTest {
   private static MockHttpServletRequestBuilder getInstrumentsBuilder(
     String dep,
     String iss,
-    Id id,
+    Optional<Id> id,
     Optional<String> version
   ) {
     return MockMvcRequestBuilders
       .post(walletViewsBasePath + "instruments")
       .content(toJson(new InstrumentsFilter(dep, iss, id, version)))
+      .contentType(MediaType.APPLICATION_JSON);
+  }
+
+  private static MockHttpServletRequestBuilder getIssuersBuilder(Optional<String> depository, Optional<String> issuer) {
+    return MockMvcRequestBuilders
+      .post(walletViewsBasePath + "issuers")
+      .content(toJson(new IssuersFilter(depository, issuer)))
       .contentType(MediaType.APPLICATION_JSON);
   }
 

@@ -1,6 +1,7 @@
 package com.synfini.wallet.views;
 
 import com.daml.ledger.javaapi.data.Unit;
+import da.types.Tuple2;
 import daml.finance.interface$.account.account.Account;
 import daml.finance.interface$.account.account.Controllers;
 import daml.finance.interface$.holding.base.Base;
@@ -14,9 +15,10 @@ import daml.finance.interface$.settlement.batch.Batch;
 import daml.finance.interface$.settlement.instruction.Instruction;
 import daml.finance.interface$.settlement.types.Allocation;
 import daml.finance.interface$.settlement.types.Approval;
+import daml.finance.interface$.settlement.types.InstructionKey;
 import daml.finance.interface$.settlement.types.RoutedStep;
-import daml.finance.interface$.settlement.types.allocation.Pledge;
-import daml.finance.interface$.settlement.types.approval.TakeDelivery;
+import daml.finance.interface$.settlement.types.allocation.*;
+import daml.finance.interface$.settlement.types.approval.*;
 import daml.finance.interface$.types.common.types.AccountKey;
 import daml.finance.interface$.types.common.types.Id;
 import daml.finance.interface$.types.common.types.InstrumentKey;
@@ -24,9 +26,12 @@ import daml.finance.interface$.types.common.types.Quantity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
+import synfini.interface$.onboarding.account.openoffer.openoffer.OpenOffer;
+import synfini.interface$.onboarding.issuer.instrument.token.issuer.Issuer;
 import synfini.wallet.api.types.*;
 
 import javax.sql.DataSource;
@@ -47,7 +52,7 @@ public class WalletRepository {
     this.pgDataSource = pgDataSource;
   }
 
-  public List<AccountSummary> accountsByOwner(String owner) {
+  public List<AccountSummary> accounts(Optional<String> custodian, String owner) {
     final var queryAccounts =
       "SELECT DISTINCT ON (custodian, owner, account_id) *\n" +
       "FROM accounts\n" +
@@ -92,9 +97,38 @@ public class WalletRepository {
       "  latest_accounts.owner = removes.owner AND\n" +
       "  latest_accounts.custodian = removes.custodian AND\n" +
       "  latest_accounts.account_id = removes.account_id\n" +
-      "WHERE latest_accounts.owner = ?",
-      ps -> ps.setString(1, owner),
+      "WHERE (? IS NULL OR latest_accounts.custodian = ?) AND latest_accounts.owner = ?",
+      ps -> {
+        ps.setString(1, custodian.orElse(null));
+        ps.setString(2, custodian.orElse(null));
+        ps.setString(3, owner);
+      },
       new AccountRowMapper()
+    );
+  }
+
+  public List<AccountOpenOfferSummary> accountOpenOffers(List<String> readAs) {
+    return jdbcTemplate.query(
+      "SELECT\n" +
+        "  o.cid cid,\n" +
+        "  o.custodian custodian,\n" +
+        "  o.permitted_owners permitted_owners,\n" +
+        "  o.description description,\n" +
+        "  o.owner_incoming_controlled owner_incoming_controlled,\n" +
+        "  o.owner_outgoing_controlled owner_outgoing_controlled,\n" +
+        "  o.additional_controllers_incoming additional_controllers_incoming,\n" +
+        "  o.additional_controllers_outgoing additional_controllers_outgoing,\n" +
+        "  o.account_factory_cid account_factory_cid,\n" +
+        "  o.holding_factory_cid holding_factory_cid,\n" +
+        "  o.create_offset create_offset,\n" +
+        "  o.create_effective_time create_effective_time\n" +
+        "FROM account_open_offers o\n" +
+        "INNER JOIN account_open_offer_witnesses w ON o.cid = w.cid\n" +
+        "WHERE o.archive_offset IS NULL AND w.party = ANY(?)",
+      ps -> {
+        ps.setArray(1, asSqlArray(readAs));
+      },
+      new AccountOpenOfferRowMapper()
     );
   }
 
@@ -166,74 +200,80 @@ public class WalletRepository {
   public List<InstrumentSummary> instruments(
     String depository,
     String issuer,
-    Id id,
+    Optional<Id> id,
     Optional<String> version,
     List<String> readAs
   ) {
-    // TODO clean up duplicated code here
-    final var instruments = jdbcTemplate.query(
-    "SELECT DISTINCT ON (instrument_depository, instrument_issuer, instrument_id, instrument_version)\n" +
+    final var commonSelect = "SELECT DISTINCT ON (instrument_depository, instrument_issuer, instrument_id, instrument_version)\n" +
       "  t.cid cid,\n" +
       "  t.instrument_depository instrument_depository,\n" +
       "  t.instrument_issuer instrument_issuer,\n" +
       "  t.instrument_id instrument_id,\n" +
       "  t.instrument_version instrument_version,\n" +
       "  t.description description,\n" +
-      "  t.valid_as_of valid_as_of\n" +
-      "FROM token_instruments t INNER JOIN instrument_witnesses ON t.cid = instrument_witnesses.cid\n" +
-      "WHERE\n" +
+      "  t.valid_as_of valid_as_of";
+    final var commonWhereOrder = "WHERE\n" +
       "  instrument_witnesses.party = ANY(?) AND\n" +
       "  t.instrument_depository = ? AND\n" +
       "  t.instrument_issuer = ? AND\n" +
-      "  t.instrument_id = ? AND\n" +
+      "  (? IS NULL OR t.instrument_id = ?) AND\n" +
       "  (? IS NULL OR t.instrument_version = ?) AND\n" +
       "  t.archive_offset IS NULL\n" +
-      "ORDER BY instrument_depository, instrument_issuer, instrument_id, instrument_version",
-      ps -> {
-        ps.setArray(1, asSqlArray(readAs));
-        ps.setString(2, depository);
-        ps.setString(3, issuer);
-        ps.setString(4, id.unpack);
-        ps.setString(5, version.orElse(null));
-        ps.setString(6, version.orElse(null));
-      },
+      "ORDER BY instrument_depository, instrument_issuer, instrument_id, instrument_version";
+    final PreparedStatementSetter commonSetVars = ps -> {
+      ps.setArray(1, asSqlArray(readAs));
+      ps.setString(2, depository);
+      ps.setString(3, issuer);
+      final var idStr = id.map(i -> i.unpack).orElse(null);
+      ps.setString(4, idStr);
+      ps.setString(5, idStr);
+      final var versionStr = version.orElse(null);
+      ps.setString(6, versionStr);
+      ps.setString(7, versionStr);
+    };
+    final var instruments = jdbcTemplate.query(
+    commonSelect + "\n" +
+      "FROM token_instruments t INNER JOIN instrument_witnesses ON t.cid = instrument_witnesses.cid\n" +
+      commonWhereOrder,
+      commonSetVars,
       new TokenInstrumentRowMapper()
     );
 
     instruments.addAll(
       jdbcTemplate.query(
-      "SELECT DISTINCT ON (instrument_depository, instrument_issuer, instrument_id, instrument_version)\n" +
-        "  t.cid cid,\n" +
-        "  t.instrument_depository instrument_depository,\n" +
-        "  t.instrument_issuer instrument_issuer,\n" +
-        "  t.instrument_id instrument_id,\n" +
-        "  t.instrument_version instrument_version,\n" +
-        "  t.description description,\n" +
-        "  t.valid_as_of valid_as_of,\n" +
+      commonSelect + ",\n" +
         "  t.owner AS owner,\n" +
         "  t.attributes attributes\n" +
         "FROM pba_instruments t INNER JOIN instrument_witnesses ON t.cid = instrument_witnesses.cid\n" +
-        "WHERE\n" +
-        "  instrument_witnesses.party = ANY(?) AND\n" +
-        "  t.instrument_depository = ? AND\n" +
-        "  t.instrument_issuer = ? AND\n" +
-        "  t.instrument_id = ? AND\n" +
-        "  (? IS NULL OR t.instrument_version = ?) AND\n" +
-        "  t.archive_offset IS NULL\n" +
-        "ORDER BY instrument_depository, instrument_issuer, instrument_id, instrument_version",
-        ps -> {
-          ps.setArray(1, asSqlArray(readAs));
-          ps.setString(2, depository);
-          ps.setString(3, issuer);
-          ps.setString(4, id.unpack);
-          ps.setString(5, version.orElse(null));
-          ps.setString(6, version.orElse(null));
-        },
+        commonWhereOrder,
+        commonSetVars,
         new PbtInstrumentRowMapper()
       )
     );
 
     return instruments;
+  }
+
+  public List<IssuerSummary> issuers(Optional<String> depository, Optional<String> issuer, List<String> readAs) {
+    return jdbcTemplate.query(
+      "SELECT\n" +
+      "  i.cid cid,\n" +
+      "  i.depository depository,\n" +
+      "  i.issuer issuer,\n" +
+      "  i.instrument_factory_cid instrument_factory_cid\n" +
+      "FROM token_instrument_issuers i INNER JOIN token_instrument_issuer_witnesses w ON i.cid = w.cid\n" +
+      "WHERE (? IS NULL OR i.depository = ?) AND (? IS NULL OR i.issuer = ?) AND w.party = ANY(?)",
+      ps -> {
+        ps.setString(1, depository.orElse(null));
+        ps.setString(2, depository.orElse(null));
+
+        ps.setString(3, issuer.orElse(null));
+        ps.setString(4, issuer.orElse(null));
+
+        ps.setArray(5, asSqlArray(readAs));
+      },
+      new IssuersRowMapper()
+    );
   }
 
   public List<SettlementSummary> settlements(
@@ -267,6 +307,7 @@ public class WalletRepository {
       "  instructions.batch_id,\n" +
       "  instructions.requestors,\n" +
       "  instructions.requestors_hash,\n" +
+      "  instructions.settlers,\n" +
       "  bs.cid batch_cid,\n" +
       "  bs.context_id,\n" +
       "  bs.description,\n" +
@@ -282,10 +323,15 @@ public class WalletRepository {
       "  instructions.instrument_depository,\n" +
       "  instructions.instrument_id,\n" +
       "  instructions.instrument_version,\n" +
-      "  instructions.approval_take_delivery_account_custodian,\n" +
-      "  instructions.approval_take_delivery_account_owner,\n" +
-      "  instructions.approval_take_delivery_account_id,\n" +
       "  instructions.allocation_pledge_cid,\n" +
+      "  instructions.allocation_credit_receiver,\n" +
+      "  instructions.allocation_pass_through_from,\n" +
+      "  instructions.allocation_pass_through_from_account_id,\n" +
+      "  instructions.allocation_settle_off_ledger,\n" +
+      "  instructions.approval_account_id,\n" +
+      "  instructions.approval_pass_through_to,\n" +
+      "  instructions.approval_debit_sender,\n" +
+      "  instructions.approval_settle_off_ledger,\n" +
       "  instructions.create_offset instruction_create_offset,\n" +
       "  instructions.archive_offset instruction_archive_offset,\n" +
       "  instructions.archive_effective_time instruction_archive_effective_time,\n" +
@@ -345,6 +391,33 @@ public class WalletRepository {
     }
   }
 
+  private static class AccountOpenOfferRowMapper implements RowMapper<AccountOpenOfferSummary> {
+    @Override
+    public AccountOpenOfferSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
+      final var permittedOwnersArray = rs.getArray("permitted_owners");
+      final Optional<da.set.types.Set<String>> permittedOwners = permittedOwnersArray == null ?
+        Optional.empty() :
+        Optional.of(arrayToSet(permittedOwnersArray));
+      return new AccountOpenOfferSummary(
+        new OpenOffer.ContractId(rs.getString("cid")),
+        new synfini.interface$.onboarding.account.openoffer.openoffer.View(
+          rs.getString("custodian"),
+          rs.getBoolean("owner_incoming_controlled"),
+          rs.getBoolean("owner_outgoing_controlled"),
+          new Controllers(
+            arrayToSet(rs.getArray("additional_controllers_outgoing")),
+            arrayToSet(rs.getArray("additional_controllers_incoming"))
+          ),
+          permittedOwners,
+          new daml.finance.interface$.account.factory.Factory.ContractId(rs.getString("account_factory_cid")),
+          new daml.finance.interface$.holding.factory.Factory.ContractId(rs.getString("holding_factory_cid")),
+          rs.getString("description")
+        ),
+        getTransactionDetail(rs, "create")
+      );
+    }
+  }
+
   private static class BalanceRowMapperWithAccount implements RowMapper<Balance> {
     private final AccountKey account;
 
@@ -386,6 +459,26 @@ public class WalletRepository {
     }
   }
 
+  private static class IssuersRowMapper implements RowMapper<IssuerSummary> {
+    @Override
+    public IssuerSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return new IssuerSummary(
+        Optional.of(
+          new TokenIssuerSummary(
+            new Issuer.ContractId(rs.getString("cid")),
+            new synfini.interface$.onboarding.issuer.instrument.token.issuer.View(
+              rs.getString("depository"),
+              rs.getString("issuer"),
+              new daml.finance.interface$.instrument.token.factory.Factory.ContractId(
+                rs.getString("instrument_factory_cid")
+              )
+            )
+          )
+        )
+      );
+    }
+  }
+
   private static class SettlementsResultSetExtractor implements ResultSetExtractor<List<SettlementSummary>> {
     @Override
     public List<SettlementSummary> extractData(ResultSet rs) throws SQLException, DataAccessException {
@@ -398,6 +491,7 @@ public class WalletRepository {
         final var batchId = new Id(rs.getString("batch_id"));
         final var requestorsHash = rs.getInt("requestors_hash");
         final var requestors = arrayToSet(rs.getArray("requestors"));
+        final var settlers = arrayToSet(rs.getArray("settlers"));
         final var batchCid = Optional.ofNullable(rs.getString("batch_cid")).map(Batch.ContractId::new);
         final var contextId = Optional.ofNullable(rs.getString("context_id")).map(Id::new);
         final var description = Optional.ofNullable(rs.getString("description"));
@@ -411,27 +505,56 @@ public class WalletRepository {
           new Id(rs.getString("instrument_id")),
           rs.getString("instrument_version")
         );
+        final var routedStep = new RoutedStep(
+          rs.getString("sender"),
+          rs.getString("receiver"),
+          rs.getString("custodian"),
+          new Quantity<>(instrumentKey, rs.getBigDecimal("amount"))
+        );
         final var instructionCid = new Instruction.ContractId(rs.getString("instruction_cid"));
-        final var takeDeliveryOwner = rs.getString("approval_take_delivery_account_owner");
-        final var takeDeliveryCustodian = rs.getString("approval_take_delivery_account_custodian");
-        final var takeDeliveryId = rs.getString("approval_take_delivery_account_id");
-        final Optional<Approval> approval =
-          (takeDeliveryOwner != null && takeDeliveryCustodian != null && takeDeliveryId != null) ?
-            Optional.of(
-              new TakeDelivery(new AccountKey(takeDeliveryCustodian, takeDeliveryOwner, new Id(takeDeliveryId)))
-            ) :
-            Optional.empty();
+        final var deliveryAccountId = rs.getString("approval_account_id");
+        final var approvalPassThroughTo = rs.getString("approval_pass_through_to");
+        final var approvalDebitSender = rs.getBoolean("approval_debit_sender");
+        final var approvalSettleOffLedger = rs.getBoolean("approval_settle_off_ledger");
+        final Approval approval;
+        if (deliveryAccountId != null) {
+          final var deliveryAccount = new AccountKey(routedStep.custodian, routedStep.receiver, new Id(deliveryAccountId));
+          if (approvalPassThroughTo != null) {
+            approval = new PassThroughTo(
+              new Tuple2<>(deliveryAccount, new InstructionKey(requestors, batchId, new Id(approvalPassThroughTo)))
+            );
+          } else {
+            approval = new TakeDelivery(deliveryAccount);
+          }
+        } else if (approvalDebitSender) {
+          approval = new DebitSender(Unit.getInstance());
+        } else if (approvalSettleOffLedger) {
+          approval = new SettleOffledgerAcknowledge(Unit.getInstance());
+        } else {
+          approval = new Unapproved(Unit.getInstance());
+        }
         final var allocationPledgeCid = rs.getString("allocation_pledge_cid");
-        final Optional<Allocation> allocation = allocationPledgeCid != null ?
-          Optional.of(new Pledge(new Base.ContractId(allocationPledgeCid))) :
-          Optional.empty();
+        final var allocationCreditReceiver = rs.getBoolean("allocation_credit_receiver");
+        final var allocationPassThroughFrom = rs.getString("allocation_pass_through_from");
+        final var allocationPassThroughFromAccountId = rs.getString("allocation_pass_through_from_account_id");
+        final var allocationSettleOffLedger = rs.getBoolean("allocation_settle_off_ledger");
+        final Allocation allocation;
+        if (allocationPledgeCid != null) {
+          allocation = new Pledge(new Base.ContractId(allocationPledgeCid));
+        } else if (allocationCreditReceiver) {
+          allocation = new CreditReceiver(Unit.getInstance());
+        } else if (allocationPassThroughFrom != null && allocationPassThroughFromAccountId != null) {
+          final var account = new AccountKey(routedStep.custodian, routedStep.sender, new Id(allocationPassThroughFromAccountId));
+          allocation = new PassThroughFrom(
+            new Tuple2<>(account, new InstructionKey(requestors, batchId, new Id(allocationPassThroughFrom)))
+          );
+        } else if (allocationSettleOffLedger) {
+          allocation = new SettleOffledger(Unit.getInstance());
+        } else {
+          allocation = new Unallocated(Unit.getInstance());
+        }
         final var step = new SettlementStep(
-          new RoutedStep(
-            rs.getString("sender"),
-            rs.getString("receiver"),
-            rs.getString("custodian"),
-            new Quantity<>(instrumentKey, rs.getBigDecimal("amount"))
-          ),
+          routedStep,
           new Id(rs.getString("instruction_id")),
           instructionCid,
           allocation,
@@ -450,6 +573,7 @@ public class WalletRepository {
           current = new SettlementSummary(
             batchId,
             requestors,
+            settlers,
             batchCid,
             contextId,
             description,
@@ -463,6 +587,7 @@ public class WalletRepository {
           current = new SettlementSummary(
             current.batchId,
             current.requestors,
+            current.settlers,
             current.batchCid.or(() -> batchCid),
             current.contextId.or(() -> contextId),
             current.description.or(() -> description),

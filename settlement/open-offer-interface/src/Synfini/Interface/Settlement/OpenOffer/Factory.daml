@@ -1,0 +1,54 @@
+module Synfini.Interface.Settlement.OpenOffer.Factory where
+
+import DA.Set (Set)
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Settlement.Types (Step)
+
+import Daml.Finance.Interface.Settlement.Factory qualified as SettlementFactory
+import Daml.Finance.Interface.Settlement.RouteProvider qualified as RouteProvider
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Synfini.Interface.Settlement.OpenOffer.OpenOffer qualified as OpenOffer
+import DA.Time.Types (RelTime)
+
+data View = View
+  with
+    provider : Party
+  deriving (Show, Eq)
+
+type V = View
+
+interface Factory requires Disclosure.I where
+  viewtype V
+
+  create' : Create -> Update (ContractId OpenOffer.I)
+
+  nonconsuming choice GetView : V
+    with
+      viewer : Party
+    controller viewer
+    do
+      pure (view this)
+
+  nonconsuming choice Create : ContractId OpenOffer.I
+    with
+      offerId : Id
+      offerDescription : Text
+      offerers : Set Party
+      settlementInstructors : Set OpenOffer.Entity
+      settlers : Set OpenOffer.Entity
+      permittedTakers : Optional (Set Party)
+      steps : [OpenOffer.OfferStep]
+      settlementTime : Optional (Either Time RelTime)
+      minQuantity : Optional Decimal
+      maxQuantity :  Optional Decimal
+      routeProviderCid : ContractId RouteProvider.I
+      settlementFactoryCid : ContractId SettlementFactory.I
+      observers : PartiesMap
+    controller offerers
+    do
+      create' this arg
+
+type I = Factory

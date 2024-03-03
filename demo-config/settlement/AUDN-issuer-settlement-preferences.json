@@ -1,0 +1,13 @@
+{
+  "acceptSettlementSettings": {
+    "acceptor": "AUDN_Issuer",
+    "settlementPreferences": [
+      {
+        "custodian": "SynfiniValidator",
+        "depository": "AUDN_Depository",
+        "issuer": "AUDN_Issuer",
+        "minterBurner": true
+      }
+    ]
+  }
+}

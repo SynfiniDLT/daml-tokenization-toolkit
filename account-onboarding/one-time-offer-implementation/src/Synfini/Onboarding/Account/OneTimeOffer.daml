@@ -1,0 +1,77 @@
+module Synfini.Onboarding.Account.OneTimeOffer where
+
+import DA.Set qualified as Set
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Account.Account qualified as Account
+import Daml.Finance.Interface.Account.Factory qualified as Account
+import Daml.Finance.Interface.Holding.Factory qualified as Holding
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Daml.Finance.Util.Disclosure qualified as ImplUtil
+
+import Synfini.Interface.Onboarding.Account.OneTimeOffer.Factory qualified as OneTimeOfferFactory
+import Synfini.Interface.Onboarding.Account.OneTimeOffer.OneTimeOffer qualified as OneTimeOffer
+
+template OneTimeOffer
+  with
+    account : AccountKey
+    accountControllers : Account.Controllers
+    accountDescription : Text
+    accountObservers : PartiesMap
+    accountFactoryCid : ContractId Account.F
+    holdingFactoryCid : ContractId Holding.F
+    description : Text
+    observers : PartiesMap
+  where
+    signatory account.custodian
+
+    observer account.owner, Disclosure.flattenObservers observers
+
+    interface instance Disclosure.I for OneTimeOffer where
+      view = Disclosure.View with disclosureControllers = Set.fromList [account.custodian], observers
+      setObservers = ImplUtil.setObserversImpl @_ @Disclosure.I this None
+      addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
+      removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
+
+    interface instance OneTimeOffer.I for OneTimeOffer where
+      view = OneTimeOffer.View with ..
+
+      accept = exercise accountFactoryCid Account.Create with
+        account
+        controllers = accountControllers
+        description = accountDescription
+        holdingFactoryCid
+        observers = accountObservers
+
+      decline = pure ()
+
+template Factory
+  with
+    provider : Party
+    observers : PartiesMap
+  where
+    signatory provider
+
+    observer Disclosure.flattenObservers observers
+
+    interface instance Disclosure.I for Factory where
+      view = Disclosure.View with disclosureControllers = Set.fromList [provider], observers
+      setObservers = ImplUtil.setObserversImpl @_ @Disclosure.I this None
+      addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
+      removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
+
+    interface instance OneTimeOfferFactory.I for Factory where
+      view = OneTimeOfferFactory.View with provider
+      create' OneTimeOfferFactory.Create {
+        account,
+        accountControllers,
+        accountDescription,
+        accountObservers,
+        accountFactoryCid,
+        holdingFactoryCid,
+        description,
+        observers
+      } = do
+        toInterfaceContractId <$> create OneTimeOffer with ..

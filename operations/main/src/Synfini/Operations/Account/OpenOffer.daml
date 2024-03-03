@@ -1,0 +1,110 @@
+module Synfini.Operations.Account.OpenOffer where
+
+import DA.Foldable (forA_)
+
+import DA.Map qualified as Map
+import DA.Optional qualified as O
+import DA.Set qualified as Set
+
+import Daml.Script
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Account.Account qualified as Account
+
+import Synfini.Operations.Factory.Account
+import Synfini.Operations.Factory.Holding
+import Synfini.Operations.Types
+
+import Synfini.Interface.Onboarding.Account.OpenOffer.Factory qualified as AccountOpenOfferFactory
+import Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer qualified as AccountOpenOffer
+
+data CreateOpenAccountOfferSettings = CreateOpenAccountOfferSettings
+  with
+    label : Text
+    custodian : Text
+    additionalIncomingControllers : [Text]
+    additionalOutgoingControllers : [Text]
+    ownerIncomingControlled : Bool
+    ownerOutgoingControlled : Bool
+    accountFactory : Text
+    holdingFactory : Text
+    description : Text
+    observers : [Observer]
+    accountOpenOfferFactory : Text
+
+data CreateOpenAccountOfferInput = CreateOpenAccountOfferInput
+  with
+    parties : [PartyInfo]
+    accountFactories : [AccountFactory]
+    holdingFactories : [HoldingFactory]
+    accountOpenOfferFactories : [AccountOpenOfferFactory]
+    offerSettings : [CreateOpenAccountOfferSettings]
+
+data LabelledOpenAccountOffer = LabelledOpenAccountOffer
+  with
+    label : Text
+    cid : ContractId AccountOpenOffer.I
+
+data CreateOpenAccountOfferOutput = CreateOpenAccountOfferOutput
+  with
+    accountOpenOffers : [LabelledOpenAccountOffer]
+
+createOpenAccountOffer : CreateOpenAccountOfferInput -> Script CreateOpenAccountOfferOutput
+createOpenAccountOffer input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  accountOpenOffers <- forA input.offerSettings $ \offerSetting -> do
+    let custodian = p offerSetting.custodian
+        additionalControllers = Account.Controllers with
+          incoming = Set.fromList (p <$> offerSetting.additionalIncomingControllers)
+          outgoing = Set.fromList (p <$> offerSetting.additionalOutgoingControllers)
+        accountFactoryCid = findFactoryContractId offerSetting.accountFactory input.accountFactories
+        holdingFactoryCid = findFactoryContractId offerSetting.holdingFactory input.holdingFactories
+        accountOpenOfferFactoryCid = findFactoryContractId offerSetting.accountOpenOfferFactory input.accountOpenOfferFactories
+    cid <- submit custodian do
+      exerciseCmd accountOpenOfferFactoryCid AccountOpenOfferFactory.Create with
+        custodian
+        permittedOwners = None -- TODO add support for this field
+        additionalControllers
+        ownerIncomingControlled = offerSetting.ownerIncomingControlled
+        ownerOutgoingControlled = offerSetting.ownerOutgoingControlled
+        accountFactoryCid
+        holdingFactoryCid
+        description = offerSetting.description
+        observers = asPartiesMap p offerSetting.observers
+    pure LabelledOpenAccountOffer with label = offerSetting.label, cid
+  pure CreateOpenAccountOfferOutput with accountOpenOffers
+
+data AccountSettings = AccountSettings
+  with
+    offer : Text
+    owner : Text
+    id : Text
+    description : Text
+    observers : [Observer]
+
+data OpenAccountsInput = OpenAccountsInput
+  with
+    parties : [PartyInfo]
+    accountOpenOffers : [LabelledOpenAccountOffer]
+    readAs : [Text]
+    accountSettings : [AccountSettings]
+
+openAccounts : OpenAccountsInput -> Script ()
+openAccounts input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let readAs = p <$> input.readAs
+  let offersMap = Map.fromList $ (\o -> (o.label, o.cid)) <$> input.accountOpenOffers
+  forA_ input.accountSettings \settings -> do
+    let owner = p settings.owner
+        openAccountOfferCid = O.fromSomeNote
+          ("Offer not found: " <> settings.offer)
+          (Map.lookup settings.offer offersMap)
+    submitMulti [owner] readAs do
+      exerciseCmd openAccountOfferCid AccountOpenOffer.Take with
+        owner
+        id = Id settings.id
+        accountDescription = settings.description
+        accountObservers = asPartiesMap p settings.observers

@@ -1,0 +1,15 @@
+{
+  "issuerFactorySettings": [
+    {
+      "provider": "custodian",
+      "label": "token",
+      "instrumentType": "Token",
+      "observers": [
+        {
+          "context": "depository",
+          "parties": ["depository"]
+        }
+      ]
+    }
+  ]
+}

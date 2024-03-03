@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import synfini.wallet.api.types.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -48,10 +50,24 @@ public class WalletViewsController {
     @RequestBody AccountFilter filter,
     @RequestHeader(value = HttpHeaders.AUTHORIZATION, defaultValue = "") String auth
   ) {
-    if (!WalletAuth.canReadAsAnyOf(ledgerApiConfig, auth, filter.owner)) {
+    final var permittedReaders = new ArrayList<>();
+    permittedReaders.add(filter.owner);
+    filter.custodian.ifPresent(permittedReaders::add);
+    if (!WalletAuth.canReadAsAnyOf(ledgerApiConfig, auth, permittedReaders.toArray(new String[]{}))) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     }
-    final var accounts = new Accounts(walletRepository.accountsByOwner(filter.owner));
+    final var accounts = new Accounts(walletRepository.accounts(filter.custodian, filter.owner));
+    return ResponseEntity.ok(asJson(accounts));
+  }
+
+  @PostMapping("/account-open-offers")
+  public ResponseEntity<String> accountOpenOffers(
+    @RequestBody AccountOpenOffersFilter filter,
+    @RequestHeader(value = HttpHeaders.AUTHORIZATION, defaultValue = "") String auth
+  ) {
+    final var userRights = WalletAuth.getUser(ledgerApiConfig, auth);
+    final var parties = allParties(userRights);
+    final var accounts = new AccountOpenOffers(walletRepository.accountOpenOffers(parties));
     return ResponseEntity.ok(asJson(accounts));
   }
 
@@ -105,6 +121,17 @@ public class WalletViewsController {
     final var instruments = new Instruments(
       walletRepository.instruments(filter.depository, filter.issuer, filter.id, filter.version, parties)
     );
+    return ResponseEntity.ok(asJson(instruments));
+  }
+
+  @PostMapping("/issuers")
+  public ResponseEntity<String> issuers(
+    @RequestBody IssuersFilter filter,
+    @RequestHeader(value = HttpHeaders.AUTHORIZATION, defaultValue = "") String auth
+  ) {
+    final var userRights = WalletAuth.getUser(ledgerApiConfig, auth);
+    final var parties = allParties(userRights);
+    final var instruments = new Issuers(walletRepository.issuers(filter.depository, filter.issuer, parties));
     return ResponseEntity.ok(asJson(instruments));
   }
 

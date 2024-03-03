@@ -1,0 +1,16 @@
+{
+  "minterBurnerSettings": [
+    {
+      "minterBurnerFactory": "v1",
+      "custodian": "SynfiniValidator",
+      "depository": "Fund_Depository",
+      "issuer": "FundA",
+      "observers": [
+        {
+          "context": "o",
+          "parties": ["WalletOperator"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+module Synfini.Onboarding.Issuer.MinterBurner where
+
+import DA.Set qualified as Set
+
+import Daml.Finance.Util.Disclosure qualified as ImplUtil
+
+import Daml.Finance.Interface.Settlement.Types
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Synfini.Assert (assertEqMsg)
+
+import Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner qualified as MinterBurner
+import Synfini.Interface.Onboarding.Issuer.MinterBurner.Factory qualified as MinterBurnerFactory
+
+template MinterBurner
+  with
+    custodian : Party
+    depository : Party
+    issuer : Party
+    observers : PartiesMap
+  where
+    signatory custodian
+
+    observer issuer, depository, Disclosure.flattenObservers observers
+
+    interface instance Disclosure.I for MinterBurner where
+      view = Disclosure.View with disclosureControllers = Set.fromList [custodian, issuer, depository], observers
+      setObservers = ImplUtil.setObserversImpl this $
+        Some (MinterBurner.disclosureUpdateReference (view @MinterBurner.I (toInterface this)))
+      addObservers = ImplUtil.addObserversImpl this $
+        Some (MinterBurner.disclosureUpdateReference (view @MinterBurner.I (toInterface this)))
+      removeObservers = ImplUtil.removeObserversImpl this $
+        Some (MinterBurner.disclosureUpdateReference (view @MinterBurner.I (toInterface this)))
+
+    interface instance MinterBurner.I for MinterBurner where
+      view = MinterBurner.View with custodian, depository, issuer
+
+      allocateIssuerCredit MinterBurner.AllocateIssuerCredit { instructionCid } = do
+        instruction <- exercise instructionCid Instruction.GetView with viewer = issuer
+        checkStep this True instruction
+        exercise instructionCid Instruction.Allocate with
+          actors = Set.fromList [custodian, issuer]
+          allocation = CreditReceiver
+
+      unallocateIssuerCredit MinterBurner.UnallocateIssuerCredit { instructionCid } = do
+        instruction <- exercise instructionCid Instruction.GetView with viewer = issuer
+        checkStep this True instruction
+        exercise instructionCid Instruction.Allocate with
+          actors = Set.fromList [custodian, issuer]
+          allocation = Unallocated
+
+      approveIssuerDebit MinterBurner.ApproveIssuerDebit { instructionCid } = do
+        instruction <- exercise instructionCid Instruction.GetView with viewer = issuer
+        checkStep this False instruction
+        exercise instructionCid Instruction.Approve with
+          actors = Set.fromList [custodian, issuer]
+          approval = DebitSender
+
+      unapproveIssuerDebit MinterBurner.UnapproveIssuerDebit { instructionCid } = do
+        instruction <- exercise instructionCid Instruction.GetView with viewer = issuer
+        checkStep this False instruction
+        exercise instructionCid Instruction.Approve with
+          actors = Set.fromList [custodian, issuer]
+          approval = Unapproved
+
+checkStep : MinterBurner -> Bool -> Instruction.V -> Update ()
+checkStep MinterBurner { custodian, depository, issuer } isCredit instruction = do
+  assertEqMsg "Must have expected custodian" instruction.routedStep.custodian custodian
+  assertEqMsg "Must have expected depository" instruction.routedStep.quantity.unit.depository depository
+  assertEqMsg "Must have expected issuer" instruction.routedStep.quantity.unit.issuer issuer
+  if isCredit then
+    assertEqMsg "Custodian must be sender for credit" instruction.routedStep.sender custodian
+  else
+    assertEqMsg "Custodian must be receiver for debits" instruction.routedStep.receiver custodian
+
+template Factory
+  with
+    provider : Party
+    observers : PartiesMap
+  where
+    signatory provider
+
+    observer Disclosure.flattenObservers observers
+
+    interface instance Disclosure.I for Factory where
+      view = Disclosure.View with disclosureControllers = Set.fromList [provider], observers
+      setObservers = ImplUtil.setObserversImpl @_ @Disclosure.I this None
+      addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
+      removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
+
+    interface instance MinterBurnerFactory.I for Factory where
+      view = MinterBurnerFactory.View with provider
+
+      create' MinterBurnerFactory.Create
+        {
+          custodian,
+          depository,
+          issuer,
+          observers
+        } = do
+          cid <- toInterfaceContractId <$> create MinterBurner with custodian, depository, issuer, observers
+          MinterBurner.createReference custodian (toInterfaceContractId cid)
+          pure cid
+
+      remove MinterBurnerFactory.Remove { custodian, depository, issuer } = do
+        (refCid, ref) <- fetchByKey @MinterBurner.R (MinterBurner.View with custodian, depository, issuer)
+        minterBurnerCid <- exercise refCid MinterBurner.GetCid with viewer = custodian
+        archive minterBurnerCid
+        archive refCid

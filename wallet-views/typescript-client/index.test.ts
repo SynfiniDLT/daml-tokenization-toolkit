@@ -43,7 +43,7 @@ beforeAll(() => {
 });
 
 test('Lists accounts', async () => {
-  const resp = await aliceClient.getAccounts({owner: alice});
+  const resp = await aliceClient.getAccounts({custodian: null, owner: alice});
   expect(resp.accounts.length).toEqual(1);
   let account = resp.accounts[0];
   expect(account.view.owner).toEqual(alice);
@@ -63,7 +63,7 @@ test('Returns balances', async () => {
 test('Returns holdings', async () => {
   const resp = await aliceClient.getHoldings({
     account: { owner: alice, custodian, id: { unpack: aliceAccountId } },
-    instrument: { issuer, depository, id: { unpack: "Instrument1" }, version: "1" }
+    instrument: { issuer, depository, id: { unpack: "Instrument1" }, version: "0" }
   });
   expect(resp.holdings.length).toEqual(1);
   const holding = resp.holdings[0];
@@ -78,10 +78,22 @@ test('Returns settlements', async () => {
   });
   expect(resp.settlements.length).toEqual(1);
   const settlement = resp.settlements[0];
-  expect(settlement.steps.length).toEqual(2);
+  expect(settlement.steps.length).toEqual(1);
+  const step = settlement.steps[0];
+  expect(step.routedStep.quantity.amount).toEqual("100000.0");
+  expect(step.routedStep.quantity.unit.issuer).toEqual(issuer);
+});
 
-  settlement.steps.forEach(step => {
-    expect(step.routedStep.quantity.amount).toEqual("100000.0");
-    expect(step.routedStep.quantity.unit.issuer).toEqual(issuer);
-  });
+test('Returns account open offers', async () => {
+  const resp = await aliceClient.getAccountOpenOffers({});
+  expect(resp.accountOpenOffers.length).toEqual(1);
+  const offer = resp.accountOpenOffers[0];
+  expect(offer.view.custodian).toEqual(custodian);
+});
+
+test('Returns issuers', async () => {
+  const resp = await aliceClient.getIssuers({ depository, issuer });
+  expect(resp.issuers.length).toEqual(1);
+  const issuerSummary = resp.issuers[0];
+  expect(issuerSummary.token?.view.issuer).toEqual(issuer);
 });

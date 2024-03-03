@@ -1,0 +1,15 @@
+{
+  "instrumentFactorySettings": [
+    {
+      "label": "token",
+      "instrumentType": "Token",
+      "provider": "custodian",
+      "observers": [
+        {
+          "context": "public",
+          "parties": ["issuer", "depository", "alice"]
+        }
+      ]
+    }
+  ]
+}

@@ -14,7 +14,7 @@ const DirectoryScreen: React.FC = () => {
   const sbt_depository = process.env.REACT_APP_LEDGER_INSTRUMENT_DEPOSITORY;
   const sbt_issuer = process.env.REACT_APP_LEDGER_INSTRUMENT_ISSUER;
   
-  const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
+  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 
@@ -57,6 +57,9 @@ const DirectoryScreen: React.FC = () => {
 
   return (
     <PageLayout>
+      <div style={{ marginTop: "15px" }}>
+        <h4 className="profile__title">SBT Contents</h4>
+      </div>
       <div>
             <Instruments instruments={instruments} />
       </div>

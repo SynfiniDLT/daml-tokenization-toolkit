@@ -1,0 +1,10 @@
+{
+  "routeProviderSettings": [
+    {
+      "label": "validatorCustodianV1",
+      "provider": "SynfiniValidator",
+      "observers": ["SynfiniPublic", "WalletOperator"],
+      "singleCustodian": "SynfiniValidator"
+    }
+  ]
+}

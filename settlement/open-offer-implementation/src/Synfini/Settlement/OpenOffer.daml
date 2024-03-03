@@ -1,0 +1,120 @@
+module Synfini.Settlement.OpenOffer where
+
+import DA.Set (Set)
+import DA.Time.Types (RelTime)
+
+import DA.Optional qualified as O
+import DA.Set qualified as Set
+import DA.Time qualified as T
+
+import Daml.Finance.Util.Disclosure qualified as ImplUtil
+
+import Daml.Finance.Interface.Settlement.Types
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Settlement.Factory qualified as SettlementFactory
+import Daml.Finance.Interface.Settlement.RouteProvider qualified as RouteProvider
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Synfini.Interface.Settlement.OpenOffer.Factory qualified as OpenOfferFactory
+import Synfini.Interface.Settlement.OpenOffer.OpenOffer qualified as OpenOffer
+
+template OpenOffer
+  with
+    offerId : Id
+    offerDescription : Text
+    offerers : Set Party
+    settlementInstructors : Set OpenOffer.Entity
+    settlers : Set OpenOffer.Entity
+    permittedTakers : Optional (Set Party)
+    steps : [OpenOffer.OfferStep]
+    settlementTime : Optional (Either Time RelTime)
+    minQuantity : Optional Decimal
+    maxQuantity :  Optional Decimal
+    routeProviderCid : ContractId RouteProvider.I
+    settlementFactoryCid : ContractId SettlementFactory.I
+    observers : PartiesMap
+  where
+    signatory offerers
+
+    key (offerers, offerId) : (Set Party, Id)
+    maintainer key._1
+
+    observer O.fromOptional Set.empty permittedTakers, Disclosure.flattenObservers observers
+
+    interface instance Disclosure.I for OpenOffer where
+      view = Disclosure.View with disclosureControllers = offerers, observers
+      setObservers = ImplUtil.setObserversImpl @_ @Disclosure.I this None
+      addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
+      removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
+
+    interface instance OpenOffer.I for OpenOffer where
+      view = OpenOffer.View with ..
+      take' OpenOffer.Take { id, taker, quantity, description } = do
+        assertMsg
+          "Quantity must be greater than or equal to permitted minimum"
+          (O.optional True (quantity >=) minQuantity)
+        assertMsg
+          "Quantity must be less than or equal to permitted maximum"
+          (O.optional True (quantity <=) maxQuantity)
+        assertMsg "Must be a permitted offer taker" (O.optional True (taker `Set.member`) permittedTakers)
+        let resolveParty entity = case entity of
+              OpenOffer.PartyEntity p -> p
+              OpenOffer.TakerEntity -> taker
+        let adjustStep step = Step with
+              sender = resolveParty step.sender
+              receiver = resolveParty step.receiver
+              quantity = step.quantity with
+                amount = step.quantity.amount * quantity
+        routedSteps <- exercise routeProviderCid RouteProvider.Discover with
+          discoverors = Set.fromList (resolveParty <$> Set.toList settlementInstructors)
+          contextId = Some offerId
+          steps = adjustStep <$> steps
+        actualSettlementTime <- case settlementTime of
+          None -> pure None
+          Some (Left time) -> pure (Some time)
+          Some (Right relTime) -> do
+            now <- getTime
+            pure $ Some (T.addRelTime now relTime)
+        exercise settlementFactoryCid SettlementFactory.Instruct with
+          id
+          contextId = Some offerId
+          instructors = Set.fromList (resolveParty <$> Set.toList settlementInstructors)
+          settlers = Set.fromList (resolveParty <$> Set.toList settlers)
+          description
+          routedSteps
+          settlementTime = actualSettlementTime
+      revoke _ = pure ()
+
+template Factory
+  with
+    provider : Party
+    observers : PartiesMap
+  where
+    signatory provider
+
+    observer Disclosure.flattenObservers observers
+
+    interface instance Disclosure.I for Factory where
+      view = Disclosure.View with disclosureControllers = Set.fromList [provider], observers
+      setObservers = ImplUtil.setObserversImpl @_ @Disclosure.I this None
+      addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
+      removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
+
+    interface instance OpenOfferFactory.I for Factory where
+      view = OpenOfferFactory.View with provider
+      create' OpenOfferFactory.Create {
+        offerId,
+        offerers,
+        offerDescription,
+        settlementInstructors,
+        settlers,
+        permittedTakers,
+        steps,
+        settlementTime,
+        minQuantity,
+        maxQuantity,
+        routeProviderCid,
+        settlementFactoryCid,
+        observers
+      } = toInterfaceContractId <$> create OpenOffer with ..

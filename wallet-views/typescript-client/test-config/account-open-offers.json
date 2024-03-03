@@ -1,0 +1,22 @@
+{
+  "offerSettings": [
+    {
+      "label": "l",
+      "custodian": "custodian",
+      "additionalIncomingControllers": [],
+      "additionalOutgoingControllers": [],
+      "ownerIncomingControlled": false,
+      "ownerOutgoingControlled": true,
+      "accountFactory": "default",
+      "holdingFactory": "fungible",
+      "description": "description",
+      "observers": [
+        {
+          "context": "o",
+          "parties": ["alice"]
+        }
+      ],
+      "accountOpenOfferFactory": "default"
+    }
+  ]
+}

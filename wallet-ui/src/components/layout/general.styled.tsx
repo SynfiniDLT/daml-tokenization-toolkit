@@ -18,11 +18,15 @@ export const ButtonContainer = styled.div`
   height: 40px;
 `;
 
-export const CardContainer = styled.div`
+interface CardContainerProps {
+  pointer?: boolean;
+}
+
+export const CardContainer = styled.div<CardContainerProps>`
   border-radius: 12px;
   margin: 15px;
   padding: 10px;
-  cursor: pointer;
+  cursor: ${(props) => (props.pointer ? 'pointer' : 'default')};
   background-color: #2a2b2f;
   box-shadow: inset 0 0 0.5px 1px hsla(0, 0%, 100%, 0.075),
     0 0 0 1px hsla(0, 0%, 0%, 0.05), 0 0.3px 0.4px hsla(0, 0%, 0%, 0.02),
@@ -39,20 +43,51 @@ export const ContainerDiv = styled.div`
 export const ContainerColumn = styled.div`
   display: flex;
   flex-direction: column;
-  min-width: 150px;
+  min-width: 250px;
 `;
 
 export const ContainerColumnKey = styled.p`
   margin-bottom: 5px;
+  padding: 5px;
+`;
+
+export const ContainerColumnField = styled.div`
+  margin: 5px;
+  padding: 5px;
+  height: 2em;
+  vertical-align: middle;
+`;
+
+export const ContainerColumnAutoField = styled.div`
+  margin: 5px;
+  padding: 5px;
+  height: auto;
+  vertical-align: middle;
 `;
 
 export const ContainerColumnValue = styled.p`
   margin-bottom: 5px;
+  padding: 5px;
   justify-content: space-between;
   margin-left: 10px;
   white-space: nowrap;
 `;
 
+export const KeyValuePair = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end; /* Align content to the bottom */
+  margin: 5px;
+  padding: 5px;
+`;
+
+export const ValueColumn = styled.div`
+  text-align: left; /* Align text to the left for values */
+`;
+
+export const KeyColumn = styled.div`
+  text-align: right; /* Align text to the right for keys */
+`;
 
 export const DivBorderRoundContainer = styled.div`
   border: 2px solid white;

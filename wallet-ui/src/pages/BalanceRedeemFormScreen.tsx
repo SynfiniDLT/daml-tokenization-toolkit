@@ -6,9 +6,9 @@ import AuthContextStore from "../store/AuthContextStore";
 import { formatCurrency } from "../components/Util";
 import { v4 as uuid } from "uuid";
 import * as damlTypes from "@daml/types";
-import { MintReceiver } from "@daml.js/daml-mint/lib/Synfini/Mint/Delegation";
 import { HoldingSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
+import { OpenOffer, OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { ContainerColumn, ContainerDiv, ContainerColumnKey, DivBorderRoundContainer, ContainerColumnValue } from "../components/layout/general.styled";
 import Modal from "react-modal";
@@ -17,10 +17,10 @@ import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
 const BalanceRedeemFormScreen: React.FC = () => {
   const nav = useNavigate();
-  const { state } = useLocation(); // TODO use strongly typed state instead of `any`
+  const { state } = useLocation();
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
-  const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
+  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
 
   const [amountInput, setAmountInput] = useState("");
   const [error, setError] = useState("");
@@ -49,7 +49,6 @@ const BalanceRedeemFormScreen: React.FC = () => {
   };
 
   const handleSubmit = async (e: any) => {
-    console.log("submit");
     e.preventDefault();
     let holdings: HoldingSummary[] = [];
     let holdingUnlockedCidArr: damlTypes.ContractId<damlHoldingFungible.Fungible>[] = [];
@@ -67,53 +66,31 @@ const BalanceRedeemFormScreen: React.FC = () => {
         );
       });
 
-    console.log("About to exercise");
     try {
+      const offerId = state.balance.instrument.id.unpack + "@" + state.balance.instrument.version + ".OffRamp"
+      const offers = await ledger.query(SettlementOpenOffer, { offerId: { unpack: offerId } });
+      const offersByIssuer = offers.filter(o => o.payload.offerers.map.has(state.balance.instrument.issuer));
       let referenceIdUUID = uuid();
-      console.log('state', state);
-      let operators = state
-          .account
-          .operatorsArray
-          .reduce(
-            (mp: damlTypes.Map<damlTypes.Party, {}>, o: damlTypes.Party) => mp.set(o, {}),
-            damlTypes.emptyMap<damlTypes.Party, {}>()
-          );
-      console.log("key", {
-        operators: {
-          map: operators
-        },
-        receiverAccount: state.balance.account,
-        instrument: state.balance.instrument
-      });
       await ledger
-        .exerciseByKey(
-          MintReceiver.ReceiverInstructBurn,
+        .exercise(
+          OpenOffer.Take,
+          offersByIssuer[0].contractId,
           {
-            operators: {
-              map: operators
-            },
-            receiverAccount: state.balance.account,
-            instrument: state.balance.instrument
-          },
-          {
-            amount: amountInput,
-            holdingCids: holdingUnlockedCidArr,
             id: { unpack: referenceIdUUID },
             description: "Redeem for fiat",
+            taker: ctx.primaryParty,
+            quantity: amountInput
           }
         )
         .then((res) => {
-          console.log('res', res);
           setMessage("Your request has been successfully completed. \nTransaction id: " + referenceIdUUID);
         })
         .catch((e) => {
-          console.log("error", e)
           setError("Error " + e.errors[0].toString());
         });
       setIsMessageOpen(true);
     } catch (e: any) {
       setIsMessageOpen(true);
-      console.log("Caught error", e);
       setError("Error " + e.toString());
     }
   };
@@ -170,7 +147,7 @@ const BalanceRedeemFormScreen: React.FC = () => {
         className="MessageModal"
         isOpen={isMessageOpen}
         onRequestClose={() => handleCloseMessageModal}
-        contentLabel="share SBT"
+        contentLabel="Redeem Balance"
       >
         <>
           <div>

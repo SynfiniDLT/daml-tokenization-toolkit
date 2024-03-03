@@ -1,0 +1,142 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+module Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner where
+
+import Daml.Finance.Interface.Holding.Base qualified as Holding
+import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+import Daml.Finance.Interface.Types.Common.Types (PartiesMap)
+import Daml.Finance.Interface.Util.Common (exerciseInterfaceByKeyHelper)
+
+data View = View
+  with
+    custodian : Party
+    depository : Party
+    issuer : Party
+  deriving (Show, Eq)
+
+type V = View
+
+interface MinterBurner requires Disclosure.I where
+  viewtype V
+
+  allocateIssuerCredit : AllocateIssuerCredit -> Update (ContractId Instruction.I, Optional (ContractId Holding.I))
+
+  unallocateIssuerCredit : UnallocateIssuerCredit -> Update (ContractId Instruction.I, Optional (ContractId Holding.I))
+
+  approveIssuerDebit : ApproveIssuerDebit -> Update (ContractId Instruction.I)
+
+  unapproveIssuerDebit : UnapproveIssuerDebit -> Update (ContractId Instruction.I)
+
+  nonconsuming choice GetView : V
+    with
+      viewer : Party
+    controller viewer
+    do
+      pure (view this)
+
+  nonconsuming choice AllocateIssuerCredit : (ContractId Instruction.I, Optional (ContractId Holding.I))
+    with
+      instructionCid : ContractId Instruction.I
+    controller (view this).issuer
+    do
+      allocateIssuerCredit this arg
+
+  nonconsuming choice UnallocateIssuerCredit : (ContractId Instruction.I, Optional (ContractId Holding.I))
+    with
+      instructionCid : ContractId Instruction.I
+    controller (view this).issuer
+    do
+      unallocateIssuerCredit this arg
+
+  nonconsuming choice ApproveIssuerDebit : ContractId Instruction.I
+    with
+      instructionCid : ContractId Instruction.I
+    controller (view this).issuer
+    do
+      approveIssuerDebit this arg
+
+  nonconsuming choice UnapproveIssuerDebit : ContractId Instruction.I
+    with
+      instructionCid : ContractId Instruction.I
+    controller (view this).issuer
+    do
+      unapproveIssuerDebit this arg
+
+type I = MinterBurner
+
+-- | HIDE
+-- This template is used to key an MinterBurner contract. It allows for looking up this contract by
+-- key then acquiring the MinterBurner contract by fetching its contract id on this contract. As
+-- updates are made to an MinterBurner, this Reference contract is required to be kept in sync.
+template Reference
+  with
+    minterBurnerView : V
+      -- ^ The default view.
+    cid : ContractId I
+      -- ^ The contract id of the minterburner.
+    observers : PartiesMap
+      -- ^ Observers.
+  where
+    signatory minterBurnerView.custodian
+    observer minterBurnerView.depository, minterBurnerView.issuer, Disclosure.flattenObservers observers
+
+    key minterBurnerView : V
+    maintainer key.custodian
+
+    nonconsuming choice GetCid : ContractId I
+      -- ^ Get the `MinterBurner`'s contract id.
+      with
+        viewer : Party
+      controller viewer
+      do
+        pure cid
+
+    choice SetCid : ContractId R
+      -- ^ Set the minterburner cid. This choice should be called only from `MinterBurner`
+      --   implementations.
+      with
+        newCid : ContractId I
+          -- The minterburner cid.
+      controller minterBurnerView.custodian
+      do
+        create this with cid = newCid
+
+    choice SetObservers : ContractId R
+      -- ^ Set observers. This choice should be called only from `MinterBurner` implementations.
+      with
+        newObservers : PartiesMap
+          -- ^ The new observers.
+      controller minterBurnerView.custodian
+      do
+        create this with observers = newObservers
+
+type R = Reference
+
+-- | Exercise interface by key.
+-- This method can be used to exercise a choice on a `MinterBurner` given its `View`.
+-- Requires as input the `View`, the actor fetching the minter burner and the choice
+-- arguments. For example:
+exerciseInterfaceByKey : forall i d r. (HasInterfaceTypeRep i, HasExercise i d r)
+  => V              -- ^ The minter burner view (key).
+  -> Party          -- ^ The actor fetching the minter burner.
+  -> d              -- ^ The choice arguments.
+  -> Update r
+exerciseInterfaceByKey k viewer arg =
+  exerciseInterfaceByKeyHelper @R @I @i k (GetCid with viewer) arg
+
+-- | HIDE
+-- Create Reference for a minter burner.
+createReference : Party -> ContractId I -> Update (ContractId R)
+createReference actor cid = do
+  minterBurnerView <- exercise cid GetView with viewer = actor
+  disclosureView <- exercise (toInterfaceContractId @Disclosure.I cid) Disclosure.GetView with
+    viewer = actor
+  create Reference with minterBurnerView; cid; observers = disclosureView.observers
+
+-- | HIDE
+-- Helper function to update the minter burner reference once observers are added to the minter burner.
+disclosureUpdateReference : V -> PartiesMap -> ContractId I -> Update (ContractId Disclosure.I)
+disclosureUpdateReference k newObservers iCid = do
+  exerciseByKey @Reference k SetCid with newCid = iCid
+  exerciseByKey @Reference k SetObservers with newObservers
+  pure $ toInterfaceContractId iCid

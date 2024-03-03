@@ -1,0 +1,16 @@
+{
+  "minterBurnerSettings": [
+    {
+      "minterBurnerFactory": "v1",
+      "custodian": "SynfiniValidator",
+      "depository": "AUDN_Depository",
+      "issuer": "AUDN_Issuer",
+      "observers": [
+        {
+          "context": "o",
+          "parties": ["WalletOperator"]
+        }
+      ]
+    }
+  ]
+}

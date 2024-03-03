@@ -1,0 +1,47 @@
+module Synfini.Operations.Party where
+
+import DA.Foldable (forA_)
+
+import DA.Set qualified as Set
+
+import Daml.Script
+
+import Synfini.Operations.Types
+
+data PartySettings = PartySettings
+  with
+    label : Text
+    displayName : Text
+    partyIdHint : Optional Text
+
+data SetupPartiesInput = SetupPartiesInput
+  with
+    partySettings : [PartySettings]
+
+data SetupPartiesOutput = SetupPartiesOutput
+  with
+    parties : [PartyInfo]
+
+allocateParties : SetupPartiesInput -> Script SetupPartiesOutput
+allocateParties input = do
+  parties <- forA input.partySettings $ \settings -> do
+    partyId <- optional
+      (allocateParty settings.displayName)
+      (\hint -> allocatePartyWithHint settings.displayName (PartyIdHint hint))
+      settings.partyIdHint
+    pure PartyInfo with label = settings.label, partyId
+  pure SetupPartiesOutput with parties
+
+data ImportPartiesInput = ImportPartiesInput
+  with
+    parties : [PartyInfo]
+    partiesToImport : [PartyInfo]
+
+importParties : ImportPartiesInput -> Script SetupPartiesOutput
+importParties input = do
+  let existingLabels = Set.fromList ((.label) <$> input.parties)
+  let duplicate = find (\p -> p.label `Set.member` existingLabels) input.partiesToImport
+  forA_ duplicate $ \dup ->
+    error ("Cannot import party as one already exists with label: " <> dup.label)
+  pure SetupPartiesOutput with
+    parties = input.parties <> input.partiesToImport

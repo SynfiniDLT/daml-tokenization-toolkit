@@ -1,10 +1,12 @@
 module Synfini.Interface.Instrument.PartyBoundAttributes.Instrument where
 
-import qualified Daml.Finance.Interface.Instrument.Base.Instrument as BaseInstrument
-import qualified Daml.Finance.Interface.Lifecycle.Event as Event
-import qualified Daml.Finance.Interface.Util.Disclosure as Disclosure
 import DA.Map (Map)
+
 import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Instrument.Base.Instrument qualified as BaseInstrument
+import Daml.Finance.Interface.Lifecycle.Event qualified as Event
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
 -- | Type synonym for `Instrument`.
 type I = Instrument

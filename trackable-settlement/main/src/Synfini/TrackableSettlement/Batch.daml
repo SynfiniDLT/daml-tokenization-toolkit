@@ -1,0 +1,43 @@
+module Synfini.TrackableSettlement.Batch where
+
+import DA.Foldable (forA_)
+
+import DA.Set qualified as Set
+
+import Daml.Finance.Settlement.Instruction (Instruction)
+
+import Daml.Finance.Settlement.Batch qualified as Default
+
+import Daml.Finance.Interface.Settlement.Types
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Settlement.Batch qualified as Batch
+
+-- | Allows you to atomically settle a set of settlement `Step`.
+template Batch
+  with
+    defaultBatch : Default.Batch
+    trackers : Parties
+  where
+    signatory (signatory defaultBatch)
+    observer (observer defaultBatch), trackers
+
+    interface instance Batch.I for Batch where
+      view = view @Batch.I (toInterface defaultBatch)
+      settle args = do
+        checkVisiblityOfInstructions this
+        Batch.settle (toInterface defaultBatch) args
+
+      cancel args = do
+        checkVisiblityOfInstructions this
+        Batch.cancel (toInterface defaultBatch) args
+
+checkVisiblityOfInstructions : Batch -> Update ()
+checkVisiblityOfInstructions Batch { defaultBatch, trackers } = do
+  let Default.Batch { requestors, id, routedStepsWithInstructionId } = defaultBatch
+  forA_ routedStepsWithInstructionId $ \(_, instructionId) -> do
+    (_, instruction) <- fetchByKey @Instruction InstructionKey with requestors, batchId = id, id = instructionId
+    let stakeholders = Set.fromList (stakeholder instruction)
+    assertMsg
+      "Instruction must be visible to trackers in order to settle or cancel"
+      (trackers `Set.isSubsetOf` stakeholders)

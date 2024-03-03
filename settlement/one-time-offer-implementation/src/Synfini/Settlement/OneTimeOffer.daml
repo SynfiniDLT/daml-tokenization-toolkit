@@ -1,0 +1,107 @@
+module Synfini.Settlement.OneTimeOffer where
+
+import DA.Set (Set)
+
+import DA.Optional qualified as O
+import DA.Set qualified as Set
+
+import Daml.Finance.Util.Disclosure qualified as ImplUtil
+
+import Daml.Finance.Interface.Settlement.Types
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Settlement.Factory qualified as SettlementFactory
+import Daml.Finance.Interface.Settlement.RouteProvider qualified as RouteProvider
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Synfini.Interface.Settlement.OneTimeOffer.Factory qualified as OneTimeOfferFactory
+import Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer qualified as OneTimeOffer
+
+template OneTimeOffer
+  with
+    offerId : Id
+    offerers : Set Party
+    offeree : Party
+    offerDescription : Text
+    settlementInstructors : Set Party
+    settlers : Set Party
+    steps : [Step]
+    settlementTime : Optional Time
+    minQuantity : Optional Decimal
+    maxQuantity :  Optional Decimal
+    routeProviderCid : ContractId RouteProvider.I
+    settlementFactoryCid : ContractId SettlementFactory.I
+    observers : PartiesMap
+  where
+    signatory offerers
+
+    key (offerers, offerId) : (Set Party, Id)
+    maintainer key._1
+
+    observer offeree, Disclosure.flattenObservers observers
+
+    ensure settlementInstructors `Set.isSubsetOf` (Set.insert offeree offerers)
+
+    interface instance Disclosure.I for OneTimeOffer where
+      view = Disclosure.View with disclosureControllers = offerers, observers
+      setObservers = ImplUtil.setObserversImpl @_ @Disclosure.I this None
+      addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
+      removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
+
+    interface instance OneTimeOffer.I for OneTimeOffer where
+      view = OneTimeOffer.View with ..
+      accept OneTimeOffer.Accept { quantity, description } = do
+        assertMsg
+          "Quantity must be greater than or equal to permitted minimum"
+          (O.optional True (quantity >=) minQuantity)
+        assertMsg
+          "Quantity must be less than or equal to permitted maximum"
+          (O.optional True (quantity <=) maxQuantity)
+        let scaledSteps = (\step -> step with quantity.amount = quantity * step.quantity.amount) <$> steps
+        routedSteps <- exercise routeProviderCid RouteProvider.Discover with
+          discoverors = settlementInstructors
+          contextId = Some offerId
+          steps = scaledSteps
+        exercise settlementFactoryCid SettlementFactory.Instruct with
+          id = offerId
+          contextId = None
+          instructors = settlementInstructors
+          settlers
+          description
+          routedSteps
+          settlementTime
+      reject _ = pure ()
+      revoke _ = pure ()
+
+template Factory
+  with
+    provider : Party
+    observers : PartiesMap
+  where
+    signatory provider
+
+    observer Disclosure.flattenObservers observers
+
+    interface instance Disclosure.I for Factory where
+      view = Disclosure.View with disclosureControllers = Set.fromList [provider], observers
+      setObservers = ImplUtil.setObserversImpl @_ @Disclosure.I this None
+      addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
+      removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
+
+    interface instance OneTimeOfferFactory.I for Factory where
+      view = OneTimeOfferFactory.View with provider
+      create' OneTimeOfferFactory.Create {
+        offerId,
+        offerers,
+        offeree,
+        offerDescription,
+        settlementInstructors,
+        settlers,
+        steps,
+        settlementTime,
+        minQuantity,
+        maxQuantity,
+        routeProviderCid,
+        settlementFactoryCid,
+        observers
+      } = toInterfaceContractId <$> create OneTimeOffer with ..

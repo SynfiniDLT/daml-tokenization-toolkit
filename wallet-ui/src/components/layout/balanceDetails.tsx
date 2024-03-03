@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import { QuestionCircle } from "react-bootstrap-icons";
 import { Balance } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 interface BalanceDetailsProps {
   balance: Balance
@@ -15,7 +14,6 @@ export default function BalanceDetails(props: BalanceDetailsProps) {
   `;
 
 
-  // TODO add locked/unlocked balance display as per business requirements
   return (
     <BalanceDetailsContainer>
       <div>
@@ -38,8 +36,6 @@ export default function BalanceDetails(props: BalanceDetailsProps) {
           <p></p>
         </div>
       </div>
-
-
     </BalanceDetailsContainer>
   );
 }

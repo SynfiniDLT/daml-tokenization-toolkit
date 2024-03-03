@@ -140,7 +140,6 @@ export default function BalanceSbts(props: {
   let trBalances;
 
   if (props.instruments !== undefined) {
-    console.log("props", props)
     props.instruments?.forEach((inst: InstrumentSummary, index) => {
       let entity: any = inst.pbaView?.attributes.entriesArray();
       let partiesSharedWith: string[] = [];

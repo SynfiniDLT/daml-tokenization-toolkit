@@ -1,0 +1,53 @@
+module Synfini.Interface.Settlement.OneTimeOffer.Factory where
+
+import DA.Set (Set)
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Settlement.Types (Step)
+
+import Daml.Finance.Interface.Settlement.Factory qualified as SettlementFactory
+import Daml.Finance.Interface.Settlement.RouteProvider qualified as RouteProvider
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer qualified as OneTimeOffer
+
+data View = View
+  with
+    provider : Party
+  deriving (Show, Eq)
+
+type V = View
+
+interface Factory requires Disclosure.I where
+  viewtype V
+
+  create' : Create -> Update (ContractId OneTimeOffer.I)
+
+  nonconsuming choice GetView : V
+    with
+      viewer : Party
+    controller viewer
+    do
+      pure (view this)
+
+  nonconsuming choice Create : ContractId OneTimeOffer.I
+    with
+      offerId : Id
+      offerers : Set Party
+      offeree : Party
+      offerDescription : Text
+      settlementInstructors : Set Party
+      settlers : Set Party
+      steps : [Step]
+      settlementTime : Optional Time
+      minQuantity : Optional Decimal
+      maxQuantity :  Optional Decimal
+      routeProviderCid : ContractId RouteProvider.I
+      settlementFactoryCid : ContractId SettlementFactory.I
+      observers : PartiesMap
+    controller offerers
+    do
+      create' this arg
+
+type I = Factory

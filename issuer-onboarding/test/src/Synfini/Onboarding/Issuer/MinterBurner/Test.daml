@@ -1,0 +1,298 @@
+module Synfini.Onboarding.Issuer.MinterBurner.Test where
+
+import DA.Map qualified as Map
+import DA.Set qualified as Set
+
+import Daml.Script
+
+import Daml.Finance.Settlement.Factory qualified as SettlementImpl
+
+import Daml.Finance.Interface.Settlement.Types
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Settlement.Factory qualified as SettlementFactory
+import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
+
+import Synfini.Assert (assertEqMsg)
+
+import Synfini.Onboarding.Issuer.MinterBurner qualified as MinterBurnerImpl
+
+import Synfini.Interface.Onboarding.Issuer.MinterBurner.Factory qualified as MinterBurnerFactory
+import Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner qualified as MinterBurner
+
+data Setup = Setup
+  with
+    custodian1 : Party
+    custodian2 : Party
+    depository1 : Party
+    depository2 : Party
+    issuer1 : Party
+    issuer2 : Party
+    settlementFactoryCid : ContractId SettlementFactory.F
+    minterBurnerFactoryCid : ContractId MinterBurnerFactory.I
+
+withSetup : (Setup -> Script ()) -> Script ()
+withSetup test = do
+  provider <- allocateParty "provider"
+  custodian1 <- allocateParty "custodian1"
+  custodian2 <- allocateParty "custodian2"
+  depository1 <- allocateParty "depository1"
+  depository2 <- allocateParty "depository2"
+  issuer1 <- allocateParty "issuer1"
+  issuer2 <- allocateParty "issuer2"
+  let observers = Set.fromList [custodian1, custodian2, depository1, depository2, issuer1]
+  settlementFactoryCid <- toInterfaceContractId <$> submit provider do
+    createCmd SettlementImpl.Factory with
+      provider
+      observers
+  minterBurnerFactoryCid <- toInterfaceContractId <$> submit provider do
+    createCmd MinterBurnerImpl.Factory with
+      provider
+      observers = Map.fromList [("", observers)]
+  test (Setup with ..)
+
+test_can_allocate_issuer_credit : Script ()
+test_can_allocate_issuer_credit = withSetup $
+  \Setup { custodian1, depository1, issuer1, settlementFactoryCid, minterBurnerFactoryCid } -> do
+  minterBurnerCid <- submit custodian1 do
+    exerciseCmd minterBurnerFactoryCid MinterBurnerFactory.Create with
+      custodian = custodian1
+      issuer = issuer1
+      depository = depository1
+      observers = Map.empty
+  let routedStep = RoutedStep with
+        sender = custodian1
+        receiver = issuer1
+        custodian = custodian1
+        quantity = Quantity with
+          unit = InstrumentKey with depository = depository1, issuer = issuer1, id = Id "0", version = "0"
+          amount = 1.0
+  (_, [instructionCid]) <- submit issuer1 do
+    exerciseCmd settlementFactoryCid SettlementFactory.Instruct with
+      instructors = Set.fromList [issuer1]
+      settlers = Set.fromList [issuer1]
+      id = Id "1"
+      description = ""
+      contextId = None
+      routedSteps = [routedStep]
+      settlementTime = None
+  -- Allocation
+  (allocatedInstructionCid, _) <- submit issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid
+  [(activeInstructionCid, Some activeInstruction)] <- queryInterface @Instruction.I issuer1
+  assertEqMsg "Must have expected instruction contract ID after allocation" activeInstructionCid allocatedInstructionCid
+  assertEqMsg "Must have CreditReceiver allocation" activeInstruction.allocation CreditReceiver
+  assertEqMsg "Must be unapproved after allocation" activeInstruction.approval Unapproved
+
+  -- Unallocation
+  (unallocatedInstructionCid, _) <- submit issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid = allocatedInstructionCid
+  [(activeInstructionCid, Some activeInstruction)] <- queryInterface @Instruction.I issuer1
+  assertEqMsg "Must have expected instruction contract ID" activeInstructionCid unallocatedInstructionCid
+  assertEqMsg "Must not be allocated" activeInstruction.allocation Unallocated
+  assertEqMsg "Must have be unapproved after unallocation" activeInstruction.approval Unapproved
+
+test_cannot_allocate_issuer_credit_to_invalid_instructions : Script ()
+test_cannot_allocate_issuer_credit_to_invalid_instructions = withSetup $
+  \Setup {
+    custodian1,
+    custodian2,
+    depository1,
+    depository2,
+    issuer1,
+    issuer2,
+    settlementFactoryCid,
+    minterBurnerFactoryCid
+  } -> do
+  minterBurnerCid <- submit custodian1 do
+    exerciseCmd minterBurnerFactoryCid MinterBurnerFactory.Create with
+      custodian = custodian1
+      issuer = issuer1
+      depository = depository1
+      observers = Map.empty
+  let unit = InstrumentKey with depository = depository1, issuer = issuer1, id = Id "0", version = "0"
+  let routedStep = RoutedStep with
+        sender = custodian1
+        receiver = issuer1
+        custodian = custodian1
+        quantity = Quantity with
+          unit
+          amount = 1.0
+  let stepSenderCustodian2 = routedStep with sender = custodian2
+      stepCustodian2 = routedStep with custodian = custodian2
+      stepReceiverIssuer2 = routedStep with receiver = issuer2
+      stepDepository2 = routedStep with
+        quantity = routedStep.quantity with unit = unit with depository = depository2
+      stepIssuer2 = routedStep with
+        quantity = routedStep.quantity with unit = unit with issuer = issuer2
+  (_, [
+    instructionCid,
+    instructionSenderCustodian2Cid,
+    instructionCustodian2Cid,
+    instructionDepository2Cid,
+    instructionIssuer2Cid]) <- submit issuer1 do
+    exerciseCmd settlementFactoryCid SettlementFactory.Instruct with
+      instructors = Set.fromList [issuer1]
+      settlers = Set.fromList [issuer1]
+      id = Id "1"
+      description = ""
+      contextId = None
+      routedSteps = [routedStep, stepSenderCustodian2, stepCustodian2, stepDepository2, stepIssuer2]
+      settlementTime = None
+  -- Allocation
+  (instructionCid, _) <- submit issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid = instructionCid
+  submitMustFail issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid = instructionSenderCustodian2Cid
+  submitMustFail issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid = instructionCustodian2Cid
+  submitMustFail issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid = instructionDepository2Cid
+  submitMustFail issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid = instructionIssuer2Cid
+
+  -- Unallocation
+  let allActors = [issuer1, issuer2, custodian1, custodian2]
+  let allActorsSet = Set.fromList allActors
+  (instructionSenderCustodian2Cid, _) <- submitMulti allActors [] do
+    exerciseCmd instructionSenderCustodian2Cid Instruction.Allocate with actors = allActorsSet, allocation = CreditReceiver
+  (instructionCustodian2Cid, _) <- submitMulti allActors [] do
+    exerciseCmd instructionCustodian2Cid Instruction.Allocate with actors = allActorsSet, allocation = CreditReceiver
+  (instructionDepository2Cid, _) <- submitMulti allActors [] do
+    exerciseCmd instructionDepository2Cid Instruction.Allocate with actors = allActorsSet, allocation = CreditReceiver
+  (instructionIssuer2Cid, _) <- submitMulti allActors [] do
+    exerciseCmd instructionIssuer2Cid Instruction.Allocate with actors = allActorsSet, allocation = CreditReceiver
+
+  submit issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid
+  submitMustFail issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid = instructionSenderCustodian2Cid
+  submitMustFail issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid = instructionCustodian2Cid
+  submitMustFail issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid = instructionDepository2Cid
+  submitMustFail issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid = instructionIssuer2Cid
+
+test_can_approve_issuer_debit : Script ()
+test_can_approve_issuer_debit = withSetup $
+  \Setup { custodian1, depository1, issuer1, settlementFactoryCid, minterBurnerFactoryCid } -> do
+  minterBurnerCid <- submit custodian1 do
+    exerciseCmd minterBurnerFactoryCid MinterBurnerFactory.Create with
+      custodian = custodian1
+      issuer = issuer1
+      depository = depository1
+      observers = Map.empty
+  let routedStep = RoutedStep with
+        sender = issuer1
+        receiver = custodian1
+        custodian = custodian1
+        quantity = Quantity with
+          unit = InstrumentKey with depository = depository1, issuer = issuer1, id = Id "0", version = "0"
+          amount = 1.0
+  (_, [instructionCid]) <- submit issuer1 do
+    exerciseCmd settlementFactoryCid SettlementFactory.Instruct with
+      instructors = Set.fromList [issuer1]
+      settlers = Set.fromList [issuer1]
+      id = Id "1"
+      description = ""
+      contextId = None
+      routedSteps = [routedStep]
+      settlementTime = None
+  -- Approval
+  approvedInstructionCid <- submit issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.ApproveIssuerDebit with instructionCid
+  [(activeInstructionCid, Some activeInstruction)] <- queryInterface @Instruction.I issuer1
+  assertEqMsg "Must have expected instruction contract ID" activeInstructionCid approvedInstructionCid
+  assertEqMsg "Must have expected approval" activeInstruction.approval DebitSender
+  assertEqMsg "Must have be unallocated" activeInstruction.allocation Unallocated
+
+  -- Unapproval
+  unapprovedInstructionCid <- submit issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.UnapproveIssuerDebit with instructionCid = approvedInstructionCid
+  [(activeInstructionCid, Some activeInstruction)] <- queryInterface @Instruction.I issuer1
+  assertEqMsg "Must have expected instruction contract ID afer unapproval" activeInstructionCid unapprovedInstructionCid
+  assertEqMsg "Must not be approved" activeInstruction.approval Unapproved
+  assertEqMsg "Must have be unallocated" activeInstruction.allocation Unallocated
+
+test_cannot_approve_issuer_debit_to_invalid_instructions : Script ()
+test_cannot_approve_issuer_debit_to_invalid_instructions = withSetup $
+  \Setup {
+    custodian1,
+    custodian2,
+    depository1,
+    depository2,
+    issuer1,
+    issuer2,
+    settlementFactoryCid,
+    minterBurnerFactoryCid
+  } -> do
+  minterBurnerCid <- submit custodian1 do
+    exerciseCmd minterBurnerFactoryCid MinterBurnerFactory.Create with
+      custodian = custodian1
+      issuer = issuer1
+      depository = depository1
+      observers = Map.empty
+  let unit = InstrumentKey with depository = depository1, issuer = issuer1, id = Id "0", version = "0"
+  let routedStep = RoutedStep with
+        sender = issuer1
+        receiver = custodian1
+        custodian = custodian1
+        quantity = Quantity with
+          unit
+          amount = 1.0
+  let stepSenderIssuer2 = routedStep with sender = issuer2
+      stepCustodian2 = routedStep with custodian = custodian2
+      stepReceiverCustodian2 = routedStep with receiver = custodian2
+      stepDepository2 = routedStep with
+        quantity = routedStep.quantity with unit = unit with depository = depository2
+      stepIssuer2 = routedStep with
+        quantity = routedStep.quantity with unit = unit with issuer = issuer2
+  (_, [
+    instructionCid,
+    instructionCustodian2Cid,
+    instructionReceiverCustodian2Cid,
+    instructionDepository2Cid,
+    instructionIssuer2Cid]) <- submit issuer1 do
+    exerciseCmd settlementFactoryCid SettlementFactory.Instruct with
+      instructors = Set.fromList [issuer1]
+      settlers = Set.fromList [issuer1]
+      id = Id "1"
+      description = ""
+      contextId = None
+      routedSteps = [routedStep, stepCustodian2, stepReceiverCustodian2, stepDepository2, stepIssuer2]
+      settlementTime = None
+  -- Approval
+  instructionCid <- submit issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.ApproveIssuerDebit with instructionCid = instructionCid
+  submitMustFail issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.ApproveIssuerDebit with instructionCid = instructionCustodian2Cid
+  submitMustFail issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.ApproveIssuerDebit with instructionCid = instructionReceiverCustodian2Cid
+  submitMustFail issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.ApproveIssuerDebit with instructionCid = instructionDepository2Cid
+  submitMustFail issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.ApproveIssuerDebit with instructionCid = instructionIssuer2Cid
+
+  -- Unapproval
+  let allActors = [issuer1, issuer2, custodian1, custodian2]
+  let allActorsSet = Set.fromList allActors
+  instructionCustodian2Cid <- submitMulti allActors [] do
+    exerciseCmd instructionCustodian2Cid Instruction.Approve with actors = allActorsSet, approval = SettleOffledgerAcknowledge
+  instructionReceiverCustodian2Cid <- submitMulti allActors [] do
+    exerciseCmd instructionReceiverCustodian2Cid Instruction.Approve with actors = allActorsSet, approval = SettleOffledgerAcknowledge
+  instructionDepository2Cid <- submitMulti allActors [] do
+    exerciseCmd instructionDepository2Cid Instruction.Approve with actors = allActorsSet, approval = SettleOffledgerAcknowledge
+  instructionIssuer2Cid <- submitMulti allActors [] do
+    exerciseCmd instructionIssuer2Cid Instruction.Approve with actors = allActorsSet, approval = SettleOffledgerAcknowledge
+
+  submit issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.UnapproveIssuerDebit with instructionCid
+  submitMustFail issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.UnapproveIssuerDebit with instructionCid = instructionCustodian2Cid
+  submitMustFail issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.UnapproveIssuerDebit with instructionCid = instructionReceiverCustodian2Cid
+  submitMustFail issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.UnapproveIssuerDebit with instructionCid = instructionDepository2Cid
+  submitMustFail issuer1 do
+    exerciseCmd minterBurnerCid MinterBurner.UnapproveIssuerDebit with instructionCid = instructionIssuer2Cid

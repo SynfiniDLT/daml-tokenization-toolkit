@@ -8,14 +8,17 @@ import { PageLayout } from "../components/PageLayout";
 import Settlements from "../components/layout/settlements";
 import { SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
+import { useLocation } from "react-router-dom";
 
 const SettlementScreen: React.FC = () => {
-  const walletViewsBaseUrl = `${window.location.protocol}//${window.location.host}`;
+  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
+  const { state } = useLocation();
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 
   const { isLoading } = useAuth0();
   const [settlements, setSettlements] = useState<SettlementSummary[]>();
+  const [filter, setFilter] = useState<string>("");
 
   let walletClient: WalletViewsClient;
 
@@ -26,18 +29,18 @@ const SettlementScreen: React.FC = () => {
 
   const fetchSettlements = async () => {
     if (ctx.primaryParty !== "") {
-      const resp = await walletClient.getSettlements({ before: null, limit:null });
+      const resp = await walletClient.getSettlements({ before: null, limit: null });
       setSettlements(resp.settlements);
     }
   };
-
+  
   useEffect(() => {
     fetchDataForUserLedger(ctx, ledger);
   }, [ctx, ledger]);
-
+  
   useEffect(() => {
     fetchSettlements();
-  }, [ctx.primaryParty]);
+  }, []);
 
   if (isLoading) {
     return (
@@ -47,10 +50,43 @@ const SettlementScreen: React.FC = () => {
     );
   }
 
+  let settlementsFiltered = settlements;
+
+  if (state !== null && state.transactionId !== null) {
+    const settlement = settlements?.find((settlement) => settlement.batchId.unpack === state.transactionId);
+    settlementsFiltered = settlement ? [settlement] : [];
+  }
+
+  if (filter!== "" && settlementsFiltered!== undefined){
+    if (filter==="pending")
+      settlementsFiltered = settlementsFiltered.filter(settlement => settlement.execution === null);
+      if (filter==="settled")
+      settlementsFiltered = settlementsFiltered.filter(settlement => settlement.execution !== null);
+  }
+
+  let transactionPendingStyle = "button__sign-up";
+  let transactionSettledStyle = "button__sign-up";
+  if (filter === 'pending') transactionPendingStyle = "button__sign-up-selected";
+  if (filter === 'settled') transactionSettledStyle = "button__sign-up-selected";
+  
+  
   return (
     <PageLayout>
       <div>
-            <Settlements settlements={settlements} />
+        <div style={{ marginTop: "15px" }}>
+          <h4 className="profile__title">Transactions</h4>
+        </div>
+        <div>
+        <div style={{ marginLeft: "200px",display: "flex", justifyContent: "left"  }} >
+          <button type="button" className={transactionPendingStyle} style={{width: "100px"}} onClick={() => setFilter("pending")}>
+            Pending
+          </button>
+          <button type="button" className={transactionSettledStyle} style={{width: "100px"}} onClick={() => setFilter("settled")}>
+            Settled
+          </button>
+        </div>
+      </div>
+        <Settlements settlements={settlementsFiltered} />
       </div>
     </PageLayout>
   );
