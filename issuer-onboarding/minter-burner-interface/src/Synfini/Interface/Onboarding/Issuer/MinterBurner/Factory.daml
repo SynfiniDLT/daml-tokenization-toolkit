@@ -8,14 +8,16 @@ import Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner qualified a
 
 data View = View
   with
-    provider : Party
+    provider : Party -- ^ Provider of the 'Factory'.
   deriving (Show, Eq)
 
+-- | Type synonym for 'View'.
 type V = View
 
 interface Factory requires Disclosure.I where
   viewtype V
 
+  -- | Implementation of the 'Create' choice.
   create' : Create -> Update (ContractId MinterBurner.I)
 
   remove : Remove -> Update ()
@@ -39,4 +41,5 @@ interface Factory requires Disclosure.I where
     do
       remove this arg
 
+-- | Type synonym for 'Factory'.
 type I = Factory

@@ -9,38 +9,44 @@ import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
 import Synfini.Interface.Onboarding.Account.OneTimeOffer.OneTimeOffer qualified as OneTimeOffer
 
+-- | View of a 'Factory'.
 data View = View
   with
-    provider : Party
+    provider : Party -- ^ Provider of the 'Factory'. -- ^ Provider of the 'Factory'.
+  deriving (Show, Eq)
 
+-- | Type synonym for 'View'.
 type V = View
 
+-- | Factory used to create 'OneTimeOffer's.
 interface Factory requires Disclosure.I where
   viewtype V
 
+  -- | Implementation of the 'Create' choice.
   create' : Create -> Update (ContractId OneTimeOffer.I)
 
+  -- | Retrieves the interface view.
   nonconsuming choice GetView : View
-    -- ^ Retrieves the interface view.
     with
-      viewer : Party
-        -- ^ The party fetching the view.
+      viewer : Party -- ^ The party fetching the view.
     controller viewer
     do
       pure $ view this
 
+  -- | Create a 'OneTimeOffer'.
   nonconsuming choice Create : ContractId OneTimeOffer.I
     with
-      account : AccountKey
-      accountControllers : Account.Controllers
-      accountDescription : Text
-      accountObservers : PartiesMap
-      accountFactoryCid : ContractId Account.F
-      holdingFactoryCid : ContractId Holding.F
-      description : Text
-      observers : PartiesMap
+      account : AccountKey -- ^ The account to be created.
+      accountControllers : Account.Controllers -- ^ The controllers of the account to be created.
+      accountDescription : Text -- ^ Description of the account.
+      accountObservers : PartiesMap -- ^ Observers of the account contract.
+      accountFactoryCid : ContractId Account.F -- ^ Factory to be used to create the 'Account' instance.
+      holdingFactoryCid : ContractId Holding.F -- ^ Holding factory to be used to create holdings in the account.
+      description : Text -- ^ Description of this offer.
+      observers : PartiesMap -- ^ Observers of the offer.
     controller account.custodian
     do
       create' this arg
 
+-- | Type synonym for 'Factory'.
 type I = Factory

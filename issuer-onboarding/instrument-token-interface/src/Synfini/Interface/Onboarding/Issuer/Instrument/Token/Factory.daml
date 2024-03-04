@@ -9,18 +9,21 @@ import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Issuer qualified as 
 
 data View = View
   with
-    provider : Party
+    provider : Party -- ^ Provider of the 'Factory'. -- ^ Provider of the 'Factory'.
   deriving (Show, Eq)
 
+-- | Type synonym for 'View'.
 type V = View
 
 interface Factory requires Disclosure.I where
   viewtype V
 
+  -- | Implementation of the 'Create' choice.
   create' : Create -> Update (ContractId Issuer.I)
 
+  -- | Retrieves the interface view.
   nonconsuming choice GetView : V
-    -- ^ Retrieves the interface view.
+    -- | Retrieves the interface view.
     with
       viewer : Party
         -- ^ The party retrieving the view.
@@ -38,4 +41,5 @@ interface Factory requires Disclosure.I where
     do
       create' this arg
 
+-- | Type synonym for 'Factory'.
 type I = Factory

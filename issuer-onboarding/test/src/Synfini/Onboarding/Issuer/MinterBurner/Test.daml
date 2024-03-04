@@ -78,7 +78,7 @@ test_can_allocate_issuer_credit = withSetup $
       settlementTime = None
   -- Allocation
   (allocatedInstructionCid, _) <- submit issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid
+    exerciseCmd minterBurnerCid MinterBurner.AllocateMint with instructionCid
   [(activeInstructionCid, Some activeInstruction)] <- queryInterface @Instruction.I issuer1
   assertEqMsg "Must have expected instruction contract ID after allocation" activeInstructionCid allocatedInstructionCid
   assertEqMsg "Must have CreditReceiver allocation" activeInstruction.allocation CreditReceiver
@@ -86,7 +86,7 @@ test_can_allocate_issuer_credit = withSetup $
 
   -- Unallocation
   (unallocatedInstructionCid, _) <- submit issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid = allocatedInstructionCid
+    exerciseCmd minterBurnerCid MinterBurner.UnallocateMint with instructionCid = allocatedInstructionCid
   [(activeInstructionCid, Some activeInstruction)] <- queryInterface @Instruction.I issuer1
   assertEqMsg "Must have expected instruction contract ID" activeInstructionCid unallocatedInstructionCid
   assertEqMsg "Must not be allocated" activeInstruction.allocation Unallocated
@@ -141,15 +141,15 @@ test_cannot_allocate_issuer_credit_to_invalid_instructions = withSetup $
       settlementTime = None
   -- Allocation
   (instructionCid, _) <- submit issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid = instructionCid
+    exerciseCmd minterBurnerCid MinterBurner.AllocateMint with instructionCid = instructionCid
   submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid = instructionSenderCustodian2Cid
+    exerciseCmd minterBurnerCid MinterBurner.AllocateMint with instructionCid = instructionSenderCustodian2Cid
   submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid = instructionCustodian2Cid
+    exerciseCmd minterBurnerCid MinterBurner.AllocateMint with instructionCid = instructionCustodian2Cid
   submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid = instructionDepository2Cid
+    exerciseCmd minterBurnerCid MinterBurner.AllocateMint with instructionCid = instructionDepository2Cid
   submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.AllocateIssuerCredit with instructionCid = instructionIssuer2Cid
+    exerciseCmd minterBurnerCid MinterBurner.AllocateMint with instructionCid = instructionIssuer2Cid
 
   -- Unallocation
   let allActors = [issuer1, issuer2, custodian1, custodian2]
@@ -164,15 +164,15 @@ test_cannot_allocate_issuer_credit_to_invalid_instructions = withSetup $
     exerciseCmd instructionIssuer2Cid Instruction.Allocate with actors = allActorsSet, allocation = CreditReceiver
 
   submit issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid
+    exerciseCmd minterBurnerCid MinterBurner.UnallocateMint with instructionCid
   submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid = instructionSenderCustodian2Cid
+    exerciseCmd minterBurnerCid MinterBurner.UnallocateMint with instructionCid = instructionSenderCustodian2Cid
   submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid = instructionCustodian2Cid
+    exerciseCmd minterBurnerCid MinterBurner.UnallocateMint with instructionCid = instructionCustodian2Cid
   submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid = instructionDepository2Cid
+    exerciseCmd minterBurnerCid MinterBurner.UnallocateMint with instructionCid = instructionDepository2Cid
   submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.UnallocateIssuerCredit with instructionCid = instructionIssuer2Cid
+    exerciseCmd minterBurnerCid MinterBurner.UnallocateMint with instructionCid = instructionIssuer2Cid
 
 test_can_approve_issuer_debit : Script ()
 test_can_approve_issuer_debit = withSetup $
@@ -201,7 +201,7 @@ test_can_approve_issuer_debit = withSetup $
       settlementTime = None
   -- Approval
   approvedInstructionCid <- submit issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.ApproveIssuerDebit with instructionCid
+    exerciseCmd minterBurnerCid MinterBurner.ApproveBurn with instructionCid
   [(activeInstructionCid, Some activeInstruction)] <- queryInterface @Instruction.I issuer1
   assertEqMsg "Must have expected instruction contract ID" activeInstructionCid approvedInstructionCid
   assertEqMsg "Must have expected approval" activeInstruction.approval DebitSender
@@ -209,7 +209,7 @@ test_can_approve_issuer_debit = withSetup $
 
   -- Unapproval
   unapprovedInstructionCid <- submit issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.UnapproveIssuerDebit with instructionCid = approvedInstructionCid
+    exerciseCmd minterBurnerCid MinterBurner.UnapproveBurn with instructionCid = approvedInstructionCid
   [(activeInstructionCid, Some activeInstruction)] <- queryInterface @Instruction.I issuer1
   assertEqMsg "Must have expected instruction contract ID afer unapproval" activeInstructionCid unapprovedInstructionCid
   assertEqMsg "Must not be approved" activeInstruction.approval Unapproved
@@ -264,15 +264,15 @@ test_cannot_approve_issuer_debit_to_invalid_instructions = withSetup $
       settlementTime = None
   -- Approval
   instructionCid <- submit issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.ApproveIssuerDebit with instructionCid = instructionCid
+    exerciseCmd minterBurnerCid MinterBurner.ApproveBurn with instructionCid = instructionCid
   submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.ApproveIssuerDebit with instructionCid = instructionCustodian2Cid
+    exerciseCmd minterBurnerCid MinterBurner.ApproveBurn with instructionCid = instructionCustodian2Cid
   submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.ApproveIssuerDebit with instructionCid = instructionReceiverCustodian2Cid
+    exerciseCmd minterBurnerCid MinterBurner.ApproveBurn with instructionCid = instructionReceiverCustodian2Cid
   submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.ApproveIssuerDebit with instructionCid = instructionDepository2Cid
+    exerciseCmd minterBurnerCid MinterBurner.ApproveBurn with instructionCid = instructionDepository2Cid
   submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.ApproveIssuerDebit with instructionCid = instructionIssuer2Cid
+    exerciseCmd minterBurnerCid MinterBurner.ApproveBurn with instructionCid = instructionIssuer2Cid
 
   -- Unapproval
   let allActors = [issuer1, issuer2, custodian1, custodian2]
@@ -287,12 +287,12 @@ test_cannot_approve_issuer_debit_to_invalid_instructions = withSetup $
     exerciseCmd instructionIssuer2Cid Instruction.Approve with actors = allActorsSet, approval = SettleOffledgerAcknowledge
 
   submit issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.UnapproveIssuerDebit with instructionCid
+    exerciseCmd minterBurnerCid MinterBurner.UnapproveBurn with instructionCid
   submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.UnapproveIssuerDebit with instructionCid = instructionCustodian2Cid
+    exerciseCmd minterBurnerCid MinterBurner.UnapproveBurn with instructionCid = instructionCustodian2Cid
   submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.UnapproveIssuerDebit with instructionCid = instructionReceiverCustodian2Cid
+    exerciseCmd minterBurnerCid MinterBurner.UnapproveBurn with instructionCid = instructionReceiverCustodian2Cid
   submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.UnapproveIssuerDebit with instructionCid = instructionDepository2Cid
+    exerciseCmd minterBurnerCid MinterBurner.UnapproveBurn with instructionCid = instructionDepository2Cid
   submitMustFail issuer1 do
-    exerciseCmd minterBurnerCid MinterBurner.UnapproveIssuerDebit with instructionCid = instructionIssuer2Cid
+    exerciseCmd minterBurnerCid MinterBurner.UnapproveBurn with instructionCid = instructionIssuer2Cid

@@ -7,42 +7,52 @@ import Daml.Finance.Interface.Account.Factory qualified as Account
 import Daml.Finance.Interface.Holding.Factory qualified as Holding
 import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
+-- | View of an 'OpenOffer'.
 data View = View
   with
-    custodian : Party
-    ownerIncomingControlled : Bool
-    ownerOutgoingControlled : Bool
-    additionalControllers : Account.Controllers
-    permittedOwners : Optional Parties
-    accountFactoryCid : ContractId Account.F
-    holdingFactoryCid : ContractId Holding.F
-    description : Text
+    custodian : Party -- ^ Custodian of accounts created using this offer.
+    ownerIncomingControlled : Bool -- ^ If 'True' then the owner will be included as an incoming controller on accounts
+      -- created using this offer.
+    ownerOutgoingControlled : Bool -- ^ If 'True' then the owner will be included as an outgoing controller on accounts
+      -- created using this offer.
+    additionalControllers : Account.Controllers -- ^ Any parties, other than the owner, that will be included as
+      -- incoming or outgoing controllers on accounts created using this offer.
+    permittedOwners : Optional Parties -- ^ Whitelist of parties which are permitted to take this offer. 'None'
+      -- indicates any stakeholder can take the offer.
+    accountFactoryCid : ContractId Account.F -- ^ Factory to be used to create 'Account' instances.
+    holdingFactoryCid : ContractId Holding.F -- ^ Holding factory to be used to create holdings in the accounts.
+    description : Text -- ^ Description of this offer.
   deriving (Show, Eq)
 
+-- | Type synonym for 'View'.
 type V = View
 
+-- | An offer made by a custodian to create an 'Account' contract under its custody. It is an "open" offer because it is
+-- not archived once taken by the account owner, allowing it to be used as many times as desired.
 interface OpenOffer requires Disclosure.I where
   viewtype V
 
+  -- | Implementation of the 'Take' choice.
   take' : Take -> Update (ContractId Account.I)
 
+  -- | Retrieves the interface view.
   nonconsuming choice GetView : View
-    -- ^ Retrieves the interface view.
     with
-      viewer : Party
-        -- ^ The party fetching the view.
+      viewer : Party -- ^ The party fetching the view.
     controller viewer
     do
       pure $ view this
 
+  -- | Take the offer and create the 'Account'.
   nonconsuming choice Take : ContractId Account.I
     with
-      owner : Party
-      id : Id
-      accountDescription : Text
-      accountObservers : PartiesMap
+      owner : Party -- ^ Owner of the account.
+      id : Id -- ^ ID of the account.
+      accountDescription : Text -- ^ Description of the account.
+      accountObservers : PartiesMap -- ^ Observers of the account.
     controller owner
     do
       take' this arg
 
+-- | Type synonym for 'OpenOffer'.
 type I = OpenOffer

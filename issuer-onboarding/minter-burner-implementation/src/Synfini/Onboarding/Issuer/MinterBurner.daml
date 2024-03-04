@@ -38,28 +38,28 @@ template MinterBurner
     interface instance MinterBurner.I for MinterBurner where
       view = MinterBurner.View with custodian, depository, issuer
 
-      allocateIssuerCredit MinterBurner.AllocateIssuerCredit { instructionCid } = do
+      allocateMint MinterBurner.AllocateMint { instructionCid } = do
         instruction <- exercise instructionCid Instruction.GetView with viewer = issuer
         checkStep this True instruction
         exercise instructionCid Instruction.Allocate with
           actors = Set.fromList [custodian, issuer]
           allocation = CreditReceiver
 
-      unallocateIssuerCredit MinterBurner.UnallocateIssuerCredit { instructionCid } = do
+      unallocateMint MinterBurner.UnallocateMint { instructionCid } = do
         instruction <- exercise instructionCid Instruction.GetView with viewer = issuer
         checkStep this True instruction
         exercise instructionCid Instruction.Allocate with
           actors = Set.fromList [custodian, issuer]
           allocation = Unallocated
 
-      approveIssuerDebit MinterBurner.ApproveIssuerDebit { instructionCid } = do
+      approveBurn MinterBurner.ApproveBurn { instructionCid } = do
         instruction <- exercise instructionCid Instruction.GetView with viewer = issuer
         checkStep this False instruction
         exercise instructionCid Instruction.Approve with
           actors = Set.fromList [custodian, issuer]
           approval = DebitSender
 
-      unapproveIssuerDebit MinterBurner.UnapproveIssuerDebit { instructionCid } = do
+      unapproveBurn MinterBurner.UnapproveBurn { instructionCid } = do
         instruction <- exercise instructionCid Instruction.GetView with viewer = issuer
         checkStep this False instruction
         exercise instructionCid Instruction.Approve with

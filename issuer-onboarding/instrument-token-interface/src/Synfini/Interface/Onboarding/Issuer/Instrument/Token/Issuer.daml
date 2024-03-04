@@ -7,45 +7,52 @@ import Daml.Finance.Interface.Instrument.Token.Factory qualified as Token
 import Daml.Finance.Interface.Instrument.Token.Instrument qualified as Token
 import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
+-- | View of an 'Issuer'.
 data View = View
   with
-    depository : Party
-    issuer : Party
-    instrumentFactoryCid : ContractId Token.F
+    depository : Party -- ^ Depository of instruments that can be created by the issuer.
+    issuer : Party -- ^ Issuer which can create instruments.
+    instrumentFactoryCid : ContractId Token.F -- ^ Factory used to create instruments.
   deriving (Show, Eq)
 
+-- | Type synonym for 'View'.
 type V = View
 
+-- | An 'Issuer' contract permits an issuer to create token 'Instrument's in a given depository.
 interface Issuer requires Disclosure.I where
   viewtype V
 
+  -- | Implementation of the 'CreateInstrument' choice.
   createInstrument : CreateInstrument -> Update (ContractId Token.I)
 
+  -- | Implementation of the 'RemoveInstrument' choice.
   removeInstrument : RemoveInstrument -> Update ()
 
+  -- | Retrieves the interface view.
   nonconsuming choice GetView : V
-    -- ^ Retrieves the interface view.
     with
-      viewer : Party
-        -- ^ The party retrieving the view.
+      viewer : Party -- ^ The party retrieving the view.
     controller viewer
     do
       pure $ view this
 
+  -- | Create a token instrument.
   nonconsuming choice CreateInstrument : ContractId Token.I
     with
-      token : Token
-      observers : PartiesMap
+      token : Token -- ^ Details of the instrument.
+      observers : PartiesMap -- ^ Observers of the instrument.
     controller (view this).issuer
     do
       createInstrument this arg
 
+  -- | Remove a token instrument.
   nonconsuming choice RemoveInstrument : ()
     with
-      id : Id
-      version : Text
+      id : Id -- ^ ID of the instrument to be removed.
+      version : Text -- ^ Version of the instrument to be removed.
     controller (view this).issuer
     do
       removeInstrument this arg
 
+-- | Type synonym for 'Issuer'.
 type I = Issuer

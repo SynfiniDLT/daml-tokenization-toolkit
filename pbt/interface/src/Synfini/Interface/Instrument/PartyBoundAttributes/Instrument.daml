@@ -8,48 +8,51 @@ import Daml.Finance.Interface.Instrument.Base.Instrument qualified as BaseInstru
 import Daml.Finance.Interface.Lifecycle.Event qualified as Event
 import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
--- | Type synonym for `Instrument`.
+-- | Type synonym for 'Instrument'.
 type I = Instrument
 
--- | Type synonym for `View`.
+-- | Type synonym for 'View'.
 type V = View
 
+-- | Type of key-value data bound to the owner.
 type Attributes = Map Text Text
 
--- | View of `Instrument`.
+-- | View of an 'Instrument'.
 data View = View
   with
-    instrument : InstrumentKey
-    description : Text
-    validAsOf : Time
-    owner : Party
-    attributes : Attributes
-      -- ^ Attributes belonging to this token.
+    instrument : InstrumentKey -- ^ The instrument's key.
+    description : Text -- ^ The description of the attributes.
+    validAsOf : Time -- ^ Timestamp as of which the attributes are valid.
+    owner : Party -- ^ Party to which the attributes are bound.
+    attributes : Attributes -- ^ Attributes belonging of this token bound to the owner.
   deriving (Eq, Show)
 
+-- | Instrument which associates a party to a set of attributes owned by that party. This instrument is intended to be
+-- referenced (through its 'InstrumentKey') by a non-transferable and non-fungible 'Holding', whose owner is the same as
+-- that of this instrument. This can be used to issue a party specific attributes, such as a name, KYC flag,
+-- jurisdiction etc.
 interface Instrument requires BaseInstrument.I, Disclosure.I where
   viewtype V
 
+  -- | Implementation of the 'DeclareUpgrade' choice.
   declareUpgrade : DeclareUpgrade -> Update (ContractId Event.I)
 
+  -- | Retrieves the interface view.
   nonconsuming choice GetView : V
-    -- ^ Retrieves the interface view.
     with
-      viewer : Party
-        -- ^ The party retrieving the view.
+      viewer : Party -- ^ The party retrieving the view.
     controller viewer
     do
       pure $ view this
 
+  -- | Declare an upgrade to the owner's attributes. The owner can then elect to lifecycle their 'Holding' in order to
+  -- accept the new version.
   nonconsuming choice DeclareUpgrade : ContractId Event.I
     with
-      id : Id
-        -- ^ Event identifier of the dividend distribution.
-      description : Text
-        -- ^ Description of the dividend event.
-      effectiveTime : Time
-        -- ^ Time at which the upgrade is recorded
-      newInstrument : InstrumentKey
+      id : Id -- ^ Event identifier of the upgrade.
+      description : Text -- ^ Description of the upgrade.
+      effectiveTime : Time -- ^ Time at which the upgrade is recorded.
+      newInstrument : InstrumentKey -- ^ The key of the upgraded instrument.
     controller (view $ toInterface @BaseInstrument.I this).issuer
     do
       declareUpgrade this arg
