@@ -1,9 +1,0 @@
-module Synfini.Interface.Settlement.Cancellation.Proposal where
-
-import DA.Set (Set)
-
-data View = View
-  with
-    batchCid : ContractId Batch.I
-    requestors : Set Party
-    signedRequestors : Set Party
