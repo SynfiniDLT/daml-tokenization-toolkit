@@ -25,10 +25,10 @@ data View = View
     steps : [Step] -- ^ Proposed settlement steps, where the quantity of each step is multiplied by the quantity
     -- specified by the offeree when they accept.
     settlementTime : Optional Time -- ^ Optional settlement time of the 'Batch' if the offer is accepted.
-    minQuantity : Optional Decimal -- ^ Minimum quantity that can be specified by the offerees
-    maxQuantity :  Optional Decimal -- ^ Maximum quantity that can be specified by the offerees
+    minQuantity : Optional Decimal -- ^ Minimum quantity that can be specified by the offeree.
+    maxQuantity :  Optional Decimal -- ^ Maximum quantity that can be specified by the offeree.
     routeProviderCid : ContractId RouteProvider.I -- ^ Route provider used to determine the custodian(s) used for
-      -- settlement
+      -- settlement.
     settlementFactoryCid : ContractId SettlementFactory.I -- ^ Settlement factory used to instruct settlement.
   deriving (Show, Eq)
 
