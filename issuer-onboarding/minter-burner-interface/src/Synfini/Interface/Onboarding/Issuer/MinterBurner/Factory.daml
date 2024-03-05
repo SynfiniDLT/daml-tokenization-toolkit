@@ -15,6 +15,7 @@ data View = View
 -- | Type synonym for 'View'.
 type V = View
 
+-- | Factory to create instances of 'MinterBurner'.
 interface Factory requires Disclosure.I where
   viewtype V
 
