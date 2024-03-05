@@ -124,8 +124,8 @@ template Reference
 type R = Reference
 
 -- | Exercise interface by key.
--- This method can be used to exercise a choice on a 'MinterBurner' given its `View`.
--- Requires as input the `View`, the actor fetching the minter burner and the choice
+-- This method can be used to exercise a choice on a 'MinterBurner' given its 'View'.
+-- Requires as input the 'View', the actor fetching the minter burner and the choice
 -- arguments. For example:
 exerciseInterfaceByKey : forall i d r. (HasInterfaceTypeRep i, HasExercise i d r)
   => V              -- ^ The minter burner view (key).
