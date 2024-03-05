@@ -1,6 +1,26 @@
-# Daml Tokenization Library
+# Daml Tokenization Solution
 
-Suite of tools for tokenization of assets using Daml/Canton.
+A solution that demostrates
+1. Tokenization of assets using Daml/Canton.
+2. Asset settlement on Canton network.
+3. Wallet to support the asset tokenization.
+
+## Diagram
+![alt text](./img/Diagram.JPG)
+
+## Component
+The project contains a number of components
+| Folder  | Content | Dependency |
+| ------------- | ------------- | ------------- |
+| account-onboarding  | Daml templates that support account setup | Daml Finance |
+| issuer-onboarding  | Daml templates that support issuer setup | Daml Finance |
+| pbt  | Daml templates that support pbt/sbt | Daml Finance |
+| settlement  | Daml templates that support settlement function | Daml Finance |
+| trackable-settlement  | Daml templates that support issuers to observe customer holdings  | Daml Finance |
+| demo-config | Configurations files for the initial smart contract setup. The file contains data required to onboard users to the ledger    | Daml solution packages |
+| operations  | Scripts that support initial contract setup | Daml Finance |
+| wallet-views  | API for the UI |  |
+| wallet-ui  | UI app |  |
 
 ## Getting started
 
@@ -28,20 +48,6 @@ most likely be replaced with the Daml Participant Query Store feature. To instal
 make install-custom-views
 ```
 
-## Components
-The project contains a number of components
-| Folder  | Content | Dependency |
-| ------------- | ------------- | ------------- |
-| account-onboarding  | Daml templates that support account setup | Daml Finance |
-| issuer-onboarding  | Daml templates that support issuer setup | Daml Finance |
-| pbt  | Daml templates that support pbt/sbt | Daml Finance |
-| settlement  | Daml templates that support settlement function | Daml Finance |
-| trackable-holding  | Daml templates that allow additional parties such as issuers or service providers to observe customer holdings | Daml Finance |
-| trackable-settlement  | Daml templates that allow additional parties such as issuers or service providers to view settlements on customer accounts | Daml Finance |
-| demo-config | Sample configuration files for the initial smart contract setup. The file contains data required to onboard users to the ledger | Daml solution packages |
-| operations  | Scripts that support initial contract setup | Daml Finance, Daml templates defined in this project |
-| wallet-views  | API for the UI |  |
-| wallet-ui  | UI app |  |
 
  
 ## Setting up Auth0 Authentication for the React App (Wallet-ui)
@@ -191,3 +197,11 @@ source ~/.bashrc
 ```
 
 TODO: add more documentation on the CLI tool.
+
+## Next step
+
+There are a number of tasks ahead to complete and enhance this solution. 
+
+1. Update the wallet runer as the customer-view library is deprecated. One option is to upgrade to PQS if the user has Daml Enterprise SDK (https://docs.daml.com/query/pqs-user-guide.html#meet-prerequisites). Another option is to develop a tailored solution to stream data from the ledger to the database. 
+
+2. Use the latest solution from DA to support public party. Public party will enable disclosure such as reference data and public offerings.
