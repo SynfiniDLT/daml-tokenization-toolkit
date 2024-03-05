@@ -6,6 +6,7 @@ import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
 import Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner qualified as MinterBurner
 
+-- | View of a 'Factory'.
 data View = View
   with
     provider : Party -- ^ Provider of the 'Factory'.
