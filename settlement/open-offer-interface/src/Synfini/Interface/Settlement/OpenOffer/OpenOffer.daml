@@ -42,8 +42,10 @@ data View = View
     settlementTime : Optional (Either Time RelTime) -- ^ Optional settlement time of the 'Batch' if the offer
       -- is accepted. 'RelTime' can be used to specify settlement time relative to the ledger time when the offer is
       -- taken.
-    minQuantity : Optional Decimal -- ^ Minimum quantity that can be specified by the taker.
-    maxQuantity :  Optional Decimal -- ^ Maximum quantity that can be specified by the taker.
+    minQuantity : Optional Decimal -- ^ Minimum quantity that can be specified by the taker. 'None' indicates no lower
+      -- bound.
+    maxQuantity :  Optional Decimal -- ^ Maximum quantity that can be specified by the taker. 'None' indicates no uppper
+      -- bound.
     routeProviderCid : ContractId RouteProvider.I -- ^ Route provider used to determine the custodian(s) used for
       -- settlement.
     settlementFactoryCid : ContractId SettlementFactory.I -- ^ Settlement factory used to instruct settlement.
