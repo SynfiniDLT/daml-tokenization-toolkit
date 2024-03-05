@@ -13,11 +13,14 @@ import Daml.Finance.Interface.Types.Common.Types
 
 import Daml.Finance.Interface.Settlement.Batch qualified as Batch
 
--- | Allows you to atomically settle a set of settlement `Step`.
+-- | Implementation of batch settlement in which the creation of the 'Batch' and any consuming choices on it are always
+-- disclosed to a set of additional observers ('trackers'). This can be useful in cases where it is strictly required to
+-- disclose the settlement to these observers. For example, a regulatory reporting application would need to be able to
+-- see these transactions.
 template Batch
   with
-    defaultBatch : Default.Batch
-    trackers : Parties
+    defaultBatch : Default.Batch -- ^ Default implementation of the batch interface.
+    trackers : Parties -- ^ Additional observers which cannot be removed from the contract.
   where
     signatory (signatory defaultBatch)
     observer (observer defaultBatch), trackers

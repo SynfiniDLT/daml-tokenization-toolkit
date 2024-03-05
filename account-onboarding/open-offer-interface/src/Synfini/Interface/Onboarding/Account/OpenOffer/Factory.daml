@@ -9,40 +9,47 @@ import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
 import Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer qualified as OpenOffer
 
+-- | View of a 'Factory'.
 data View = View
   with
-    provider : Party
+    provider : Party -- ^ Provider of the 'Factory'.
   deriving (Show, Eq)
 
+-- | Type synonym for 'View'.
 type V = View
 
+-- | Factory used to create 'OpenOffer's.
 interface Factory requires Disclosure.I where
   viewtype V
 
+  -- | Implementation of the 'Create' choice.
   create' : Create -> Update (ContractId OpenOffer.I)
 
+  -- | Retrieves the interface view.
   nonconsuming choice GetView : View
-    -- ^ Retrieves the interface view.
     with
-      viewer : Party
-        -- ^ The party fetching the view.
+      viewer : Party -- ^ The party fetching the view.
     controller viewer
     do
       pure $ view this
 
   nonconsuming choice Create : ContractId OpenOffer.I
     with
-      custodian : Party
-      ownerIncomingControlled : Bool
-      ownerOutgoingControlled : Bool
-      additionalControllers : Account.Controllers
-      permittedOwners : Optional Parties
-      accountFactoryCid : ContractId Account.F
-      holdingFactoryCid : ContractId Holding.F
-      description : Text
-      observers : PartiesMap
+      custodian : Party -- ^ Custodian of accounts created using the offer.
+      ownerIncomingControlled : Bool -- ^ Flag to indicate if the owner will be included as an incoming controller on
+        -- accounts created using the offer.
+      ownerOutgoingControlled : Bool -- ^ Flag to indicate if owner will be included as an outgoing controller on
+        -- accounts created using the offer.
+      additionalControllers : Account.Controllers -- ^ Any parties, other than the owner, that will be included as
+        -- incoming or outgoing controllers on accounts created using the offer.
+      permittedOwners : Optional Parties -- ^ Whitelist of parties which are permitted to take the offer.
+      accountFactoryCid : ContractId Account.F -- ^ Factory to be used to create 'Account' instances.
+      holdingFactoryCid : ContractId Holding.F -- ^ Holding factory to be used to create holdings in the accounts.
+      description : Text -- ^ Description of this offer.
+      observers : PartiesMap -- ^ Observers of the offer.
     controller custodian
     do
       create' this arg
 
+-- | Type synonym for 'Factory'.
 type I = Factory

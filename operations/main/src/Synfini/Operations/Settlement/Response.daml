@@ -91,7 +91,7 @@ applyAllocationPreference acceptor (allocations, received, usePassThroughs) (ins
   let custodianQuantity = (instruction.routedStep.custodian, instruction.routedStep.quantity) in
   let (newAllocation, passThroughFrom)
         | preference.minterBurner && instruction.routedStep.sender == instruction.routedStep.custodian =
-          (Some (IssuerCreditHelp, None), None)
+          (Some (AllocateMintHelp, None), None)
         | preference.settleOffLedger && instruction.routedStep.sender == acceptor =
           (Some (SettleOffledgerHelp, None), None)
         | not preference.settleOffLedger && instruction.routedStep.sender == acceptor =
@@ -141,7 +141,7 @@ applyApprovalPreference : Party -> Map Id (Id, Id) -> Approvals -> (Instruction.
 applyApprovalPreference acceptor usePassThroughs approvals (instruction, preference) =
   let newApproval
         | preference.minterBurner && instruction.routedStep.receiver == instruction.routedStep.custodian =
-          Some ApproveIssuerDebitHelp
+          Some ApproveBurnHelp
         | preference.settleOffLedger && instruction.routedStep.receiver == acceptor =
           Some SettleOffledgerAcknowledgeHelp
         | not preference.settleOffLedger && instruction.routedStep.receiver == acceptor =

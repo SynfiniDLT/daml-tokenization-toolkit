@@ -36,9 +36,10 @@ The project contains a number of components
 | issuer-onboarding  | Daml templates that support issuer setup | Daml Finance |
 | pbt  | Daml templates that support pbt/sbt | Daml Finance |
 | settlement  | Daml templates that support settlement function | Daml Finance |
-| trackable-settlement  | Daml templates that support issuers to observe customer holdings  | Daml Finance |
-| demo-config | Configurations files for the initial smart contract setup. The file contains data required to onboard users to the ledger    | Daml solution packages |
-| operations  | Scripts that support initial contract setup | Daml Finance |
+| trackable-holding  | Daml templates that allow additional parties such as issuers or service providers to observe customer holdings | Daml Finance |
+| trackable-settlement  | Daml templates that allow additional parties such as issuers or service providers to view settlements on customer accounts | Daml Finance |
+| demo-config | Sample configuration files for the initial smart contract setup. The file contains data required to onboard users to the ledger | Daml solution packages |
+| operations  | Scripts that support initial contract setup | Daml Finance, Daml templates defined in this project |
 | wallet-views  | API for the UI |  |
 | wallet-ui  | UI app |  |
 

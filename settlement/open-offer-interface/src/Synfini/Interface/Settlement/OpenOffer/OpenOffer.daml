@@ -1,6 +1,7 @@
 module Synfini.Interface.Settlement.OpenOffer.OpenOffer where
 
 import DA.Set (Set)
+import DA.Time (RelTime)
 
 import Daml.Finance.Interface.Types.Common.Types
 
@@ -9,62 +10,85 @@ import Daml.Finance.Interface.Settlement.Factory qualified as SettlementFactory
 import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
 import Daml.Finance.Interface.Settlement.RouteProvider qualified as RouteProvider
 import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
-import DA.Time (RelTime)
 
-data Entity = PartyEntity Party | TakerEntity deriving (Show, Eq, Ord)
+-- | Data type used to resolve a party ID during exercise of the 'Take' choice.
+data Entity =
+  PartyEntity Party | -- ^ The party is resolved to the given party.
+  TakerEntity -- ^ The party will be equal to the party exercising the 'Take' choice.
+  deriving (Show, Eq, Ord)
 
+-- | Proposed settlement step.
 data OfferStep = OfferStep
   with
-    sender : Entity
-    receiver : Entity
-    quantity : InstrumentQuantity
+    sender : Entity -- ^ Sender of the asset.
+    receiver : Entity -- ^ Receiver of the asset.
+    quantity : InstrumentQuantity -- ^ Instrument and amount of the asset.
   deriving (Show, Eq)
 
+-- | View of an 'OpenOffer'.
 data View = View
   with
-    offerId : Id
-    offerDescription : Text
-    offerers : Set Party
-    settlementInstructors : Set Entity
-    settlers : Set Entity
-    permittedTakers : Optional (Set Party)
-    steps : [OfferStep]
-    settlementTime : Optional (Either Time RelTime)
-    minQuantity : Optional Decimal -- ^ Minimum quantity that can be specified by the taker
-    maxQuantity :  Optional Decimal -- ^ Maximum quantity that can be specified by the taker
-    routeProviderCid : ContractId RouteProvider.I -- ^ Route provider used to determine the custodian(s) used for settlement
-    settlementFactoryCid : ContractId SettlementFactory.I -- ^ Settlement factory used to instruct settlement
+    offerId : Id -- ^ Unique identifier of the offer to be used as the context id of the 'Batch' if the offer is
+      -- accepted.
+    offerDescription : Text -- ^ Description of the offer.
+    offerers : Set Party -- ^ Signatories of the offer.
+    settlementInstructors : Set Entity -- ^ Parties who will act as instructors of the settlement if the offer is
+      -- accepted.
+    settlers : Set Entity -- ^ Parties who will act as settlers on the resulting 'Batch' if the offer is accepted.
+    permittedTakers : Optional (Set Party) -- ^ Whitelist of parties with permission to take the offer. 'None' indicates
+      -- any stakeholder can take the offer.
+    steps : [OfferStep] -- ^ Proposed settlement steps, where the quantity of each step is multiplied by the quantity
+      -- specified by the taker.
+    settlementTime : Optional (Either Time RelTime) -- ^ Optional settlement time of the 'Batch' if the offer
+      -- is accepted. 'RelTime' can be used to specify settlement time relative to the ledger time when the offer is
+      -- taken.
+    minQuantity : Optional Decimal -- ^ Minimum quantity that can be specified by the taker. 'None' indicates no lower
+      -- bound.
+    maxQuantity :  Optional Decimal -- ^ Maximum quantity that can be specified by the taker. 'None' indicates no uppper
+      -- bound.
+    routeProviderCid : ContractId RouteProvider.I -- ^ Route provider used to determine the custodian(s) used for
+      -- settlement.
+    settlementFactoryCid : ContractId SettlementFactory.I -- ^ Settlement factory used to instruct settlement.
   deriving (Show, Eq)
 
+-- | Type synonym for 'View'.
 type V =  View
 
+-- | An offer, which if accepted, generates settlement instructions. It is an "open" offer because, if the offer is
+-- taken, it is not archived and can be used again.
 interface OpenOffer requires Disclosure.I where
   viewtype V
 
+  -- | Implementation of the 'Take' choice.
   take' : Take -> Update (ContractId Batch.I, [ContractId Instruction.I])
 
+  -- | Implementation of the 'Revoke' choice.
   revoke : Revoke -> Update ()
 
+  -- | Retrieves the interface view.
   nonconsuming choice GetView : V
     with
-      viewer : Party
+      viewer : Party -- ^ The party fetching the view.
     controller viewer
     do
       pure (view this)
 
+  -- | Take the offer and generate settlement instructions.
   nonconsuming choice Take : (ContractId Batch.I, [ContractId Instruction.I])
     with
-      id : Id
-      taker : Party
-      quantity : Decimal
-      description : Text
+      id : Id -- ^ Settlement 'Batch' ID.
+      taker : Party -- ^ Party taking the offer.
+      quantity : Decimal -- ^ The quantity of each settlement step will be multiplied by this amount.
+      description : Text -- ^ Description of the 'Batch' which can be used to add any comments or reference information.
     controller taker
     do
       take' this arg
 
+  -- | Choice for the offerers to take away the offer.
   choice Revoke : ()
     controller (view this).offerers
     do
       revoke this arg
 
+-- | Type synonym for 'OpenOffer'.
 type I = OpenOffer

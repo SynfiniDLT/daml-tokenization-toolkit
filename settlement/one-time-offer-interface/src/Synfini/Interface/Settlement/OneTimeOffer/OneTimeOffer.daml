@@ -12,37 +12,47 @@ import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
 import Daml.Finance.Interface.Settlement.RouteProvider qualified as RouteProvider
 import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
+-- | View of a 'OneTimeOffer'.
 data View = View
   with
-    offerId : Id -- ^ Unique identifier of the offer to be used as the id of the 'Batch' if the offer is accepted
-    offerers : Set Party -- ^ Parties who have signed the offer
-    offeree : Party -- ^ Party with the choice to accept or reject this offer
-    offerDescription : Text -- ^ Description of this offer
-    settlementInstructors : Set Party -- ^ Parties who will act as instructors of the settlement if the offer is accepted
-    settlers : Set Party -- ^ Parties who will act as settlers on the resulting 'Batch' if the offer is accepted
+    offerId : Id -- ^ Unique identifier of the offer to be used as the id of the 'Batch' if the offer is accepted.
+    offerers : Set Party -- ^ Parties who have signed the offer.
+    offeree : Party -- ^ Party with the choice to accept or reject this offer.
+    offerDescription : Text -- ^ Description of this offer.
+    settlementInstructors : Set Party -- ^ Parties who will act as instructors of the settlement if the offer is
+      -- accepted.
+    settlers : Set Party -- ^ Parties who will act as settlers on the resulting 'Batch' if the offer is accepted.
     steps : [Step] -- ^ Proposed settlement steps, where the quantity of each step is multiplied by the quantity
-    -- specified by the offerees when they accept
-    settlementTime : Optional Time
-    minQuantity : Optional Decimal -- ^ Minimum quantity that can be specified by the offerees
-    maxQuantity :  Optional Decimal -- ^ Maximum quantity that can be specified by the offerees
-    routeProviderCid : ContractId RouteProvider.I -- ^ Route provider used to determine the custodian(s) used for settlement
-    settlementFactoryCid : ContractId SettlementFactory.I -- ^ Settlement factory used to instruct settlement
+    -- specified by the offeree when they accept.
+    settlementTime : Optional Time -- ^ Optional settlement time of the 'Batch' if the offer is accepted.
+    minQuantity : Optional Decimal -- ^ Minimum quantity that can be specified by the offeree.
+    maxQuantity :  Optional Decimal -- ^ Maximum quantity that can be specified by the offeree.
+    routeProviderCid : ContractId RouteProvider.I -- ^ Route provider used to determine the custodian(s) used for
+      -- settlement.
+    settlementFactoryCid : ContractId SettlementFactory.I -- ^ Settlement factory used to instruct settlement.
   deriving (Show, Eq)
 
+-- | Type synonym for 'View'.
 type V = View
 
+-- | An offer, which if taken, will generate settlement instructions. Once taken or rejected, the offer is archived, so
+-- it is for one-time use only.
 interface OneTimeOffer requires Disclosure.I where
   viewtype V
 
+  -- | Implementation of the 'Accept' choice.
   accept : Accept -> Update (ContractId Batch.I, [ContractId Instruction.I])
 
+  -- | Implementation of the 'Reject' choice.
   reject : Reject -> Update ()
 
+  -- | Implementation of the 'Revoke' choice.
   revoke : Revoke -> Update ()
 
+  -- | Retrieves the interface view.
   nonconsuming choice GetView : V
     with
-      viewer : Party
+      viewer : Party -- ^ The party fetching the view.
     controller viewer
     do
       pure (view this)
@@ -51,22 +61,23 @@ interface OneTimeOffer requires Disclosure.I where
   -- as a result of this choice)
   choice Accept : (ContractId Batch.I, [ContractId Instruction.I])
     with
-      quantity : Decimal -- ^ The quantity of each settlement step will be multiplied by this amount
-      description : Text -- ^ Description of the 'Batch' which can be used to add any comments or reference information
+      quantity : Decimal -- ^ The quantity of each settlement step will be multiplied by this amount.
+      description : Text -- ^ Description of the 'Batch' which can be used to add any comments or reference information.
     controller (view this).offeree
     do
       accept this arg
 
-  -- | Choice to allow the offerees to reject the offer
+  -- | Choice to allow the offerees to reject the offer.
   choice Reject : ()
     controller (view this).offeree
     do
       reject this arg
 
-  -- | Choice for the offerers to take away the offer
+  -- | Choice for the offerers to take away the offer.
   choice Revoke : ()
     controller (view this).offerers
     do
       revoke this arg
 
+-- | Type synonym for 'OneTimeOffer'.
 type I = OneTimeOffer
