@@ -18,6 +18,12 @@ import Synfini.Interface.Instrument.PartyBoundAttributes.Instrument qualified as
 import Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer qualified as AccountOpenOffer
 import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Issuer qualified as TokenIssuer
 
+data TransactionDetail = TransactionDetail
+  with
+    offset : Text
+    effectiveTime : Time
+  deriving (Show, Eq)
+
 data Balance = Balance
   with
     account : AccountKey
@@ -31,10 +37,9 @@ data Balances = Balances
     balances : [Balance]
   deriving (Show, Eq)
 
-data TransactionDetail = TransactionDetail
+data BalanceFilter = BalanceFilter
   with
-    offset : Text
-    effectiveTime : Time
+    account : AccountKey
   deriving (Show, Eq)
 
 data HoldingSummary = HoldingSummary
@@ -49,21 +54,10 @@ data Holdings = Holdings
     holdings : [HoldingSummary]
   deriving (Show, Eq)
 
-data BalanceFilter = BalanceFilter
-  with
-    account : AccountKey
-  deriving (Show, Eq)
-
 data HoldingFilter = HoldingFilter
   with
     account : AccountKey
     instrument : InstrumentKey
-  deriving (Show, Eq)
-
-data AccountFilter = AccountFilter
-  with
-    custodian : Optional Party
-    owner : Party
   deriving (Show, Eq)
 
 data AccountSummary = AccountSummary
@@ -79,10 +73,10 @@ data Accounts = Accounts
     accounts : [AccountSummary]
   deriving (Show, Eq)
 
-data SettlementsFilter = SettlementsFilter
+data AccountFilter = AccountFilter
   with
-    before : Optional Text
-    limit : Optional Int
+    custodian : Optional Party
+    owner : Party
   deriving (Show, Eq)
 
 data SettlementStep = SettlementStep
@@ -112,6 +106,12 @@ data Settlements = Settlements
     settlements : [SettlementSummary]
   deriving (Show, Eq)
 
+data SettlementsFilter = SettlementsFilter
+  with
+    before : Optional Text
+    limit : Optional Int
+  deriving (Show, Eq)
+
 -- TODO may need to add create/archive TransactionDetail for this type
 data InstrumentSummary = InstrumentSummary
   with
@@ -133,11 +133,6 @@ data InstrumentsFilter = InstrumentsFilter
     version : Optional Text
   deriving (Show, Eq)
 
--- TODO may need to add filter parameters here
-data AccountOpenOffersFilter = AccountOpenOffersFilter
-  with
-  deriving (Show, Eq)
-
 data AccountOpenOfferSummary = AccountOpenOfferSummary
   with
     cid : ContractId AccountOpenOffer.I
@@ -150,10 +145,9 @@ data AccountOpenOffers = AccountOpenOffers
     accountOpenOffers : [AccountOpenOfferSummary]
   deriving (Show, Eq)
 
-data IssuersFilter = IssuersFilter
+-- TODO may need to add filter parameters here
+data AccountOpenOffersFilter = AccountOpenOffersFilter
   with
-    depository : Optional Party
-    issuer : Optional Party
   deriving (Show, Eq)
 
 data TokenIssuerSummary = TokenIssuerSummary
@@ -170,4 +164,10 @@ data IssuerSummary = IssuerSummary
 data Issuers = Issuers
   with
     issuers : [IssuerSummary]
+  deriving (Show, Eq)
+
+data IssuersFilter = IssuersFilter
+  with
+    depository : Optional Party
+    issuer : Optional Party
   deriving (Show, Eq)
