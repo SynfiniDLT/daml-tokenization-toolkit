@@ -43,8 +43,10 @@ The project contains a number of components
 | wallet-ui  | UI app |  |
 
  
-## Setting up Auth0 Authentication for Your React App
-This will guide you through the steps to set up Auth0 authentication in your React app as a Single Page Application (SPA).  
+## Setting up Auth0 Authentication for the React App (Wallet-ui)
+This will guide you through the steps to set up Auth0 authentication in your React app as a Single Page Application (SPA). In this application, we leverage Auth0's Universal Login to streamline the authentication and token generation process.   
+This authentication service provides a seamless and secure user experience by centralizing login functionality, allowing users to access their blockchain wallet through a unified and authenticated session managed by Auth0.  
+* Users have the flexibility to modify the authentication and authorization platform according to their preferences, providing them the freedom to integrate and use alternative authentication mechanisms if they are more comfortable with a different approach.
 
 ### Step 1: Create an Auth0 Account
 1. Go to Auth0 and sign up for a free account.

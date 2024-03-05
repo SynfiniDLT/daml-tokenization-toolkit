@@ -27,7 +27,7 @@ export const InstrumentCreateFormScreen: React.FC = () => {
 
   const [productTypeInput, setProductTypeInput] = useState("");
   const [productVersionInput, setProductVersionInput] = useState("");
-  const [piePointQuantityInput, setPiePointQuantity] = useState("");
+  const [certificateQuantityInput, setCertificateQuantity] = useState("");
   const [ipfsInput, setIpfsInput] = useState("");
   const [priceInput, setPriceInput] = useState("");
   const [observerInput, setObserverInput] = useState("");
@@ -44,8 +44,8 @@ export const InstrumentCreateFormScreen: React.FC = () => {
     setProductVersionInput(event.target.value);
   };
 
-  const handlePiePointQuantity = (event: any) => {
-    setPiePointQuantity(event.target.value);
+  const handleCertificateQuantity = (event: any) => {
+    setCertificateQuantity(event.target.value);
   };
 
   const handleIpfsInput = (event: any) => {
@@ -81,7 +81,7 @@ export const InstrumentCreateFormScreen: React.FC = () => {
 
       const desc_instrument = {
         ipfs: ipfsInput,
-        piePointQuantity: piePointQuantityInput,
+        certificateQuantity: certificateQuantityInput,
         price: priceInput
       };
 
@@ -123,7 +123,7 @@ export const InstrumentCreateFormScreen: React.FC = () => {
             <ContainerColumn>
               <ContainerColumnField>Product Type:</ContainerColumnField>
               <ContainerColumnField>Product Version:</ContainerColumnField>
-              <ContainerColumnField>PIE Point Quantity:</ContainerColumnField>
+              <ContainerColumnField>Certificate Quantity:</ContainerColumnField>
               <ContainerColumnField>IPFS url:</ContainerColumnField>
               <ContainerColumnField>Issuing Price:</ContainerColumnField>
               <ContainerColumnField>Promote To:</ContainerColumnField>
@@ -154,10 +154,10 @@ export const InstrumentCreateFormScreen: React.FC = () => {
               <ContainerColumnField>
                 <input
                   type="text"
-                  id="piePointQuantity"
-                  name="piePointQuantity"
+                  id="certificateQuantity"
+                  name="certificateQuantity"
                   style={{ width: "150px" }}
-                  onChange={handlePiePointQuantity}
+                  onChange={handleCertificateQuantity}
                 />
               </ContainerColumnField>
               <ContainerColumnField>
