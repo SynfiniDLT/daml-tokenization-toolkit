@@ -108,8 +108,7 @@ template Reference
     -- | Set the MinterBurner cid. This choice should be called only from 'MinterBurner' implementations.
     choice SetCid : ContractId R
       with
-        newCid : ContractId I
-          -- The minterburner cid.
+        newCid : ContractId I -- The minterburner cid.
       controller minterBurnerView.custodian
       do
         create this with cid = newCid

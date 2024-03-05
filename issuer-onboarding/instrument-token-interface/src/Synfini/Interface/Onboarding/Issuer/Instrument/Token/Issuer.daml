@@ -18,7 +18,7 @@ data View = View
 -- | Type synonym for 'View'.
 type V = View
 
--- | An 'Issuer' contract permits an issuer to create token 'Instrument's in a given depository.
+-- | An 'Issuer' contract permits an issuer to create token 'Instrument's at a given depository.
 interface Issuer requires Disclosure.I where
   viewtype V
 

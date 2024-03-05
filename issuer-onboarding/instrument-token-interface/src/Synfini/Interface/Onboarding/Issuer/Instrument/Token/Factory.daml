@@ -7,14 +7,16 @@ import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
 import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Issuer qualified as Issuer
 
+-- | View of a 'Factory'.
 data View = View
   with
-    provider : Party -- ^ Provider of the 'Factory'. -- ^ Provider of the 'Factory'.
+    provider : Party -- ^ Provider of the 'Factory'.
   deriving (Show, Eq)
 
 -- | Type synonym for 'View'.
 type V = View
 
+-- | Factory to create instances of 'Issuer'.
 interface Factory requires Disclosure.I where
   viewtype V
 
@@ -31,12 +33,13 @@ interface Factory requires Disclosure.I where
     do
       pure $ view this
 
+  -- | Create an 'Issuer'.
   nonconsuming choice Create : ContractId Issuer.I
     with
-      depository : Party
-      issuer : Party
-      instrumentFactoryCid : ContractId Token.F
-      observers : PartiesMap
+      depository : Party -- ^ Depository of instruments that can be created by the issuer.
+      issuer : Party -- ^ Issuer which can create instruments.
+      instrumentFactoryCid : ContractId Token.F -- ^ Factory used to create instruments.
+      observers : PartiesMap -- ^ Observers of the 'Issuer'.
     controller depository
     do
       create' this arg
