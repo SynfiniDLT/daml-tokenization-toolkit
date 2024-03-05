@@ -25,10 +25,8 @@ interface Factory requires Disclosure.I where
 
   -- | Retrieves the interface view.
   nonconsuming choice GetView : V
-    -- | Retrieves the interface view.
     with
-      viewer : Party
-        -- ^ The party retrieving the view.
+      viewer : Party -- ^ The party retrieving the view.
     controller viewer
     do
       pure $ view this
