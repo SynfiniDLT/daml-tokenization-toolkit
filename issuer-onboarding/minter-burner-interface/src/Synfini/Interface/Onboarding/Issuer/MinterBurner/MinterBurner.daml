@@ -41,7 +41,7 @@ interface MinterBurner requires Disclosure.I where
   -- | Retrieves the interface view.
   nonconsuming choice GetView : V
     with
-      viewer : Party
+      viewer : Party -- ^ The party retrieving the view.
     controller viewer
     do
       pure (view this)
