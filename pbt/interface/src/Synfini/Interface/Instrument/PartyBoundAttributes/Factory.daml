@@ -6,49 +6,45 @@ import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
 import Synfini.Interface.Instrument.PartyBoundAttributes.Instrument qualified as Instrument
 
--- | Type synonym for `Factory`.
+-- | Type synonym for 'Factory'.
 type F = Factory
 
--- | Type synonym for `View`.
+-- | Type synonym for 'View'.
 type V = View
 
--- View of `Factory`.
+-- | View of 'Factory'.
 data View = View
   with
-    provider : Party
-      -- ^ The provider of the `Factory`.
+    provider : Party -- ^ Provider of the 'Factory'.
   deriving (Eq, Show)
 
--- | Factory interface to instantiate simple tokens.
+-- | Factory to instantiate party-bound attributes 'Instrument's.
 interface Factory requires Disclosure.I where
   viewtype V
 
+  -- | Implementation of the 'Create' choice.
   create' : Create -> Update (ContractId Instrument.I)
-    -- ^ Implementation of `Create` choice.
-  remove : Remove -> Update ()
-    -- ^ Implementation of `Remove` choice.
 
+  -- | Implementation of 'Remove' choice.
+  remove : Remove -> Update ()
+
+  -- | Create new party-bound attributes.
   nonconsuming choice Create : ContractId Instrument.I
-    -- ^ Create a new token.
     with
-      instrument : InstrumentKey
-      description : Text
-      validAsOf : Time
-      owner : Party
-      attributes : Instrument.Attributes
-        -- ^ Attributes to create a token.
-      observers : PartiesMap
-        -- ^ The instrument's observers.
+      instrument : InstrumentKey -- ^ The instrument's key.
+      description : Text -- ^ The description of the attributes.
+      validAsOf : Time -- ^ Timestamp as of which the attributes are valid.
+      owner : Party -- ^ Owner of the attributes.
+      attributes : Instrument.Attributes -- ^ Attributes of the party.
+      observers : PartiesMap -- ^ The instrument's observers.
     controller instrument.depository, instrument.issuer
     do
       create' this arg
 
+  -- | Archive party-bound attributes.
   nonconsuming choice Remove : ()
-    -- ^ Archive a token.
     with
-      instrument : InstrumentKey
-      owner : Party
-        -- ^ The instrument's key.
+      instrument : InstrumentKey -- ^ The instrument's key.
     controller instrument.depository, instrument.issuer
       do
         remove this arg

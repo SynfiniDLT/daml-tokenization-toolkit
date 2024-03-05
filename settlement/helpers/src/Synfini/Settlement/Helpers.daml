@@ -19,68 +19,76 @@ import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
 
 import Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner qualified as MinterBurner
 
-type InstructionIndex = Id
-
+-- | The type of allocation to apply to the instruction using the helper function.
 data AllocationHelp =
-  UnallocatedHelp |
-  PledgeFromFungiblesHelp |
-  PledgeFromNonFungiblesHelp |
-  CreditReceiverHelp |
-  IssuerCreditHelp |
-  UnallocateIssuerCreditHelp |
-  SettleOffledgerHelp |
-  PassThroughFromHelp with accountId : Id, instructionIndex : InstructionIndex
+  UnallocatedHelp | -- ^ Use the 'Unallocated' allocation type.
+  PledgeFromFungiblesHelp | -- ^ Use the 'Pledge' allocation type by allocating fungible 'Holding's.
+  PledgeFromNonFungiblesHelp | -- ^ Use the 'Pledge' allocation type by allocating non-fungible 'Holding's.
+  CreditReceiverHelp | -- ^ Use the 'CreditReceiver' allocation type.
+  AllocateMintHelp | -- ^ Use a 'MinterBurner' instance to allocate the instruction.
+  UnallocateMintHelp | -- ^ Use a 'MinterBurner' instance to un-allocate the instruction.
+  SettleOffledgerHelp | -- ^ Use the 'SettleOffledger' allocation type.
+  PassThroughFromHelp with accountId : Id, instructionId : Id -- ^ Use the 'PassThroughFrom' allocation type.
   deriving (Show, Eq)
 
+-- | The type of approval to apply to the instruction using the helper function.
 data ApprovalHelp =
-  UnapprovedHelp |
-  TakeDeliveryHelp Id |
-  DebitSenderHelp |
-  ApproveIssuerDebitHelp |
-  UnapproveIssuerDebitHelp |
-  SettleOffledgerAcknowledgeHelp |
-  PassThroughToHelp with accountId : Id, instructionIndex : InstructionIndex
+  UnapprovedHelp | -- ^ Use the 'Unapproved' allocation type.
+  TakeDeliveryHelp with accountId : Id | -- ^ Use the 'TakeDelivery' allocation type.
+  DebitSenderHelp | -- ^ Use the 'DebitSender' allocation type.
+  ApproveBurnHelp | -- ^ Use a 'MinterBurner' instance to approve the instruction.
+  UnapproveBurnHelp | -- ^ Use a 'MinterBurner' instance to un-approve the instruction.
+  SettleOffledgerAcknowledgeHelp | -- ^ Use the 'SettleOffledger' approval type.
+  PassThroughToHelp with accountId : Id, instructionId : Id -- ^ Use the 'PassThroughTo' approval type.
   deriving (Show, Eq)
 
+-- | Descriptor of a 'Holding' contract.
 data HoldingDescriptor = HoldingDescriptor
   with
-    instrument : InstrumentKey
-    custodian : Party
+    instrument : InstrumentKey -- ^ The instrument of the 'Holding'.
+    custodian : Party -- ^ The custodian of the 'Holding'.
   deriving (Show, Eq, Ord)
 
+-- | Type synonym for 'Holding's contract IDs and their descriptors.
 type HoldingsMap = Map HoldingDescriptor [ContractId Holding.I] 
 
-type InstructionsMap = Map InstructionIndex (ContractId Instruction.I)
+-- | Type synonym for 'Instruction's contract IDs and their instruction IDs.
+type InstructionsMap = Map Id (ContractId Instruction.I)
 
+-- | Template to allow for allocation and/or approval of one or more 'Instruction's from a single 'Batch'. It is inteded
+-- to be created and exercised on in the same transaction (i.e. a CreateAndExerciseCommand on the ledger API).
 template AllocateAndApproveHelper
   with
-    actors : Set Party
-    holdings : HoldingsMap
-    instructions : InstructionsMap
-    allocations : Map InstructionIndex AllocationHelp
-    approvals : Map InstructionIndex ApprovalHelp
+    actors : Set Party -- ^ Parties authorising the allocations and/or approvals.
+    holdings : HoldingsMap -- ^ Holdings contracts to be used for settlement, grouped by their descriptors.
+    instructions : InstructionsMap -- ^ Map which resolves an instrution ID to its contract ID.
+    allocations : Map Id AllocationHelp -- ^ Instruction IDs and the allocations to perform on them.
+    approvals : Map Id ApprovalHelp -- ^ Instruction IDs and the approvals to perform on them.
   where
     signatory actors
 
     ensure all (`Map.member` instructions) (Map.keys allocations) &&
       all (`Map.member` instructions) (Map.keys approvals)
 
+    -- | Allocate and approve all required instructions and return the new 'Instruction' and 'Holding' contract IDs.
     choice AllocateAndApprove : (InstructionsMap, HoldingsMap)
       controller actors
       do
-        let mapInstr (index, instructionCid) =
-              (index, instructionCid, Map.lookup index allocations, Map.lookup index approvals)
+        let mapInstr (instrId, instructionCid) =
+              (instrId, instructionCid, Map.lookup instrId allocations, Map.lookup instrId approvals)
         let instructionsList = mapInstr <$> (Map.toList instructions)
         foldlA (allocateAndApproveHelper actors) (instructions, holdings) instructionsList
 
+-- | HIDE
 type InstructionState = (InstructionsMap, HoldingsMap)
 
+-- | HIDE
 allocateAndApproveHelper :
   Set Party ->
   InstructionState ->
-  (InstructionIndex, ContractId Instruction.I, Optional AllocationHelp, Optional ApprovalHelp) ->
+  (Id, ContractId Instruction.I, Optional AllocationHelp, Optional ApprovalHelp) ->
   Update InstructionState
-allocateAndApproveHelper actors (instructionsMap, holdingsMap) (index, instructionCid, allocation, approval) = do
+allocateAndApproveHelper actors (instructionsMap, holdingsMap) (instrId, instructionCid, allocation, approval) = do
   let viewer = L.head (Set.toList actors)
   instruction <- exercise instructionCid Instruction.GetView with viewer
   let holdingDescriptor = HoldingDescriptor with
@@ -107,17 +115,17 @@ allocateAndApproveHelper actors (instructionsMap, holdingsMap) (index, instructi
           instructionCid'
         )
     Some PledgeFromNonFungiblesHelp -> error "Non-fungible settlement not supported"
-    Some IssuerCreditHelp -> do
+    Some AllocateMintHelp -> do
       (instructionCid', _) <- MinterBurner.exerciseInterfaceByKey @MinterBurner.I
         (minterBurnerKey instruction)
         viewer
-        MinterBurner.AllocateIssuerCredit with instructionCid
+        MinterBurner.AllocateMint with instructionCid
       pure (holdingsMap, instructionCid')
-    Some UnallocateIssuerCreditHelp -> do
+    Some UnallocateMintHelp -> do
       (instructionCid', _) <- MinterBurner.exerciseInterfaceByKey @MinterBurner.I
         (minterBurnerKey instruction)
         viewer
-        MinterBurner.UnallocateIssuerCredit with instructionCid
+        MinterBurner.UnallocateMint with instructionCid
       pure (holdingsMap, instructionCid')
     Some CreditReceiverHelp -> do
       (instructionCid', _) <- exercise instructionCid Instruction.Allocate with
@@ -129,11 +137,11 @@ allocateAndApproveHelper actors (instructionsMap, holdingsMap) (index, instructi
         allocation = SettleOffledger
         actors
       pure (holdingsMap, instructionCid')
-    Some (PassThroughFromHelp accountId passThroughIndex) -> do
+    Some (PassThroughFromHelp accountId passThroughId) -> do
       let passThroughInstructionKey = InstructionKey with
             requestors = instruction.requestors
             batchId = instruction.batchId
-            id = passThroughIndex
+            id = passThroughId
           passThroughFromAccount = AccountKey with
             custodian = instruction.routedStep.custodian
             owner = instruction.routedStep.sender
@@ -152,21 +160,21 @@ allocateAndApproveHelper actors (instructionsMap, holdingsMap) (index, instructi
             id = accountId
       exercise instructionCid Instruction.Approve with actors, approval = TakeDelivery takeDeliveryAccount
     Some DebitSenderHelp -> exercise instructionCid Instruction.Approve with actors, approval = DebitSender
-    Some ApproveIssuerDebitHelp -> MinterBurner.exerciseInterfaceByKey @MinterBurner.I
+    Some ApproveBurnHelp -> MinterBurner.exerciseInterfaceByKey @MinterBurner.I
       (minterBurnerKey instruction)
       viewer
-      MinterBurner.ApproveIssuerDebit with instructionCid
-    Some UnapproveIssuerDebitHelp -> MinterBurner.exerciseInterfaceByKey @MinterBurner.I
+      MinterBurner.ApproveBurn with instructionCid
+    Some UnapproveBurnHelp -> MinterBurner.exerciseInterfaceByKey @MinterBurner.I
       (minterBurnerKey instruction)
       viewer
-      MinterBurner.UnapproveIssuerDebit with instructionCid
+      MinterBurner.UnapproveBurn with instructionCid
     Some SettleOffledgerAcknowledgeHelp ->
       exercise instructionCid Instruction.Approve with actors, approval = SettleOffledgerAcknowledge
-    Some (PassThroughToHelp accountId passThroughIndex) -> do
+    Some (PassThroughToHelp accountId passThroughId) -> do
       let passThroughInstructionKey = InstructionKey with
             requestors = instruction.requestors
             batchId = instruction.batchId
-            id = passThroughIndex
+            id = passThroughId
           passThroughToAccount = AccountKey with
             custodian = instruction.routedStep.custodian
             owner = instruction.routedStep.receiver
@@ -174,14 +182,16 @@ allocateAndApproveHelper actors (instructionsMap, holdingsMap) (index, instructi
       exercise instructionCid Instruction.Approve with
         actors
         approval = PassThroughTo (passThroughToAccount, passThroughInstructionKey)
-  pure (Map.insert index instructionCid instructionsMap, holdingsMap)
+  pure (Map.insert instrId instructionCid instructionsMap, holdingsMap)
 
+-- | HIDE
 minterBurnerKey : Instruction.V -> MinterBurner.V
 minterBurnerKey instruction = MinterBurner.View with
   custodian = instruction.routedStep.custodian
   depository = instruction.routedStep.quantity.unit.depository
   issuer = instruction.routedStep.quantity.unit.issuer
 
+-- | HIDE
 mergeAndSplitHelper : [ContractId Fungible.I] ->
                       Decimal ->
                       Update (ContractId Fungible.I, Optional (ContractId Fungible.I))

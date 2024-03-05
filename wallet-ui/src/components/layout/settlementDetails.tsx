@@ -246,11 +246,11 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
             }
             allocations = allocations.set(step.instructionId, {
               tag: "PassThroughFromHelp",
-              value: { accountId, instructionIndex: passThroughFromId },
+              value: { accountId, instructionId: passThroughFromId },
             });
             approvals = approvals.set(passThroughFromId, {
               tag: "PassThroughToHelp",
-              value: { accountId, instructionIndex: step.instructionId },
+              value: { accountId, instructionId: step.instructionId },
             });
           } else {
             allocations = allocations.set(step.instructionId, { tag: "PledgeFromFungiblesHelp", value: {} });
@@ -266,7 +266,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
         step.routedStep.quantity.unit.issuer === ctx.primaryParty
       ) {
         // This is a "mint" instruction to be approved by the issuer
-        allocations = allocations.set(step.instructionId, { tag: "IssuerCreditHelp", value: {} });
+        allocations = allocations.set(step.instructionId, { tag: "AllocateMintHelp", value: {} });
       }
     });
 
@@ -277,14 +277,14 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
         if (step.routedStep.receiver === ctx.primaryParty) {
           const accountId = accounts.get(step.routedStep.custodian);
           if (accountId !== undefined) {
-            approvals = approvals.set(step.instructionId, { tag: "TakeDeliveryHelp", value: accountId });
+            approvals = approvals.set(step.instructionId, { tag: "TakeDeliveryHelp", value: { accountId } });
           }
         } else if (
           step.routedStep.receiver === step.routedStep.custodian &&
           step.routedStep.quantity.unit.issuer === ctx.primaryParty
         ) {
           // This is a "burn" instruction to be approved by the issuer
-          approvals = approvals.set(step.instructionId, { tag: "ApproveIssuerDebitHelp", value: {} });
+          approvals = approvals.set(step.instructionId, { tag: "ApproveBurnHelp", value: {} });
         }
       });
 

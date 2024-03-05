@@ -17,9 +17,13 @@ instance HasField "observers" Fungible PartiesMap where
   getField f = f.defaultFungible.observers
   setField obs f = f with defaultFungible.observers = obs
 
+-- | Fungible holding which can be tracked by additional observers: i.e. any consuming choices such as 'Split',
+-- 'Transfer' etc. will result in a new holding which maintains the same additional observers. This can be useful in
+-- cases where it is strictly required to maintain these observers. For example, a regulatory reporting application
+-- would need to be able to track holding movements.
 template Fungible
   with
-    defaultFungible : Default.Fungible
+    defaultFungible : Default.Fungible -- ^ Default implementation of the 'Fungible' interface.
     trackers : Parties -- ^ Additional observers which cannot be removed from the contract.
   where
     signatory (signatory defaultFungible)
@@ -61,11 +65,12 @@ instance HasField "observers" Factory PartiesMap where
   getField f = f.defaultFactory.observers
   setField obs f = f with defaultFactory.observers = obs
 
+-- | Factory use to create instances of trackable 'Fungible' holdings.
 template Factory
   with
-    defaultFactory : Default.Factory
-    holdingTrackers : Parties
-      -- ^ Parties which are always added as observers onto any Holdings created with this factory.
+    defaultFactory : Default.Factory -- ^ Default implementation of the 'Factory' interface.
+    holdingTrackers : Parties -- ^ Parties which are always added as observers onto any Holdings created with this
+      -- factory.
   where
     signatory (signatory defaultFactory)
     observer (observer defaultFactory)

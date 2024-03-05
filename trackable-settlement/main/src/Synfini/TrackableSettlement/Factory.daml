@@ -11,10 +11,12 @@ import Daml.Finance.Interface.Settlement.Factory qualified as Factory
 
 import Synfini.TrackableSettlement.Batch qualified as Custom
 
+-- | Factory use to create instances of trackable 'Batch'es.
 template Factory
   with
-    defaultFactory : Default.Factory
-    settlementTrackers : Parties
+    defaultFactory : Default.Factory -- ^ Default implementation of the Factory interface.
+    settlementTrackers : Parties -- ^ Parties which are always added as observers onto any 'Batch'es and 'Instruction's
+      -- created with this factory.
   where
     signatory (signatory defaultFactory)
 

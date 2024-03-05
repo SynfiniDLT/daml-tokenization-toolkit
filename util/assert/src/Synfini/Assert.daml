@@ -2,5 +2,7 @@ module Synfini.Assert where
 
 import DA.Action (when)
 
+-- | Assert that the two arguments are equal, including an error message and a display of the two values if the
+-- assertion fails.
 assertEqMsg : (CanAssert m, Show a, Eq a) => Text -> a -> a -> m ()
 assertEqMsg msg a b = when (a /= b) (assertFail (msg <> ": expected " <> show a <> " == " <> show b))

@@ -12,42 +12,50 @@ import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
 import Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer qualified as OneTimeOffer
 
+-- | View of a 'Factory'.
 data View = View
   with
-    provider : Party
+    provider : Party -- ^ Provider of the 'Factory'.
   deriving (Show, Eq)
 
+-- | Type synonym for 'View'.
 type V = View
 
+-- | Factory to create 'OneTimeOffer' instances.
 interface Factory requires Disclosure.I where
   viewtype V
 
+  -- | Implementation of the 'Create' choice.
   create' : Create -> Update (ContractId OneTimeOffer.I)
 
+  -- | Retrieves the interface view.
   nonconsuming choice GetView : V
     with
-      viewer : Party
+      viewer : Party -- ^ The party fetching the view.
     controller viewer
     do
       pure (view this)
 
+  -- | Create a 'OneTimeOffer'.
   nonconsuming choice Create : ContractId OneTimeOffer.I
     with
-      offerId : Id
-      offerers : Set Party
-      offeree : Party
-      offerDescription : Text
-      settlementInstructors : Set Party
-      settlers : Set Party
-      steps : [Step]
-      settlementTime : Optional Time
-      minQuantity : Optional Decimal
-      maxQuantity :  Optional Decimal
-      routeProviderCid : ContractId RouteProvider.I
-      settlementFactoryCid : ContractId SettlementFactory.I
-      observers : PartiesMap
+      offerId : Id -- ^ ID of the offer.
+      offerers : Set Party -- ^ Signatories of the offer.
+      offeree : Party -- ^ Offeree of the offer.
+      offerDescription : Text -- ^ Description of the offer.
+      settlementInstructors : Set Party -- ^ Instructors of the settlement, if the offer is accepted.
+      settlers : Set Party -- ^ Settlers, if the offer is accepted.
+      steps : [Step] -- ^ Proposed settlement steps.
+      settlementTime : Optional Time -- ^ Proposed settlement time.
+      minQuantity : Optional Decimal -- ^ Minimum quantity permitted for settlement.
+      maxQuantity :  Optional Decimal -- ^ Maximum quantity permitted for settlement.
+      routeProviderCid : ContractId RouteProvider.I -- ^ Route provider used to determine the custodian(s) used for
+      -- settlement
+      settlementFactoryCid : ContractId SettlementFactory.I -- ^ Settlement factory used to instruct settlement.
+      observers : PartiesMap -- ^ Observers of the 'OneTimeOffer'.
     controller offerers
     do
       create' this arg
 
+-- | Type synonym for 'Factory'.
 type I = Factory

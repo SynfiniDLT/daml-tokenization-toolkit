@@ -6,37 +6,45 @@ import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
 import Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner qualified as MinterBurner
 
+-- | View of a 'Factory'.
 data View = View
   with
-    provider : Party
+    provider : Party -- ^ Provider of the 'Factory'.
   deriving (Show, Eq)
 
+-- | Type synonym for 'View'.
 type V = View
 
+-- | Factory to create instances of 'MinterBurner'.
 interface Factory requires Disclosure.I where
   viewtype V
 
+  -- | Implementation of the 'Create' choice.
   create' : Create -> Update (ContractId MinterBurner.I)
 
+  -- | Implementation of the 'Remove' choice.
   remove : Remove -> Update ()
 
+  -- | Create a 'MinterBurner'.
   nonconsuming choice Create : ContractId MinterBurner.I
     with
-      custodian : Party
-      depository : Party
-      issuer : Party
-      observers : PartiesMap
+      custodian : Party -- ^ Custodian under which the issuer can mint or burn.
+      depository : Party -- ^ Depository at which minted or burned assets are held.
+      issuer : Party -- ^ Instrument issuer who is responsible for authorising minting or burning.
+      observers : PartiesMap -- ^ Observers of the 'MinterBurner'.
     controller custodian
     do
       create' this arg
 
+  -- | Remove a 'MinterBurner'.
   nonconsuming choice Remove : ()
     with
-      custodian : Party
-      depository : Party
-      issuer : Party
+      custodian : Party -- ^ Custodian of the 'MinterBurner'.
+      depository : Party -- ^ Depository of the 'MinterBurner'.
+      issuer : Party -- ^ The issuer whose minting and burning rights will be revoked.
     controller custodian
     do
       remove this arg
 
+-- | Type synonym for 'Factory'.
 type I = Factory

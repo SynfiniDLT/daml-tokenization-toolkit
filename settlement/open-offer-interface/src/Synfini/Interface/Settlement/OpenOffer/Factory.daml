@@ -1,54 +1,63 @@
 module Synfini.Interface.Settlement.OpenOffer.Factory where
 
 import DA.Set (Set)
+import DA.Time.Types (RelTime)
 
 import Daml.Finance.Interface.Types.Common.Types
-
-import Daml.Finance.Interface.Settlement.Types (Step)
 
 import Daml.Finance.Interface.Settlement.Factory qualified as SettlementFactory
 import Daml.Finance.Interface.Settlement.RouteProvider qualified as RouteProvider
 import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
 import Synfini.Interface.Settlement.OpenOffer.OpenOffer qualified as OpenOffer
-import DA.Time.Types (RelTime)
 
+-- | View of a 'Factory'.
 data View = View
   with
-    provider : Party
+    provider : Party -- ^ Provider of the 'Factory'.
   deriving (Show, Eq)
 
+-- | Type synonym for 'View'.
 type V = View
 
+-- | Factory used to instantiate 'OpenOffer's.
 interface Factory requires Disclosure.I where
   viewtype V
 
+  -- | Implementation of the 'Create' choice.
   create' : Create -> Update (ContractId OpenOffer.I)
 
+  -- | Retrieves the interface view.
   nonconsuming choice GetView : V
     with
-      viewer : Party
+      viewer : Party -- ^ The party fetching the view.
     controller viewer
     do
       pure (view this)
 
+  -- | Create an 'OpenOffer'.
   nonconsuming choice Create : ContractId OpenOffer.I
     with
-      offerId : Id
-      offerDescription : Text
-      offerers : Set Party
-      settlementInstructors : Set OpenOffer.Entity
-      settlers : Set OpenOffer.Entity
-      permittedTakers : Optional (Set Party)
-      steps : [OpenOffer.OfferStep]
-      settlementTime : Optional (Either Time RelTime)
-      minQuantity : Optional Decimal
-      maxQuantity :  Optional Decimal
-      routeProviderCid : ContractId RouteProvider.I
-      settlementFactoryCid : ContractId SettlementFactory.I
-      observers : PartiesMap
+      offerId : Id -- ^ Unique identifier of the offer.
+      offerDescription : Text -- ^ Description of the offer.
+      offerers : Set Party -- ^ Signatories of the offer.
+      settlementInstructors : Set OpenOffer.Entity -- ^ Parties who will act as instructors of the settlement if the
+        -- offer is accepted.
+      settlers : Set OpenOffer.Entity -- ^ Parties who will act as settlers on the resulting 'Batch' if the offer is
+        -- accepted.
+      permittedTakers : Optional (Set Party) -- ^ Whitelist of parties with permission to take the offer.
+      steps : [OpenOffer.OfferStep] -- ^ Proposed settlement steps.
+      settlementTime : Optional (Either Time RelTime) -- ^ Optional settlement time of the 'Batch' if the offer is
+        -- accepted.
+      minQuantity : Optional Decimal -- ^ Minimum quantity that can be specified by the taker.
+      maxQuantity :  Optional Decimal  -- ^ Maximum quantity that can be specified by the taker.
+      routeProviderCid : ContractId RouteProvider.I -- ^ Route provider used to determine the custodian(s) used for
+        -- settlement.
+      settlementFactoryCid : ContractId SettlementFactory.I -- ^ Settlement factory used to instruct settlement.
+      observers : PartiesMap -- ^ Observers of the offer.
     controller offerers
     do
       create' this arg
 
+-- | Type synonym for 'Factory'.
 type I = Factory
