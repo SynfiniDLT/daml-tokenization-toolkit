@@ -79,7 +79,7 @@ Unauthorized.
 Before reading this section you should have a working knowledge of the fundamentals of Daml Finance library (accounts,
 holdings, settlement and instruments). The following endpoints are provided the API:
 
-### List accounts
+### List Accounts
 #### HTTP Request
 - URL: `/wallet-views/v1/accounts`
 - Method: `POST`
@@ -88,8 +88,8 @@ holdings, settlement and instruments). The following endpoints are provided the 
 
 ```js
 {
-  "custodian": "Acme::abc123", // Only returns accounts which use this custodian - optional
-  "owner": "Alice::abc123" // Only returns accounts owned by this party
+  "custodian": "Acme::abc123...", // Only returns accounts which use this custodian - optional
+  "owner": "Alice::abc123..." // Only returns accounts owned by this party
 }
 ```
 
@@ -107,21 +107,25 @@ holdings, settlement and instruments). The following endpoints are provided the 
     {
       "cid": "abc123...", // Contract ID of the Daml Finance Account
       "view": { // Interface view of the Daml Finance Account
-        "custodian": "Acme::abc123",
-        "owner": "Alice::abc123",
+        "custodian": "Acme::abc123...",
+        "owner": "Alice::abc123...",
         "id": {
           "unpack": "1"
         },
         "description": "...",
         "holdingFactoryCid": "...",
         "controllers": {
-          "outgoing": [
-            ["Alice::abc123", {}],
-            ["Bob::abc123", {}]
-          ],
-          "incoming": [
-            ["Charlie::abc123", {}]
-          ]
+          "outgoing": {
+            "map": [
+              ["Alice::abc123...", {}],
+              ["Bob::abc123...", {}]
+            ]
+          },
+          "incoming": {
+            "map": [
+              ["Charlie::abc123...", {}],
+            ]
+          }
         }
       },
       "create": { // When the account was created - optional
@@ -131,6 +135,68 @@ holdings, settlement and instruments). The following endpoints are provided the 
       "remove": { // When the account was removed - optional
         "offset": "...",
         "effectiveTime": "2023-05-01T04:30:23.123456Z"
+      }
+    }
+  ]
+}
+```
+
+### List Account OpenOffer Contracts
+This endpoint lists account `OpenOffer` contracts as defined in the `account-onboarding` at the base of this repository.
+
+#### HTTP Request
+- URL: `/wallet-views/v1/account-open-offers`
+- Method: `POST`
+- Content-Type: `application/json`
+- Content:
+
+```js
+{} // No filters are currently implemented
+```
+
+#### Required permissions
+- N/A (only returns data which is visible to parties that the user has readAs or actAs rights for).
+
+#### HTTP Response
+- Content-Type: `application/json`
+- Content:
+
+```js
+{
+  "accountOpenOffers": [ // Zero or more open offers
+    {
+      "cid": "abc123...", // Contract ID of OpenOffer
+      "view": { // Interface view of the OpenOffer
+        "custodian": "Acme::abc123...",
+        "ownerIncomingControlled": true,
+        "ownerOutgoingControlled": false,
+        "additionalControllers": {
+          "outgoing": {
+            "map": [
+              ["Alice::abc123...", {}],
+              ["Bob::abc123...", {}]
+            ]
+          },
+          "incoming": {
+            "map": [
+              ["Charlie::abc123...", {}],
+            ]
+          }
+        },
+        "permittedOwners": { // Optional
+          "map": [
+            ["David::abc123...", {}],
+          ]
+        },
+        "accountFactoryCid": "abc123...",
+        "holdingFactoryCid": "abc123...",
+        "description": "..."
+      },
+      "create": {
+        // When the offer was created - optional (present if contract was created after the projection runner first
+        // started)
+        "offset": "...",
+        "effectiveTime": "2023-01-01T04:30:23.123456Z"
       }
     }
   ]
@@ -147,8 +213,8 @@ holdings, settlement and instruments). The following endpoints are provided the 
 ```js
 {
   "account": { // Returns balances for this account
-    "owner": "Alice::abc123",
-    "custodian": "Custodian::abc123",
+    "owner": "Alice::abc123...",
+    "custodian": "Custodian::abc123...",
     "id": {
       "unpack": "1"
     }
@@ -169,15 +235,15 @@ holdings, settlement and instruments). The following endpoints are provided the 
   "balances": [
     {
       "account": {
-        "owner": "Alice::abc123",
-        "custodian": "Acme::abc123",
+        "owner": "Alice::abc123...",
+        "custodian": "Acme::abc123...",
         "id": {
           "unpack": "1"
         }
       },
       "instrument": {
-        "depository": "Depository::abc123",
-        "issuer": "Issuer1::abc123",
+        "depository": "Depository::abc123...",
+        "issuer": "Issuer1::abc123...",
         "id": {
           "unpack": "Coin1"
         },
@@ -188,15 +254,15 @@ holdings, settlement and instruments). The following endpoints are provided the 
     },
     {
       "account": {
-        "owner": "Alice::abc123",
-        "custodian": "Acme::abc123",
+        "owner": "Alice::abc123...",
+        "custodian": "Acme::abc123...",
         "id": {
           "unpack": "1"
         }
       },
       "instrument": {
-        "depository": "Depository::abc123",
-        "issuer": "Issuer2::abc123",
+        "depository": "Depository::abc123...",
+        "issuer": "Issuer2::abc123...",
         "id": {
           "unpack": "Coin2"
         },
@@ -209,7 +275,7 @@ holdings, settlement and instruments). The following endpoints are provided the 
 }
 ```
 
-### List settlements
+### List Settlements
 #### HTTP Request
 - URL: `/wallet-views/v1/settlements`
 - Method: `POST`
@@ -255,7 +321,7 @@ holdings, settlement and instruments). The following endpoints are provided the 
       "requestors": {
         "map": [
           [
-            "Alice::abc123",
+            "Alice::abc123...",
             {}
           ]
         ]
@@ -263,7 +329,7 @@ holdings, settlement and instruments). The following endpoints are provided the 
       "settlers": {
         "map": [
           [
-            "Bob::abc123",
+            "Bob::abc123...",
             {}
           ]
         ]
@@ -291,8 +357,8 @@ holdings, settlement and instruments). The following endpoints are provided the 
             "tag": "PassThroughFrom",
             "value": {
               "_1": { // AccountKey
-                "owner": "Alice::abc123",
-                "custodian": "Acme::abc123",
+                "owner": "Alice::abc123...",
+                "custodian": "Acme::abc123...",
                 "id": {
                   "unpack": "1"
                 }
@@ -301,7 +367,7 @@ holdings, settlement and instruments). The following endpoints are provided the 
                 "requestors": {
                   "map": [
                     [
-                      "Alice::abc123",
+                      "Alice::abc123...",
                       {}
                     ]
                   ]
@@ -322,8 +388,8 @@ holdings, settlement and instruments). The following endpoints are provided the 
             // ... or ...
             "tag": "TakeDelivery",
             "value": { // AccountKey
-              "owner": "Alice::abc123",
-              "custodian": "Acme::abc123",
+              "owner": "Alice::abc123...",
+              "custodian": "Acme::abc123...",
               "id": {
                 "unpack": "1"
               }
@@ -338,8 +404,8 @@ holdings, settlement and instruments). The following endpoints are provided the 
             "tag": "PassThroughTo",
             "value": {
               "_1": { // AccountKey
-                "owner": "Alice::abc123",
-                "custodian": "Acme::abc123",
+                "owner": "Alice::abc123...",
+                "custodian": "Acme::abc123...",
                 "id": {
                   "unpack": "1"
                 }
@@ -348,7 +414,7 @@ holdings, settlement and instruments). The following endpoints are provided the 
                 "requestors": {
                   "map": [
                     [
-                      "Alice::abc123",
+                      "Alice::abc123...",
                       {}
                     ]
                   ]
@@ -365,10 +431,10 @@ holdings, settlement and instruments). The following endpoints are provided the 
           "routedStep": {
             "sender": "Charlie::def456",
             "receiver": "David::ghi789",
-            "custodian": "Custodian::abc123",
+            "custodian": "Custodian::abc123...",
             "quantity": {
               "unit": {
-                "depository": "Custodian::abc123",
+                "depository": "Custodian::abc123...",
                 "issuer": "Issuer::def456",
                 "id": {
                   "unpack": "1"
@@ -398,7 +464,7 @@ combination of batch ID and the set of requesting parties. This applies even for
 on the ledger. The `Batch`es and `Instruction`es are grouped together by the batch key. This requires the requesting
 parties to use a trusted supplier of unique identifiers from off the ledger.
 
-### List Holding contracts
+### List Holding Contracts
 This endpoint is useful if you need to get specific `Holding` contracts and use them within workflows, such as transfers
 or DvP.
 
@@ -411,15 +477,15 @@ or DvP.
 ```js
 {
   "account": {
-    "owner": "Alice::abc123",
-    "custodian": "Custodian::abc123",
+    "owner": "Alice::abc123...",
+    "custodian": "Custodian::abc123...",
     "id": {
       "unpack": "1"
     }
   },
   "instrument": {
-    "depository": "Depository::abc123",
-    "issuer": "Issuer1::abc123",
+    "depository": "Depository::abc123...",
+    "issuer": "Issuer1::abc123...",
     "id": {
       "unpack": "Coin1"
     },
@@ -442,15 +508,15 @@ or DvP.
       "cid": "abc123...", // Contract ID of the Holding
       "view": { // Interface view of the Daml Finance Holding (Base interface)
         "account": {
-          "custodian": "Acme::abc123",
-          "owner": "Alice::abc123",
+          "custodian": "Acme::abc123...",
+          "owner": "Alice::abc123...",
           "id": {
            "unpack": "1"
           }
         },
         "instrument": {
-          "depository": "Depository::abc123",
-          "issuer": "Issuer1::abc123",
+          "depository": "Depository::abc123...",
+          "issuer": "Issuer1::abc123...",
           "id": {
             "unpack": "Coin1"
           },
@@ -458,15 +524,17 @@ or DvP.
         },
         "amount": "999.0",
         "lock": { // Optional
-          "lockers": [
-            ["Alice::abc123", {}],
-            ["Bob::abc123", {}]
-          ],
+          "lockers": {
+            "map": [
+              ["Alice::abc123...", {}],
+              ["Bob::abc123...", {}]
+            ]
+          },
           "lockType": "Semaphore" // "Semaphore" or "Reentrant"
         }
       },
       "create": {
-        // When the Holding contract was created - optional (present if Holding was created after the projection runner
+        // When the Holding contract was created - optional (present if contract was created after the projection runner
         // first started)
         "offset": "...",
         "effectiveTime": "2023-01-01T04:30:23.123456Z"
