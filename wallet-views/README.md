@@ -653,6 +653,53 @@ List `Issuer` contracts as defined in the `issuer-onboarding` folder at the base
 }
 ```
 
+### Start the projection
+Start the projection runner
+
+#### HTTP Request
+- URL: `/wallet-views/v1/projection/start`
+- Method: `POST`
+- Content-Type: `application/json`
+- Content:
+
+```js
+{
+  "readAs": "Alice::abc123...",
+  "tokenUrl": "https://your-access-token-endpoint", // OAuth access token endpoint - optional (will not use authentication if not provided)
+  "clientId": "abc123...", // OAuth client ID - optional (required if "tokenUrl" is provided)
+  "clientSecret": "abc123...", // OAuth client secret - optional (required if "tokenUrl" is provided)
+  "audience": "abc123..." // OAuth audience - optional (required if "tokenUrl" is provided)
+}
+```
+
+#### Required permissions
+- Authentication for this endpoint is not yet implemented, however the projection runner itself still needs to
+authenticate against the participant
+
+#### HTTP Response
+- Content-Type: `application/json`
+- Content: `null`
+
+### Stop the projection
+Stop the projection runner
+
+#### HTTP Request
+- URL: `/wallet-views/v1/projection/clear`
+- Method: `POST`
+- Content-Type: `application/json`
+- Content:
+
+```js
+{}
+```
+
+#### Required permissions
+- Authentication for this endpoint is not yet implemented
+
+#### HTTP Response
+- Content-Type: `application/json`
+- Content: `null`
+
 ## Building and running
 
 Building/running/testing is only supported on Linux.
@@ -670,176 +717,141 @@ Please install the following first:
 
 ### Build
 
-Due to a bug in custom views, we need to clone a forked version of the repository until such time that DA release a fix
-for this.
+Install the custom views library by running:
 
-    git clone https://github.com/SynfiniDLT/custom-views
-    cd custom-views
-    git checkout non-root-events-assembly
-    sbt 'set test in assembly := {}' clean assembly
-    mvn install:install-file \
-      -Dfile=target/scala-2.13/custom-views-assembly-LOCAL-SNAPSHOT.jar \
-      -DgroupId=com.daml \
-      -DartifactId=custom-views_2.13 \
-      -Dversion=assembly-LOCAL-SNAPSHOT \
-      -Dpackaging=jar \
-      -DgeneratePom=true
+```
+make install-custom-views
+```
 
-Change directory back to the root of this repository and download the Daml Finance dependencies:
+from the base of this repository.
 
-    ./get-dependencies.sh
+Then the API and projection runner can be compiled using:
 
-This command builds both the API and projection runner as they are currently part of one maven project:
+```
+make compile-wallet-views
+```
 
-    mvn clean compile
+The above command will download and build all required dependencies. Do not try to compile without using `make` as these
+dependencies may not be updated.
+
+To build an executable JAR:
+
+```
+make build-wallet-views
+```
+
+The TypeScript client can be built using:
+
+```
+make build-wallet-views-client
+```
 
 ### Run the projection runner
 
-In order to run the projection you need to upload the Daml Finance DAR files to the ledger first. After running the
-`get-dependencies.sh`, they can be found here:
+#### 1. Upload required Daml packages
 
-- `.lib/daml-finance-interface-account.dar`
-- `.lib/daml-finance-interface-holding.dar`
-- `.lib/daml-finance-interface-settlement.dar`
+In order to run the projection you need to upload the required DAR files to the ledger first. You can either use the
+`dops` CLI tool (refer to `operations` folder in the base of this repository) as follows:
 
-Here is an example of how to run on the local Daml sandbox. You can adjust the `--ledger-host` and `--ledger-port` to
-point to your participant node. Remove the `--ledger-plaintext` argument if the participant node uses TLS. Mutual TLS
-is not supported. PostsgreSQL is the only supported database type.
+```bash
+# Make sure to export required environment variables to connect to your participant before running `dops` (see
+# the documentation for more detail)
+dops upload-dar
+```
 
-    mvn exec:java \
-      -Dexec.mainClass="com.synfini.wallet.views.projection.ProjectionRunner" \
-      -Dexec.args=" \
-         --ledger-host localhost \
-         --ledger-port 6865 \
-         --ledger-plaintext \
-         --read-as Alice::abc123 \
-         --db-url jdbc:postgresql://localhost/wallet_views \
-         --db-user postgres \
-         --db-password-file /path/to/password.txt"
+or you can directly upload the DAR file found at `.build/synfini-wallet-views-types.dar` using the `daml` assistant
+or ledger API. This DAR file is automatically built by `make compile-wallet-views` or `make build-wallet-views`.
 
-The `--read-as` parameter is the party ID that will be used to stream data from the ledger. The database password needs
-to be stored in a file, with the file path supplied as the `--db-password-file` option.
+#### 2. Allocate a party for the projection
 
-To run against an authenticated participant, use the following additional options, which are used to fetch access tokens
-from an OAuth 2.0 access token endpoint.
+You need to allocate one party on the participant which is used to stream all required contracts from the ledger. This
+party will need to be a stakeholder on all such contracts.
 
-- `--token-audience`: Your OAuth token audience.
-- `--token-client-id`: Your OAuth client ID.
-- `--token-client-secret-file`: File path to a file containing your client secret.
-- `--token-url`: URL of your OAuth access token endpoint.
+#### 3. Setup a Postgres database
 
-For more options, run with the `--help` flag.
+Create a Postgres database. Currently only Postgres version 12 is supported.
 
-### Run the API
+#### 4. Run the application
 
-The API can be configured using `src/main/resources/application.properties`.
+The API and projection runner are packaged as a single JAR file. When the application is run, the API
+starts automatically, but to start the projection need to be started by issuing a HTTP request to the API.
 
-Launch the API using the command below. This is an example for running on the local sandbox. The host/port values can
-be adjusted as required. The default behaviour is to use TLS to connect to the ledger - i.e. if the default value of
-`walletviews.ledger-plaintext` is `false`.
+Create an `application.properties` file by copying the example from `src/main/resources/application.properties`. The
+following properties can be modified as required but the others should not be altered:
 
-    mvn spring-boot:run \
-      -Dspring-boot.run.arguments=" \
-        --walletviews.ledger-host=localhost \
-        --walletviews.ledger-port=6865 \
-        --walletviews.ledger-plaintext=true"
+| Property | Description |
+| ------------- | ------------- |
+| `spring.datasource.url` | JDBC URL of the Postgres database |
+| `spring.datasource.username` | Username used to write the data from the ledger into Postgres database. Also used to create the database schema if required. |
+| `spring.datasource.password` | Password of the above Postgres user |
+| `walletviews.ledger-host` | Host of the participant node's gRPC API |
+| `walletviews.ledger-port` | Port of the participant node's gRPC API |
+| `walletviews.ledger-plaintext` | Use `true` for plaintext connections to the participant node's gRPC API, otherwise TLS will be used |
+| `walletviews.max-transactions-response-size` | Maximum number of batch settlements the API will return in a single response when no limit is provided in the request |
+| `walletviews.projection.token-refresh-window-seconds` | For the projection runner. If there is less than this amount of time left before its access token expires, it will fetch a fresh token using the OAuth token endpoint |
+| `walletviews.projection.max-retries` | Maximum times the projection runner will re-try on error* |
+| `walletviews.projection.retry-window-seconds` | Retry window of the projection runner* |
+| `walletviews.projection.retry-delay-seconds` | Delay between retries of the projection runner* |
+
+*If the projection runner encounters an error, then it will increment a retry counter variable (initially set to zero)
+and attempt to re-start the projection. If a subsequent error occurs within `retry-window-seconds` then the counter is
+incremented again, otherwise the counter is set to zero. If the counter reaches `walletviews.projection.max-retries`
+then the projection runner will terminate. A delay between retries can be added using
+`walletviews.projection.retry-delay-seconds`.
+
+Next, run `make build-wallet-views`. This will generate a JAR file under the `wallet-views/java/target` directory. You
+can launch the API by running
+
+```
+java \
+  -Dprojection.flyway.migrate-on-start=true \
+  -jar wallet-views/java/target/wallet-views-<version>.jar \
+  --spring.config.name=application \
+  --spring.config.location=file:<directory containing application.properties>
+```
+
+This will start the API on port 8080 running over a plaintext connection. TLS support is not currently implemented.
+
+#### 5. Create the database schema and run the projection
+
+The projection needs to be started using a HTTP POST call to the `wallet-views/v1/projection/start` endpoint (see the
+API documentation section above for more detail). Note: in the previous step the system variable
+`projection.flyway.migrate-on-start` was set to `true`. This will cause the database schema to be created when the
+projection runner starts. A known issue is that schema creation requires root privelages on the database due to the
+usage of `CREATE EXTENSION` in the schema creation SQL. Therefore you may want to set
+`projection.flyway.migrate-on-start` to `true` the first time you run the projection (using a database user with the
+required privelages), then re-start the application using a different user (with lesser privelages) and set
+`projection.flyway.migrate-on-start` to `false`
 
 ## Running the tests
 
-Testing is not yet automated as part of a build process. These are the steps for running the tests manually.
+### API tests
 
-### Run the API test cases
+To run functional test cases on the API, run the below command:
 
-The tests for the API (and projection runner) can be run using:
+```
+make test-wallet-views
+```
 
-    mvn clean compile test
+This will:
 
-The above command will:
-
-- Start a local Daml sandbox.
+- Start a local Daml sandbox on an available port.
 - Run the projection runner to project events from the sandbox into a Postgres instance managed by [Test Containers](https://www.testcontainers.org/).
 - Test that the API correctly returns data based on what commands have been submitted to the ledger API.
-- Tear down the sandbox at the end of the test suite.
+- Tear down the sandbox and wallet views application at the end of the test suite.
 
-### TypeScript client
+### TypeScript client tests
 
-To build the TypeScript client, run the following:
+There is a set of integration tests for the TypeScript client. They can be run using:
 
-    cd daml/types
-    daml build
-    rm -rf ../../typescript-client/daml.js
-    daml codegen js .daml/dist/synfini-wallet-views-types-0.0.1.dar -o ../../typescript-client/daml.js
-    cd ../../typescript-client
-    npm install
-    npm run build
+```
+make test-wallet-views-client
+```
 
-### Running the TypeScript test cases
+This will:
 
-These test cases test the integration between the TypeScript code and the API. This requires you to start the projection
-runner, API and Daml sandbox first.
-
-Start the sandbox:
-
-    cd daml/typescript-integration-test
-    daml sandbox
-
-In another terminal, from the project root, start a PostgreSQL database with docker compose:
-
-    docker compose up -d db
-
-Drop the `wallet_views` database if it already exists:
-
-    psql -h localhost -p 5432 -U postgres -c 'drop database wallet_views'
-
-Create a new database named `wallet_views` in the Postgres db.
-
-    psql -h localhost -p 5432 -U postgres -c 'create database wallet_views'
-
-Upload the DAR and allocate the parties:
-
-    cd daml/typescript-integration-test
-    daml build
-    daml ledger upload-dar .daml/dist/synfini-wallet-views-typescript-integration-test-0.0.1.dar
-    daml script \
-      --dar .daml/dist/synfini-wallet-views-typescript-integration-test-0.0.1.dar \
-      --ledger-host localhost \
-      --ledger-port 6865 \
-      --output-file ../../typescript-client/allocate-parties-output.json \
-      --script-name Synfini.Wallet.Api.TypeScriptIntegrationTestSetup:allocateParties
-
-Start the projection process. Note you will need [jq](https://stedolan.github.io/jq/) to run the command below, and it should be run from the
-project  root
-
-    mvn exec:java \
-      -Dexec.mainClass="com.synfini.wallet.views.projection.ProjectionRunner" \
-      -Dexec.args=" \
-         --ledger-host localhost \
-         --ledger-port 6865 \
-         --ledger-plaintext \
-         --read-as $(jq -r '.custodian' typescript-client/allocate-parties-output.json) \
-         --db-url jdbc:postgresql://localhost/wallet_views \
-         --db-user postgres \
-         --db-password-file /dev/stdin" <<< "postgres"
-
-After the projection process is started, run the script to create contracts for testing:
-
-    cd daml/typescript-integration-test
-    daml script \
-      --dar .daml/dist/synfini-wallet-views-typescript-integration-test-0.0.1.dar \
-      --ledger-host localhost \
-      --ledger-port 6865 \
-      --input-file ../../typescript-client/allocate-parties-output.json \
-      --script-name Synfini.Wallet.Api.TypeScriptIntegrationTestSetup:createContracts
-
-From the project root, start the API server
-
-    mvn spring-boot:run \
-      -Dspring-boot.run.arguments=" \
-        --walletviews.ledger-host=localhost \
-        --walletviews.ledger-port=6865 \
-        --walletviews.ledger-plaintext=true"
-
-Run the tests:
-
-    cd typescript-client
-    npm test
+- Start a local Daml sandbox on an available port.
+- Run the projection runner to project events from the sandbox into a Postgres instance created using `docker compose` on
+an available port. The compose file can be found under `wallet-views/java`.
+- Perform basic tests to make sure the TypeScript client can retrieve data from the API.
+- Tear down the sandbox and wallet views application at the end of the test suite.
