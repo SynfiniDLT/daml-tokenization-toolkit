@@ -613,6 +613,46 @@ Note: only active contracts are returned.
 }
 ```
 
+### List Issuers
+List `Issuer` contracts as defined in the `issuer-onboarding` folder at the base of this repository.
+
+#### HTTP Request
+- URL: `/wallet-views/v1/issuers`
+- Method: `POST`
+- Content-Type: `application/json`
+- Content:
+
+```js
+{
+  "depository": "Depository1::abc123...", // Optional
+  "issuer": "Issuer::abc123...", // Optional
+}
+```
+
+#### Required permissions
+- N/A (only returns data which is visible to parties that the user has readAs or actAs rights for).
+
+#### HTTP Response
+- Content-Type: `application/json`
+- Content:
+
+```js
+{
+  "instruments": [ // Zero or more Issuers
+    {
+      "token": { // Details of Token issuer (optional as other issuer types may be added in future e.g. Bond Issuer)
+        "cid": "abc123...", // Contract ID of the Token Issuer
+        "view": {
+          "depository": "Depository1::abc123...",
+          "issuer": "Issuer::abc123...",
+          "instrumentFactoryCid": "abc123..."
+        }
+      }
+    }
+  ]
+}
+```
+
 ## Building and running
 
 Building/running/testing is only supported on Linux.
