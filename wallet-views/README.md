@@ -76,8 +76,14 @@ Unauthorized.
 
 ## API Specification
 
-Before reading this section you should have a working knowledge of the fundamentals of Daml Finance library (accounts,
-holdings, settlement and instruments). The following endpoints are provided the API:
+Before reading this section you should have a working knowledge of the fundamentals of the Daml Finance library (
+accounts, holdings, settlement and instruments). Any request fields marked as optional below must still be included in
+the JSON request body but with value set to `null` (as opposed to not including the field at all). This is a known issue
+due to the usage of the `gson` library for decoding the Daml data types. The necessary conversions from JSON to Daml
+types are not natively supported in the Daml java libraries at the time of writing (refer to this
+[issue](https://discuss.daml.com/t/java-jsoncodec-how-to-convert-from-jsvalue-to-value/6453)).
+
+The following endpoints are provided the API:
 
 ### List Accounts
 #### HTTP Request
