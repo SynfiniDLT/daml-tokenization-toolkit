@@ -12,8 +12,8 @@ A solution that demostrates
 The project contains a number of components
 | Folder  | Content | Dependency |
 | ------------- | ------------- | ------------- |
-| account-onboarding  | Daml templates that support account setup | Daml Finance |
-| issuer-onboarding  | Daml templates that support issuer setup | Daml Finance |
+| account-onboarding  | Daml templates. Refer to [this readme file](./account-onboarding/README.md) | Daml Finance |
+| issuer-onboarding  | Daml templates. Refer to [this readme file](./isser-onboarding/README.md) | Daml Finance |
 | pbt  | Daml templates that support pbt/sbt | Daml Finance |
 | settlement  | Daml templates that support settlement function | Daml Finance |
 | trackable-settlement  | Daml templates that support issuers to observe customer holdings  | Daml Finance |
@@ -21,6 +21,7 @@ The project contains a number of components
 | operations  | Scripts that support initial contract setup | Daml Finance |
 | wallet-views  | API for the UI |  |
 | wallet-ui  | UI app |  |
+
 
 ## Getting started
 
@@ -197,6 +198,27 @@ source ~/.bashrc
 ```
 
 TODO: add more documentation on the CLI tool.
+
+## Asset and party configuration of the demo
+### UI User profile
+
+| UI user profile  | Description  |
+| ------------- | -------------  |
+| Issuer  | Issuer can create instruments and offers, mint asset and enter into a settlement with other parties. Issuer can access and use the issuer wallet. | 
+| Investor  | Investor can accept offers and enter into settlement with other parties. Investor can access and use the investor wallet. | 
+
+Each user on the ledger needs to use one or many parties to communicate with the ledger and complete the required workflow. 
+
+| User | Party | Description | 
+| ------------- | ------------- | -------------  |
+| coin issuer | asset_Issuer | the party manage the coin issuing | 
+| coin issuer | asset_Depository | depository for the coin instrument | 
+| asset/coin validator | asset_Validator | the party witnesses and validates the transactions. Each asset can have its own validator party. Validator party should be opertated by app operator or ledger provider |
+| investor | investorA | investor party |
+| investor | investorB | investor party |
+| fund issuer | FundA | the party manage the fund issuing |
+| fund issuer | Fund_depository | depository for the fund instrument |
+| broker | FundManagerA | the party which takes the commission in fund settlement workflow | 
 
 ## Next step
 
