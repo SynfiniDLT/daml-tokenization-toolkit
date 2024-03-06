@@ -187,7 +187,7 @@ This endpoint lists account `OpenOffer` contracts as defined in the `account-onb
           "map": [
             ["David::abc123...", {}],
           ]
-        },
+        }, 
         "accountFactoryCid": "abc123...",
         "holdingFactoryCid": "abc123...",
         "description": "..."
@@ -300,7 +300,7 @@ This endpoint lists account `OpenOffer` contracts as defined in the `account-onb
 
 ```js
 {
-  "settlements": [ // List of 0 or more Daml Finance `Batch` settlements
+  "settlements": [ // Zero or more Daml Finance `Batch` settlements
     {
       "execution": { // Ledger offset and ledger time at which the `Batch` was settled - optional
         "offset": "...",
@@ -545,6 +545,73 @@ or DvP.
 ```
 
 Note: only active contracts are returned.
+
+### List Instruments
+
+#### HTTP Request
+- URL: `/wallet-views/v1/instruments`
+- Method: `POST`
+- Content-Type: `application/json`
+- Content:
+
+```js
+{
+  "depository": "Depository1::abc123...",
+  "issuer": "Issuer::abc123...",
+  "id": { // Instrument ID - optional
+    "unpack": "Coin1"
+  },
+  "version": "1" // Instrument version - optional
+}
+```
+
+#### Required permissions
+- N/A (only returns data which is visible to parties that the user has readAs or actAs rights for).
+
+#### HTTP Response
+- Content-Type: `application/json`
+- Content:
+
+```js
+{
+  "instruments": [ // Zero or more Instruments
+    {
+      "cid": "abc123...", // Contract ID of the Instrument
+      "tokenView": { // Interface view of the Instrument if it is a Token Instrument
+        "instrument": {
+          "depository": "Depository::abc123...",
+          "issuer": "Issuer1::abc123...",
+          "id": {
+            "unpack": "Coin1"
+          },
+          "version": "1"
+        },
+        "description": "...",
+        "validAsOf": "2023-01-01T04:30:23.123456Z"
+      },
+      "pbaView": {
+        // Interface view of the Instrument if it is a PartyBoundAttributes Instrument (defined in `pbt` folder in the
+        // base of this repository)
+        "instrument": {
+          "depository": "Depository::abc123...",
+          "issuer": "Issuer1::abc123...",
+          "id": {
+            "unpack": "Coin1"
+          },
+          "version": "1"
+        },
+        "description": "...",
+        "validAsOf": "2023-01-01T04:30:23.123456Z",
+        "owner": "Alice::abc123...",
+        "attributes": [
+          ["k1", "v1"],
+          ["k2", "v2"]
+        ]
+      }
+    }
+  ]
+}
+```
 
 ## Building and running
 
