@@ -860,3 +860,4 @@ This will:
 an available port. The compose file can be found under `wallet-views/java`.
 - Perform basic tests to make sure the TypeScript client can retrieve data from the API.
 - Tear down the sandbox and wallet views application at the end of the test suite.
+- Stop the Postgres docker container.
