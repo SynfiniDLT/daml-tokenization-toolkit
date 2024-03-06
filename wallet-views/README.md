@@ -148,7 +148,8 @@ The following endpoints are provided the API:
 ```
 
 ### List Account OpenOffer Contracts
-This endpoint lists account `OpenOffer` contracts as defined in the `account-onboarding` at the base of this repository.
+This endpoint lists account `OpenOffer` contracts as defined in the `account-onboarding` folder at the base of this
+repository.
 
 #### HTTP Request
 - URL: `/wallet-views/v1/account-open-offers`
@@ -399,7 +400,7 @@ This endpoint lists account `OpenOffer` contracts as defined in the `account-onb
               "id": {
                 "unpack": "1"
               }
-            }
+            },
             // ... or ...
             "tag": "DebitSender",
             "value": {},
@@ -435,13 +436,13 @@ This endpoint lists account `OpenOffer` contracts as defined in the `account-onb
             }
           },
           "routedStep": {
-            "sender": "Charlie::def456",
-            "receiver": "David::ghi789",
+            "sender": "Charlie::abc123...",
+            "receiver": "David::abc123...",
             "custodian": "Custodian::abc123...",
             "quantity": {
               "unit": {
                 "depository": "Custodian::abc123...",
-                "issuer": "Issuer::def456",
+                "issuer": "Issuer::abc123...",
                 "id": {
                   "unpack": "1"
                 },
@@ -779,9 +780,6 @@ Create a Postgres database. Currently only Postgres version 12 is supported.
 
 #### 4. Run the application
 
-The API and projection runner are packaged as a single JAR file. When the application is run, the API
-starts automatically, but to start the projection need to be started by issuing a HTTP request to the API.
-
 Create an `application.properties` file by copying the example from `src/main/resources/application.properties`. The
 following properties can be modified as required but the others should not be altered:
 
@@ -817,6 +815,7 @@ java \
 ```
 
 This will start the API on port 8080 running over a plaintext connection. TLS support is not currently implemented.
+Note: the projection will not start automatically (see the next step) i.e. the API will not return any data (yet).
 
 #### 5. Create the database schema and run the projection
 
