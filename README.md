@@ -211,11 +211,11 @@ Each user on the ledger needs to use one or many parties to communicate with the
 
 | User | Party | Description | 
 | ------------- | ------------- | -------------  |
-| coin issuer | asset_Issuer | the party manage the coin issuing | 
-| coin issuer | asset_Depository | depository for the coin instrument | 
+| coin issuer | Asset_Issuer | the party manage the coin issuing | 
+| coin issuer | Asset_Depository | depository for the coin instrument | 
 | asset/coin validator | asset_Validator | the party witnesses and validates the transactions. Each asset can have its own validator party. Validator party should be opertated by app operator or ledger provider |
-| investor | investorA | investor party |
-| investor | investorB | investor party |
+| investor | InvestorA | investor party |
+| investor | InvestorB | investor party |
 | fund issuer | FundA | the party manage the fund issuing |
 | fund issuer | Fund_depository | depository for the fund instrument |
 | broker | FundManagerA | the party which takes the commission in fund settlement workflow | 
