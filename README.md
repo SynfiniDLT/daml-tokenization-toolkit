@@ -207,18 +207,18 @@ TODO: add more documentation on the CLI tool.
 | Issuer  | Issuer can create instruments and offers, mint asset and enter into a settlement with other parties. Issuer can access and use the issuer wallet. | 
 | Investor  | Investor can accept offers and enter into settlement with other parties. Investor can access and use the investor wallet. | 
 
-Each user on the ledger needs to use one or many parties to communicate with the ledger and complete the required workflow. 
+Each user on the ledger needs to use one or many parties to communicate with the ledger to complete the required workflow. 
 
 | User | Party | Description | 
 | ------------- | ------------- | -------------  |
-| coin issuer | Asset_Issuer | the party manage the coin issuing | 
-| coin issuer | Asset_Depository | depository for the coin instrument | 
-| asset/coin validator | asset_Validator | the party witnesses and validates the transactions. Each asset can have its own validator party. Validator party should be opertated by app operator or ledger provider |
-| investor | InvestorA | investor party |
-| investor | InvestorB | investor party |
-| fund issuer | FundA | the party manage the fund issuing |
-| fund issuer | Fund_depository | depository for the fund instrument |
-| broker | FundManagerA | the party which takes the commission in fund settlement workflow | 
+| coin issuer | Asset_Issuer | The party manages the coin issuing | 
+| coin issuer | Asset_Depository | Depository for the coin instrument | 
+| asset/coin validator | Asset_Validator | The party witnesses and validates the transactions on the validator node. The solution supports each asset to have its own validator party. Validator party should be opertated by app operator or ledger provider |
+| investor | InvestorA | Investor party |
+| investor | InvestorB | Investor party |
+| fund issuer | FundA | The party manages the fund issuing |
+| fund issuer | Fund_depository | Depository for the fund instrument |
+| broker | FundManagerA | The party which takes the commission in fund settlement workflow | 
 
 ## Next step
 
