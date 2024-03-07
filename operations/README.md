@@ -42,7 +42,16 @@ multiple files will be created. `dops` will automatically fetch a fresh token if
 
 ## Basic usage
 
-Each `dops` command requries an input JSON file. For example, to allocate parties to the participant, a JSON file such
+Before running any `dops` commands, the required packages must be uploaded to the ledger. `dops` comes packaged with
+all of its necessary Daml packages. You can upload all of them to your participant by running:
+
+```bash
+dops upload-dar
+```
+
+Note: for a multi-participant setup, this step must be repeated for the other participants.
+
+Most `dops` commands requrie an input JSON file. For example, to allocate parties to the participant, a JSON file such
 as this needs to be created:
 
 ```json
@@ -163,17 +172,34 @@ JSON files for the factories.
 
 ## Command specifications
 
-### `allocate-parties`
+### Upload Daml Packages
+
+This command will upload the required Daml Finance interfaces, (default) implementations as well as all of the
+packages defined in this repository.
 
 #### Input file format
 
-```json
+N/A. No input file is needed.
+
+#### Command
+
+```bash
+dops upload-dar
+```
+
+### Allocate parties
+
+Allocate parties on the participant node.
+
+#### Input file format
+
+```js
 {
   "partySettings": [ // One or more parties to allocate
     {
       "label": "alice",
       "displayName": "Alice", // Party display name
-      "partyIdHint": "alice" // Hint to determine party ID - optional - uses random party ID if not provided
+      "partyIdHint": "alice" // Hint to determine party ID - optional - uses randomly generated party ID if not provided
     }
   ]
 }
@@ -183,4 +209,183 @@ JSON files for the factories.
 
 ```bash
 dops allocate-parties <path to JSON file>
+```
+
+### Create users
+
+Create users on the participant node using the User Management Service.
+
+#### Input file format
+
+```js
+{
+  "users": [ // One or more users to create
+    {
+      "userId": "abc123...", // Unique user ID
+      "primaryParty": "alice", // Label of primary party - optional
+      "actAs": ["alice"], // Zero or more labels of the parties which the user can act as
+      "readAs": ["investor"] // Zero or more labels of the parties which the user can read as
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops create-users <path to JSON file>
+```
+
+### Create Account Factories
+
+Create factory contracts for creating `Account`s. The only the factory implementation currently supported is the default
+provided in the Daml Finance library.
+
+#### Input file format
+
+```js
+{
+  "accountFactorySettings": [ // One or more Account factories to create
+    {
+      "label": "factory1",
+      "provider": "alice", // Label of the factory provider party
+      "observers": [ // Zero or more sets of observers
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["bob"] // One or more labels of the observer parties
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops create-account-factories <path to JSON file>
+```
+
+### Create Account Open Offer Factories
+
+Create factory contracts for creating `Account` `OpenOffer`s. The interfaces/templates for these are defined under the
+`account-onboarding` folder at the base of this repository.
+
+#### Input file format
+
+```js
+{
+  "accountOpenOfferFactorySettings": [ // One or more factories to create
+    {
+      "label": "v1",
+      "provider": "alice", // Label of the factory provider party
+      "observers": [ // Zero or more sets of observers
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["bob"] // One or more labels of the observer parties
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops create-account-open-offer-factories <path to JSON file>
+```
+
+### Create Holding Factories
+
+Create factory contracts for creating `Holding`s.
+
+#### Input file format
+
+```js
+{
+  "holdingFactorySettings": [ // One or more factories to create
+    {
+      "label": "label1",
+      "holdingType": "Fungible", // One of: "Fungible", "NonFungible" or "NonTransferable"
+      "provider": "alice", // Label of the factory provider party
+      "observers": [ // Zero or more sets of observers
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["bob"] // One or more labels of the observer parties
+        }
+      ],
+      "holdingTrackers": ["WalletOperator"] // Optional labels of one or more tracking parties of Holdings created using
+      // this factory. If provided, then the implementation used is from the `trackable-holding` folder in this
+      // repository. Otherwise, the default implementation from Daml Finance is used. Currently this field is only
+      // supported for the Fungible holding type.
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops create-holding-factories <path to JSON file>
+```
+
+### Create Settlement One-time Offer Factories
+
+Create factory contracts for creating settlement `OneTimeOffer`s. The interfaces/templates for these are defined in the
+`settlement` folder at the base of this repository.
+
+#### Input file format
+
+```js
+{
+  "settlementOneTimeOfferFactorySettings": [ // One or more factories to create
+    {
+      "label": "label1",
+      "provider": "alice", // Label of the factory provider party
+      "observers": [ // Zero or more sets of observers
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["bob"] // One or more labels of the observer parties
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops create-settlement-one-time-offer-factories <path to JSON file>
+```
+
+### Create Settlement Open Offer Factories
+
+Create factory contracts for creating settlement `OpenOffer`s. The interfaces/templates for these are defined in the
+`settlement` folder at the base of this repository.
+
+#### Input file format
+
+```js
+{
+  "settlementOpenOfferFactorySettings": [ // One or more factories to create
+    {
+      "label": "label1",
+      "provider": "alice", // Label of the factory provider party
+      "observers": [ // Zero or more sets of observers
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["bob"] // One or more labels of the observer parties
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops create-settlement-open-offer-factories <path to JSON file>
 ```
