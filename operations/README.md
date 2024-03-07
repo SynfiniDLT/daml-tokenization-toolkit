@@ -200,7 +200,7 @@ Allocate parties on the participant node.
 {
   "partySettings": [ // One or more parties to allocate
     {
-      "label": "alice",
+      "label": "alice", // Label of the party which can referenced in other input files
       "displayName": "Alice", // Party display name
       "partyIdHint": "alice" // Hint to determine party ID - optional - uses randomly generated party ID if not provided
     }
@@ -537,4 +537,165 @@ library.
 
 ```bash
 dops create-route-providers <path to JSON file>
+```
+
+### Create Accounts Unilaterally
+
+Create `Account` contracts using a single command submission.
+
+#### Input file format
+
+```js
+{
+  "readAs": ["public"], // Labels of zero or more parties to use to read contracts (can be useful for fetching the
+    // factory contracts)
+  "accountFactory": "label1", // Label of account factory used to create the Account instance
+  "accountSettings": [ // One or more accounts to create
+    {
+      "owner": "bob", // Label of the owner party
+      "custodian": "alice", // Label of the custodian party
+      "id": "abc123...", // Account ID
+      "description": "Bob's account", // Account description
+      "incomingControllers": ["bob"], // Zero or more labels of the incoming controller parties of the account
+      "outgoingControllers": ["bob"], // One or more labels of the outgoing controller parties of the account
+      "holdingFactory": "label1", // Label of the Holding Factory for the account
+      "observers": [ // Zero or more sets of observers
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["bob"] // One or more labels of the observer parties
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops create-accounts-unilateral <path to JSON file>
+```
+
+### Create Account Open Offers
+
+As a custodian, create `OpenOffer` contracts to allow parties to create accounts. The interfaces/templates for these are
+defined in the `account-onboarding` folder in this repository.
+
+#### Input file format
+
+```js
+{
+  "offerSettings": [ // One or more offers to create
+    {
+      "label": "label1",
+      "custodian": "alice", // Label of the custodian party which will create the offer
+      "additionalIncomingControllers": ["charlie"], // Zero or more labels of additional incoming controller parties
+      "additionalOutgoingControllers": ["charlie"], // Zero or more labels of additional outgoing controller parties
+      "ownerIncomingControlled": false,
+      "ownerOutgoingControlled": true,
+      "accountFactory": "label1", // Label of the factory used to create Account instances
+      "holdingFactory": "label1", // Label of the Holding factory on the Accounts
+      "description": "abc123...",
+      "observers": [ // Zero or more sets of observers
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["bob"] // One or more labels of the observer parties
+        }
+      ],
+      "accountOpenOfferFactory": "label1" // Label of the factory used to create the offer
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops create-account-open-offers <path to JSON file>
+```
+
+### Take Account Open Offers
+
+As an account owner, take up an `Account` `OpenOffer` to create an `Account`.
+
+#### Input file format
+
+```js
+{
+  "readAs": ["public"], // Labels of zero or more parties to use to read contracts (can be useful for fetching the
+    // factory contracts)
+  "accountSettings": [ // One or more accounts to create
+    {
+      "offer": "label1", // Label of the account open offer
+      "owner": "bob", // Label of the party who will take the offer to become the owner of the account
+      "id": "abc123...", // Account ID
+      "description": "abc123...",
+      "observers": [ // Zero or more sets of observers
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["bob"] // One or more labels of the observer parties
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops take-account-open-offers <path to JSON file>
+```
+
+### Create PartyBoundAttributes Unilaterally
+
+As an issuer of `PartyBoundAttributes`, unilaterally create the instrument and corresponding `Holding`. The
+interfaces/templates for these can be found under the `pbt` folder of this repository. As this is a unilateral workflow,
+it is only practical for testing scenarios where the issuer, depository, custodian and owner all exist on one node.
+
+#### Input file format
+
+```js
+{
+  "readAs": ["public"], // Labels of zero or more parties to use to read contracts (can be useful for fetching the
+    // factory contracts)
+  "pbaInstrument": { // Details of the PBA instrument
+    "issuer": "alice",
+    "depository": "bob",
+    "id": "abc123...", // Instrument ID
+    "description": "abc123...",
+    "custodian": "charlie" // Label of the custodian of Holdings of this instrument
+  },
+  "settlementFactory": "label1", // Label of the settlement factory used to instruct settlement to create the Holding
+  "instrumentFactory": "label1", // Label of the instrument factory used to create the PBA instrument
+  "pbas": [ // One or more PBAs to create
+    {
+      "owner": "david", // Label of the owner of the PBA
+      "accountId": "abc123..",
+      "attributes": [ // One or more key-value pairs (attributes assigned to the party)
+        ["k1", "v1"]
+      ],
+      "validAsOf": "2023-10-03T23:15:48.569796Z",
+      "version": "abc123...",
+      "instrumentObservers": [ // Zero or more sets of observers of the Instrument contract
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["bob"] // One or more labels of the observer parties
+        }
+      ],
+      "holdingObservers": [ // Zero or more sets of observers of the Holding contract
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["bob"] // One or more labels of the observer parties
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops create-pbas-unilateral <path to JSON file>
 ```
