@@ -172,6 +172,9 @@ JSON files for the factories.
 
 ## Command specifications
 
+Please note: the example JSON snippets use comments for explanation but only standard JSON files (without comments) are
+accepted by `dops`.
+
 ### Upload Daml Packages
 
 This command will upload the required Daml Finance interfaces, (default) implementations as well as all of the
@@ -247,7 +250,7 @@ provided in the Daml Finance library.
 {
   "accountFactorySettings": [ // One or more Account factories to create
     {
-      "label": "factory1",
+      "label": "label1",
       "provider": "alice", // Label of the factory provider party
       "observers": [ // Zero or more sets of observers
         {
@@ -330,6 +333,33 @@ Create factory contracts for creating `Holding`s.
 dops create-holding-factories <path to JSON file>
 ```
 
+### Create Settlement Factories
+
+Create factory contracts for instructing `Batch` settlements.
+
+#### Input file format
+
+```js
+{
+  "settlementFactorySettings": [ // One or more factories to create
+    {
+      "label": "label1",
+      "provider": "alice", // Label of the factory provider party
+      "observers": ["bob"], // Zero or more labels of the observers of the factory
+      "settlementTrackers": ["WalletOperator"] // Optional labels of one or more tracking parties of settlements
+      // instructed using this factory. If provided, then the implementation used is from the `trackable-settlement`
+      // folder in this repository. Otherwise, the default implementation from Daml Finance is used.
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops create-settlement-factories <path to JSON file>
+```
+
 ### Create Settlement One-time Offer Factories
 
 Create factory contracts for creating settlement `OneTimeOffer`s. The interfaces/templates for these are defined in the
@@ -388,4 +418,123 @@ Create factory contracts for creating settlement `OpenOffer`s. The interfaces/te
 
 ```bash
 dops create-settlement-open-offer-factories <path to JSON file>
+```
+
+### Create Instrument Factories
+
+Create factory contracts for creating `Instrument`s.
+
+#### Input file format
+
+```js
+{
+  "instrumentFactorySettings": [ // One or more factories to create
+    {
+      "label": "label1",
+      "provider": "alice", // Label of the factory provider party
+      "observers": [ // Zero or more sets of observers
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["bob"] // One or more labels of the observer parties
+        }
+      ],
+      "instrumentType": "Pba" // One of: "Token" or "Pba". "Token" will use the default Token factory implementation
+        // from Daml Finance. "Pba" will use the PartyBoundAttributes instrument from this repository.
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops create-instrument-factories <path to JSON file>
+```
+
+### Create Issuer Factories
+
+Create factory contracts for creating `Issuers`s. The interfaces/templates for these are defined in the
+`issuer-onboarding` folder in this repository.
+
+#### Input file format
+
+```js
+{
+  "issuerFactorySettings": [ // One or more factories to create
+    {
+      "label": "label1",
+      "provider": "alice", // Label of the factory provider party
+      "instrumentType": "Token", // Type of instrument the issuer factory is for. "Token" is the only type that is
+        // currently supported
+      "observers": [ // Zero or more sets of observers
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["bob"] // One or more labels of the observer parties
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops create-issuer-factories <path to JSON file>
+```
+
+### Create MinterBurner Factories
+
+Create factory contracts for creating `MinterBurner`s. The interfaces/templates for these are defined in the
+`issuer-onboarding` folder in this repository.
+
+#### Input file format
+
+```js
+{
+  "minterBurnerFactorySettings": [ // One or more factories to create
+    {
+      "label": "label1",
+      "provider": "alice", // Label of the factory provider party
+      "observers": [ // Zero or more sets of observers
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["bob"] // One or more labels of the observer parties
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops create-minter-burner-factories <path to JSON file>
+```
+
+### Create Route Providers
+
+Create `RouteProvider` instances. The only type of `RouteProvider` supported is `SingleCustodian` from the Daml Finance
+library.
+
+#### Input file format
+
+```js
+{
+  "routeProviderSettings": [ // One or more RouteProviders to create
+    {
+      "label": "label1",
+      "provider": "alice", // Label of the factory provider party
+      "observers": ["bob"], // Zero or more labels of the observers of the RouteProvider
+      "singleCustodian": "charlie" // Label of the single custodian party through which paths will be routed
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops create-route-providers <path to JSON file>
 ```
