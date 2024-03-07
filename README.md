@@ -98,7 +98,7 @@ Replace your-api-identifier with the audience identifier you obtained from the A
 1.	In the ~/demo-config/users folder, there is a users.json file to store user information for ledger identification.
 1. The users.json file has an array of user objects, each containing the userId from Auth0 and the corresponding primaryParty for ledger identification. Replace your-auth0-user-id and another-auth0-user-id with the actual user IDs from Auth0.
 1. Ensure that the userId in each object corresponds to the sub (subject) field in the Auth0 user profile. You can find the userId in the Auth0 ID Token received during authentication.
-1. The primaryParty field is a unique identifier for each user in your ledger. Customize it based on your application's requirements.
+1. The primaryParty field is the default party used to issue commands to the ledger. If logged into the UI, the user will act as this party.
 1. Save and commit the users.json file to your version control system (e.g., Git) to keep it in sync with your codebase.
 1. Whenever a user logs in, retrieve their userId from the Auth0 user profile, and use it to look up the corresponding primaryParty from the users.json file for ledger identification.
 

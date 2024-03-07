@@ -1,15 +1,13 @@
 # Daml Wallet Views
 
-WARNING this is out of date and needs to be removed or re-written
-
-This repository contains an API written in Java Spring Boot. This API provides read-only endpoints for querying the
+This folder contains an API written in Java Spring Boot. This API provides read-only endpoints for querying the
 details of a "Daml wallet", such as account details and balances. The "wallet" refers to assets held by a Daml party,
 modelled using [Daml Finance](https://docs.daml.com/daml-finance/index.html). It is not restricted to any particular
 type of asset. The only requirement is that the assets implement the Daml Finance interfaces.
 
 ## Components overview
 
-## HTTP/JSON API
+### HTTP/JSON API
 
 The API provides read-only endpoints (see below for more detail). It is not strictly a RESTful API, but it uses  HTTP
 and requests/responses are in JSON format. The requests and responses are encoded using the
@@ -17,20 +15,20 @@ and requests/responses are in JSON format. The requests and responses are encode
 the [Daml JSON API](https://docs.daml.com/json-api/index.html). The API provides a significantly faster way to query
 wallet information than would otherwise be possible using only the Daml gRPC or JSON APIs.
 
-## Custom views projection
+### Custom views projection
 
 The Spring Boot API does not send requests directly to the ledger API. Instead, it reads from a PostgreSQL database.
 The database is populated using an application written using [Custom Views](https://docs.daml.com/app-dev/custom-views/index.html)
 which is also provided as part of this repository. This application continuously streams events from the ledger and
 writes them to the database.
 
-## Javascript client
+### Javascript client
 
 A client-side library, written in Typescript, is provided which can call the API from the browser or backend application.
 This is available under `typescript-client` directory. This provides a strongly-typed interface for interacting with
 the API.
 
-## Type definitions
+### Type definitions
 
 The type definitions of API requests and responses are written as Daml datatypes under `daml/types`. Note - this is just
 an internal implementation detail of the project, and this Daml code is not used directly. It is only used as a single
@@ -39,13 +37,24 @@ source of truth for the API request/response schemas. As part of the build, the
 the client. The types are fully compatible with Daml Finance as Daml Finance types/interface definitions are used in
 the Daml code.
 
-# Deployment topology
+## Deployment topology
+
+### Current state
 
 In the context of [Canton](https://docs.daml.com/canton/about.html), each participant needs to host their own instance
 of the Wallet Views database and API. There is a one-to-one relationship between the database and the participant node,
 as it acts as an indexed view of the state of the Daml ledger (visible to the participant) and its transaction history.
 
-![alt text](https://github.com/SynfiniDLT/daml-wallet-views/blob/main/diagrams/high-level-architecture.png?raw=true)
+![alt text](https://github.com/SynfiniDLT/daml-tokenization-lib/blob/main/wallet-views/diagrams/high-level-architecture.png?raw=true)
+
+### Future state
+
+In future, the topology may be changed to use the Daml 3.0 application architecture: the projection runner would read
+from a separate participant using a party which is an observer of the wallet users' contracts. The wallet users could
+still use their own participant for submitting transactions, thereby maintaining a greater level of control over their
+assets, while delegating operation of the projection runner, database and API to a service provider.
+
+## Database management
 
 It is possible to drop the database and re-start the projection but this is not recommended because transactional
 history will be lost, as when the projection starts from an empty database, it begins by using an Active Contract Set
@@ -53,7 +62,7 @@ snapshot, rather than utilising the Transaction Service. The projection does not
 i.e. an equivalent to [participant pruning](https://docs.daml.com/ops/pruning.html) for the database is not supported,
 but this feature could be added.
 
-# API Authentication
+## API Authentication
 
 The API expects a ledger API user access token to be supplied with every request, even if the underlying participant
 does not use authentication. The token must be provided through the HTTP header:
@@ -65,30 +74,36 @@ user from the participant node's UserManagementService. If the request is reject
 status `UNAUTHENTICATED` or the user does not exist on the participant, then the caller will receive HTTP status 401
 Unauthorized.
 
-# API Specification
+## API Specification
+
+Before reading this section you should have a working knowledge of the fundamentals of the Daml Finance library (
+accounts, holdings, settlement and instruments). Any request fields marked as optional below must still be included in
+the JSON request body but with value set to `null` (as opposed to not including the field at all). This is a known issue
+due to the usage of the `gson` library for decoding the Daml data types. The necessary conversions from JSON to Daml
+types are not natively supported in the Daml java libraries at the time of writing (refer to this
+[issue](https://discuss.daml.com/t/java-jsoncodec-how-to-convert-from-jsvalue-to-value/6453)).
 
 The following endpoints are provided the API:
 
-## List accounts
-### HTTP Request
-- URL: `/v1/accounts`
+### List Accounts
+#### HTTP Request
+- URL: `/wallet-views/v1/accounts`
 - Method: `POST`
 - Content-Type: `application/json`
 - Content:
 
 ```js
 {
-  "owner": "Alice::abc123" // Returns only accounts owned by this party
+  "custodian": "Acme::abc123...", // Only returns accounts which use this custodian - optional
+  "owner": "Alice::abc123..." // Only returns accounts owned by this party
 }
 ```
 
-Currently, only filtering by account owner is supported. Support for other filters may be added in future, such as
-account custodian.
+#### Required permissions
+- actAs or readAs permissions for the account owner; or
+- actAs or readAs permissions for the account custodian if provided.
 
-### Required permissions
-- actAs or readAs permissions for the account owner party
-
-### HTTP Response
+#### HTTP Response
 - Content-Type: `application/json`
 - Content:
 
@@ -96,23 +111,27 @@ account custodian.
 {
   "accounts": [
     {
-      "cid": "...",
+      "cid": "abc123...", // Contract ID of the Daml Finance Account
       "view": { // Interface view of the Daml Finance Account
-        "custodian": "Acme::abc123",
-        "owner": "Alice::abc123",
+        "custodian": "Acme::abc123...",
+        "owner": "Alice::abc123...",
         "id": {
           "unpack": "1"
         },
         "description": "...",
         "holdingFactoryCid": "...",
         "controllers": {
-          "outgoing": [
-            ["Alice::abc123", {}],
-            ["Bob::abc123", {}]
-          ],
-          "incoming": [
-            ["Charlie::abc123", {}]
-          ]
+          "outgoing": {
+            "map": [
+              ["Alice::abc123...", {}],
+              ["Bob::abc123...", {}]
+            ]
+          },
+          "incoming": {
+            "map": [
+              ["Charlie::abc123...", {}],
+            ]
+          }
         }
       },
       "create": { // When the account was created - optional
@@ -128,9 +147,72 @@ account custodian.
 }
 ```
 
-## List account balances
-### HTTP Request
-- URL: `/v1/balance`
+### List Account OpenOffer Contracts
+This endpoint lists account `OpenOffer` contracts as defined in the `account-onboarding` folder at the base of this
+repository.
+
+#### HTTP Request
+- URL: `/wallet-views/v1/account-open-offers`
+- Method: `POST`
+- Content-Type: `application/json`
+- Content:
+
+```js
+{} // No filters are currently implemented
+```
+
+#### Required permissions
+- N/A (only returns data which is visible to parties that the user has readAs or actAs rights for).
+
+#### HTTP Response
+- Content-Type: `application/json`
+- Content:
+
+```js
+{
+  "accountOpenOffers": [ // Zero or more open offers
+    {
+      "cid": "abc123...", // Contract ID of OpenOffer
+      "view": { // Interface view of the OpenOffer
+        "custodian": "Acme::abc123...",
+        "ownerIncomingControlled": true,
+        "ownerOutgoingControlled": false,
+        "additionalControllers": {
+          "outgoing": {
+            "map": [
+              ["Alice::abc123...", {}],
+              ["Bob::abc123...", {}]
+            ]
+          },
+          "incoming": {
+            "map": [
+              ["Charlie::abc123...", {}],
+            ]
+          }
+        },
+        "permittedOwners": { // Optional
+          "map": [
+            ["David::abc123...", {}],
+          ]
+        }, 
+        "accountFactoryCid": "abc123...",
+        "holdingFactoryCid": "abc123...",
+        "description": "..."
+      },
+      "create": {
+        // When the offer was created - optional (present if contract was created after the projection runner first
+        // started)
+        "offset": "...",
+        "effectiveTime": "2023-01-01T04:30:23.123456Z"
+      }
+    }
+  ]
+}
+```
+
+### List account balances
+#### HTTP Request
+- URL: `/wallet-views/v1/balance`
 - Method: `POST`
 - Content-Type: `application/json`
 - Content:
@@ -138,8 +220,8 @@ account custodian.
 ```js
 {
   "account": { // Returns balances for this account
-    "owner": "Alice::abc123",
-    "custodian": "Custodian::abc123",
+    "owner": "Alice::abc123...",
+    "custodian": "Custodian::abc123...",
     "id": {
       "unpack": "1"
     }
@@ -147,68 +229,62 @@ account custodian.
 }
 ```
 
-Support for other balance filters may be added in future.
-
-### Required permissions
+#### Required permissions
 - actAs or readAs permissions for the account owner; or
 - actAs or readAs permissions for the account custodian.
 
-### HTTP Response
+#### HTTP Response
 - Content-Type: `application/json`
 - Content:
+
 ```js
 {
   "balances": [
     {
       "account": {
-        "owner": "Alice::abc123",
-        "custodian": "Acme::abc123",
+        "owner": "Alice::abc123...",
+        "custodian": "Acme::abc123...",
         "id": {
           "unpack": "1"
         }
       },
       "instrument": {
-        "depository": "Depository::abc123",
-        "issuer": "Issuer1::abc123",
+        "depository": "Depository::abc123...",
+        "issuer": "Issuer1::abc123...",
         "id": {
           "unpack": "Coin1"
         },
         "version": "1"
       },
-      "balance": 999.0
+      "unlocked": "999.0", // Sum of holdings which are locked
+      "locked": "1.0" // Sum of holdings which are unlocked
     },
     {
       "account": {
-        "owner": "Alice::abc123",
-        "custodian": "Acme::abc123",
+        "owner": "Alice::abc123...",
+        "custodian": "Acme::abc123...",
         "id": {
           "unpack": "1"
         }
       },
       "instrument": {
-        "depository": "Depository::abc123",
-        "issuer": "Issuer2::abc123",
+        "depository": "Depository::abc123...",
+        "issuer": "Issuer2::abc123...",
         "id": {
           "unpack": "Coin2"
         },
         "version": "1"
       },
-      "balance": "999.0"
+      "unlocked": "0.0", // Sum of holdings which are locked
+      "locked": "1.0" // Sum of holdings which are unlocked
     }
   ]
 }
 ```
 
-The balance includes `Holding`s that are locked. A breakdown of locked and unlocked balance may need to be added in
-future.
-
-The balances API uses a lazily-loaded cache. The cache stores the balance and the ledger offset at which the balance was
-last calculated. Only debits/credits after this offset are needed to calculate the balance the next time the API is
-called.
-
-## List settlements
-### HTTP Request
-- URL: `/v1/settlements`
+### List Settlements
+#### HTTP Request
+- URL: `/wallet-views/v1/settlements`
 - Method: `POST`
 - Content-Type: `application/json`
 - Content:
@@ -222,31 +298,45 @@ called.
 }
 ```
 
-### Required permissions
-N/A (only returns data which is visible to parties that the user has readAs or actAs rights for).
+#### Required permissions
+- N/A (only returns data which is visible to parties that the user has readAs or actAs rights for).
 
-### HTTP Response
+#### HTTP Response
 - Content-Type: `application/json`
 - Content:
 
 ```js
 {
-  "settlements": [ // List of 0 or more Batch settlements
+  "settlements": [ // Zero or more Daml Finance `Batch` settlements
     {
-      "execution": {
+      "execution": { // Ledger offset and ledger time at which the `Batch` was settled - optional
         "offset": "...",
         "effectiveTime": "1970-01-01T00:00:00Z"
       },
       "batchCid": "...", // Optional contract ID of the Batch contract (if the contract is visible to the caller)
+      "batchId": {
+        "unpack": "batch1"
+      },
+      "contextId": {
+        "unpack": "context1" // Optional context ID of the Batch contract (if the contract is visible to the caller)
+      },
       "description": "...", // Optional description of the Batch contract (if the contract is visible to the caller)
-      "witness": {
+      "witness": { // Ledger offset and ledger time at which the caller was first informed of the settlement
         "offset": "...",
         "effectiveTime": "1970-01-01T00:00:00Z"
       },
       "requestors": {
         "map": [
           [
-            "Alice::abc123",
+            "Alice::abc123...",
+            {}
+          ]
+        ]
+      },
+      "settlers": {
+        "map": [
+          [
+            "Bob::abc123...",
             {}
           ]
         ]
@@ -256,28 +346,103 @@ N/A (only returns data which is visible to parties that the user has readAs or a
           "instructionId": {
             "unpack": "0"
           },
+          "instructionCid": "...", // Contract ID of the most recently active instruction contract for this instruction ID in the Batch
           "allocation": {
+            // One of:
+            "tag": "Unallocated",
+            "value": {}
+            // ... or ...
             "tag": "Pledge",
-            "value": "..." // Contract Id of pledged holding
+            "value": "abc123...", // Contract Id of pledged holding
+            // ... or ...
+            "tag": "CreditReceiver",
+            "value": {},
+            // ... or ...
+            "tag": "SettleOffledger",
+            "value": {},
+            // ... or ...
+            "tag": "PassThroughFrom",
+            "value": {
+              "_1": { // AccountKey
+                "owner": "Alice::abc123...",
+                "custodian": "Acme::abc123...",
+                "id": {
+                  "unpack": "1"
+                }
+              },
+              "_2": { // InstructionKey
+                "requestors": {
+                  "map": [
+                    [
+                      "Alice::abc123...",
+                      {}
+                    ]
+                  ]
+                },
+                "batchId": {
+                  "unpack": "batch1"
+                },
+                "id": {
+                  "unpack": "1"
+                }
+              }
+            }
           },
           "approval": {
+            // One of:
+            "tag": "Unapproved",
+            "value": {}
+            // ... or ...
             "tag": "TakeDelivery",
-            "value": {
-              "custodian": "Custodian::abc123",
-              "owner": "David::ghi789",
+            "value": { // AccountKey
+              "owner": "Alice::abc123...",
+              "custodian": "Acme::abc123...",
               "id": {
                 "unpack": "1"
+              }
+            },
+            // ... or ...
+            "tag": "DebitSender",
+            "value": {},
+            // ... or ...
+            "tag": "SettleOffledgerAcknowledge",
+            "value": {},
+            // ... or ...
+            "tag": "PassThroughTo",
+            "value": {
+              "_1": { // AccountKey
+                "owner": "Alice::abc123...",
+                "custodian": "Acme::abc123...",
+                "id": {
+                  "unpack": "1"
+                }
+              },
+              "_2": { // InstructionKey
+                "requestors": {
+                  "map": [
+                    [
+                      "Alice::abc123...",
+                      {}
+                    ]
+                  ]
+                },
+                "batchId": {
+                  "unpack": "batch1"
+                },
+                "id": {
+                  "unpack": "1"
+                }
               }
             }
           },
           "routedStep": {
-            "sender": "Charlie::def456",
-            "receiver": "David::ghi789",
-            "custodian": "Custodian::abc123",
+            "sender": "Charlie::abc123...",
+            "receiver": "David::abc123...",
+            "custodian": "Custodian::abc123...",
             "quantity": {
               "unit": {
-                "depository": "Custodian::abc123",
-                "issuer": "Issuer::def456",
+                "depository": "Custodian::abc123...",
+                "issuer": "Issuer::abc123...",
                 "id": {
                   "unpack": "1"
                 },
@@ -285,16 +450,9 @@ N/A (only returns data which is visible to parties that the user has readAs or a
               },
               "amount": "100.0"
             }
-          },
-          "instructionCid": "..."
+          }
         }
-      ],
-      "batchId": {
-        "unpack": "batch1"
-      },
-      "contextId": {
-        "unpack": "context1" // Optional context ID of the Batch contract (if the contract is visible to the caller)
-      }
+      ]
     }
   ]
 }
@@ -305,21 +463,20 @@ The response will include all `Batch`es and `Instruction`es visible to the API c
 You can use the ledger offset of the last transaction in the list to call the endpoint again, using this value for the
 `before` field.
 
-The API is currently only able to return the `TakeDelivery` case of [Approval](https://github.com/digital-asset/daml-finance/blob/1a58c1df3776c918c98cd2333b1e12ed0e99df1c/src/main/daml/Daml/Finance/Interface/Settlement/Types.daml#L49-L61)
-and the `Pledge` case of [Allocation](https://github.com/digital-asset/daml-finance/blob/1a58c1df3776c918c98cd2333b1e12ed0e99df1c/src/main/daml/Daml/Finance/Interface/Settlement/Types.daml#L34-L46).
-Any other cases are returned as `null`.
+The API response is currently missing an attribute showing if/when the `Batch` was cancelled. This should be added in
+future.
 
-The API assumes that the batch key is a unique identifiers for each `Batch`, where the batch key is defined as the
+The API assumes that the batch key is a unique identifier for each `Batch`, where the batch key is defined as the
 combination of batch ID and the set of requesting parties. This applies even for `Batch`es which are already archived
 on the ledger. The `Batch`es and `Instruction`es are grouped together by the batch key. This requires the requesting
 parties to use a trusted supplier of unique identifiers from off the ledger.
 
-## List Holding contracts
+### List Holding Contracts
 This endpoint is useful if you need to get specific `Holding` contracts and use them within workflows, such as transfers
 or DvP.
 
-### HTTP Request
-- URL: `/v1/holdings`
+#### HTTP Request
+- URL: `/wallet-views/v1/holdings`
 - Method: `POST`
 - Content-Type: `application/json`
 - Content:
@@ -327,15 +484,15 @@ or DvP.
 ```js
 {
   "account": {
-    "owner": "Alice::abc123",
-    "custodian": "Custodian::abc123",
+    "owner": "Alice::abc123...",
+    "custodian": "Custodian::abc123...",
     "id": {
       "unpack": "1"
     }
   },
   "instrument": {
-    "depository": "Depository::abc123",
-    "issuer": "Issuer1::abc123",
+    "depository": "Depository::abc123...",
+    "issuer": "Issuer1::abc123...",
     "id": {
       "unpack": "Coin1"
     },
@@ -344,11 +501,10 @@ or DvP.
 }
 ```
 
-### Required permissions
-- readAs or actAs permissions for the account owner; or
-- readAs or actAs permissions for the account custodian.
+#### Required permissions
+- N/A (only returns data which is visible to parties that the user has readAs or actAs rights for).
 
-### HTTP Response
+#### HTTP Response
 - Content-Type: `application/json`
 - Content:
 
@@ -356,18 +512,18 @@ or DvP.
 {
   "holdings": [ // Zero or more Holdings
     {
-      "cid": "...",
+      "cid": "abc123...", // Contract ID of the Holding
       "view": { // Interface view of the Daml Finance Holding (Base interface)
         "account": {
-          "custodian": "Acme::abc123",
-          "owner": "Alice::abc123",
+          "custodian": "Acme::abc123...",
+          "owner": "Alice::abc123...",
           "id": {
            "unpack": "1"
           }
         },
         "instrument": {
-          "depository": "Depository::abc123",
-          "issuer": "Issuer1::abc123",
+          "depository": "Depository::abc123...",
+          "issuer": "Issuer1::abc123...",
           "id": {
             "unpack": "Coin1"
           },
@@ -375,14 +531,18 @@ or DvP.
         },
         "amount": "999.0",
         "lock": { // Optional
-          "lockers": [
-            ["Alice::abc123", {}],
-            ["Bob::abc123", {}]
-          ],
+          "lockers": {
+            "map": [
+              ["Alice::abc123...", {}],
+              ["Bob::abc123...", {}]
+            ]
+          },
           "lockType": "Semaphore" // "Semaphore" or "Reentrant"
         }
       },
-      "create": { // Optional. When the Holding contract was created.
+      "create": {
+        // When the Holding contract was created - optional (present if contract was created after the projection runner
+        // first started)
         "offset": "...",
         "effectiveTime": "2023-01-01T04:30:23.123456Z"
       }
@@ -393,11 +553,165 @@ or DvP.
 
 Note: only active contracts are returned.
 
-# Building and running
+### List Instruments
+
+#### HTTP Request
+- URL: `/wallet-views/v1/instruments`
+- Method: `POST`
+- Content-Type: `application/json`
+- Content:
+
+```js
+{
+  "depository": "Depository1::abc123...",
+  "issuer": "Issuer::abc123...",
+  "id": { // Instrument ID - optional
+    "unpack": "Coin1"
+  },
+  "version": "1" // Instrument version - optional
+}
+```
+
+#### Required permissions
+- N/A (only returns data which is visible to parties that the user has readAs or actAs rights for).
+
+#### HTTP Response
+- Content-Type: `application/json`
+- Content:
+
+```js
+{
+  "instruments": [ // Zero or more Instruments
+    {
+      "cid": "abc123...", // Contract ID of the Instrument
+      "tokenView": { // Interface view of the Instrument if it is a Token Instrument
+        "instrument": {
+          "depository": "Depository::abc123...",
+          "issuer": "Issuer1::abc123...",
+          "id": {
+            "unpack": "Coin1"
+          },
+          "version": "1"
+        },
+        "description": "...",
+        "validAsOf": "2023-01-01T04:30:23.123456Z"
+      },
+      "pbaView": {
+        // Interface view of the Instrument if it is a PartyBoundAttributes Instrument (defined in `pbt` folder in the
+        // base of this repository)
+        "instrument": {
+          "depository": "Depository::abc123...",
+          "issuer": "Issuer1::abc123...",
+          "id": {
+            "unpack": "Coin1"
+          },
+          "version": "1"
+        },
+        "description": "...",
+        "validAsOf": "2023-01-01T04:30:23.123456Z",
+        "owner": "Alice::abc123...",
+        "attributes": [
+          ["k1", "v1"],
+          ["k2", "v2"]
+        ]
+      }
+    }
+  ]
+}
+```
+
+### List Issuers
+List `Issuer` contracts as defined in the `issuer-onboarding` folder at the base of this repository.
+
+#### HTTP Request
+- URL: `/wallet-views/v1/issuers`
+- Method: `POST`
+- Content-Type: `application/json`
+- Content:
+
+```js
+{
+  "depository": "Depository1::abc123...", // Optional
+  "issuer": "Issuer::abc123...", // Optional
+}
+```
+
+#### Required permissions
+- N/A (only returns data which is visible to parties that the user has readAs or actAs rights for).
+
+#### HTTP Response
+- Content-Type: `application/json`
+- Content:
+
+```js
+{
+  "instruments": [ // Zero or more Issuers
+    {
+      "token": { // Details of Token issuer (optional as other issuer types may be added in future e.g. Bond Issuer)
+        "cid": "abc123...", // Contract ID of the Token Issuer
+        "view": {
+          "depository": "Depository1::abc123...",
+          "issuer": "Issuer::abc123...",
+          "instrumentFactoryCid": "abc123..."
+        }
+      }
+    }
+  ]
+}
+```
+
+### Start the projection
+Start the projection runner
+
+#### HTTP Request
+- URL: `/wallet-views/v1/projection/start`
+- Method: `POST`
+- Content-Type: `application/json`
+- Content:
+
+```js
+{
+  "readAs": "Alice::abc123...",
+  "tokenUrl": "https://your-access-token-endpoint", // OAuth access token endpoint - optional (will not use authentication if not provided)
+  "clientId": "abc123...", // OAuth client ID - optional (required if "tokenUrl" is provided)
+  "clientSecret": "abc123...", // OAuth client secret - optional (required if "tokenUrl" is provided)
+  "audience": "abc123..." // OAuth audience - optional (required if "tokenUrl" is provided)
+}
+```
+
+#### Required permissions
+- Authentication for this endpoint is not yet implemented, however the projection runner itself still needs to
+authenticate against the participant
+
+#### HTTP Response
+- Content-Type: `application/json`
+- Content: `null`
+
+### Stop the projection
+Stop the projection runner
+
+#### HTTP Request
+- URL: `/wallet-views/v1/projection/clear`
+- Method: `POST`
+- Content-Type: `application/json`
+- Content:
+
+```js
+{}
+```
+
+#### Required permissions
+- Authentication for this endpoint is not yet implemented
+
+#### HTTP Response
+- Content-Type: `application/json`
+- Content: `null`
+
+## Building and running
 
 Building/running/testing is only supported on Linux.
 
-## Prerequisites
+### Prerequisites
 
 Please install the following first:
 
@@ -408,178 +722,142 @@ Please install the following first:
 - Docker (https://docs.docker.com/get-docker/)
 - npm (https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 
-## Build
+### Build
 
-Due to a bug in custom views, we need to clone a forked version of the repository until such time that DA release a fix
-for this.
+Install the custom views library by running:
 
-    git clone https://github.com/SynfiniDLT/custom-views
-    cd custom-views
-    git checkout non-root-events-assembly
-    sbt 'set test in assembly := {}' clean assembly
-    mvn install:install-file \
-      -Dfile=target/scala-2.13/custom-views-assembly-LOCAL-SNAPSHOT.jar \
-      -DgroupId=com.daml \
-      -DartifactId=custom-views_2.13 \
-      -Dversion=assembly-LOCAL-SNAPSHOT \
-      -Dpackaging=jar \
-      -DgeneratePom=true
+```
+make install-custom-views
+```
 
-Change directory back to the root of this repository and download the Daml Finance dependencies:
+from the base of this repository.
 
-    ./get-dependencies.sh
+Then the API and projection runner can be compiled using:
 
-This command builds both the API and projection runner as they are currently part of one maven project:
+```
+make compile-wallet-views
+```
 
-    mvn clean compile
+The above command will download and build all required dependencies. Do not try to compile without using `make` as these
+dependencies may not be updated.
 
-## Run the projection runner
+To build an executable JAR:
 
-In order to run the projection you need to upload the Daml Finance DAR files to the ledger first. After running the
-`get-dependencies.sh`, they can be found here:
+```
+make build-wallet-views
+```
 
-- `.lib/daml-finance-interface-account.dar`
-- `.lib/daml-finance-interface-holding.dar`
-- `.lib/daml-finance-interface-settlement.dar`
+The TypeScript client can be built using:
 
-Here is an example of how to run on the local Daml sandbox. You can adjust the `--ledger-host` and `--ledger-port` to
-point to your participant node. Remove the `--ledger-plaintext` argument if the participant node uses TLS. Mutual TLS
-is not supported. PostsgreSQL is the only supported database type.
+```
+make build-wallet-views-client
+```
 
-    mvn exec:java \
-      -Dexec.mainClass="com.synfini.wallet.views.projection.ProjectionRunner" \
-      -Dexec.args=" \
-         --ledger-host localhost \
-         --ledger-port 6865 \
-         --ledger-plaintext \
-         --read-as Alice::abc123 \
-         --db-url jdbc:postgresql://localhost/wallet_views \
-         --db-user postgres \
-         --db-password-file /path/to/password.txt"
+### Run the projection runner
 
-The `--read-as` parameter is the party ID that will be used to stream data from the ledger. The database password needs
-to be stored in a file, with the file path supplied as the `--db-password-file` option.
+#### 1. Upload required Daml packages
 
-To run against an authenticated participant, use the following additional options, which are used to fetch access tokens
-from an OAuth 2.0 access token endpoint.
+In order to run the projection you need to upload the required DAR files to the ledger first. You can either use the
+`dops` CLI tool (refer to `operations` folder in the base of this repository) as follows:
 
-- `--token-audience`: Your OAuth token audience.
-- `--token-client-id`: Your OAuth client ID.
-- `--token-client-secret-file`: File path to a file containing your client secret.
-- `--token-url`: URL of your OAuth access token endpoint.
+```bash
+# Make sure to export required environment variables to connect to your participant before running `dops` (see
+# the documentation for more detail)
+dops upload-dar
+```
 
-For more options, run with the `--help` flag.
+or you can directly upload the DAR file found at `.build/synfini-wallet-views-types.dar` using the `daml` assistant
+or ledger API. This DAR file is automatically built by `make compile-wallet-views` or `make build-wallet-views`.
 
-## Run the API
+#### 2. Allocate a party for the projection
 
-The API can be configured using `src/main/resources/application.properties`.
+You need to allocate one party on the participant which is used to stream all required contracts from the ledger. This
+party will need to be a stakeholder on all such contracts.
 
-Launch the API using the command below. This is an example for running on the local sandbox. The host/port values can
-be adjusted as required. The default behaviour is to use TLS to connect to the ledger - i.e. if the default value of
-`walletviews.ledger-plaintext` is `false`.
+#### 3. Setup a Postgres database
 
-    mvn spring-boot:run \
-      -Dspring-boot.run.arguments=" \
-        --walletviews.ledger-host=localhost \
-        --walletviews.ledger-port=6865 \
-        --walletviews.ledger-plaintext=true"
+Create a Postgres database. Currently only Postgres version 12 is supported.
 
-# Running the tests
+#### 4. Run the application
 
-Testing is not yet automated as part of a build process. These are the steps for running the tests manually.
+Create an `application.properties` file by copying the example from `src/main/resources/application.properties`. The
+following properties can be modified as required but the others should not be altered:
 
-## Run the API test cases
+| Property | Description |
+| ------------- | ------------- |
+| `spring.datasource.url` | JDBC URL of the Postgres database |
+| `spring.datasource.username` | Username used to write the data from the ledger into Postgres database. Also used to create the database schema if required. |
+| `spring.datasource.password` | Password of the above Postgres user |
+| `walletviews.ledger-host` | Host of the participant node's gRPC API |
+| `walletviews.ledger-port` | Port of the participant node's gRPC API |
+| `walletviews.ledger-plaintext` | Use `true` for plaintext connections to the participant node's gRPC API, otherwise TLS will be used |
+| `walletviews.max-transactions-response-size` | Maximum number of batch settlements the API will return in a single response when no limit is provided in the request |
+| `walletviews.projection.token-refresh-window-seconds` | For the projection runner. If there is less than this amount of time left before its access token expires, it will fetch a fresh token using the OAuth token endpoint |
+| `walletviews.projection.max-retries` | Maximum times the projection runner will re-try on error* |
+| `walletviews.projection.retry-window-seconds` | Retry window of the projection runner* |
+| `walletviews.projection.retry-delay-seconds` | Delay between retries of the projection runner* |
 
-The tests for the API (and projection runner) can be run using:
+*If the projection runner encounters an error, then it will increment a retry counter variable (initially set to zero)
+and attempt to re-start the projection. If a subsequent error occurs within `retry-window-seconds` then the counter is
+incremented again, otherwise the counter is set to zero. If the counter reaches `walletviews.projection.max-retries`
+then the projection runner will terminate. A delay between retries can be added using
+`walletviews.projection.retry-delay-seconds`.
 
-    mvn clean compile test
+Next, run `make build-wallet-views`. This will generate a JAR file under the `wallet-views/java/target` directory. You
+can launch the API by running
 
-The above command will:
+```
+java \
+  -Dprojection.flyway.migrate-on-start=true \
+  -jar wallet-views/java/target/wallet-views-<version>.jar \
+  --spring.config.name=application \
+  --spring.config.location=file:<directory containing application.properties>
+```
 
-- Start a local Daml sandbox.
+This will start the API on port 8080 running over a plaintext connection. TLS support is not currently implemented.
+Note: the projection will not start automatically (see the next step) i.e. the API will not return any data (yet).
+
+#### 5. Create the database schema and run the projection
+
+The projection needs to be started using a HTTP POST call to the `wallet-views/v1/projection/start` endpoint (see the
+API documentation section above for more detail). Note: in the previous step the system variable
+`projection.flyway.migrate-on-start` was set to `true`. This will cause the database schema to be created when the
+projection runner starts. A known issue is that schema creation requires root privelages on the database due to the
+usage of `CREATE EXTENSION` in the schema creation SQL. Therefore you may want to set
+`projection.flyway.migrate-on-start` to `true` the first time you run the projection (using a database user with the
+required privelages), then re-start the application using a different user (with lesser privelages) and set
+`projection.flyway.migrate-on-start` to `false`
+
+## Running the tests
+
+### API tests
+
+To run functional test cases on the API, run the below command:
+
+```
+make test-wallet-views
+```
+
+This will:
+
+- Start a local Daml sandbox on an available port.
 - Run the projection runner to project events from the sandbox into a Postgres instance managed by [Test Containers](https://www.testcontainers.org/).
 - Test that the API correctly returns data based on what commands have been submitted to the ledger API.
-- Tear down the sandbox at the end of the test suite.
+- Tear down the sandbox and wallet views application at the end of the test suite.
 
-## TypeScript client
+### TypeScript client tests
 
-To build the TypeScript client, run the following:
+There is a set of integration tests for the TypeScript client. They can be run using:
 
-    cd daml/types
-    daml build
-    rm -rf ../../typescript-client/daml.js
-    daml codegen js .daml/dist/synfini-wallet-views-types-0.0.1.dar -o ../../typescript-client/daml.js
-    cd ../../typescript-client
-    npm install
-    npm run build
+```
+make test-wallet-views-client
+```
 
-## Running the TypeScript test cases
+This will:
 
-These test cases test the integration between the TypeScript code and the API. This requires you to start the projection
-runner, API and Daml sandbox first.
-
-Start the sandbox:
-
-    cd daml/typescript-integration-test
-    daml sandbox
-
-In another terminal, from the project root, start a PostgreSQL database with docker compose:
-
-    docker compose up -d db
-
-Drop the `wallet_views` database if it already exists:
-
-    psql -h localhost -p 5432 -U postgres -c 'drop database wallet_views'
-
-Create a new database named `wallet_views` in the Postgres db.
-
-    psql -h localhost -p 5432 -U postgres -c 'create database wallet_views'
-
-Upload the DAR and allocate the parties:
-
-    cd daml/typescript-integration-test
-    daml build
-    daml ledger upload-dar .daml/dist/synfini-wallet-views-typescript-integration-test-0.0.1.dar
-    daml script \
-      --dar .daml/dist/synfini-wallet-views-typescript-integration-test-0.0.1.dar \
-      --ledger-host localhost \
-      --ledger-port 6865 \
-      --output-file ../../typescript-client/allocate-parties-output.json \
-      --script-name Synfini.Wallet.Api.TypeScriptIntegrationTestSetup:allocateParties
-
-Start the projection process. Note you will need [jq](https://stedolan.github.io/jq/) to run the command below, and it should be run from the
-project  root
-
-    mvn exec:java \
-      -Dexec.mainClass="com.synfini.wallet.views.projection.ProjectionRunner" \
-      -Dexec.args=" \
-         --ledger-host localhost \
-         --ledger-port 6865 \
-         --ledger-plaintext \
-         --read-as $(jq -r '.custodian' typescript-client/allocate-parties-output.json) \
-         --db-url jdbc:postgresql://localhost/wallet_views \
-         --db-user postgres \
-         --db-password-file /dev/stdin" <<< "postgres"
-
-After the projection process is started, run the script to create contracts for testing:
-
-    cd daml/typescript-integration-test
-    daml script \
-      --dar .daml/dist/synfini-wallet-views-typescript-integration-test-0.0.1.dar \
-      --ledger-host localhost \
-      --ledger-port 6865 \
-      --input-file ../../typescript-client/allocate-parties-output.json \
-      --script-name Synfini.Wallet.Api.TypeScriptIntegrationTestSetup:createContracts
-
-From the project root, start the API server
-
-    mvn spring-boot:run \
-      -Dspring-boot.run.arguments=" \
-        --walletviews.ledger-host=localhost \
-        --walletviews.ledger-port=6865 \
-        --walletviews.ledger-plaintext=true"
-
-Run the tests:
-
-    cd typescript-client
-    npm test
+- Start a local Daml sandbox on an available port.
+- Run the projection runner to project events from the sandbox into a Postgres instance created using `docker compose` on
+an available port. The compose file can be found under `wallet-views/java`.
+- Perform basic tests to make sure the TypeScript client can retrieve data from the API.
+- Tear down the sandbox and wallet views application at the end of the test suite.
+- Stop the Postgres docker container.

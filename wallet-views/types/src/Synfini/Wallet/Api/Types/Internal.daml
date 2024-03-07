@@ -13,19 +13,19 @@ type a :+: b = Either a b
 template UsedTypes
   with
     types :
-      Balances :+:
-      BalanceFilter :+:
-      Holdings :+:
-      HoldingFilter :+:
       Accounts :+:
       AccountFilter :+:
+      AccountOpenOffers :+:
+      AccountOpenOffersFilter :+:
+      Balances :+:
+      BalanceFilter :+:
       Settlements :+:
       SettlementsFilter :+:
+      Holdings :+:
+      HoldingFilter :+:
       Instruments :+:
       InstrumentsFilter :+:
-      AccountOpenOffersFilter :+:
-      AccountOpenOffers :+:
-      IssuersFilter :+:
-      Issuers
+      Issuers :+:
+      IssuersFilter
   where
     signatory undefinedParty
