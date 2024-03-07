@@ -175,26 +175,27 @@ JSON files for the factories.
 Please note: the example JSON snippets use comments for explanation but only standard JSON files (without comments) are
 accepted by `dops`.
 
-### Upload Daml Packages
+### Party and Package Setup
+#### Upload Daml Packages
 
 This command will upload the required Daml Finance interfaces, (default) implementations as well as all of the
 packages defined in this repository.
 
-#### Input file format
+##### Input file format
 
 N/A. No input file is needed.
 
-#### Command
+##### Command
 
 ```bash
 dops upload-dar
 ```
 
-### Allocate parties
+#### Allocate parties
 
 Allocate parties on the participant node.
 
-#### Input file format
+##### Input file format
 
 ```js
 {
@@ -208,17 +209,17 @@ Allocate parties on the participant node.
 }
 ```
 
-#### Command
+##### Command
 
 ```bash
 dops allocate-parties <path to JSON file>
 ```
 
-### Create users
+#### Create users
 
 Create users on the participant node using the User Management Service.
 
-#### Input file format
+##### Input file format
 
 ```js
 {
@@ -233,7 +234,7 @@ Create users on the participant node using the User Management Service.
 }
 ```
 
-#### Command
+##### Command
 
 ```bash
 dops create-users <path to JSON file>
@@ -689,6 +690,77 @@ it is only practical for testing scenarios where the issuer, depository, custodi
           "parties": ["bob"] // One or more labels of the observer parties
         }
       ]
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops create-pbas-unilateral <path to JSON file>
+```
+
+### Create OpenOffers for Settlement
+
+Create a settlement `OpenOffer`. The templates/interfaces for `OpenOffer` are defined in the `settlement` folder of this
+respository.
+
+#### Input file format
+
+```js
+{
+  "readAs": ["public"], // Labels of zero or more parties to use to read contracts (can be useful for fetching the
+    // factory contracts)
+  "settlementOpenOfferSettings": [
+    {
+      "offerId": "abc123...", // Offer ID
+      "offerers": ["alice"], // Labels of one or more parties which authorise the offer creation
+      "offerDescription": "abc123...",
+      "settlementInstructors": [
+        // One or more parties which will authorise the settlement if the offer is accepted
+        // Format is either:
+        {"party": "alice"}, // Label of an instructor party
+        // ... or ...
+        {"taker": {}} // An instructor party which will be set to the taker party when the `Accept` choice is exercised
+      ],
+      "settlers": [{"party": "FundA"}],
+      "steps": [
+        {
+          "sender": {"party": "SynfiniValidator"},
+          "receiver": {"taker": {}},
+          "instrumentDepository": "Fund_Depository",
+          "instrumentIssuer": "FundA",
+          "instrumentId": "FundA",
+          "instrumentVersion": "0",
+          "amount": 1
+        },
+        {
+          "sender": {"taker": {}},
+          "receiver": {"party": "FundA"},
+          "instrumentDepository": "AUDN_Depository",
+          "instrumentIssuer": "AUDN_Issuer",
+          "instrumentId": "AUDN",
+          "instrumentVersion": "0",
+          "amount": 42
+        },
+        {
+          "sender": {"taker": {}},
+          "receiver": {"party": "FundManagerA"},
+          "instrumentDepository": "AUDN_Depository",
+          "instrumentIssuer": "AUDN_Issuer",
+          "instrumentId": "AUDN",
+          "instrumentVersion": "0",
+          "amount": 0.42
+        }
+      ],
+      "settlementOpenOfferFactory": "V1",
+      "routeProvider": "validatorCustodianV1",
+      "settlementFactory": "V1",
+      "observers" : [{
+        "context": "",
+        "parties": ["SynfiniPublic", "WalletOperator"]
+      }]
     }
   ]
 }
