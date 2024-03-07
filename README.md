@@ -200,6 +200,12 @@ source ~/.bashrc
 TODO: add more documentation on the CLI tool.
 
 ## Asset and party configuration of the demo
+### Asset/Account support
+1. The demo onboards two issuers, stable coin issuer and fund issuer.
+2. The demo supports investors to create account with different asset/coin issuers.
+3. The demo supports DvP settlement among asset issuer, investor and broker.
+
+
 ### UI User profile
 
 | UI user profile  | Description  |
@@ -207,6 +213,7 @@ TODO: add more documentation on the CLI tool.
 | Issuer  | Issuer can create instruments and offers, mint asset and enter into a settlement with other parties. Issuer can access and use the issuer wallet. | 
 | Investor  | Investor can accept offers and enter into settlement with other parties. Investor can access and use the investor wallet. | 
 
+### Party configuration
 Each user on the ledger needs to use one or many parties to communicate with the ledger to complete the required workflow. 
 
 | User | Party | Description | 
@@ -217,7 +224,7 @@ Each user on the ledger needs to use one or many parties to communicate with the
 | investor | InvestorA | Investor party |
 | investor | InvestorB | Investor party |
 | fund issuer | FundA | The party manages the fund issuing |
-| fund issuer | Fund_depository | Depository for the fund instrument |
+| fund issuer | Fund_Depository | Depository for the fund instrument |
 | broker | FundManagerA | The party which takes the commission in fund settlement workflow | 
 
 ## Next step
