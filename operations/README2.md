@@ -245,6 +245,7 @@ dops create-users <path to JSON file>
 
 ---
 ### Factory and RouteProvider Setup
+---
 #### Create Account Factories
 
 Create factory contracts for creating `Account`s. The only the factory implementation currently supported is the default
@@ -593,6 +594,7 @@ Create `Account` contracts using a single command submission.
 dops create-accounts-unilateral <path to JSON file>
 ```
 
+---
 #### Create Account Open Offers
 
 As a custodian, create `OpenOffer` contracts to allow parties to create accounts. The interfaces/templates for these are
@@ -631,6 +633,7 @@ defined in the `account-onboarding` folder in this repository.
 dops create-account-open-offers <path to JSON file>
 ```
 
+---
 #### Take Account Open Offers
 
 As an account owner, take up an `Account` `OpenOffer` to create an `Account`.
@@ -664,6 +667,9 @@ As an account owner, take up an `Account` `OpenOffer` to create an `Account`.
 dops take-account-open-offers <path to JSON file>
 ```
 
+---
+### Party/soul-bound Tokens
+---
 #### Create PartyBoundAttributes Unilaterally
 
 As an issuer of `PartyBoundAttributes`, unilaterally create the instrument and corresponding `Holding`. The
@@ -717,10 +723,22 @@ it is only practical for testing scenarios where the issuer, depository, custodi
 dops create-pbas-unilateral <path to JSON file>
 ```
 
+### Settlement
+---
 #### Create OpenOffers for Settlement
 
 Create a settlement `OpenOffer`. The templates/interfaces for `OpenOffer` are defined in the `settlement` folder of this
-respository.
+respository. A party involved in settlement is captured using the follow JSON structure:
+
+```js
+ // Either:
+{"party": "alice"}, // Label of an instructor party
+// ... or ...
+{"taker": {}} // An instructor party which will be set to the taker party when the `Accept` choice is exercised. The
+// empty JSON `{}` is required
+```
+
+We refer to the above format as a "settlement party" in documentation below.
 
 ##### Input file format
 
@@ -733,50 +751,32 @@ respository.
       "offerId": "abc123...", // Offer ID
       "offerers": ["alice"], // Labels of one or more parties which authorise the offer creation
       "offerDescription": "abc123...",
-      "settlementInstructors": [
-        // One or more parties which will authorise the settlement if the offer is accepted
-        // Format is either:
-        {"party": "alice"}, // Label of an instructor party
-        // ... or ...
-        {"taker": {}} // An instructor party which will be set to the taker party when the `Accept` choice is exercised
+      "settlementInstructors": [ // One or more settlement parties who will authorise the settlement instruction
+        {"party": "alice"},
+        {"taker": {}}
       ],
-      "settlers": [{"party": "FundA"}],
+      "settlers": [{"party": "alice"}], // One or more settlement parties who will have authorisation to settle
       "steps": [
+        // One or more settlement steps, each of which define a movement of a quantity of an asset between two parties
         {
-          "sender": {"party": "SynfiniValidator"},
-          "receiver": {"taker": {}},
-          "instrumentDepository": "Fund_Depository",
-          "instrumentIssuer": "FundA",
-          "instrumentId": "FundA",
-          "instrumentVersion": "0",
+          "sender": {"party": "bob"}, // Sender settlement party
+          "receiver": {"taker": {}}, // Receiver settlement party
+          "instrumentDepository": "charlie", // Label of the depository party of the asset
+          "instrumentIssuer": "david", // Label of the issuer party of the asset
+          "instrumentId": "abc123...",
+          "instrumentVersion": "abc123..",
           "amount": 1
-        },
-        {
-          "sender": {"taker": {}},
-          "receiver": {"party": "FundA"},
-          "instrumentDepository": "AUDN_Depository",
-          "instrumentIssuer": "AUDN_Issuer",
-          "instrumentId": "AUDN",
-          "instrumentVersion": "0",
-          "amount": 42
-        },
-        {
-          "sender": {"taker": {}},
-          "receiver": {"party": "FundManagerA"},
-          "instrumentDepository": "AUDN_Depository",
-          "instrumentIssuer": "AUDN_Issuer",
-          "instrumentId": "AUDN",
-          "instrumentVersion": "0",
-          "amount": 0.42
         }
       ],
-      "settlementOpenOfferFactory": "V1",
-      "routeProvider": "validatorCustodianV1",
-      "settlementFactory": "V1",
-      "observers" : [{
-        "context": "",
-        "parties": ["SynfiniPublic", "WalletOperator"]
-      }]
+      "settlementOpenOfferFactory": "label1", // Label of the settlement OpenOffer factory
+      "routeProvider": "label1", // Label of the RouteProvider used to route the steps through custodian(s)
+      "settlementFactory": "label1", // Label of the settlement factory
+      "observers" : [ // Zero or more sets of observers of the OpenOffer
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["charlie"] // One or more labels of the observer parties
+        }
+      ]
     }
   ]
 }
@@ -785,5 +785,5 @@ respository.
 ##### Command
 
 ```bash
-dops create-pbas-unilateral <path to JSON file>
+dops create-settlement-open-offers <path to JSON file>
 ```
