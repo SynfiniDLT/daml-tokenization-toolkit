@@ -36,6 +36,10 @@ environment variables:
 | ACCESS_TOKEN_CLIENT_SECRET | OAuth client secret (required if `LEDGER_AUTH_ENABLED` is `true`) | N/A |
 | ACCESS_TOKEN_AUDIENCE | OAuth audience (required if `LEDGER_AUTH_ENABLED` is `true`) | N/A |
 
+If authentication is enabled using the above variables, then the access tokens are cached by saving them to file(s)
+under the `.dops` directory. The file name is based on the client ID. If you switch between different client IDs then
+multiple files will be created. `dops` will automatically fetch a fresh token if the cached token is about to expire.
+
 ## Basic usage
 
 Each `dops` command requries an input JSON file. For example, to allocate parties to the participant, a JSON file such
@@ -154,5 +158,29 @@ and create the contract using:
 dops create-accounts-unilateral <path to JSON file>
 ```
 
-The values of `accountFactory` and `holdingFactory` above are equal to the labels that were defined in the input JSON
-files for the factories earlier.
+The values of `accountFactory` and `holdingFactory` above must be equal to the labels that were defined in the input
+JSON files for the factories.
+
+## Command specifications
+
+### `allocate-parties`
+
+#### Input file format
+
+```json
+{
+  "partySettings": [ // One or more parties to allocate
+    {
+      "label": "alice",
+      "displayName": "Alice", // Party display name
+      "partyIdHint": "alice" // Hint to determine party ID - optional - uses random party ID if not provided
+    }
+  ]
+}
+```
+
+#### Command
+
+```bash
+dops allocate-parties <path to JSON file>
+```
