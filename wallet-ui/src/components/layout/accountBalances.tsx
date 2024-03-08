@@ -41,7 +41,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
             <tr key={balance.instrument.id.unpack}>
               <td>{balance.account.id.unpack} </td>
               <td>
-                {balance.instrument.id.unpack === "AUDN" && (
+                {balance.instrument.id.unpack === "StableCoin" && (
                   <>
                     <Coin />
                     &nbsp;&nbsp;
@@ -54,7 +54,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
               <td>{keyAccount.view.description} </td>
               <td><HoverPopUp triggerText={nameFromParty(balance.instrument.issuer)} popUpContent={balance.instrument.issuer} /></td>
 
-              {balance.instrument.id.unpack === "AUDN" ? (
+              {balance.instrument.id.unpack === "StableCoin" ? (
                 <>
                   <td>
                     {formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")} <Coin />
@@ -70,7 +70,7 @@ export default function AccountBalances(props: { accountBalancesMap?: any }) {
                 </>
               )}
               <td>
-                {balance.instrument.id.unpack === "AUDN" && (
+                {balance.instrument.id.unpack === "StableCoin" && (
                   <button onClick={() => handleRedeem(balance, keyAccount)}>Redeem</button>
                   )}
               </td>

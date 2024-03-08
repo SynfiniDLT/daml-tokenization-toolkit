@@ -12,7 +12,7 @@
       "holdingFactory": "FungibleV1",
       "observers": [
         {
-          "context": "o",
+          "context": "setup",
           "parties": ["WalletOperator"]
         }
       ]
@@ -27,7 +27,7 @@
       "holdingFactory": "FungibleV1",
       "observers": [
         {
-          "context": "o",
+          "context": "setup",
           "parties": ["WalletOperator"]
         }
       ]
@@ -42,7 +42,7 @@
       "holdingFactory": "FungibleV1",
       "observers": [
         {
-          "context": "",
+          "context": "setup",
           "parties": ["WalletOperator"]
         }
       ]
@@ -57,7 +57,7 @@
       "holdingFactory": "FungibleV1",
       "observers": [
         {
-          "context": "",
+          "context": "setup",
           "parties": ["WalletOperator"]
         }
       ]
@@ -72,26 +72,26 @@
       "holdingFactory": "FungibleV1",
       "observers": [
         {
-          "context": "",
+          "context": "setup",
           "parties": ["WalletOperator"]
         }
       ]
     },
     {
       "owner": "InvestorA",
-      "custodian": "SBT_Issuer",
+      "custodian": "SbtIssuer",
       "id": "sbt",
       "description": "sbt account",
       "incomingControllers": [
-        "SBT_Issuer"
+        "SbtIssuer"
       ],
       "outgoingControllers": [
-        "SBT_Issuer"
+        "SbtIssuer"
       ],
       "holdingFactory": "NonTransferableV1",
       "observers": [
         {
-          "context": "o",
+          "context": "setup",
           "parties": [
             "SynfiniValidator", "WalletOperator"
           ]
@@ -100,19 +100,19 @@
     },
     {
       "owner": "InvestorB",
-      "custodian": "SBT_Issuer",
+      "custodian": "SbtIssuer",
       "id": "sbt",
       "description": "sbt account",
       "incomingControllers": [
-        "SBT_Issuer"
+        "SbtIssuer"
       ],
       "outgoingControllers": [
-        "SBT_Issuer"
+        "SbtIssuer"
       ],
       "holdingFactory": "NonTransferableV1",
       "observers": [
         {
-          "context": "o",
+          "context": "setup",
           "parties": [
             "SynfiniValidator", "WalletOperator"
           ]

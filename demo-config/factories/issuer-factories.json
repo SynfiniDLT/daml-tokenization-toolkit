@@ -6,7 +6,7 @@
       "instrumentType": "Token",
       "observers": [
         {
-          "context": "public",
+          "context": "setup",
           "parties": ["SynfiniPublic"]
         }
       ]

@@ -12,7 +12,7 @@
       "description": "Account Offer 01",
       "observers": [
         {
-          "context": "o",
+          "context": "setup",
           "parties": ["SynfiniPublic","WalletOperator"]
         }
       ],
@@ -30,7 +30,7 @@
       "description": "Account Offer 02",
       "observers": [
         {
-          "context": "o",
+          "context": "setup",
           "parties": ["SynfiniPublic","WalletOperator"]
         }
       ],

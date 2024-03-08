@@ -1,6 +1,6 @@
 {
   "readAs": ["SynfiniPublic"],
   "settleSettings": {
-    "settler": "AUDN_Issuer"
+    "settler": "StableCoinIssuer"
   }
 }

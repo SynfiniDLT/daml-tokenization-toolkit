@@ -79,17 +79,17 @@ dops create-route-providers ${config_dir}/route-providers/route-providers.json
 dops create-accounts-unilateral ${config_dir}/accounts/accounts.json
 dops create-account-open-offers ${config_dir}/accounts/account-open-offers.json
 
-# AUDN
-dops create-minter-burners ${config_dir}/audn/minter-burner.json
-dops create-settlement-open-offers ${config_dir}/audn/on-ramp-offer.json
+# Stablecoin
+dops create-minter-burners ${config_dir}/stablecoin/minter-burner.json
+dops create-settlement-open-offers ${config_dir}/stablecoin/on-ramp-offer.json
 mint_id=$(uuidgen)
-dops take-settlement-open-offer ${config_dir}/audn/take-on-ramp-offer.json $mint_id
-dops accept-settlement ${config_dir}/settlement/investorA-settlement-preferences.json AUDN_Issuer,InvestorA $mint_id
-dops accept-settlement ${config_dir}/settlement/AUDN-issuer-settlement-preferences.json AUDN_Issuer,InvestorA $mint_id
-dops execute-settlement ${config_dir}/settlement/AUDN-issuer-execute.json AUDN_Issuer,InvestorA $mint_id
-dops create-settlement-open-offers ${config_dir}/audn/off-ramp-offer.json
+dops take-settlement-open-offer ${config_dir}/stablecoin/take-on-ramp-offer.json $mint_id
+dops accept-settlement ${config_dir}/settlement/investorA-settlement-preferences.json StableCoinIssuer,InvestorA $mint_id
+dops accept-settlement ${config_dir}/settlement/stablecoin-issuer-settlement-preferences.json StableCoinIssuer,InvestorA $mint_id
+dops execute-settlement ${config_dir}/settlement/stablecoin-issuer-execute.json StableCoinIssuer,InvestorA $mint_id
+dops create-settlement-open-offers ${config_dir}/stablecoin/off-ramp-offer.json
 burn_id=$(uuidgen)
-dops take-settlement-open-offer ${config_dir}/audn/take-off-ramp-offer.json $burn_id
+dops take-settlement-open-offer ${config_dir}/stablecoin/take-off-ramp-offer.json $burn_id
 
 # SBT
 dops create-pbas-unilateral ${config_dir}/sbt/pba.json

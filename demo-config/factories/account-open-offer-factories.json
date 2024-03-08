@@ -5,7 +5,7 @@
       "provider": "SynfiniValidator",
       "observers": [
         {
-          "context": "o",
+          "context": "setup",
           "parties": ["SynfiniPublic"]
         }
       ]

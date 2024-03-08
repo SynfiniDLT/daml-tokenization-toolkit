@@ -3,11 +3,11 @@
     {
       "minterBurnerFactory": "v1",
       "custodian": "SynfiniValidator",
-      "depository": "AUDN_Depository",
-      "issuer": "AUDN_Issuer",
+      "depository": "StableCoinDepository",
+      "issuer": "StableCoinIssuer",
       "observers": [
         {
-          "context": "o",
+          "context": "setup",
           "parties": ["WalletOperator"]
         }
       ]

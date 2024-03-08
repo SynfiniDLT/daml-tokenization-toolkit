@@ -1,11 +1,11 @@
 {
   "readAs": ["SynfiniPublic"],
   "pbaInstrument": {
-    "issuer": "SBT_Issuer",
-    "depository": "SBT_Depository",
+    "issuer": "SbtIssuer",
+    "depository": "SbtDepository",
     "id": "EntityName",
     "description": "Entity Name",
-    "custodian": "SBT_Issuer"
+    "custodian": "SbtIssuer"
   },
   "settlementFactory": "V1",
   "instrumentFactory": "pba.V1",
@@ -20,13 +20,13 @@
       "version": "InvestorA.V1",
       "instrumentObservers": [
         {
-          "context": "",
+          "context": "setup",
           "parties": ["SynfiniValidator", "InvestorA", "WalletOperator"]
         }
       ],
       "holdingObservers": [
         {
-          "context": "",
+          "context": "setup",
           "parties": ["SynfiniValidator", "WalletOperator"]
         }
       ]
@@ -41,13 +41,13 @@
       "version": "InvestorB.V1",
       "instrumentObservers": [
         {
-          "context": "",
+          "context": "setup",
           "parties": ["SynfiniValidator", "InvestorB", "WalletOperator"]
         }
       ],
       "holdingObservers": [
         {
-          "context": "",
+          "context": "setup",
           "parties": ["SynfiniValidator", "WalletOperator"]
         }
       ]
