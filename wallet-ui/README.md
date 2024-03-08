@@ -87,3 +87,14 @@ Finally, in another terminal you can start the UI:
 npm install
 npm start
 ```
+
+## .env variables explanation
+
+These environment variables in the .env file defines key entities and roles within the wallet-ui application. They assign values to terms like depository, issuer, operator, and public key, managing operations within the wallet under the Synfini platform.   
+
+1. REACT_APP_LEDGER_INSTRUMENT_DEPOSITORY: Represents the depository entity for the specified ledger instrument SBT (Soulbound Token).
+1. REACT_APP_LEDGER_INSTRUMENT_ISSUER: Denotes the issuer entity responsible for managing and issuing the specified ledger instrument SBT (Soulbound Token).
+1. REACT_APP_LEDGER_WALLET_OPERATOR: Points to the operator entity responsible for managing operations within the wallet.
+1. REACT_APP_LEDGER_WALLET_DEPOSITORY: Refers to the depository entity associated with the specific blockchain wallet.
+1. REACT_APP_LEDGER_WALLET_PUBLIC: Represents the public-facing aspect or key for the Synfini blockchain wallet.
+1. REACT_APP_MODE: specifies the operational mode of the wallet app, serving either as an investor or issuer, adapting its functionalities accordingly.

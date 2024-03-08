@@ -76,7 +76,7 @@ export const OfferFormScreen: React.FC = () => {
           sender: producerInput, receiver: investorInput, quantity: {amount: "1", unit: state.instrument.tokenView.token.instrument}
         }],
         minQuantity: "1",
-        maxQuantity: json_description.piePointQuantity,
+        maxQuantity: json_description.certificateQuantity,
         routeProviderCid: routeProvider[0].contractId,
         settlementFactoryCid: settlementFactory[0].contractId,
       })

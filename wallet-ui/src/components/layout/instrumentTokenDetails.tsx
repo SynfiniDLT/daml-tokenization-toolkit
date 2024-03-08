@@ -31,7 +31,7 @@ export default function instrumentTokenDetails(props: InstrumentDetailsProps) {
             <ContainerColumnField>Product Version:</ContainerColumnField>
             <ContainerColumnKey>Certificate ID(UUID):</ContainerColumnKey>
             <ContainerColumnKey>IPFS url:</ContainerColumnKey>
-            <ContainerColumnKey>PIE Point Quantity:</ContainerColumnKey>
+            <ContainerColumnKey>Certificate Quantity:</ContainerColumnKey>
             <ContainerColumnKey>Price:</ContainerColumnKey>
             <ContainerColumnKey>Creation Date (dd/mm/yyyy HH:MM:ss:sss)</ContainerColumnKey>
           </ContainerColumn>
@@ -55,7 +55,7 @@ export default function instrumentTokenDetails(props: InstrumentDetailsProps) {
               </a>
             </ContainerColumnValue>
 
-            <ContainerColumnValue>{json_description.piePointQuantity}</ContainerColumnValue>
+            <ContainerColumnValue>{json_description.certificateQuantity}</ContainerColumnValue>
             <ContainerColumnValue>{json_description.price}</ContainerColumnValue>
             <ContainerColumnValue>{toDateTimeString(props.instrument.tokenView?.token.validAsOf)}</ContainerColumnValue>
           </ContainerColumn>
