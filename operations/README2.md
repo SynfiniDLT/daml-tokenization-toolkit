@@ -986,3 +986,20 @@ Acting as a custodian, create `MinterBurner` contracts to allow issuers to mint/
 ```bash
 dops create-minter-burners <path to JSON file>
 ```
+
+## Additional Daml Script Options
+
+It is possible to pass additional options to the `daml` assistant which is used by `dops`. This can be passed in after
+the `dops` arguments. For example:
+
+```bash
+dops execute-settlement preferences.json alice,bob abc123 --application-id MyApp
+```
+
+The only parameters that can not be added are ledger host and port, the `--tls` flag  and `--access-token-file`.
+
+## Importing existing party or contract IDs
+
+Currently, there are no commands to allow for storing additional party or contract IDs in the `dops` cache e.g. if for
+referencing a party on another participant which belongs to a different organisation. The workaround for this is to
+manually edit the JSON files under the `.dops` directory.
