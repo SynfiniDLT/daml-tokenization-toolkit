@@ -36,6 +36,8 @@ environment variables:
 | ACCESS_TOKEN_CLIENT_SECRET | OAuth client secret (required if `LEDGER_AUTH_ENABLED` is `true`) | N/A |
 | ACCESS_TOKEN_AUDIENCE | OAuth audience (required if `LEDGER_AUTH_ENABLED` is `true`) | N/A |
 
+Note: only `LEDGER_HOST` and `LEDGER_PORT` are mandatory, but you will most likely need to use the other variables.
+
 If authentication is enabled using the above variables, then the access tokens are cached by saving them to file(s)
 under the `.dops` directory. The file name is based on the client ID. If you switch between different client IDs then
 multiple files will be created. `dops` will automatically fetch a fresh token if the cached token is about to expire.
