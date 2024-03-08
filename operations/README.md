@@ -30,7 +30,7 @@ environment variables:
 | LEDGER_HOST | Participant node host | N/A |
 | LEDGER_PORT | Participant node host port | N/A |
 | LEDGER_PLAINTEXT | If set to `true` then a plain text connection will be used to connect to the participant, otherwise TLS will be used | `false` |
-| LEDGER_AUTH_ENABLED | If set to `true` then the `dops` will fetch a token from the configured OAuth token endpoint and use it for authentication with the participant | `true` |
+| LEDGER_AUTH_ENABLED | If set to `true` then `dops` will fetch a token from the configured OAuth token endpoint and use it for authentication with the participant | `true` |
 | ACCESS_TOKEN_URL | OAuth token endpoint (required if `LEDGER_AUTH_ENABLED` is `true`) | N/A |
 | ACCESS_TOKEN_CLIENT_ID | OAuth client ID (required if `LEDGER_AUTH_ENABLED` is `true`) | N/A |
 | ACCESS_TOKEN_CLIENT_SECRET | OAuth client secret (required if `LEDGER_AUTH_ENABLED` is `true`) | N/A |
