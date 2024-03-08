@@ -42,8 +42,8 @@ multiple files will be created. `dops` will automatically fetch a fresh token if
 
 ## Basic usage
 
-Before running any `dops` commands, the required packages must be uploaded to the ledger. `dops` comes packaged with
-all of its necessary Daml packages. You can upload all of them to your participant by running:
+Before running any `dops` commands, the required packages must be uploaded to the ledger. `dops` includes all of its
+necessary Daml packages. You can upload all of them to your participant by running:
 
 ```bash
 dops upload-dar
@@ -80,9 +80,11 @@ dops allocate-parties <path to JSON file>
 The `dops` tool will automatically create a directory which it uses to cache party IDs. The cached identifiers are
 stored with a human-readable label. As such, the above command will generate a file in the current directory at
 `.dops/parties.json`. You can then refer to the parties by their labels, rather than their party IDs in other JSON
-files. Contract IDs are also cached. For example, in order to setup an `Account` for Bob with Alice as custodian,
-we need to first create a `Holding` factory for the assets in the `Account`. The input file would look like this for
-creating an `Account` holding fungible assets:
+files.
+
+Contract IDs are also cached. For example, in order to setup an `Account` for Bob with Alice as custodian, we need to
+first create a `Holding` factory for the assets in the `Account`. The input file would look like this for creating a
+factory for `Fungible` `Holding`s, provided by Alice and visible to Bob:
 
 ```json
 {
@@ -136,11 +138,11 @@ which can be used to create the `Account` factory by running:
 dops create-account-factories <path to JSON file>
 ```
 
-The contract IDs of the factories will saved with their labels under the `.dops` directory. Finally, we can use them
+The contract IDs of the factories will be saved with their labels under the `.dops` directory. Finally, we can use them
 to create the `Account`s. The tool supports both a propose-accept worklow and also a unilateral method to do this. For
-simplicity, this is an example will show the unilateral way. It assumes we are able to act as both the custodian and
-owner in a single command. This can be useful for testing on a single participant. For example, to create one `Account`
-for Bob, use this JSON file:
+simplicity, this is example will show the unilateral way. It assumes we are able to act as both the custodian and owner
+in a single command. This can be useful for testing on a single participant. For example, to create one `Account` for
+Bob, use this JSON file:
 
 ```json
 {
@@ -176,7 +178,6 @@ Please note: the example JSON snippets use comments for explanation but only sta
 accepted by `dops`.
 
 ### Party and Package Setup
----
 #### Upload Daml Packages
 
 This command will upload the required Daml Finance interfaces, (default) implementations as well as all of the
@@ -247,7 +248,7 @@ dops create-users <path to JSON file>
 ### Factory and RouteProvider Setup
 #### Create Account Factories
 
-Create factory contracts for creating `Account`s. The only the factory implementation currently supported is the default
+Create factory contracts for creating `Account`s. The only factory implementation currently supported is the default
 provided in the Daml Finance library.
 
 ##### Input file format
@@ -276,7 +277,7 @@ dops create-account-factories <path to JSON file>
 ```
 
 ---
-#### Create Account Open Offer Factories
+#### Create Account OpenOffer Factories
 
 Create factory contracts for creating `Account` `OpenOffer`s. The factory interfaces and templates are defined in the
 `account-onboarding` folder at the base of this repository.
@@ -370,7 +371,7 @@ dops create-settlement-factories <path to JSON file>
 ```
 
 ---
-#### Create Settlement One-time Offer Factories
+#### Create Settlement OneTimeOffer Factories
 
 Create factory contracts for creating settlement `OneTimeOffer`s. The factory interfaces and templates are defined in
 the `settlement` folder at the base of this repository.
@@ -401,7 +402,7 @@ dops create-settlement-one-time-offer-factories <path to JSON file>
 ```
 
 ---
-#### Create Settlement Open Offer Factories
+#### Create Settlement OpenOffer Factories
 
 Create factory contracts for creating settlement `OpenOffer`s. The factory interfaces and templates are defined in the
 `settlement` folder at the base of this repository.
@@ -594,7 +595,7 @@ dops create-accounts-unilateral <path to JSON file>
 ```
 
 ---
-#### Create Account Open Offers
+#### Create Account OpenOffers
 
 As a custodian, create `OpenOffer` contracts to allow parties to create accounts. For more information on the interfaces
 and templates used in this section refer to the `account-onboarding` folder at the base of this repository.
@@ -633,7 +634,7 @@ dops create-account-open-offers <path to JSON file>
 ```
 
 ---
-#### Take Account Open Offers
+#### Take Account OpenOffers
 
 As an account owner, take up an `Account` `OpenOffer` to create an `Account`. For more information on the interfaces
 and templates used in this section refer to the `account-onboarding` folder at the base of this repository.
@@ -646,7 +647,7 @@ and templates used in this section refer to the `account-onboarding` folder at t
     // factory contracts)
   "accountSettings": [ // One or more accounts to create
     {
-      "offer": "label1", // Label of the account open offer
+      "offer": "label1", // Label of the account open offer to take
       "owner": "bob", // Label of the party who will take the offer to become the owner of the account
       "id": "abc123...", // Account ID
       "description": "abc123...",
