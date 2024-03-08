@@ -42,8 +42,8 @@ multiple files will be created. `dops` will automatically fetch a fresh token if
 
 ## Basic usage
 
-Before running any `dops` commands, the required packages must be uploaded to the ledger. `dops` comes packaged with
-all of its necessary Daml packages. You can upload all of them to your participant by running:
+Before running any `dops` commands, the required packages must be uploaded to the ledger. `dops` includes all of its
+necessary Daml packages. You can upload all of them to your participant by running:
 
 ```bash
 dops upload-dar
@@ -80,9 +80,11 @@ dops allocate-parties <path to JSON file>
 The `dops` tool will automatically create a directory which it uses to cache party IDs. The cached identifiers are
 stored with a human-readable label. As such, the above command will generate a file in the current directory at
 `.dops/parties.json`. You can then refer to the parties by their labels, rather than their party IDs in other JSON
-files. Contract IDs are also cached. For example, in order to setup an `Account` for Bob with Alice as custodian,
-we need to first create a `Holding` factory for the assets in the `Account`. The input file would look like this for
-creating an `Account` holding fungible assets:
+files.
+
+Contract IDs are also cached. For example, in order to setup an `Account` for Bob with Alice as custodian, we need to
+first create a `Holding` factory for the assets in the `Account`. The input file would look like this for creating a
+factory for `Fungible` `Holding`s, provided by Alice and visible to Bob:
 
 ```json
 {
@@ -136,11 +138,11 @@ which can be used to create the `Account` factory by running:
 dops create-account-factories <path to JSON file>
 ```
 
-The contract IDs of the factories will saved with their labels under the `.dops` directory. Finally, we can use them
+The contract IDs of the factories will be saved with their labels under the `.dops` directory. Finally, we can use them
 to create the `Account`s. The tool supports both a propose-accept worklow and also a unilateral method to do this. For
-simplicity, this is an example will show the unilateral way. It assumes we are able to act as both the custodian and
-owner in a single command. This can be useful for testing on a single participant. For example, to create one `Account`
-for Bob, use this JSON file:
+simplicity, this is example will show the unilateral way. It assumes we are able to act as both the custodian and owner
+in a single command. This can be useful for testing on a single participant. For example, to create one `Account` for
+Bob, use this JSON file:
 
 ```json
 {
@@ -176,7 +178,6 @@ Please note: the example JSON snippets use comments for explanation but only sta
 accepted by `dops`.
 
 ### Party and Package Setup
----
 #### Upload Daml Packages
 
 This command will upload the required Daml Finance interfaces, (default) implementations as well as all of the
@@ -247,7 +248,7 @@ dops create-users <path to JSON file>
 ### Factory and RouteProvider Setup
 #### Create Account Factories
 
-Create factory contracts for creating `Account`s. The only the factory implementation currently supported is the default
+Create factory contracts for creating `Account`s. The only factory implementation currently supported is the default
 provided in the Daml Finance library.
 
 ##### Input file format
@@ -276,9 +277,9 @@ dops create-account-factories <path to JSON file>
 ```
 
 ---
-#### Create Account Open Offer Factories
+#### Create Account OpenOffer Factories
 
-Create factory contracts for creating `Account` `OpenOffer`s. The interfaces/templates for these are defined under the
+Create factory contracts for creating `Account` `OpenOffer`s. The factory interfaces and templates are defined in the
 `account-onboarding` folder at the base of this repository.
 
 ##### Input file format
@@ -287,7 +288,7 @@ Create factory contracts for creating `Account` `OpenOffer`s. The interfaces/tem
 {
   "accountOpenOfferFactorySettings": [ // One or more factories to create
     {
-      "label": "v1",
+      "label": "label1",
       "provider": "alice", // Label of the factory provider party
       "observers": [ // Zero or more sets of observers
         {
@@ -370,10 +371,10 @@ dops create-settlement-factories <path to JSON file>
 ```
 
 ---
-#### Create Settlement One-time Offer Factories
+#### Create Settlement OneTimeOffer Factories
 
-Create factory contracts for creating settlement `OneTimeOffer`s. The interfaces/templates for these are defined in the
-`settlement` folder at the base of this repository.
+Create factory contracts for creating settlement `OneTimeOffer`s. The factory interfaces and templates are defined in
+the `settlement` folder at the base of this repository.
 
 ##### Input file format
 
@@ -401,9 +402,9 @@ dops create-settlement-one-time-offer-factories <path to JSON file>
 ```
 
 ---
-#### Create Settlement Open Offer Factories
+#### Create Settlement OpenOffer Factories
 
-Create factory contracts for creating settlement `OpenOffer`s. The interfaces/templates for these are defined in the
+Create factory contracts for creating settlement `OpenOffer`s. The factory interfaces and templates are defined in the
 `settlement` folder at the base of this repository.
 
 ##### Input file format
@@ -466,8 +467,8 @@ dops create-instrument-factories <path to JSON file>
 ---
 #### Create Issuer Factories
 
-Create factory contracts for creating `Issuers`s. The interfaces/templates for these are defined in the
-`issuer-onboarding` folder in this repository.
+Create factory contracts for creating `Issuers`s. The factory interfaces and templates are defined in the
+`issuer-onboarding` folder at the base of this repository.
 
 ##### Input file format
 
@@ -499,8 +500,8 @@ dops create-issuer-factories <path to JSON file>
 ---
 #### Create MinterBurner Factories
 
-Create factory contracts for creating `MinterBurner`s. The interfaces/templates for these are defined in the
-`issuer-onboarding` folder in this repository.
+Create factory contracts for creating `MinterBurner`s. The factory interfaces and templates are defined in the
+`issuer-onboarding` folder at the base of this repository.
 
 ##### Input file format
 
@@ -554,11 +555,11 @@ library.
 dops create-route-providers <path to JSON file>
 ```
 
-### Account Setup
 ---
+### Account Setup
 #### Create Accounts Unilaterally
 
-Create `Account` contracts using a single command submission.
+Create `Account` contracts using a single command submission, acting as both custodian and owner.
 
 ##### Input file format
 
@@ -593,10 +594,11 @@ Create `Account` contracts using a single command submission.
 dops create-accounts-unilateral <path to JSON file>
 ```
 
-#### Create Account Open Offers
+---
+#### Create Account OpenOffers
 
-As a custodian, create `OpenOffer` contracts to allow parties to create accounts. The interfaces/templates for these are
-defined in the `account-onboarding` folder in this repository.
+As a custodian, create `OpenOffer` contracts to allow parties to create accounts. For more information on the interfaces
+and templates used in this section refer to the `account-onboarding` folder at the base of this repository.
 
 ##### Input file format
 
@@ -631,9 +633,11 @@ defined in the `account-onboarding` folder in this repository.
 dops create-account-open-offers <path to JSON file>
 ```
 
-#### Take Account Open Offers
+---
+#### Take Account OpenOffers
 
-As an account owner, take up an `Account` `OpenOffer` to create an `Account`.
+As an account owner, take up an `Account` `OpenOffer` to create an `Account`. For more information on the interfaces
+and templates used in this section refer to the `account-onboarding` folder at the base of this repository.
 
 ##### Input file format
 
@@ -643,7 +647,7 @@ As an account owner, take up an `Account` `OpenOffer` to create an `Account`.
     // factory contracts)
   "accountSettings": [ // One or more accounts to create
     {
-      "offer": "label1", // Label of the account open offer
+      "offer": "label1", // Label of the account open offer to take
       "owner": "bob", // Label of the party who will take the offer to become the owner of the account
       "id": "abc123...", // Account ID
       "description": "abc123...",
@@ -664,11 +668,17 @@ As an account owner, take up an `Account` `OpenOffer` to create an `Account`.
 dops take-account-open-offers <path to JSON file>
 ```
 
+---
+### Party/soul-bound Tokens
+
+For more information on the interfaces and templates used in this section refer to the `pbt` folder at the base of this
+repository.
+
 #### Create PartyBoundAttributes Unilaterally
 
-As an issuer of `PartyBoundAttributes`, unilaterally create the instrument and corresponding `Holding`. The
-interfaces/templates for these can be found under the `pbt` folder of this repository. As this is a unilateral workflow,
-it is only practical for testing scenarios where the issuer, depository, custodian and owner all exist on one node.
+As an issuer of `PartyBoundAttributes` (PBA), unilaterally create the instrument and corresponding `Holding`. As this
+is a unilateral workflow, it is only practical for testing scenarios where the issuer, depository, custodian and owner
+all exist on one node.
 
 ##### Input file format
 
@@ -717,10 +727,24 @@ it is only practical for testing scenarios where the issuer, depository, custodi
 dops create-pbas-unilateral <path to JSON file>
 ```
 
+---
+### Settlement
 #### Create OpenOffers for Settlement
 
-Create a settlement `OpenOffer`. The templates/interfaces for `OpenOffer` are defined in the `settlement` folder of this
-respository.
+Create settlement `OpenOffer`s. Refer to the the `settlement` folder of this respository for more information on the
+`OpenOffer` interfaces and templates.
+
+A party involved in the proposed settlement is captured using the following JSON structure:
+
+```js
+ // Either:
+{"party": "alice"}, // Label of an instructor party
+// ... or ...
+{"taker": {}} // An instructor party which will be set to the taker party when the `Accept` choice is exercised. The
+// empty JSON `{}` is required
+```
+
+We refer to the above format as a "settlement party" in the documentation below.
 
 ##### Input file format
 
@@ -733,50 +757,32 @@ respository.
       "offerId": "abc123...", // Offer ID
       "offerers": ["alice"], // Labels of one or more parties which authorise the offer creation
       "offerDescription": "abc123...",
-      "settlementInstructors": [
-        // One or more parties which will authorise the settlement if the offer is accepted
-        // Format is either:
-        {"party": "alice"}, // Label of an instructor party
-        // ... or ...
-        {"taker": {}} // An instructor party which will be set to the taker party when the `Accept` choice is exercised
+      "settlementInstructors": [ // One or more settlement parties who will authorise the settlement instruction
+        {"party": "alice"},
+        {"taker": {}}
       ],
-      "settlers": [{"party": "FundA"}],
+      "settlers": [{"party": "alice"}], // One or more settlement parties who will have authorisation to settle
       "steps": [
+        // One or more settlement steps, each of which define a movement of a quantity of an asset between two parties
         {
-          "sender": {"party": "SynfiniValidator"},
-          "receiver": {"taker": {}},
-          "instrumentDepository": "Fund_Depository",
-          "instrumentIssuer": "FundA",
-          "instrumentId": "FundA",
-          "instrumentVersion": "0",
+          "sender": {"party": "bob"}, // Sender settlement party
+          "receiver": {"taker": {}}, // Receiver settlement party
+          "instrumentDepository": "charlie", // Label of the depository party of the asset
+          "instrumentIssuer": "david", // Label of the issuer party of the asset
+          "instrumentId": "abc123...",
+          "instrumentVersion": "abc123..",
           "amount": 1
-        },
-        {
-          "sender": {"taker": {}},
-          "receiver": {"party": "FundA"},
-          "instrumentDepository": "AUDN_Depository",
-          "instrumentIssuer": "AUDN_Issuer",
-          "instrumentId": "AUDN",
-          "instrumentVersion": "0",
-          "amount": 42
-        },
-        {
-          "sender": {"taker": {}},
-          "receiver": {"party": "FundManagerA"},
-          "instrumentDepository": "AUDN_Depository",
-          "instrumentIssuer": "AUDN_Issuer",
-          "instrumentId": "AUDN",
-          "instrumentVersion": "0",
-          "amount": 0.42
         }
       ],
-      "settlementOpenOfferFactory": "V1",
-      "routeProvider": "validatorCustodianV1",
-      "settlementFactory": "V1",
-      "observers" : [{
-        "context": "",
-        "parties": ["SynfiniPublic", "WalletOperator"]
-      }]
+      "settlementOpenOfferFactory": "label1", // Label of the settlement OpenOffer factory
+      "routeProvider": "label1", // Label of the RouteProvider used to route the steps through custodian(s)
+      "settlementFactory": "label1", // Label of the settlement factory
+      "observers" : [ // Zero or more sets of observers of the OpenOffer
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["charlie"] // One or more labels of the observer parties
+        }
+      ]
     }
   ]
 }
@@ -785,5 +791,215 @@ respository.
 ##### Command
 
 ```bash
-dops create-pbas-unilateral <path to JSON file>
+dops create-settlement-open-offers <path to JSON file>
 ```
+
+---
+#### Take an OpenOffer for Settlement
+
+Take a settlement `OpenOffer` to generate the settlement instructions. This command will do a scan of the Active
+Contract Set to find an `OpenOffer` with matching `offerId` and `offerers`.
+
+##### Input file format
+
+```js
+{
+  "readAs": ["public"], // Labels of zero or more parties to use to read contracts (can be useful for fetching the
+    // factory contracts)
+  "takeOpenOfferSettings": {
+    "offerId": "abc123...", // Offer ID
+    "offerers": ["alice"], // Labels of the authorisers of the offer
+    "taker": "bob", // Label of the party to take the offer
+    "description": "abc123...", // Settlement description
+    "quantity": 1e3
+  }
+}
+```
+
+##### Command
+
+The unique identifier must be generated and provided as the second argument in the command. This will be used as the
+`Batch` ID of the settlement.
+
+```bash
+dops take-settlement-open-offer <path to JSON file> <Batch ID>
+```
+
+---
+#### Accept Settlement Instructions
+
+Accept pending settlement `Instruction`s in a `Batch` by allocating and/or approving them.
+
+##### Input file format
+
+The input file specifies the settlement preferences of the accepting party e.g. their preferred account(s) to take
+delivery.
+
+```js
+{
+  "acceptSettlementSettings": {
+    "acceptor": "bob", // Label of the accepting party
+    "settlementPreferences": [
+      // One or more preferences. Given an `Instruction` contract, the settlement preferences are evaluated from the
+      // first to last element in this array, until a matching prefence is found for the `Instruction` or otherwise
+      // no allocation or approval is applied
+      {
+        "custodian": "alice", // Label of the custodian party. Only matches `Instruction`s which use this custodian
+        "depository": "bob", // Label of the depository party - optional. If provided, only matches
+          // `Instruction`s which use an instrument at this depository
+        "issuer": "charlie", // Label of the issuer party - optional. If provided, only matches
+          // `Instruction`s which use an instrument issued by this issuer
+        "accountId": "abc123..." // If the `Instruction` matches this preference, then this account will be used to
+          // take delivery, pledge Holdings from or pass assets to/from in the case of a pass-through chain. Optional.
+        "minterBurner": true // Optional boolean flag (defaults to `false` if not provided). If `true` and the `issuer`
+          // is the `acceptor`, then on a matching `Instruction` it will use the issuer's `MinterBurner` contract to
+          // allocate and/or approve the `Instruction`
+        "settleOffLedger": true // Optional boolean flag (defaults to `false` if not provided). If `true` then it will
+          // use the settle off-ledger allocation and/or approval.
+      }
+    ]
+  }
+}
+```
+
+##### Command
+
+The second argument is a comma-delimited list of the labels of the parties which instructed the settlement. The third
+argument is the Batch ID. This command will do a scan of the Active Contract Set to find `Instruction`s with matching
+Batch ID and instructors.
+
+```bash
+dops accept-settlement <path to JSON file> <instructor1>,<instructor2>...<instructorN> <Batch ID>
+```
+
+For example, for a settlement instructed by parties labeled "alice" and "bob", having `Batch` ID "abc123":
+
+```bash
+dops accept-settlement preferences.json alice,bob abc123
+```
+
+---
+#### Execute a Batch Settlement
+
+Execute (settle) a `Batch`.
+
+##### Input file format
+
+```js
+{
+  "readAs": ["public"], // Labels of zero or more parties to use to read contracts (can be useful for fetching the
+    // factory contracts)
+  "settleSettings": {
+    "settler": "alice" // Label of the party which will settle the `Batch`
+  }
+}
+```
+
+##### Command
+
+The second argument is a comma-delimited list of the labels of the parties which instructed the settlement. The third
+argument is the Batch ID.
+
+```bash
+dops execute-settlement <path to JSON file> <instructor1>,<instructor2>...<instructorN> <Batch ID>
+```
+
+For example, for a settlement instructed by parties labeled "alice" and "bob", having `Batch` ID "abc123":
+
+```bash
+dops execute-settlement preferences.json alice,bob abc123
+```
+
+---
+
+### Issuer Setup
+
+Refer to the `issuer-onboarding` folder at the base of this repository for more information on the interfaces and
+templates used in this section.
+
+#### Create Issuer Contracts
+
+Acting as a depository, create `Issuer` contracts to allow issuers to create new instruments.
+
+##### Input file format
+
+```js
+{
+  "readAs": ["public"], // Labels of zero or more parties to use to read contracts (can be useful for fetching the
+    // factory contracts)
+  "issuerSettings": [ // One or more `Issuer`s to create
+    {
+      "issuer": "alice", // Label of the issuer party
+      "depository": "bob", // Label of the depository party
+      "instrumentType": "Token", // Type of instrument the issuer factory is for. "Token" is the only type that is
+        // currently supported
+      "issuerFactory": "label1", // Label of the factory to use to create the `Issuer`
+      "instrumentFactory": "label1", // Label of the instrument factory of the `Issuer`
+      "observers" : [ // Zero or more sets of observers of the `Issuer`
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["charlie"] // One or more labels of the observer parties
+        }
+      ]
+    }
+  ]
+}
+```
+
+##### Command
+
+```bash
+dops create-issuers <path to JSON file>
+```
+
+---
+
+#### Create MinterBurner Contracts
+
+Acting as a custodian, create `MinterBurner` contracts to allow issuers to mint/burn `Holding`s.
+
+##### Input file format
+
+```js
+{
+  "readAs": ["public"], // Labels of zero or more parties to use to read contracts (can be useful for fetching the
+    // factory contracts)
+  "minterBurnerSettings": [ // One or more `MinterBurner`s to create
+    {
+      "minterBurnerFactory": "label1", // Label of the factory to create the `MinterBurner`
+      "custodian": "alice", // Label of the custodian party
+      "depository": "bob", // Label of the depository party
+      "issuer": "charlie", // Label of the issuer party
+      "observers" : [ // Zero or more sets of observers of the `MinterBurner`
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["david"] // One or more labels of the observer parties
+        }
+      ]
+    }
+  ]
+}
+```
+
+##### Command
+
+```bash
+dops create-minter-burners <path to JSON file>
+```
+
+## Additional Daml Script Options
+
+It is possible to pass additional options to the `daml` assistant which is used by `dops`. This can be passed in after
+the `dops` arguments. For example:
+
+```bash
+dops execute-settlement preferences.json alice,bob abc123 --application-id MyApp
+```
+
+The only parameters that can not be added are ledger host and port, the `--tls` flag  and `--access-token-file`.
+
+## Importing other party or contract IDs
+
+Currently, there are no commands to allow for storing additional party or contract IDs in the `dops` cache. An example
+usecase would be to reference a party on a participant which belongs to a different organisation that you want to do a
+workflow with. The workaround for this is to manually edit the JSON files under the `.dops` directory.
