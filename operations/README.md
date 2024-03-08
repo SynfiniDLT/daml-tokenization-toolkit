@@ -996,7 +996,7 @@ the `dops` arguments. For example:
 dops execute-settlement preferences.json alice,bob abc123 --application-id MyApp
 ```
 
-The only parameters that can not be added are ledger host and port, the `--tls` flag  and `--access-token-file`.
+The only parameters that cannot be added are ledger host and port, the `--tls` flag  and `--access-token-file`.
 
 ## Importing other party or contract IDs
 
