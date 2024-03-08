@@ -1,8 +1,8 @@
 {
   "readAs": ["SynfiniPublic"],
   "takeOpenOfferSettings": {
-    "offerId": "AUDN@0.OnRamp",
-    "offerers": ["AUDN_Issuer"],
+    "offerId": "StableCoin@0.OnRamp",
+    "offerers": ["StableCoinIssuer"],
     "taker": "InvestorA",
     "description": "on ramp",
     "quantity": 1e7

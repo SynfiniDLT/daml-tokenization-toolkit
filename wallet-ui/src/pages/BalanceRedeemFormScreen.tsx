@@ -102,7 +102,7 @@ const BalanceRedeemFormScreen: React.FC = () => {
   return (
     <PageLayout>
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
-        AUDN Redemption
+        StableCoin Redemption
       </h3>
 
       <DivBorderRoundContainer>

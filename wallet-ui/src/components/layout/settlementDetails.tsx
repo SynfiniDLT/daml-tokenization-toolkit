@@ -125,7 +125,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
             <h5 className="profile__title">Step {index + 1}</h5>
             <div style={{ margin: "15px" }}>
               <Field>Amount: </Field>
-              {step.routedStep.quantity.unit.id.unpack === "AUDN" ? (
+              {step.routedStep.quantity.unit.id.unpack === "StableCoin" ? (
                 <>{formatCurrency(step.routedStep.quantity.amount, "en-US")}</>
               ) : (
                 <>{Number(step.routedStep.quantity.amount)}</>
@@ -482,7 +482,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
                   <h5 className="profile__title">Step {index + 1}</h5>
                   <div style={{ margin: "15px" }}>
                     <Field>Amount: </Field>
-                    {step.routedStep.quantity.unit.id.unpack === "AUDN" ? (
+                    {step.routedStep.quantity.unit.id.unpack === "StableCoin" ? (
                       <>{formatCurrency(step.routedStep.quantity.amount, "en-US")}</>
                     ) : (
                       <>{Number(step.routedStep.quantity.amount)}</>

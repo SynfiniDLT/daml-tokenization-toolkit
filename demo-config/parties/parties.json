@@ -11,29 +11,24 @@
       "partyIdHint": "SynfiniPublic"
     },
     {
-      "label": "AUDN_Issuer",
-      "displayName": "AUDN_Issuer",
-      "partyIdHint": "AUDN_Issuer"
+      "label": "StableCoinIssuer",
+      "displayName": "StableCoinIssuer",
+      "partyIdHint": "StableCoinIssuer"
     },
     {
-      "label": "AUDN_Depository",
-      "displayName": "AUDN_Depository",
-      "partyIdHint": "AUDN_Depository"
+      "label": "StableCoinDepository",
+      "displayName": "StableCoinDepository",
+      "partyIdHint": "StableCoinDepository"
     },
     {
-      "label": "AUDN_MinterBurner",
-      "displayName": "AUDN_MinterBurner",
-      "partyIdHint": "AUDN_MinterBurner"
+      "label": "SbtIssuer",
+      "displayName": "SbtIssuer",
+      "partyIdHint": "SbtIssuer"
     },
     {
-      "label": "SBT_Issuer",
-      "displayName": "SBT_Issuer",
-      "partyIdHint": "SBT_Issuer"
-    },
-    {
-      "label": "SBT_Depository",
-      "displayName": "SBT_Depository",
-      "partyIdHint": "SBT_Depository"
+      "label": "SbtDepository",
+      "displayName": "SbtDepository",
+      "partyIdHint": "SbtDepository"
     },
     {
       "label": "WalletOperator",
@@ -51,9 +46,9 @@
       "partyIdHint": "InvestorB"
     },
     {
-      "label": "Fund_Depository",
+      "label": "FundDepository",
       "displayName": "Fund Depository",
-      "partyIdHint": "Fund_Depository"
+      "partyIdHint": "FundDepository"
     },
     {
       "label": "FundA",
