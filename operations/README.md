@@ -819,7 +819,7 @@ Contract Set to find an `OpenOffer` with matching `offerId` and `offerers`.
 ##### Command
 
 The unique identifier must be generated and provided as the second argument in the command. This will be used as the
-`Batch` ID of the settlement.
+Batch ID of the settlement.
 
 ```bash
 dops take-settlement-open-offer <path to JSON file> <Batch ID>
@@ -872,7 +872,7 @@ Batch ID and instructors.
 dops accept-settlement <path to JSON file> <instructor1>,<instructor2>...<instructorN> <Batch ID>
 ```
 
-For example, for a settlement instructed by parties labeled "alice" and "bob", having `Batch` ID "abc123":
+For example, for a settlement instructed by parties labeled "alice" and "bob", having Batch ID "abc123":
 
 ```bash
 dops accept-settlement preferences.json alice,bob abc123
@@ -904,7 +904,7 @@ argument is the Batch ID.
 dops execute-settlement <path to JSON file> <instructor1>,<instructor2>...<instructorN> <Batch ID>
 ```
 
-For example, for a settlement instructed by parties labeled "alice" and "bob", having `Batch` ID "abc123":
+For example, for a settlement instructed by parties labeled "alice" and "bob", having Batch ID "abc123":
 
 ```bash
 dops execute-settlement preferences.json alice,bob abc123
