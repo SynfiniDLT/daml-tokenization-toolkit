@@ -183,6 +183,11 @@ To clean the build state:
 make clean
 ```
 
+## Deployment
+
+1. Refer to [wallet view readme](./wallet-views/README.md) for deploying daml packages, project runner and wallet API.
+2. Refer to [wallet ui readme](./wallet-ui/README.md) for deploying wallet ui.
+
 ## dops CLI
 
 The `dops` ("Daml Ops") CLI can be used for various operations on the ledger, such as party allocation, creation of
