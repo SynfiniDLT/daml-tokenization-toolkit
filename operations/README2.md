@@ -998,7 +998,7 @@ dops execute-settlement preferences.json alice,bob abc123 --application-id MyApp
 
 The only parameters that can not be added are ledger host and port, the `--tls` flag  and `--access-token-file`.
 
-## Importing existing party or contract IDs
+## Importing other party or contract IDs
 
 Currently, there are no commands to allow for storing additional party or contract IDs in the `dops` cache. An example
 usecase would be to reference a party on a participant which belongs to a different organisation that you want to do a
