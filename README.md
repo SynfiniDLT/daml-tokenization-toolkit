@@ -2,25 +2,26 @@
 
 A solution that demostrates
 1. Tokenization of assets using Daml/Canton.
-2. Asset settlement on Canton network.
-3. Wallet to support the asset tokenization.
+1. Asset settlement on Canton network.
+1. Wallet to support the asset tokenization.
 
 ## Diagram
 ![alt text](./img/Diagram.JPG)
 
 ## Component
 The project contains a number of components
-| Folder  | Content | Dependency |
+| Folder | Content | Dependency |
 | ------------- | ------------- | ------------- |
-| account-onboarding  | Daml templates. Refer to [this readme file](./account-onboarding/README.md) | Daml Finance |
-| issuer-onboarding  | Daml templates. Refer to [this readme file](./isser-onboarding/README.md) | Daml Finance |
-| pbt  | Daml templates that support pbt/sbt | Daml Finance |
-| settlement  | Daml templates that support settlement function | Daml Finance |
-| trackable-settlement  | Daml templates that support issuers to observe customer holdings  | Daml Finance |
-| demo-config | Configurations files for the initial smart contract setup. The file contains data required to onboard users to the ledger    | Daml solution packages |
-| operations  | Scripts that support initial contract setup | Daml Finance |
-| wallet-views  | API for the UI |  |
-| wallet-ui  | UI app |  |
+| account-onboarding | Daml templates. Refer to [this readme file](./account-onboarding/README.md) | Daml Finance |
+| issuer-onboarding | Daml templates. Refer to [this readme file](./isser-onboarding/README.md) | Daml Finance |
+| pbt | Daml templates that support pbt/sbt | Daml Finance |
+| settlement | Daml templates that support settlement function | Daml Finance |
+| trackable-holding | Daml templates that allow additional parties such as issuers or service providers to observe customer holdings | Daml Finance |
+| trackable-settlement | Daml templates that allow additional parties such as issuers or service providers to view settlements on customer accounts | Daml Finance |
+| demo-config | Configurations files for the initial smart contract setup. The file contains data required to onboard users to the ledger | Daml solution packages |
+| operations | Scripts that support initial contract setup | Daml Finance, Daml templates defined in this project |
+| wallet-views | API for the UI |  |
+| wallet-ui | UI app |  |
 
 
 ## Getting started
@@ -54,7 +55,7 @@ make install-custom-views
 ## Setting up Auth0 Authentication for the React App (Wallet-ui)
 This will guide you through the steps to set up Auth0 authentication in your React app as a Single Page Application (SPA). In this application, we leverage Auth0's Universal Login to streamline the authentication and token generation process.   
 This authentication service provides a seamless and secure user experience by centralizing login functionality, allowing users to access their blockchain wallet through a unified and authenticated session managed by Auth0.  
-* Users have the flexibility to modify the authentication and authorization platform according to their preferences, providing them the freedom to integrate and use alternative authentication mechanisms if they are more comfortable with a different approach.
+The solution currently only supports Auth0, however it could be modified to support other authentication and authorization platform providers if needed.
 
 ### Step 1: Create an Auth0 Account
 1. Go to Auth0 and sign up for a free account.
@@ -202,8 +203,8 @@ TODO: add more documentation on the CLI tool.
 ## Asset and party configuration of the demo
 ### Asset/Account support
 1. The demo onboards two issuers, stable coin issuer and fund issuer.
-2. The demo supports investors to create account with different asset/coin issuers.
-3. The demo supports DvP settlement among asset issuer, investor and broker.
+1. The demo supports investors to create account with different asset/coin issuers.
+1. The demo supports DvP settlement among asset issuer, investor and broker.
 
 
 ### UI User profile
@@ -288,6 +289,5 @@ sudo docker logs -f wallet-frontend
 
 There are a number of tasks ahead to complete and enhance this solution. 
 
-1. Update the wallet runer as the customer-view library is deprecated. One option is to upgrade to PQS if the user has Daml Enterprise SDK (https://docs.daml.com/query/pqs-user-guide.html#meet-prerequisites). Another option is to develop a tailored solution to stream data from the ledger to the database. 
-
-2. Use the latest solution from DA to support public party. Public party will enable disclosure such as reference data and public offerings.
+1. Update the wallet runer as the custom-views library is deprecated. One option is to upgrade to PQS if the user has Daml Enterprise SDK (https://docs.daml.com/query/pqs-user-guide.html#meet-prerequisites). Another option is to develop a tailored solution to stream data from the ledger to the database. 
+1. Use the latest solution from DA to support public party. Public party will enable disclosure such as reference data and public offerings.
