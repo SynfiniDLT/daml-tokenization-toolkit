@@ -255,7 +255,7 @@ provided in the Daml Finance library.
 
 ```js
 {
-  "accountFactorySettings": [ // One or more Account factories to create
+  "accountFactorySettings": [ // One or more factories to create
     {
       "label": "label1",
       "provider": "alice", // Label of the factory provider party
