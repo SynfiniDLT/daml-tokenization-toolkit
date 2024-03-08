@@ -227,6 +227,63 @@ Each user on the ledger needs to use one or many parties to communicate with the
 | fund issuer | Fund_Depository | Depository for the fund instrument |
 | broker | FundManagerA | The party which takes the commission in fund settlement workflow | 
 
+
+## Project Deployment Guide
+This guide provides step-by-step instructions for building and deploying the backend and frontend applications using Docker.
+
+
+### 1. Dockerfile-backend Version Explanation
+The Dockerfile-backend uses a version argument that is set in the pom.xml file located at wallet-views/java/pom.xml. This version corresponds to the version of the JAR file used in the backend container.
+
+### 2. Build the Project using Makefile
+To build the project, execute the following commands:
+
+``` bash
+make build-wallet-views
+make build-wallet-ui
+```
+
+### 3. Build the Backend Container
+Build the backend container by executing the following command. The VERSION argument is used to specify the version of the JAR file from the pom.xml.
+
+```bash
+sudo docker build --build-arg VERSION=0.0.2 -t wallet-be -f Dockerfile-backend .
+```
+### 4. Build the Frontend Container
+Build the frontend container using the following command:
+
+```bash
+sudo docker build -t wallet-fe -f Dockerfile-frontend .
+```
+
+### 5. Run Backend Container
+Run the backend container in detached mode, mapping port 8091 on the host to port 8091 in the container:
+
+```bash
+sudo docker run -p 8091:8091 --name wallet-backend -d wallet-be
+```
+
+### 6. Run Frontend Container
+Run the frontend container in detached mode, mapping port 8090 on the host to port 8090 in the container:
+
+```bash
+sudo docker run -p 8090:8090 --name wallet-frontend -d wallet-fe
+```
+
+### 7. Check Container Logs
+Check the logs of the backend container:
+
+```bash
+sudo docker logs -f wallet-backend
+```
+
+
+Check the logs of the frontend container:
+
+```bash
+sudo docker logs -f wallet-frontend
+```
+
 ## Next step
 
 There are a number of tasks ahead to complete and enhance this solution. 
