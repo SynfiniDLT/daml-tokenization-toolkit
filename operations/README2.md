@@ -1000,6 +1000,6 @@ The only parameters that can not be added are ledger host and port, the `--tls` 
 
 ## Importing existing party or contract IDs
 
-Currently, there are no commands to allow for storing additional party or contract IDs in the `dops` cache e.g. if for
-referencing a party on another participant which belongs to a different organisation. The workaround for this is to
-manually edit the JSON files under the `.dops` directory.
+Currently, there are no commands to allow for storing additional party or contract IDs in the `dops` cache. An example
+usecase would be to reference a party on a participant which belongs to a different organisation that you want to do a
+workflow with. The workaround for this is to manually edit the JSON files under the `.dops` directory.
