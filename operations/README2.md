@@ -245,7 +245,6 @@ dops create-users <path to JSON file>
 
 ---
 ### Factory and RouteProvider Setup
----
 #### Create Account Factories
 
 Create factory contracts for creating `Account`s. The only the factory implementation currently supported is the default
@@ -555,8 +554,8 @@ library.
 dops create-route-providers <path to JSON file>
 ```
 
-### Account Setup
 ---
+### Account Setup
 #### Create Accounts Unilaterally
 
 Create `Account` contracts using a single command submission.
@@ -669,7 +668,6 @@ dops take-account-open-offers <path to JSON file>
 
 ---
 ### Party/soul-bound Tokens
----
 #### Create PartyBoundAttributes Unilaterally
 
 As an issuer of `PartyBoundAttributes`, unilaterally create the instrument and corresponding `Holding`. The
@@ -723,8 +721,8 @@ it is only practical for testing scenarios where the issuer, depository, custodi
 dops create-pbas-unilateral <path to JSON file>
 ```
 
-### Settlement
 ---
+### Settlement
 #### Create OpenOffers for Settlement
 
 Create a settlement `OpenOffer`. The templates/interfaces for `OpenOffer` are defined in the `settlement` folder of this
@@ -787,3 +785,126 @@ We refer to the above format as a "settlement party" in documentation below.
 ```bash
 dops create-settlement-open-offers <path to JSON file>
 ```
+
+---
+#### Take an OpenOffer for Settlement
+
+Take a settlement `OpenOffer` to generate the settlement instructions. This command will do a scan of the Active
+Contract Set to find an `OpenOffer` with matching `offerId` and `offerers`.
+
+##### Input file format
+
+```js
+{
+  "readAs": ["public"], // Labels of zero or more parties to use to read contracts (can be useful for fetching the
+    // factory contracts)
+  "takeOpenOfferSettings": {
+    "offerId": "abc123...", // Offer ID
+    "offerers": ["alice"], // Labels of the authorisers of the offer
+    "taker": "bob", // Label of the party to take the offer
+    "description": "abc123...", // Settlement description
+    "quantity": 1e3
+  }
+}
+```
+
+##### Command
+
+The unique identifier must be generated and provided as the second argument in the command. This will be used as the
+`Batch` ID of the settlement.
+
+```bash
+dops take-settlement-open-offer <path to JSON file> <Batch ID>
+```
+
+---
+#### Accept Settlement Instructions
+
+Accept pending settlement `Instruction`s in a `Batch` by allocating and/or approving them.
+
+##### Input file format
+
+The input file specifies the settlement preferences of the accepting party e.g. their preferred account(s) to take
+delivery.
+
+```js
+{
+  "acceptSettlementSettings": {
+    "acceptor": "bob", // Label of the accepting party
+    "settlementPreferences": [
+      // One or more preferences. Given an `Instruction` contract, the settlement preferences are evaluated from the
+      // first to last element in this array, until a matching prefence is found for the `Instruction` or otherwise
+      // no allocation or approval is applied
+      {
+        "custodian": "alice", // Label of the custodian party. Only matches `Instruction`s which use this custodian
+        "depository": "bob", // Label of the depository party - optional. If provided, only matches
+          // `Instruction`s which use an instrument at this depository
+        "issuer": "charlie", // Label of the issuer party - optional. If provided, only matches
+          // `Instruction`s which use an instrument issued by this issuer
+        "accountId": "abc123..." // If the `Instruction` matches this preference, then this account will be used to
+          // take delivery, pledge Holdings from or pass assets to/from in the case of a pass-through chain. Optional.
+        "minterBurner": true // Optional boolean flag (defaults to `false` if not provided). If `true` and the `issuer`
+          // is the `acceptor`, then on a matching `Instruction` it will use the issuer's `MinterBurner` contract to
+          // allocate and/or approve the `Instruction`
+        "settleOffLedger": true // Optional boolean flag (defaults to `false` if not provided). If `true` then it will
+          // use the settle off-ledger allocation and/or approval.
+      }
+    ]
+  }
+}
+```
+
+##### Command
+
+The second argument is a comma-delimited list of the labels of the parties which instructed the settlement. The third
+argument is the Batch ID.
+
+```bash
+dops accept-settlement <path to JSON file> <instructor1>,<instructor2>...<instructorN> <Batch ID>
+```
+
+For example, for a settlement instructed by parties labeled "alice" and "bob", having `Batch` ID "abc123":
+
+```bash
+dops accept-settlement preferences.json alice,bob abc123
+```
+
+---
+#### Execute a Batch Settlement
+
+Execute (settle) a `Batch`.
+
+##### Input file format
+
+```js
+{
+  "readAs": ["public"], // Labels of zero or more parties to use to read contracts (can be useful for fetching the
+    // factory contracts)
+  "settleSettings": {
+    "settler": "alice" // Label of the party which will settle the `Batch`
+  }
+}
+```
+
+##### Command
+
+The second argument is a comma-delimited list of the labels of the parties which instructed the settlement. The third
+argument is the Batch ID.
+
+```bash
+dops execute-settlement <path to JSON file> <instructor1>,<instructor2>...<instructorN> <Batch ID>
+```
+
+For example, for a settlement instructed by parties labeled "alice" and "bob", having `Batch` ID "abc123":
+
+```bash
+dops execute-settlement preferences.json alice,bob abc123
+```
+
+---
+
+### Issuer Setup
+
+#### Create Issuer Contracts
+
+
