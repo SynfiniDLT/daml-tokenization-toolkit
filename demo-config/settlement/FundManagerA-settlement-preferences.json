@@ -4,8 +4,8 @@
     "settlementPreferences": [
       {
         "custodian": "SynfiniValidator",
-        "depository": "AUDN_Depository",
-        "issuer": "AUDN_Issuer",
+        "depository": "StableCoinDepository",
+        "issuer": "StableCoinIssuer",
         "accountId": "001"
       }
     ]

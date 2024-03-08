@@ -1,11 +1,11 @@
 {
   "acceptSettlementSettings": {
-    "acceptor": "AUDN_Issuer",
+    "acceptor": "StableCoinIssuer",
     "settlementPreferences": [
       {
         "custodian": "SynfiniValidator",
-        "depository": "AUDN_Depository",
-        "issuer": "AUDN_Issuer",
+        "depository": "StableCoinDepository",
+        "issuer": "StableCoinIssuer",
         "minterBurner": true
       }
     ]

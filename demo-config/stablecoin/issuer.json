@@ -2,14 +2,14 @@
   "readAs": ["SynfiniPublic"],
   "issuerSettings": [
     {
-      "issuer": "AUDN_Issuer",
-      "depository": "AUDN_Depository",
+      "issuer": "StableCoinIssuer",
+      "depository": "StableCoinDepository",
       "instrumentType": "Token",
       "issuerFactory": "token.V1",
       "instrumentFactory": "token.V1",
       "observers": [
         {
-          "context": "deployment",
+          "context": "setup",
           "parties": ["WalletOperator"]
         }
       ]

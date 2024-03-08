@@ -3,11 +3,11 @@
     {
       "minterBurnerFactory": "v1",
       "custodian": "SynfiniValidator",
-      "depository": "Fund_Depository",
+      "depository": "FundDepository",
       "issuer": "FundA",
       "observers": [
         {
-          "context": "o",
+          "context": "setup",
           "parties": ["WalletOperator"]
         }
       ]

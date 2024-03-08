@@ -22,9 +22,9 @@
     },
     {
       "userId": "auth0|6502812f87540693daa0a66b",
-      "primaryParty": "AUDN_Issuer",
+      "primaryParty": "StableCoinIssuer",
       "actAs": [
-        "AUDN_Issuer"
+        "StableCoinIssuer"
       ],
       "readAs": [
         "SynfiniPublic"
@@ -32,10 +32,10 @@
     },
     {
       "userId": "auth0|6502814dd572a3455f2cf5e1",
-      "primaryParty": "AUDN_Issuer",
+      "primaryParty": "StableCoinIssuer",
       "actAs": [],
       "readAs": [
-        "AUDN_Issuer",
+        "StableCoinIssuer",
         "SynfiniPublic"
       ]
     },
