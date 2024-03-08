@@ -845,10 +845,10 @@ delivery.
       // no allocation or approval is applied
       {
         "custodian": "alice", // Label of the custodian party. Only matches `Instruction`s which use this custodian
-        "depository": "bob", // Label of the depository party - optional. If provided, only matches
-          // `Instruction`s which use an instrument at this depository
-        "issuer": "charlie", // Label of the issuer party - optional. If provided, only matches
-          // `Instruction`s which use an instrument issued by this issuer
+        "depository": "bob", // Label of the depository party - optional. If provided, only matches `Instruction`s
+          // which use an instrument at this depository
+        "issuer": "charlie", // Label of the issuer party - optional. If provided, only matches `Instruction`s which use
+          // an instrument issued by this issuer
         "accountId": "abc123..." // If the `Instruction` matches this preference, then this account will be used to
           // take delivery, pledge Holdings from or pass assets to/from in the case of a pass-through chain. Optional.
         "minterBurner": true // Optional boolean flag (defaults to `false` if not provided). If `true` and the `issuer`
