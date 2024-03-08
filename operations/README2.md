@@ -734,7 +734,7 @@ dops create-pbas-unilateral <path to JSON file>
 Create settlement `OpenOffer`s. Refer to the the `settlement` folder of this respository for more information on the
 `OpenOffer` interfaces and templates.
 
-A party involved in the proposed settlement is captured using the follow JSON structure:
+A party involved in the proposed settlement is captured using the following JSON structure:
 
 ```js
  // Either:
@@ -865,7 +865,8 @@ delivery.
 ##### Command
 
 The second argument is a comma-delimited list of the labels of the parties which instructed the settlement. The third
-argument is the Batch ID.
+argument is the Batch ID. This command will do a scan of the Active Contract Set to find `Instruction`s with matching
+Batch ID and instructors.
 
 ```bash
 dops accept-settlement <path to JSON file> <instructor1>,<instructor2>...<instructorN> <Batch ID>
