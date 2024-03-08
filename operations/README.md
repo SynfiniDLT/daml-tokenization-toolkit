@@ -183,7 +183,7 @@ accepted by `dops`.
 This command will upload the required Daml Finance interfaces, (default) implementations as well as all of the
 packages defined in this repository.
 
-##### Input file format
+##### Input File Format
 
 N/A. No input file is needed.
 
@@ -198,7 +198,7 @@ dops upload-dar
 
 Allocate parties on the participant node.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -223,7 +223,7 @@ dops allocate-parties <path to JSON file>
 
 Create users on the participant node using the User Management Service.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -251,7 +251,7 @@ dops create-users <path to JSON file>
 Create factory contracts for creating `Account`s. The only factory implementation currently supported is the default
 provided in the Daml Finance library.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -282,7 +282,7 @@ dops create-account-factories <path to JSON file>
 Create factory contracts for creating `Account` `OpenOffer`s. The factory interfaces and templates are defined in the
 `account-onboarding` folder at the base of this repository.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -312,7 +312,7 @@ dops create-account-open-offer-factories <path to JSON file>
 
 Create factory contracts for creating `Holding`s.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -347,7 +347,7 @@ dops create-holding-factories <path to JSON file>
 
 Create factory contracts for instructing `Batch` settlements.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -376,7 +376,7 @@ dops create-settlement-factories <path to JSON file>
 Create factory contracts for creating settlement `OneTimeOffer`s. The factory interfaces and templates are defined in
 the `settlement` folder at the base of this repository.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -407,7 +407,7 @@ dops create-settlement-one-time-offer-factories <path to JSON file>
 Create factory contracts for creating settlement `OpenOffer`s. The factory interfaces and templates are defined in the
 `settlement` folder at the base of this repository.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -437,7 +437,7 @@ dops create-settlement-open-offer-factories <path to JSON file>
 
 Create factory contracts for creating `Instrument`s.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -470,7 +470,7 @@ dops create-instrument-factories <path to JSON file>
 Create factory contracts for creating `Issuers`s. The factory interfaces and templates are defined in the
 `issuer-onboarding` folder at the base of this repository.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -503,7 +503,7 @@ dops create-issuer-factories <path to JSON file>
 Create factory contracts for creating `MinterBurner`s. The factory interfaces and templates are defined in the
 `issuer-onboarding` folder at the base of this repository.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -534,7 +534,7 @@ dops create-minter-burner-factories <path to JSON file>
 Create `RouteProvider` instances. The only type of `RouteProvider` supported is `SingleCustodian` from the Daml Finance
 library.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -561,7 +561,7 @@ dops create-route-providers <path to JSON file>
 
 Create `Account` contracts using a single command submission, acting as both custodian and owner.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -600,7 +600,7 @@ dops create-accounts-unilateral <path to JSON file>
 As a custodian, create `OpenOffer` contracts to allow parties to create accounts. For more information on the interfaces
 and templates used in this section refer to the `account-onboarding` folder at the base of this repository.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -639,7 +639,7 @@ dops create-account-open-offers <path to JSON file>
 As an account owner, take up an `Account` `OpenOffer` to create an `Account`. For more information on the interfaces
 and templates used in this section refer to the `account-onboarding` folder at the base of this repository.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -680,7 +680,7 @@ As an issuer of `PartyBoundAttributes` (PBA), unilaterally create the instrument
 is a unilateral workflow, it is only practical for testing scenarios where the issuer, depository, custodian and owner
 all exist on one node.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -746,7 +746,7 @@ A party involved in the proposed settlement is captured using the following JSON
 
 We refer to the above format as a "settlement party" in the documentation below.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -800,7 +800,7 @@ dops create-settlement-open-offers <path to JSON file>
 Take a settlement `OpenOffer` to generate the settlement instructions. This command will do a scan of the Active
 Contract Set to find an `OpenOffer` with matching `offerId` and `offerers`.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -830,7 +830,7 @@ dops take-settlement-open-offer <path to JSON file> <Batch ID>
 
 Accept pending settlement `Instruction`s in a `Batch` by allocating and/or approving them.
 
-##### Input file format
+##### Input File Format
 
 The input file specifies the settlement preferences of the accepting party e.g. their preferred account(s) to take
 delivery.
@@ -883,7 +883,7 @@ dops accept-settlement preferences.json alice,bob abc123
 
 Execute (settle) a `Batch`.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -921,7 +921,7 @@ templates used in this section.
 
 Acting as a depository, create `Issuer` contracts to allow issuers to create new instruments.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -958,7 +958,7 @@ dops create-issuers <path to JSON file>
 
 Acting as a custodian, create `MinterBurner` contracts to allow issuers to mint/burn `Holding`s.
 
-##### Input file format
+##### Input File Format
 
 ```js
 {
@@ -998,7 +998,7 @@ dops execute-settlement preferences.json alice,bob abc123 --application-id MyApp
 
 The only parameters that cannot be added are ledger host and port, the `--tls` flag  and `--access-token-file`.
 
-## Importing other party or contract IDs
+## Importing Other Party or Contract IDs
 
 Currently, there are no commands to allow for storing additional party or contract IDs in the `dops` cache. An example
 usecase would be to reference a party on a participant which belongs to a different organisation that you want to do a
