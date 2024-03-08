@@ -1,7 +1,7 @@
-# Operational Scripts for Daml Finance and Wallet Applications
+# Operational Scripts for Wallet Applications
 
 This folder contains a set of Daml Scripts and a command line tool to invoke them. The scripts are designed for various
-operational activites such as party setup, creation of factory contracts and account creation.
+operational activites such as party setup, creation of factory contracts, account creation and settlement.
 
 ## Installation
 
