@@ -278,7 +278,7 @@ dops create-account-factories <path to JSON file>
 ---
 #### Create Account Open Offer Factories
 
-Create factory contracts for creating `Account` `OpenOffer`s. The interfaces/templates for these are defined under the
+Create factory contracts for creating `Account` `OpenOffer`s. The factory interfaces and templates are defined in the
 `account-onboarding` folder at the base of this repository.
 
 ##### Input file format
@@ -287,7 +287,7 @@ Create factory contracts for creating `Account` `OpenOffer`s. The interfaces/tem
 {
   "accountOpenOfferFactorySettings": [ // One or more factories to create
     {
-      "label": "v1",
+      "label": "label1",
       "provider": "alice", // Label of the factory provider party
       "observers": [ // Zero or more sets of observers
         {
@@ -372,8 +372,8 @@ dops create-settlement-factories <path to JSON file>
 ---
 #### Create Settlement One-time Offer Factories
 
-Create factory contracts for creating settlement `OneTimeOffer`s. The interfaces/templates for these are defined in the
-`settlement` folder at the base of this repository.
+Create factory contracts for creating settlement `OneTimeOffer`s. The factory interfaces and templates are defined in
+the `settlement` folder at the base of this repository.
 
 ##### Input file format
 
@@ -403,7 +403,7 @@ dops create-settlement-one-time-offer-factories <path to JSON file>
 ---
 #### Create Settlement Open Offer Factories
 
-Create factory contracts for creating settlement `OpenOffer`s. The interfaces/templates for these are defined in the
+Create factory contracts for creating settlement `OpenOffer`s. The factory interfaces and templates are defined in the
 `settlement` folder at the base of this repository.
 
 ##### Input file format
@@ -466,8 +466,8 @@ dops create-instrument-factories <path to JSON file>
 ---
 #### Create Issuer Factories
 
-Create factory contracts for creating `Issuers`s. The interfaces/templates for these are defined in the
-`issuer-onboarding` folder in this repository.
+Create factory contracts for creating `Issuers`s. The factory interfaces and templates are defined in the
+`issuer-onboarding` folder at the base of this repository.
 
 ##### Input file format
 
@@ -499,8 +499,8 @@ dops create-issuer-factories <path to JSON file>
 ---
 #### Create MinterBurner Factories
 
-Create factory contracts for creating `MinterBurner`s. The interfaces/templates for these are defined in the
-`issuer-onboarding` folder in this repository.
+Create factory contracts for creating `MinterBurner`s. The factory interfaces and templates are defined in the
+`issuer-onboarding` folder at the base of this repository.
 
 ##### Input file format
 
@@ -558,7 +558,7 @@ dops create-route-providers <path to JSON file>
 ### Account Setup
 #### Create Accounts Unilaterally
 
-Create `Account` contracts using a single command submission.
+Create `Account` contracts using a single command submission, acting as both custodian and owner.
 
 ##### Input file format
 
@@ -596,8 +596,8 @@ dops create-accounts-unilateral <path to JSON file>
 ---
 #### Create Account Open Offers
 
-As a custodian, create `OpenOffer` contracts to allow parties to create accounts. The interfaces/templates for these are
-defined in the `account-onboarding` folder in this repository.
+As a custodian, create `OpenOffer` contracts to allow parties to create accounts. For more information on the interfaces
+and templates used in this section refer to the `account-onboarding` folder at the base of this repository.
 
 ##### Input file format
 
@@ -635,7 +635,8 @@ dops create-account-open-offers <path to JSON file>
 ---
 #### Take Account Open Offers
 
-As an account owner, take up an `Account` `OpenOffer` to create an `Account`.
+As an account owner, take up an `Account` `OpenOffer` to create an `Account`. For more information on the interfaces
+and templates used in this section refer to the `account-onboarding` folder at the base of this repository.
 
 ##### Input file format
 
@@ -668,11 +669,15 @@ dops take-account-open-offers <path to JSON file>
 
 ---
 ### Party/soul-bound Tokens
+
+For more information on the interfaces and templates used in this section refer to the `pbt` folder at the base of this
+repository.
+
 #### Create PartyBoundAttributes Unilaterally
 
-As an issuer of `PartyBoundAttributes`, unilaterally create the instrument and corresponding `Holding`. The
-interfaces/templates for these can be found under the `pbt` folder of this repository. As this is a unilateral workflow,
-it is only practical for testing scenarios where the issuer, depository, custodian and owner all exist on one node.
+As an issuer of `PartyBoundAttributes` (PBA), unilaterally create the instrument and corresponding `Holding`. As this
+is a unilateral workflow, it is only practical for testing scenarios where the issuer, depository, custodian and owner
+all exist on one node.
 
 ##### Input file format
 
@@ -725,8 +730,10 @@ dops create-pbas-unilateral <path to JSON file>
 ### Settlement
 #### Create OpenOffers for Settlement
 
-Create a settlement `OpenOffer`. The templates/interfaces for `OpenOffer` are defined in the `settlement` folder of this
-respository. A party involved in settlement is captured using the follow JSON structure:
+Create settlement `OpenOffer`s. Refer to the the `settlement` folder of this respository for more information on the
+`OpenOffer` interfaces and templates.
+
+A party involved in the proposed settlement is captured using the follow JSON structure:
 
 ```js
  // Either:
@@ -736,7 +743,7 @@ respository. A party involved in settlement is captured using the follow JSON st
 // empty JSON `{}` is required
 ```
 
-We refer to the above format as a "settlement party" in documentation below.
+We refer to the above format as a "settlement party" in the documentation below.
 
 ##### Input file format
 
@@ -905,6 +912,75 @@ dops execute-settlement preferences.json alice,bob abc123
 
 ### Issuer Setup
 
+Refer to the `issuer-onboarding` folder at the base of this repository for more information on the interfaces and
+templates used in this section.
+
 #### Create Issuer Contracts
 
+Acting as a depository, create `Issuer` contracts to allow issuers to create new instruments.
 
+##### Input file format
+
+```js
+{
+  "readAs": ["public"], // Labels of zero or more parties to use to read contracts (can be useful for fetching the
+    // factory contracts)
+  "issuerSettings": [ // One or more `Issuer`s to create
+    {
+      "issuer": "alice", // Label of the issuer party
+      "depository": "bob", // Label of the depository party
+      "instrumentType": "Token", // Type of instrument the issuer factory is for. "Token" is the only type that is
+        // currently supported
+      "issuerFactory": "label1", // Label of the factory to use to create the `Issuer`
+      "instrumentFactory": "label1", // Label of the instrument factory of the `Issuer`
+      "observers" : [ // Zero or more sets of observers of the `Issuer`
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["charlie"] // One or more labels of the observer parties
+        }
+      ]
+    }
+  ]
+}
+```
+
+##### Command
+
+```bash
+dops create-issuers <path to JSON file>
+```
+
+---
+
+#### Create MinterBurner Contracts
+
+Acting as a custodian, create `MinterBurner` contracts to allow issuers to mint/burn `Holding`s.
+
+##### Input file format
+
+```js
+{
+  "readAs": ["public"], // Labels of zero or more parties to use to read contracts (can be useful for fetching the
+    // factory contracts)
+  "minterBurnerSettings": [ // One or more `MinterBurner`s to create
+    {
+      "minterBurnerFactory": "label1", // Label of the factory to create the `MinterBurner`
+      "custodian": "alice", // Label of the custodian party
+      "depository": "bob", // Label of the depository party
+      "issuer": "charlie", // Label of the issuer party
+      "observers" : [ // Zero or more sets of observers of the `MinterBurner`
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["david"] // One or more labels of the observer parties
+        }
+      ]
+    }
+  ]
+}
+```
+
+##### Command
+
+```bash
+dops create-minter-burners <path to JSON file>
+```
