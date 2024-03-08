@@ -85,21 +85,15 @@ if [ "$LEDGER_AUTH_ENABLED" = "true" ]; then
   ${DOPS_UTIL}/fetch-access-token.sh
   auth_args="--access-token-file ${DOPS_ACCESS_TOKEN_FILE}"
 fi
-json_api_args=""
-if [ "$LEDGER_USE_JSON_API" = "true" ]; then
-  json_api_args="--json-api"
-fi
-export DOPS_CONNECTION_ARGS="${host_port_args} ${tls_args} ${auth_args} ${json_api_args}"
+export DOPS_CONNECTION_ARGS="${host_port_args} ${tls_args} ${auth_args}"
 
 if [ "$command" = "upload-dar" ]; then
   daml ledger upload-dar \
     --host ${LEDGER_HOST} \
     --port ${LEDGER_PORT} \
-    ${tls_args} ${auth_args} ${json_api_args} $@ ${DOPS_DAR}
+    ${tls_args} ${auth_args} $@ ${DOPS_DAR}
 elif [ "$command" = "allocate-parties" ]; then
   ${dops_commands}/allocate-parties.sh $@
-elif [ "$command" = "import-parties" ]; then
-  ${dops_commands}/import-parties.sh $@
 elif [ "$command" = "create-users" ]; then
   ${dops_commands}/create-users.sh $@
 elif [ "$command" = "create-account-factories" ]; then
