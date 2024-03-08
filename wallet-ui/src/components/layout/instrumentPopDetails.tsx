@@ -13,7 +13,7 @@ interface InstrumentDetailsProps {
 }
 type InstrumentDesc = {
   ipfs: "";
-  piePointQuantity: "";
+  certificateQuantity: "";
   price: "";
 };
 
@@ -40,7 +40,7 @@ export default function InstrumentPopDetails(props: InstrumentDetailsProps) {
   const fetchInstruments = async () => {
     setInstrumentDesc({
       ipfs: "",
-      piePointQuantity: "",
+      certificateQuantity: "",
       price: "",
     });
     if (props.instrument !== undefined) {

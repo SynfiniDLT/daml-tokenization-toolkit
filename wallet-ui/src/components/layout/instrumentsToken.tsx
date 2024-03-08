@@ -30,7 +30,7 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
     if (instrument.tokenView == null) {
       console.log("Internal error: tokenView is null");
     } else {
-      // get piepoint quantity from instrument
+      // get certificate quantity from instrument
       const description = instrument.tokenView?.token.description;
       let json_description = JSON.parse(description);
 
@@ -64,7 +64,7 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
                   receiver: instrument.tokenView.token.instrument.issuer,
                   quantity: {
                     unit: instrument.tokenView.token.instrument,
-                    amount: json_description.piePointQuantity, 
+                    amount: json_description.certificateQuantity, 
                   },
                 },
               ],
@@ -101,7 +101,7 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
                       <th>Product Version</th>
                       <th>Certificate ID(UUID)</th>
                       <th>IPFS(url)</th>
-                      <th>PIE Point Quantity</th>
+                      <th>Certificate Quantity</th>
                       <th>Issuing Price</th>
                       <th>Creation Date (dd/mm/yyyy HH:MM:ss:sss)</th>
                       <th>Actions</th>
@@ -134,7 +134,7 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
                                 </a>
                               </td>
 
-                              <td>{json_description.piePointQuantity}</td>
+                              <td>{json_description.certificateQuantity}</td>
                               <td>{json_description.price}</td>
                               <td>{toDateTimeString(instrument.tokenView?.token.validAsOf)}</td>
                               <td>
