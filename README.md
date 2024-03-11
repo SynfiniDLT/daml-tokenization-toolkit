@@ -186,7 +186,7 @@ make clean
 
 ## Deployment
 
-1. Refer to [wallet view readme](./wallet-views/README.md) for deploying daml packages, project runner and wallet API.
+1. Refer to [wallet views readme](./wallet-views/README.md) for deploying daml packages, projection runner and wallet API.
 2. Refer to [wallet ui readme](./wallet-ui/README.md) for deploying wallet ui.
 
 ## dops CLI
