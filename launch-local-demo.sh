@@ -104,5 +104,8 @@ dops accept-settlement ${config_dir}/settlement/FundA-settlement-preferences.jso
 dops accept-settlement ${config_dir}/settlement/FundManagerA-settlement-preferences.json FundA,InvestorA $invest_id
 dops execute-settlement ${config_dir}/settlement/FundA-execute.json FundA,InvestorA $invest_id
 
+## Environmental token
+dops create-minter-burners ${config_dir}/environmental-token/minter-burner.json
+
 # Issuer
 dops create-issuers ${config_dir}/issuers/issuers.json

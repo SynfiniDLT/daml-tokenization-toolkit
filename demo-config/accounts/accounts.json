@@ -118,6 +118,36 @@
           ]
         }
       ]
+    },
+    {
+      "owner": "EnvironmentalTokenIssuer",
+      "custodian": "SynfiniValidator",
+      "id": "001",
+      "description": "Synfini account 1",
+      "incomingControllers": ["EnvironmentalTokenIssuer"],
+      "outgoingControllers": ["EnvironmentalTokenIssuer"],
+      "holdingFactory": "FungibleV1",
+      "observers": [
+        {
+          "context": "setup",
+          "parties": ["WalletOperator"]
+        }
+      ]
+    },
+    {
+      "owner": "ProducerA",
+      "custodian": "SynfiniValidator",
+      "id": "001",
+      "description": "Synfini account 1",
+      "incomingControllers": ["ProducerA"],
+      "outgoingControllers": ["ProducerA"],
+      "holdingFactory": "FungibleV1",
+      "observers": [
+        {
+          "context": "setup",
+          "parties": ["WalletOperator"]
+        }
+      ]
     }
   ]
 }

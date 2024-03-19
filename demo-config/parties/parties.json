@@ -31,6 +31,21 @@
       "partyIdHint": "SbtDepository"
     },
     {
+      "label": "EnvironmentalTokenIssuer",
+      "displayName": "EnvironmentalTokenIssuer",
+      "partyIdHint": "EnvironmentalTokenIssuer"
+    },
+    {
+      "label": "EnvironmentalTokenDepository",
+      "displayName": "EnvironmentalTokenDepository",
+      "partyIdHint": "EnvironmentalTokenDepository"
+    },
+    {
+      "label": "ProducerA",
+      "displayName": "ProducerA",
+      "partyIdHint": "ProducerA"
+    },
+    {
       "label": "WalletOperator",
       "displayName": "WalletOperator",
       "partyIdHint": "WalletOperator"
