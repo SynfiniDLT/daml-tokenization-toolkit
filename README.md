@@ -181,16 +181,64 @@ To clean the build state:
 make clean
 ```
 
-## Project Deployment Guide
+## Deployment
 
+1. Refer to [wallet views readme](./wallet-views/README.md) for deploying daml packages, projection runner and wallet API.
+2. Refer to [wallet ui readme](./wallet-ui/README.md) for deploying wallet ui.
+
+## dops CLI
+
+The `dops` ("Daml Ops") CLI can be used for various operations on the ledger, such as party allocation, creation of
+users and Daml Finance account setup.
+
+To install it and add it to your `PATH`, run:
+
+```
+make install-onboarding
+echo 'export DOPS_HOME=~/.dops' >> ~/.bashrc
+echo 'export PATH=$PATH:$DOPS_HOME/bin' >> ~/.bashrc
+source ~/.bashrc
+```
+
+TODO: add more documentation on the CLI tool.
+
+## Asset and party configuration of the demo
+### Asset/Account support
+1. The demo onboards two issuers, stable coin issuer and fund issuer.
+1. The demo supports investors to create account with different asset/coin issuers.
+1. The demo supports DvP settlement among asset issuer, investor and broker.
+
+
+### UI User profile
+
+| UI user profile  | Description  |
+| ------------- | -------------  |
+| Issuer  | Issuer can create instruments and offers, mint asset and enter into a settlement with other parties. Issuer can access and use the issuer wallet. | 
+| Investor  | Investor can accept offers and enter into settlement with other parties. Investor can access and use the investor wallet. | 
+
+### Party configuration
+Each user on the ledger needs to use one or many parties to communicate with the ledger to complete the required workflow. 
+
+| User | Party | Description | 
+| ------------- | ------------- | -------------  |
+| coin issuer | Asset_Issuer | The party manages the coin issuing | 
+| coin issuer | Asset_Depository | Depository for the coin instrument | 
+| asset/coin validator | Asset_Validator | The party witnesses and validates the transactions on the validator node. The solution supports each asset to have its own validator party. Validator party should be opertated by app operator or ledger provider |
+| investor | InvestorA | Investor party |
+| investor | InvestorB | Investor party |
+| fund issuer | FundA | The party manages the fund issuing |
+| fund issuer | Fund_Depository | Depository for the fund instrument |
+| broker | FundManagerA | The party which takes the commission in fund settlement workflow | 
+
+
+## Project Deployment Guide
 This guide provides step-by-step instructions for building and deploying the backend and frontend applications using Docker.
 
-### 1. Dockerfile-backend Version Explanation
 
+### 1. Dockerfile-backend Version Explanation
 The Dockerfile-backend uses a version argument that is set in the pom.xml file located at wallet-views/java/pom.xml. This version corresponds to the version of the JAR file used in the backend container.
 
 ### 2. Build the Project using Makefile
-
 To build the project, execute the following commands:
 
 ``` bash
@@ -199,15 +247,12 @@ make build-wallet-ui
 ```
 
 ### 3. Build the Backend Container
-
 Build the backend container by executing the following command. The VERSION argument is used to specify the version of the JAR file from the pom.xml.
 
 ```bash
 sudo docker build --build-arg VERSION=0.0.2 -t wallet-be -f Dockerfile-backend .
 ```
-
 ### 4. Build the Frontend Container
-
 Build the frontend container using the following command:
 
 ```bash
@@ -215,7 +260,6 @@ sudo docker build -t wallet-fe -f Dockerfile-frontend .
 ```
 
 ### 5. Run Backend Container
-
 Run the backend container in detached mode, mapping port 8091 on the host to port 8091 in the container:
 
 ```bash
@@ -223,7 +267,6 @@ sudo docker run -p 8091:8091 --name wallet-backend -d wallet-be
 ```
 
 ### 6. Run Frontend Container
-
 Run the frontend container in detached mode, mapping port 8090 on the host to port 8090 in the container:
 
 ```bash
@@ -231,7 +274,6 @@ sudo docker run -p 8090:8090 --name wallet-frontend -d wallet-fe
 ```
 
 ### 7. Check Container Logs
-
 Check the logs of the backend container:
 
 ```bash
