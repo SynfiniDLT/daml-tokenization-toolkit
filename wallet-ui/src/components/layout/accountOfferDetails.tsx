@@ -14,7 +14,7 @@ import { userContext } from "../../App";
 import { Party, emptyMap } from "@daml/types";
 import { Set } from "@daml.js/97b883cd8a2b7f49f90d5d39c981cf6e110cf1f1c64427a28a6d58ec88c43657/lib/DA/Set/Types";
 import { v4 as uuid } from "uuid";
-import { packageStringFromParty, nameFromParty, arrayToSet } from "../Util";
+import { nameFromParty, arrayToSet } from "../Util";
 import HoverPopUp from "./hoverPopUp";
 
 interface AccountOpenOfferSummaryProps {
@@ -24,7 +24,7 @@ interface AccountOpenOfferSummaryProps {
 export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps) {
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
-  const wallet_operaton = process.env.REACT_APP_LEDGER_WALLET_OPERATOR;
+  const wallet_operaton = process.env.REACT_APP_PARTIES_WALLET_OPERATOR || "";
 
   const [accountOffer, setAccountOffer] = useState<AccountOpenOfferSummary>();
   const [accountName, setAccountName] = useState("");
@@ -49,7 +49,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
     if (accountOffer?.cid !== undefined) {
       let idUUID = uuid();
       let observers: Party[] = [];
-      observers.push(wallet_operaton + "::" + packageStringFromParty(ctx.primaryParty));
+      observers.push(wallet_operaton);
       ledger
         .exercise(OpenOffer.Take, accountOffer?.cid, {
           accountDescription: accountName,

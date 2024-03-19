@@ -159,8 +159,8 @@ This step ensures that your ledger can correctly identify users based on their A
 ### Start the demo on local sandbox
 
 1. Start a local postgres DB by running: `cd wallet-views/java && docker compose up -d db && cd ../..`
-1. Run: `./launch-local-demo.sh`.
-1. Start the UI using `make start-wallet-ui`
+1. Run: `./launch-local-demo-processes.sh`.
+1. Start the UI using `./run-local-demo-ui.sh`
 
 If the following error occurs
 ```

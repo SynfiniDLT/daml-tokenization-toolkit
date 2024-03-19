@@ -10,7 +10,7 @@ import {
   DivBorderRoundContainer,
 } from "../components/layout/general.styled";
 import { Party, emptyMap } from "@daml/types";
-import { arrayToSet, packageStringFromParty } from "../components/Util";
+import { arrayToSet } from "../components/Util";
 import { Issuer as TokenIssuer } from "@daml.js/synfini-issuer-onboarding-instrument-token-interface/lib/Synfini/Interface/Onboarding/Issuer/Instrument/Token/Issuer";
 import { Set } from "@daml.js/97b883cd8a2b7f49f90d5d39c981cf6e110cf1f1c64427a28a6d58ec88c43657/lib/DA/Set/Types";
 import { v4 as uuid } from "uuid";
@@ -21,9 +21,9 @@ export const InstrumentCreateFormScreen: React.FC = () => {
   const { state } = useLocation();
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
-  const wallet_depository = process.env.REACT_APP_LEDGER_WALLET_DEPOSITORY;
-  const wallet_operator = process.env.REACT_APP_LEDGER_WALLET_OPERATOR;
-  const wallet_public = process.env.REACT_APP_LEDGER_WALLET_PUBLIC;
+  const wallet_depository = process.env.REACT_APP_PARTIES_ENVIRONMENTAL_TOKEN_DEPOSITORY || "";
+  const wallet_operator = process.env.REACT_APP_PARTIES_WALLET_OPERATOR || "";
+  const wallet_public = process.env.REACT_APP_PARTIES_PUBLIC || "";
 
   const [productTypeInput, setProductTypeInput] = useState("");
   const [productVersionInput, setProductVersionInput] = useState("");
@@ -72,9 +72,9 @@ export const InstrumentCreateFormScreen: React.FC = () => {
       let idUUID = uuid();
       
       let observers: Party[] = [];
-      observers.push(wallet_depository + "::" + packageStringFromParty(ctx.primaryParty));
-      observers.push(wallet_operator + "::" + packageStringFromParty(ctx.primaryParty));
-      observers.push(wallet_public + "::" + packageStringFromParty(ctx.primaryParty));
+      observers.push(wallet_depository);
+      observers.push(wallet_operator);
+      observers.push(wallet_public);
       observers.push(ctx.primaryParty);
       if (observerInput!== undefined && observerInput!=="")
         observers.push(observerInput);
@@ -89,7 +89,7 @@ export const InstrumentCreateFormScreen: React.FC = () => {
         .exercise(TokenIssuer.CreateInstrument, state.issuer.token.cid, {
           token: {
             instrument: {
-              depository: wallet_depository + "::" + packageStringFromParty(ctx.primaryParty),
+              depository: wallet_depository,
               issuer: ctx.primaryParty,
               id: { unpack: productTypeInput+"-"+productVersionInput },
               version: idUUID,

@@ -34,7 +34,7 @@ rm -rf .dops
 config_dir=${tokenization_lib_home}/demo-config
 dops upload-dar
 dops allocate-parties ${config_dir}/parties/parties.json
-read_as=$(jq -r '.parties[] | select(.label == "WalletOperator") | .partyId' .dops/parties.json)
+read_as=$(./party-id-from-label.sh WalletOperator)
 dops create-users ${config_dir}/users/users.json
 
 cd ${tokenization_lib_home}/wallet-views/java
@@ -104,7 +104,7 @@ dops accept-settlement ${config_dir}/settlement/FundA-settlement-preferences.jso
 dops accept-settlement ${config_dir}/settlement/FundManagerA-settlement-preferences.json FundA,InvestorA $invest_id
 dops execute-settlement ${config_dir}/settlement/FundA-execute.json FundA,InvestorA $invest_id
 
-## Environmental token
+# Environmental token
 dops create-minter-burners ${config_dir}/environmental-token/minter-burner.json
 
 # Issuer

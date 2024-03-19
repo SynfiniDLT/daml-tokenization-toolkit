@@ -4,11 +4,11 @@
 
 These environment variables in the .env file defines party name and IAM url for the wallet-ui application. 
 
-1. REACT_APP_LEDGER_INSTRUMENT_DEPOSITORY: Party name of the depository entity for SBT (Soulbound Token). (Participant ID not included)
-1. REACT_APP_LEDGER_INSTRUMENT_ISSUER: Party name of the issuer entity for SBT (Soulbound Token).
-1. REACT_APP_LEDGER_WALLET_OPERATOR: Party name of the wallet operator.
-1. REACT_APP_LEDGER_WALLET_DEPOSITORY: Party name of the issuer.
-1. REACT_APP_LEDGER_WALLET_PUBLIC: Party name of the public party.
+1. REACT_APP_PARTIES_SBT_INSTRUMENT_DEPOSITORY: Party ID of the depository entity for SBT (Soulbound Token). (Participant ID not included)
+1. REACT_APP_PARTIES_SBT_INSTRUMENT_ISSUER: Party ID of the issuer entity for SBT (Soulbound Token).
+1. REACT_APP_PARTIES_WALLET_OPERATOR: Party ID of the wallet operator.
+1. REACT_APP_PARTIES_ENVIRONMENTAL_TOKEN_DEPOSITORY: Party ID of the issuer.
+1. REACT_APP_PARTIES_PUBLIC: Party ID of the public party.
 1. REACT_APP_MODE: specifies the operational mode of the wallet app, serving either as an investor or issuer, adapting its functionalities accordingly.
 
 ## Project Deployment Guide
