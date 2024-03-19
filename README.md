@@ -5,30 +5,33 @@ A solution that demostrates
 1. Asset settlement on Canton network.
 1. Wallet to support the asset tokenization.
 
-## Diagram
+## High-level solution design
+
+This diagram shows the overall intended deployment structure of the wallet. Each participant is expected to host their
+own instance of the wallet API and wallet UI. The wallet API is read-only, therefore UI users must use the JSON API to
+issue any commands which update ledger state. In future this could be migrated to the Daml 3.0 application architecture
+in which the wallet application service provider would host the read-only wallet API on its participant, while users
+would submit commands through own participants.
+
 ![alt text](./img/Diagram.JPG)
 
-## Component
-The project contains a number of components
+## Components
+
+The project contains a number of components:
+
 | Folder | Content | Dependency |
 | ------------- | ------------- | ------------- |
-| account-onboarding | Daml templates. Refer to [this readme file](./account-onboarding/README.md) | Daml Finance |
-| issuer-onboarding | Daml templates. Refer to [this readme file](./isser-onboarding/README.md) | Daml Finance |
-| pbt | Daml templates that support pbt/sbt | Daml Finance |
-| settlement | Daml templates that support settlement function | Daml Finance |
-| trackable-holding | Daml templates that allow additional parties such as issuers or service providers to observe customer holdings | Daml Finance |
-| trackable-settlement | Daml templates that allow additional parties such as issuers or service providers to view settlements on customer accounts | Daml Finance |
-| demo-config | Configurations files for the initial smart contract setup. The file contains data required to onboard users to the ledger | Daml Finance, Daml templates defined in this project, operations scripts |
-| operations | Scripts that support initial contract setup | Daml Finance, Daml templates defined in this project |
-| wallet-views | API for the UI |  |
-| wallet-ui | UI app |  |
+| [models](./models) | Daml templates used in this project | Daml Finance |
+| [demo-config](./demo-config) | Configurations files for the initial smart contract setup. The file contains data required to onboard users to the ledger | Daml Finance, Daml templates defined in this project, operations scripts |
+| [operations](./operations) | Scripts that support party and contract setup, instruction and execution of settlements | Daml Finance, Daml templates defined in this project |
+| [wallet-views](./wallet-views) | API for the UI | Daml Finance, Daml templates from [models](./models) |
+| [wallet-ui](./wallet-ui) | UI app | Daml Finance, Daml templates from [models](./models) |
 
+## Prerequisites
 
-## Getting started
+Please follow these prerequisite steps before running any of the build/run/test steps.
 
-### Prerequisites
-
-Please install the following first:
+Install the following first:
 
 - Daml SDK (https://docs.daml.com/getting-started/installation.html#installing-the-sdk)
 - Maven (https://maven.apache.org/install.html)
@@ -36,28 +39,73 @@ Please install the following first:
 - npm (https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 - Docker (https://docs.docker.com/get-docker/)
 
+Build has been tested with Java version 17, Maven 3.6.3 and npm 8.19.
+
 Then, clone this repo **including the submodules** which are needed for building:
 
 ```bash
 git clone https://github.com/SynfiniDLT/daml-tokenization-lib --recurse-submodules
 ```
 
-Before running any of the below commands, you need to install Custom Views first. This is a library that is being used
-to continuosly stream events and contracts from the ledger and store them in a queryable database. In future, this will
-most likely be replaced with the Daml Participant Query Store feature. To install Custom Views run:
+The Custom Views library needs to be installed as it is used to continuosly stream events and contracts from the ledger
+and store them in a queryable database. In future, this will most likely be replaced with the Daml Participant Query
+Store feature. To install Custom Views run:
 
 ```bash
 make install-custom-views
 ```
 
+## Asset and party configuration of the demo
 
- 
-## Setting up Auth0 Authentication for the React App (Wallet-ui)
+This repository comes with a demo which demonstrates how the wallet can be used by investors, issuers and other parties.
+
+### Asset/Account support
+
+1. The demo onboards multiple issuers: a stable coin issuer, a fund issuer, an ESG asset issuer and a "Soul-bound token"
+issuer.
+1. The demo supports investors to create multiple accounts through offer contracts created by the custodian.
+1. The demo supports DvP settlements amongst asset issuer, investor and other parties.
+
+### UI User profile
+
+| UI user profile  | Description  |
+| ------------- | -------------  |
+| Issuer | Issuer can create instruments and offers, mint assets and enter into a settlement with other parties. Issuer can access and use the issuer wallet. | 
+| Investor | Investor can accept offers and enter into settlement with other parties. Investor can access and use the investor wallet. | 
+
+### Party configuration
+
+Each user on the ledger needs to use one or many parties to communicate with the ledger to complete the required workflow. 
+
+| UI user profile | Primary Party | Description | 
+| ------------- | ------------- | -------------  |
+| Issuer | StableCoinIssuer | The party manages stablecoin issuing | 
+| Issuer | StableCoinDepository | Depository for the stablecoin instrument |
+| Issuer | SbtIssuer | The party manages party/soul-bound token issuing | 
+| Issuer | SbtDepository | Depository for the party/soul-bound token instrument | 
+| Issuer | FundA | The party manages the fund issuing |
+| N/A (UI login not required) | FundDepository | Depository for the fund instrument |
+| Investor | FundManagerA | The party which takes the commission in fund settlement workflow |
+| Issuer | EnvironmentalTokenIssuer | The party manages issuance of environmental tokens |
+| N/A (UI login not required) | EnvironmentalTokenDepository | Depository for the environemntal token instruments |
+| Investor | ProducerA | Producer of environmentally-friendly products/projects, who can be awarded points by the EnvironmentalTokenIssuer |
+| N/A (UI login not required) | SynfiniValidator | This party witnesses and validates the movements of assets (act as custodian in Daml Finance). They delegate responsibility for minting/burning `Holding`s to the asset issuers |
+| Investor | InvestorA | Investor party |
+| Investor | InvestorB | Investor party |
+
+## Quick start
+
+You can use the instructions in this section to launch the demo on your local machine on a single participant node
+(Daml sandbox).
+
+### Setting up Auth0 Authentication for the React App (Wallet-ui)
+
 This will guide you through the steps to set up Auth0 authentication in your React app as a Single Page Application (SPA). In this application, we leverage Auth0's Universal Login to streamline the authentication and token generation process.   
 This authentication service provides a seamless and secure user experience by centralizing login functionality, allowing users to access their blockchain wallet through a unified and authenticated session managed by Auth0.  
 The solution currently only supports Auth0, however it could be modified to support other authentication and authorization platform providers if needed.
 
-### Step 1: Create an Auth0 Account
+#### Step 1: Create an Auth0 Account
+
 1. Go to Auth0 and sign up for a free account.
 1. Once logged in, go to the Dashboard.
 1. Click on the "Create Application" button.
@@ -65,7 +113,7 @@ The solution currently only supports Auth0, however it could be modified to supp
 1. Configure your application settings, including the Allowed Callback URLs, Allowed Logout URLs, and Allowed Web Origins. Typically, for development, you can set these to http://localhost:3000.
 1. Save the changes.
 
-### Step 2: Edit the .env file at the wallet-ui folder with the following: 
+#### Step 2: Edit the .env file at the wallet-ui folder with the following: 
 
 ```bash
 REACT_APP_AUTH0_DOMAIN=your-auth0-domain
@@ -73,7 +121,8 @@ REACT_APP_AUTH0_CLIENT_ID=your-auth0-client-id
 ```
 Replace your-auth0-domain and your-auth0-client-id with the values from your Auth0 application settings.
 
-### Step 3: Create an Auth0 API Resource (Audience)
+#### Step 3: Create an Auth0 API Resource (Audience)
+
 1. In your Auth0 Dashboard, navigate to the APIs section.
 1. Click on the "Create API" button.
 
@@ -95,7 +144,8 @@ REACT_APP_AUTH0_AUDIENCE=your-api-identifier
 ```
 Replace your-api-identifier with the audience identifier you obtained from the Auth0 Dashboard.
 
-### Step 4: Edit the users.json File for Ledger Identification
+#### Step 4: Edit the users.json File for Ledger Identification
+
 1.	In the ~/demo-config/users folder, there is a users.json file to store user information for ledger identification.
 1. The users.json file has an array of user objects, each containing the userId from Auth0 and the corresponding primaryParty for ledger identification. Replace your-auth0-user-id and another-auth0-user-id with the actual user IDs from Auth0.
 1. Ensure that the userId in each object corresponds to the sub (subject) field in the Auth0 user profile. You can find the userId in the Auth0 ID Token received during authentication.
@@ -106,63 +156,11 @@ Replace your-api-identifier with the audience identifier you obtained from the A
 This step ensures that your ledger can correctly identify users based on their Auth0 userId and associate them with the appropriate primaryParty. Update your application logic to use this mapping whenever you need to interact with the ledger.
 
 
-## Start the demo on local sandbox
+### Start the demo on local sandbox
 
 1. Start a local postgres DB by running: `cd wallet-views/java && docker compose up -d db && cd ../..`
-1. Run: `./launch-local-demo.sh`.
-1. Start the UI using `make start-wallet-ui`
-
-To stop the demo, press control-C and then run `./kill-local-demo-processes.sh`.
-
-## Build process
-
-Build has been tested with Java version 17, Maven 3.6.3 and npm 8.19.
-
-All DAR files are saved as part of the build under: `.build`.
-
-Note: all build/test steps must be run via `make` - not directly through `maven`, `daml` or other build tools. This is
-because the dependencies between different components is properly captured by the Makefile. Running the builds without
-using `make` means the necessary dependencies may not be built yet, and the build will not behave as expected.
-
-To build wallet backend:
-
-```bash
-make build-wallet-views
-```
-
-To test the wallet backend:
-
-```bash
-make test-wallet-views
-```
-
-To run specific test cases for the wallet backend, you need to export an enviroment variable for this:
-
-```bash
-export TEST_WALLET_VIEWS_ARGS="-Dtest=IntegrationTest#yourTestMethod"
-make test-wallet-views
-```
-
-The wallet backend test cases start up a local sandbox automatically and it uses ports which are available so it will
-not interfere with any existing Canton instance. The test cases have configurable timeout for waiting for the sandbox
-to start. It can be set as follows:
-
-```bash
-export TEST_WALLET_VIEWS_ARGS="-Dtest=IntegrationTest#yourTestMethod -Dwalletviews.test.sandbox-start-timeout-seconds=200"
-make test-wallet-views
-```
-
-To test the wallet backend client library:
-
-```bash
-make test-wallet-views-client
-```
-
-For front end:
-
-```bash
-make build-wallet-ui
-```
+1. Run: `./launch-local-demo-processes.sh`.
+1. Start the UI using `./run-local-demo-ui.sh`
 
 If the following error occurs
 ```
@@ -177,6 +175,12 @@ Set up the following node option and try again
 export NODE_OPTIONS=--openssl-legacy-provider
 ```
 
+To stop the demo, press control-C and then run `./kill-local-demo-processes.sh`.
+
+## Build process
+
+Please refer to each of the folders for documentation on how to build each component. Note that all the builds are
+managed by the `Makefile` in the base directory.
 
 To clean the build state:
 
@@ -189,56 +193,11 @@ make clean
 1. Refer to [wallet views readme](./wallet-views/README.md) for deploying daml packages, projection runner and wallet API.
 2. Refer to [wallet ui readme](./wallet-ui/README.md) for deploying wallet ui.
 
-## dops CLI
-
-The `dops` ("Daml Ops") CLI can be used for various operations on the ledger, such as party allocation, creation of
-users and Daml Finance account setup.
-
-To install it and add it to your `PATH`, run:
-
-```
-make install-onboarding
-echo 'export DOPS_HOME=~/.dops' >> ~/.bashrc
-echo 'export PATH=$PATH:$DOPS_HOME/bin' >> ~/.bashrc
-source ~/.bashrc
-```
-
-TODO: add more documentation on the CLI tool.
-
-## Asset and party configuration of the demo
-### Asset/Account support
-1. The demo onboards two issuers, stable coin issuer and fund issuer.
-1. The demo supports investors to create account with different asset/coin issuers.
-1. The demo supports DvP settlement among asset issuer, investor and broker.
-
-
-### UI User profile
-
-| UI user profile  | Description  |
-| ------------- | -------------  |
-| Issuer  | Issuer can create instruments and offers, mint asset and enter into a settlement with other parties. Issuer can access and use the issuer wallet. | 
-| Investor  | Investor can accept offers and enter into settlement with other parties. Investor can access and use the investor wallet. | 
-
-### Party configuration
-Each user on the ledger needs to use one or many parties to communicate with the ledger to complete the required workflow. 
-
-| User | Party | Description | 
-| ------------- | ------------- | -------------  |
-| coin issuer | Asset_Issuer | The party manages the coin issuing | 
-| coin issuer | Asset_Depository | Depository for the coin instrument | 
-| asset/coin validator | Asset_Validator | The party witnesses and validates the transactions on the validator node. The solution supports each asset to have its own validator party. Validator party should be opertated by app operator or ledger provider |
-| investor | InvestorA | Investor party |
-| investor | InvestorB | Investor party |
-| fund issuer | FundA | The party manages the fund issuing |
-| fund issuer | Fund_Depository | Depository for the fund instrument |
-| broker | FundManagerA | The party which takes the commission in fund settlement workflow | 
-
-
-
-
-## Next step
+## Next steps
 
 There are a number of tasks ahead to complete and enhance this solution. 
 
 1. Update the wallet runer as the custom-views library is deprecated. One option is to upgrade to PQS if the user has Daml Enterprise SDK (https://docs.daml.com/query/pqs-user-guide.html#meet-prerequisites). Another option is to develop a tailored solution to stream data from the ledger to the database. 
-1. Use the latest solution from DA to support public party. Public party will enable disclosure such as reference data and public offerings.
+1. Use the latest solution from DA which replaces the public party feature (i.e. use explict disclosure). This will make
+it easier to share commononly used utility contracts (such as factories) without need for a public party hosted on
+multiple participants.

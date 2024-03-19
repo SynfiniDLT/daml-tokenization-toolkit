@@ -38,18 +38,6 @@ export function nameFromParty(party: string) {
   return name;
 }
 
-export function packageStringFromParty(party: string) {
-  let name = '';
-
-  if (party === '' || party === undefined) {
-      return '';
-  }else{
-      name = party.split("::")[1];
-  } 
-
-  return name;
-}
-
 export const toDateTimeString = (inputDate: damlTypes.Time) => {
   return new Date(inputDate).toLocaleString("en-GB", {
     day: "2-digit",

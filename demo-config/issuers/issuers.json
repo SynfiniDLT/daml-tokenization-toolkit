@@ -13,6 +13,19 @@
           "parties": ["WalletOperator"]
         }
       ]
+    },
+    {
+      "issuerFactory" : "token.V1",
+      "instrumentFactory" : "token.V1",
+      "instrumentType" : "Token",
+      "depository" : "EnvironmentalTokenDepository",
+      "issuer" : "EnvironmentalTokenIssuer",
+      "observers" : [
+        {
+          "context": "setup",
+          "parties": ["WalletOperator"]
+        }
+      ]
     }
   ]
 }

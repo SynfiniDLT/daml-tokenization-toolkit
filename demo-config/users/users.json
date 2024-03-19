@@ -58,6 +58,26 @@
       "readAs": [
         "SynfiniPublic"
       ]
+    },
+    {
+      "userId": "auth0|65f8eed446d77a57585e7409",
+      "primaryParty": "EnvironmentalTokenIssuer",
+      "actAs": [
+        "EnvironmentalTokenIssuer"
+      ],
+      "readAs": [
+        "SynfiniPublic"
+      ]
+    },
+    {
+      "userId": "auth0|65f8ef0c46d77a57585e742e",
+      "primaryParty": "ProducerA",
+      "actAs": [
+        "ProducerA"
+      ],
+      "readAs": [
+        "SynfiniPublic"
+      ]
     }
   ]
 }
