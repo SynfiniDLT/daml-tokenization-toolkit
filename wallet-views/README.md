@@ -845,6 +845,20 @@ This will:
 - Test that the API correctly returns data based on what commands have been submitted to the ledger API.
 - Tear down the sandbox and wallet views application at the end of the test suite.
 
+To run specific test cases for the wallet backend, you need to export an enviroment variable for this:
+
+```bash
+export TEST_WALLET_VIEWS_ARGS="-Dtest=IntegrationTest#yourTestMethod"
+make test-wallet-views
+```
+
+The test cases have configurable timeout for waiting for the sandbox to start. It can be set as follows:
+
+```bash
+export TEST_WALLET_VIEWS_ARGS="-Dtest=IntegrationTest#yourTestMethod -Dwalletviews.test.sandbox-start-timeout-seconds=200"
+make test-wallet-views
+```
+
 ### TypeScript client tests
 
 There is a set of integration tests for the TypeScript client. They can be run using:

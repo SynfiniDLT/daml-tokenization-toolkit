@@ -3,6 +3,9 @@ proj_root = $(shell pwd)
 # Dar dependencies
 daml_finance_dir = .lib
 
+# Daml models directory
+models_src_dir = models
+
 # Dar build outputs
 build_dir = .build
 assert_dar = $(build_dir)/synfini-assert.dar
@@ -53,87 +56,87 @@ install-custom-views:
 		-Dpackaging=jar \
 		-DgeneratePom=true
 
-$(assert_dar): $(shell ./find-daml-project-files.sh util/assert)
-	cd util/assert && daml build -o $(proj_root)/$(assert_dar)
+$(assert_dar): $(shell ./find-daml-project-files.sh $(models_src_dir)/util/assert)
+	cd $(models_src_dir)/util/assert && daml build -o $(proj_root)/$(assert_dar)
 
-$(trackable_holding_dar): $(daml_finance_dir) $(shell ./find-daml-project-files.sh trackable-holding/main)
-	cd trackable-holding/main && daml build -o $(proj_root)/$(trackable_holding_dar)
+$(trackable_holding_dar): $(daml_finance_dir) $(shell ./find-daml-project-files.sh $(models_src_dir)/trackable-holding/main)
+	cd $(models_src_dir)/trackable-holding/main && daml build -o $(proj_root)/$(trackable_holding_dar)
 
-$(trackable_settlement_dar): $(daml_finance_dir) $(shell ./find-daml-project-files.sh trackable-settlement/main)
-	cd trackable-settlement/main && daml build -o $(proj_root)/$(trackable_settlement_dar)
+$(trackable_settlement_dar): $(daml_finance_dir) $(shell ./find-daml-project-files.sh $(models_src_dir)/trackable-settlement/main)
+	cd $(models_src_dir)/trackable-settlement/main && daml build -o $(proj_root)/$(trackable_settlement_dar)
 
 ## BEGIN settlement
 $(settlement_one_time_offer_interface_dar): $(daml_finance_dir) \
-  $(shell ./find-daml-project-files.sh settlement/one-time-offer-interface)
-	cd settlement/one-time-offer-interface && daml build -o $(proj_root)/$(settlement_one_time_offer_interface_dar)
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/settlement/one-time-offer-interface)
+	cd $(models_src_dir)/settlement/one-time-offer-interface && daml build -o $(proj_root)/$(settlement_one_time_offer_interface_dar)
 
 $(settlement_one_time_offer_dar): $(settlement_one_time_offer_interface_dar) \
-  $(shell ./find-daml-project-files.sh settlement/one-time-offer-implementation)
-	cd settlement/one-time-offer-implementation && daml build -o $(proj_root)/$(settlement_one_time_offer_dar)
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/settlement/one-time-offer-implementation)
+	cd $(models_src_dir)/settlement/one-time-offer-implementation && daml build -o $(proj_root)/$(settlement_one_time_offer_dar)
 
 $(settlement_open_offer_interface_dar): $(daml_finance_dir) \
-  $(shell ./find-daml-project-files.sh settlement/open-offer-interface)
-	cd settlement/open-offer-interface && daml build -o $(proj_root)/$(settlement_open_offer_interface_dar)
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/settlement/open-offer-interface)
+	cd $(models_src_dir)/settlement/open-offer-interface && daml build -o $(proj_root)/$(settlement_open_offer_interface_dar)
 
 $(settlement_open_offer_dar): $(settlement_open_offer_interface_dar) \
-  $(shell ./find-daml-project-files.sh settlement/open-offer-implementation)
-	cd settlement/open-offer-implementation && daml build -o $(proj_root)/$(settlement_open_offer_dar)
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/settlement/open-offer-implementation)
+	cd $(models_src_dir)/settlement/open-offer-implementation && daml build -o $(proj_root)/$(settlement_open_offer_dar)
 
 $(settlement_helpers_dar): $(settlement_one_time_offer_interface_dar) \
   $(minter_burner_interface_dar) \
   $(assert_dar) \
-  $(shell ./find-daml-project-files.sh settlement/helpers)
-	cd settlement/helpers && daml build -o $(proj_root)/$(settlement_helpers_dar)
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/settlement/helpers)
+	cd $(models_src_dir)/settlement/helpers && daml build -o $(proj_root)/$(settlement_helpers_dar)
 
 .PHONY: test-settlement
 test-settlement: $(settlement_one_time_offer_dar) $(assert_dar)
-	cd settlement/test && daml test
+	cd $(models_src_dir)/settlement/test && daml test
 ## END settlement
 
 ## BEGIN onboarding
 # Account
 $(account_onboarding_one_time_offer_interface_dar): $(daml_finance_dir) \
-  $(shell ./find-daml-project-files.sh account-onboarding/one-time-offer-interface)
-	cd account-onboarding/one-time-offer-interface && daml build -o $(proj_root)/$(account_onboarding_one_time_offer_interface_dar)
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/account-onboarding/one-time-offer-interface)
+	cd $(models_src_dir)/account-onboarding/one-time-offer-interface && daml build -o $(proj_root)/$(account_onboarding_one_time_offer_interface_dar)
 
 $(account_onboarding_one_time_offer_dar): $(account_onboarding_one_time_offer_interface_dar) \
-  $(shell ./find-daml-project-files.sh account-onboarding/one-time-offer-implementation)
-	cd account-onboarding/one-time-offer-implementation && daml build -o $(proj_root)/$(account_onboarding_one_time_offer_dar)
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/account-onboarding/one-time-offer-implementation)
+	cd $(models_src_dir)/account-onboarding/one-time-offer-implementation && daml build -o $(proj_root)/$(account_onboarding_one_time_offer_dar)
 
 $(account_onboarding_open_offer_interface_dar): $(daml_finance_dir) \
-  $(shell ./find-daml-project-files.sh account-onboarding/open-offer-interface)
-	cd account-onboarding/open-offer-interface && daml build -o $(proj_root)/$(account_onboarding_open_offer_interface_dar)
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/account-onboarding/open-offer-interface)
+	cd $(models_src_dir)/account-onboarding/open-offer-interface && daml build -o $(proj_root)/$(account_onboarding_open_offer_interface_dar)
 
 $(account_onboarding_open_offer_dar): $(account_onboarding_open_offer_interface_dar) \
-  $(shell ./find-daml-project-files.sh account-onboarding/open-offer-implementation)
-	cd account-onboarding/open-offer-implementation && daml build -o $(proj_root)/$(account_onboarding_open_offer_dar)
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/account-onboarding/open-offer-implementation)
+	cd $(models_src_dir)/account-onboarding/open-offer-implementation && daml build -o $(proj_root)/$(account_onboarding_open_offer_dar)
 
 .PHONY: test-account-onboarding
 test-account-onboarding: $(account_onboarding_open_offer_dar) $(assert_dar)
-	cd account-onboarding/test && daml test
+	cd $(models_src_dir)/account-onboarding/test && daml test
 
 # Issuer
 $(issuer_onboarding_token_interface_dar): $(daml_finance_dir) \
-  $(shell ./find-daml-project-files.sh issuer-onboarding/instrument-token-interface)
-	cd issuer-onboarding/instrument-token-interface && daml build -o $(proj_root)/$(issuer_onboarding_token_interface_dar)
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/issuer-onboarding/instrument-token-interface)
+	cd $(models_src_dir)/issuer-onboarding/instrument-token-interface && daml build -o $(proj_root)/$(issuer_onboarding_token_interface_dar)
 
 $(issuer_onboarding_token_dar): $(issuer_onboarding_token_interface_dar) \
   $(assert_dar) \
-  $(shell ./find-daml-project-files.sh issuer-onboarding/instrument-token-implementation)
-	cd issuer-onboarding/instrument-token-implementation && daml build -o $(proj_root)/$(issuer_onboarding_token_dar)
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/issuer-onboarding/instrument-token-implementation)
+	cd $(models_src_dir)/issuer-onboarding/instrument-token-implementation && daml build -o $(proj_root)/$(issuer_onboarding_token_dar)
 
 $(minter_burner_interface_dar): $(daml_finance_dir) \
-  $(shell ./find-daml-project-files.sh issuer-onboarding/minter-burner-interface)
-	cd issuer-onboarding/minter-burner-interface && daml build -o $(proj_root)/$(minter_burner_interface_dar)
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/issuer-onboarding/minter-burner-interface)
+	cd $(models_src_dir)/issuer-onboarding/minter-burner-interface && daml build -o $(proj_root)/$(minter_burner_interface_dar)
 
 $(minter_burner_dar): $(minter_burner_interface_dar) \
   $(assert_dar) \
-  $(shell ./find-daml-project-files.sh issuer-onboarding/minter-burner-implementation)
-	cd issuer-onboarding/minter-burner-implementation && daml build -o $(proj_root)/$(minter_burner_dar)
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/issuer-onboarding/minter-burner-implementation)
+	cd $(models_src_dir)/issuer-onboarding/minter-burner-implementation && daml build -o $(proj_root)/$(minter_burner_dar)
 
 .PHONY: test-issuer-onboarding
 test-issuer-onboarding: $(issuer_onboarding_token_dar) $(minter_burner_dar) $(assert_dar)
-	cd issuer-onboarding/test && daml test
+	cd $(models_src_dir)/issuer-onboarding/test && daml test
 
 # Scripts
 $(operations_scripts_dar): $(daml_finance_dir) \
@@ -156,11 +159,11 @@ install-operations: $(operations_scripts_dar)
 ## END onboarding
 
 ## BEGIN pbt
-$(pbt_interface_dar): $(daml_finance_dir) $(shell ./find-daml-project-files.sh pbt/interface)
-	cd pbt/interface && daml build -o $(proj_root)/$(pbt_interface_dar)
+$(pbt_interface_dar): $(daml_finance_dir) $(shell ./find-daml-project-files.sh $(models_src_dir)/pbt/interface)
+	cd $(models_src_dir)/pbt/interface && daml build -o $(proj_root)/$(pbt_interface_dar)
 
-$(pbt_dar): $(daml_finance_dir) $(pbt_interface_dar) $(shell ./find-daml-project-files.sh pbt/implementation)
-	cd pbt/implementation && daml build -o $(proj_root)/$(pbt_dar)
+$(pbt_dar): $(daml_finance_dir) $(pbt_interface_dar) $(shell ./find-daml-project-files.sh $(models_src_dir)/pbt/implementation)
+	cd $(models_src_dir)/pbt/implementation && daml build -o $(proj_root)/$(pbt_dar)
 ## END pbt
 
 ## BEGIN wallet-views
