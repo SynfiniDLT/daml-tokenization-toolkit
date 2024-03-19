@@ -21,11 +21,11 @@ The project contains a number of components:
 
 | Folder | Content | Dependency |
 | ------------- | ------------- | ------------- |
-| [models](./models) | Daml templates. Refer to [this readme file](./models/README.md) | Daml Finance |
-| demo-config | Configurations files for the initial smart contract setup. The file contains data required to onboard users to the ledger | Daml Finance, Daml templates defined in this project, operations scripts |
-| operations | Scripts that support initial contract setup. Refer to [this readme file](./operations/README.md) | Daml Finance, Daml templates defined in this project |
-| wallet-views | API for the UI |  |
-| wallet-ui | UI app |  |
+| [models](./models) | Daml templates used in this project | Daml Finance |
+| [demo-config](./demo-config) | Configurations files for the initial smart contract setup. The file contains data required to onboard users to the ledger | Daml Finance, Daml templates defined in this project, operations scripts |
+| [operations](./operations) | Scripts that support party and contract setup, instruction and execution of settlements | Daml Finance, Daml templates defined in this project |
+| [wallet-views](./wallet-views) | API for the UI | Daml Finance, Daml templates from [models](./models) |
+| [wallet-ui](./wallet-ui) | UI app | Daml Finance, Daml templates from [models](./models) |
 
 ## Prerequisites
 
@@ -155,18 +155,6 @@ This step ensures that your ledger can correctly identify users based on their A
 1. Run: `./launch-local-demo.sh`.
 1. Start the UI using `make start-wallet-ui`
 
-To stop the demo, press control-C and then run `./kill-local-demo-processes.sh`.
-
-## Build process
-
-TODO: move this somewhere
-
-For front end:
-
-```bash
-make build-wallet-ui
-```
-
 If the following error occurs
 ```
   opensslErrorStack: [ 'error:03000086:digital envelope routines::initialization error' ],
@@ -180,6 +168,12 @@ Set up the following node option and try again
 export NODE_OPTIONS=--openssl-legacy-provider
 ```
 
+To stop the demo, press control-C and then run `./kill-local-demo-processes.sh`.
+
+## Build process
+
+Please refer to each of the folders for documentation on how to build each component. Note that all the builds are
+managed by the `Makefile` in the base directory.
 
 To clean the build state:
 
@@ -188,13 +182,15 @@ make clean
 ```
 
 ## Project Deployment Guide
+
 This guide provides step-by-step instructions for building and deploying the backend and frontend applications using Docker.
 
-
 ### 1. Dockerfile-backend Version Explanation
+
 The Dockerfile-backend uses a version argument that is set in the pom.xml file located at wallet-views/java/pom.xml. This version corresponds to the version of the JAR file used in the backend container.
 
 ### 2. Build the Project using Makefile
+
 To build the project, execute the following commands:
 
 ``` bash
@@ -203,12 +199,15 @@ make build-wallet-ui
 ```
 
 ### 3. Build the Backend Container
+
 Build the backend container by executing the following command. The VERSION argument is used to specify the version of the JAR file from the pom.xml.
 
 ```bash
 sudo docker build --build-arg VERSION=0.0.2 -t wallet-be -f Dockerfile-backend .
 ```
+
 ### 4. Build the Frontend Container
+
 Build the frontend container using the following command:
 
 ```bash
@@ -216,6 +215,7 @@ sudo docker build -t wallet-fe -f Dockerfile-frontend .
 ```
 
 ### 5. Run Backend Container
+
 Run the backend container in detached mode, mapping port 8091 on the host to port 8091 in the container:
 
 ```bash
@@ -223,6 +223,7 @@ sudo docker run -p 8091:8091 --name wallet-backend -d wallet-be
 ```
 
 ### 6. Run Frontend Container
+
 Run the frontend container in detached mode, mapping port 8090 on the host to port 8090 in the container:
 
 ```bash
@@ -230,6 +231,7 @@ sudo docker run -p 8090:8090 --name wallet-frontend -d wallet-fe
 ```
 
 ### 7. Check Container Logs
+
 Check the logs of the backend container:
 
 ```bash
@@ -243,9 +245,11 @@ Check the logs of the frontend container:
 sudo docker logs -f wallet-frontend
 ```
 
-## Next step
+## Next steps
 
 There are a number of tasks ahead to complete and enhance this solution. 
 
 1. Update the wallet runer as the custom-views library is deprecated. One option is to upgrade to PQS if the user has Daml Enterprise SDK (https://docs.daml.com/query/pqs-user-guide.html#meet-prerequisites). Another option is to develop a tailored solution to stream data from the ledger to the database. 
-1. Use the latest solution from DA to support public party. Public party will enable disclosure such as reference data and public offerings.
+1. Use the latest solution from DA which replaces the public party feature (i.e. use explict disclosure). This will make
+it easier to share commononly used utility contracts (such as factories) without need for a public party hosted on
+multiple participants.
