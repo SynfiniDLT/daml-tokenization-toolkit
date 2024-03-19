@@ -10,8 +10,8 @@ A solution that demostrates
 This diagram shows the overall intended deployment structure of the wallet. Each participant is expected to host their
 own instance of the wallet API and wallet UI. The wallet API is read-only, therefore UI users must use the JSON API to
 issue any commands which update ledger state. In future this could be migrated to the Daml 3.0 application architecture
-in which the wallet application service provider would host the read-only wallet API on their own participant, while
-users would submit commands through their participant.
+in which the wallet application service provider would host the read-only wallet API on its participant, while users
+would submit commands through own participants.
 
 ![alt text](./img/Diagram.JPG)
 
@@ -64,7 +64,7 @@ This repository comes with a demo which demonstrates how the wallet can be used 
 1. The demo onboards multiple issuers: a stable coin issuer, a fund issuer, an ESG asset issuer and a "Soul-bound token"
 issuer.
 1. The demo supports investors to create multiple accounts through offer contracts created by the custodian.
-1. The demo supports DvP settlements amongst asset issuer, investor and other parties,
+1. The demo supports DvP settlements amongst asset issuer, investor and other parties.
 
 ### UI User profile
 
@@ -77,7 +77,7 @@ issuer.
 
 Each user on the ledger needs to use one or many parties to communicate with the ledger to complete the required workflow. 
 
-| User type | Primary Party | Description | 
+| UI user profile | Primary Party | Description | 
 | ------------- | ------------- | -------------  |
 | Issuer | StableCoinIssuer | The party manages stablecoin issuing | 
 | Issuer | StableCoinDepository | Depository for the stablecoin instrument |
