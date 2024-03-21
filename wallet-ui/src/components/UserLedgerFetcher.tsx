@@ -1,5 +1,6 @@
+import Ledger from "@daml/ledger";
 
-const fetchDataForUserLedger = async (ctx:any, ledger:any) => {
+const fetchDataForUserLedger = async (ctx:any, ledger: Ledger) => {
   try {
     const user = await ledger.getUser();
     const rights = await ledger.listUserRights();

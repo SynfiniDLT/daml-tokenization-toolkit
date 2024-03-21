@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { userContext } from "../App";
-import AuthContextStore from "../store/AuthContextStore";
+import AuthContextStore, { undefinedPrimaryParty } from "../store/AuthContextStore";
 import { PageLoader } from "../components/layout/page-loader";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import AccountBalances from "../components/layout/accountBalances";
+import AccountBalances, { AccountBalanceSummary } from "../components/layout/accountBalances";
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
 const WalletScreen: React.FC = () => {
@@ -15,7 +15,7 @@ const WalletScreen: React.FC = () => {
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 
-  const [accountBalancesMap, setAccountBalancesMap] = useState(new Map<any, any>());
+  const [accountBalances, setAccountBalances] = useState<AccountBalanceSummary[]>([]);
 
   let walletClient: WalletViewsClient;
 
@@ -25,14 +25,16 @@ const WalletScreen: React.FC = () => {
   });
 
   const fetchAccounts = async () => {
-    if (ctx.primaryParty !== "") {
+    if (ctx.primaryParty !== undefinedPrimaryParty) {
       const resp = await walletClient.getAccounts({ owner: ctx.primaryParty, custodian: null });
       return resp.accounts;
+    } else {
+      return [];
     }
   };
 
   const fetchBalances = async (account: AccountSummary) => {
-    if (ctx.primaryParty !== "") {
+    if (ctx.primaryParty !== undefinedPrimaryParty) {
       const resp = await walletClient.getBalance({
         account: {
           owner: ctx.primaryParty,
@@ -50,26 +52,17 @@ const WalletScreen: React.FC = () => {
   }, [ctx, ledger]);
 
   useEffect(() => {
-    fetchAccounts().then((res) => {
-      const promises = res?.map((account: AccountSummary) => {
-        return fetchBalances(account).then((res_balances) => {
-          return {
-            account,
-            balances: res_balances
-          };
-        });
-      });
-
-      if (promises) {
-        Promise.all(promises).then((results) => {
-          const accBalancesMap = new Map(accountBalancesMap);
-          results.forEach(({ account, balances }) => {
-            accBalancesMap.set(account, balances);
-          });
-          setAccountBalancesMap(accBalancesMap);
-        });
-      }
-    });
+    const fetchAccountBalances = async () => {
+      const accounts = await fetchAccounts();
+      const accountsWithBalances = await Promise.all(
+        accounts.map(async (account) => {
+          const balances = await fetchBalances(account);
+          return { account, balances }
+        })
+      );
+      setAccountBalances(accountsWithBalances);
+    }
+    fetchAccountBalances();
   }, [ctx.primaryParty]);
 
   if (isLoading) {
@@ -95,7 +88,7 @@ const WalletScreen: React.FC = () => {
       )}
 
       <div>
-        <AccountBalances accountBalancesMap={accountBalancesMap} />
+        <AccountBalances accountBalances={accountBalances} />
       </div>
     </PageLayout>
   );
