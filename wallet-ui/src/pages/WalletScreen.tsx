@@ -17,8 +17,6 @@ const WalletScreen: React.FC = () => {
 
   const [accountBalancesMap, setAccountBalancesMap] = useState(new Map<any, any>());
 
-  console.log("url backend endpoint=>",walletViewsBaseUrl)
-
   let walletClient: WalletViewsClient;
 
   walletClient = new WalletViewsClient({
@@ -56,17 +54,7 @@ const WalletScreen: React.FC = () => {
       const promises = res?.map((account: AccountSummary) => {
         return fetchBalances(account).then((res_balances) => {
           return {
-            account: {
-              ...account,
-              operatorsArray: account
-                .view
-                .controllers
-                .outgoing
-                .map
-                .delete(account.view.owner)
-                .entriesArray()
-                .map(e => e[0])
-            },
+            account,
             balances: res_balances
           };
         });

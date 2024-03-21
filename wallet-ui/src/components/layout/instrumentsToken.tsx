@@ -88,10 +88,10 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
         {props.instruments !== undefined && (
           <>
             <div style={{ marginTop: "15px" }}>
-              <h4 className="profile__title">Instruments</h4>
+              <h4 className="profile__title">Environmental Tokens</h4>
             </div>
             {props.instruments.length === 0 ? (
-              <span style={{ color: "white" }}>There isn't any instrument created by this party.</span>
+              <span style={{ color: "white" }}>There aren't any environmental tokens created by this party.</span>
             ) : (
               <>
                 <table id="assets">

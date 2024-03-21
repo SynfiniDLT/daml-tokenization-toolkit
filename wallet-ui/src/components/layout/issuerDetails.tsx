@@ -16,7 +16,7 @@ export default function IssuerDetails(props: IssuerDetailsProps) {
       {props.issuer.token !== null && (
         <ContainerDiv id={props.issuer.token.cid}>
           <ContainerColumn>
-            <button onClick={() => handleClick(props.issuer)}>Create Instrument</button>
+            <button onClick={() => handleClick(props.issuer)}>Create environmental token</button>
           </ContainerColumn>
         </ContainerDiv>
       )}

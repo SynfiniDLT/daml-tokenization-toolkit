@@ -67,7 +67,7 @@ const IssuersScreen: React.FC = () => {
     <PageLayout>
       <>
         <div style={{ marginTop: "15px" }}>
-          <h4 className="profile__title">Issuer</h4>
+          <h4 className="profile__title">Issuance</h4>
         </div>
         <Issuers issuers={issuers} />
         <InstrumentsToken instruments={instruments} />

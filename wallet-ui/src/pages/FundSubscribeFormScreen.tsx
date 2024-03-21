@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, ChangeEventHandler } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
 import AuthContextStore from "../store/AuthContextStore";
@@ -24,9 +24,16 @@ type FundSubscribeFormScreenState = {
   fund: CreateEvent<SettlementOpenOffer, undefined, string>
 }
 
+// React does not copy down the functions available on state variables, so we use this workaround to add these methods
+// back onto the `Map` instance
+function repairMap<K, V>(map: damlTypes.Map<K, V>) {
+  Object.setPrototypeOf(map, Object.getPrototypeOf(damlTypes.emptyMap<K, V>()));
+}
+
 export const FundSubscribeFormScreen: React.FC = () => {
   const nav = useNavigate();
   const { state } = useLocation() as { state: FundSubscribeFormScreenState };
+  repairMap(state.fund.payload.offerers.map);
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
   const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
@@ -42,9 +49,10 @@ export const FundSubscribeFormScreen: React.FC = () => {
     token: ctx.token,
   });
 
-  const handleChangeInputQtd = (event: any) => {
-    setInputQtd(event.target.value);
-    setTotal(costForQuantity(event.target.value));
+  const handleChangeInputQtd: ChangeEventHandler<HTMLInputElement> = (event) => {
+    const q = parseInt(event.target.value);
+    setInputQtd(q);
+    setTotal(costForQuantity(q));
   };
 
   function costForQuantity(q: number): damlTypes.Map<InstrumentKey, number> {
@@ -66,7 +74,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
     fetchDataForUserLedger(ctx, ledger);
   }, [ctx, ledger]);
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit:  React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     let referenceIdUUID = uuid();
     try {
@@ -123,11 +131,8 @@ export const FundSubscribeFormScreen: React.FC = () => {
                 <ContainerColumnKey>Total cost:</ContainerColumnKey>
               </ContainerColumn>
               <ContainerColumn>
-                {/* TODO: React does not copy down the functions available on state variables, hence
-                `state.fund.payload.map.entriesArray()` is not a function! Therefore we use the below hack to access the
-                keys of the map but there should be a better way to do this */}
                 <ContainerColumnValue>
-                  {(state.fund.payload.offerers.map as any)._keys.map((offerer: string) => nameFromParty(offerer)).join(", ")}
+                  {(state.fund.payload.offerers.map).entriesArray().map(entry => nameFromParty(entry[0])).join(", ")}
                 </ContainerColumnValue>
                 <ContainerColumnValue>
                   {costForQuantity(1).entriesArray().map(entry => <>{formatCurrency(entry[1].toString(), "en-US") + " " + entry[0].id.unpack + " "}<Coin/></>)}

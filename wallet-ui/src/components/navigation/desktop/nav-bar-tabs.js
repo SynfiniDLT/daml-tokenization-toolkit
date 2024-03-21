@@ -31,7 +31,7 @@ export const NavBarTabs = () => {
       <NavBarTab path="/wallet" label="Wallet" />
       <NavBarTab path="/account/create" label="Accounts" />
       <NavBarTab path="/offers" label="Offers" />
-      <NavBarTab path="/issuers" label="Instruments" />
+      <NavBarTab path="/issuers" label="Environmental Tokens" />
       <NavBarTab path="/settlements" label="Transactions" />
       <NavBarTab path="/directory" label="Directory" />
     </>
