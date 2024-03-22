@@ -10,8 +10,8 @@ import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfi
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 
 const DirectoryScreen: React.FC = () => {
-  const sbt_depository = process.env.REACT_APP_PARTIES_SBT_INSTRUMENT_DEPOSITORY;
-  const sbt_issuer = process.env.REACT_APP_PARTIES_SBT_INSTRUMENT_ISSUER;
+  const sbtDepository = process.env.REACT_APP_PARTIES_SBT_INSTRUMENT_DEPOSITORY;
+  const sbtIssuer = process.env.REACT_APP_PARTIES_SBT_INSTRUMENT_ISSUER;
   
   const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
   const ctx = useContext(AuthContextStore);
@@ -20,21 +20,22 @@ const DirectoryScreen: React.FC = () => {
   const { isLoading } = useAuth0();
   const [instruments, setInstruments] = useState<InstrumentSummary[]>();
 
-  let walletClient: WalletViewsClient;
-
-  walletClient = new WalletViewsClient({
+  const walletClient = new WalletViewsClient({
     baseUrl: walletViewsBaseUrl,
     token: ctx.token,
   });
 
-
   const fetchInstruments = async () => {
-    if (ctx.primaryParty !== "" && sbt_depository!== undefined && sbt_issuer!== undefined) {
-      const resp = await walletClient.getInstruments({
-         depository: sbt_depository, 
-         issuer: sbt_issuer, 
-         id: {unpack:"EntityName"}, version: null });
-      setInstruments(resp.instruments.filter(instrument => instrument.pbaView?.owner !== ctx.primaryParty))
+    if (ctx.primaryParty !== "" && sbtDepository!== undefined && sbtIssuer!== undefined) {
+      const resp = await walletClient.getInstruments(
+        {
+          depository: sbtDepository, 
+          issuer: sbtIssuer, 
+          id: { unpack:"EntityName" },
+          version: null
+        }
+      );
+      setInstruments(resp.instruments.filter(instrument => instrument.pbaView?.owner !== ctx.primaryParty));
     }
   };
 

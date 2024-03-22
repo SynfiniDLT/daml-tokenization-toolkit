@@ -1,11 +1,11 @@
 import Ledger from "@daml/ledger";
+import { AuthContext } from "../store/AuthContextStore";
 
-const fetchDataForUserLedger = async (ctx:any, ledger: Ledger) => {
+const fetchDataForUserLedger = async (ctx: AuthContext, ledger: Ledger) => {
   try {
     const user = await ledger.getUser();
     const rights = await ledger.listUserRights();
-    const found = rights.find((right:any) => right.type === "CanActAs" && right.party === user.primaryParty);
-    ctx.readOnly = found === undefined;
+    ctx.readOnly = (rights.find(right => right.type === "CanActAs" && right.party === user.primaryParty) === undefined);
 
     if (user.primaryParty !== undefined) {
       ctx.setPrimaryParty(user.primaryParty);

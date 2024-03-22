@@ -23,12 +23,11 @@ const BalanceRedeemFormScreen: React.FC = () => {
   const [isMessageOpen, setIsMessageOpen] = useState<boolean>(false);
 
   const handleChangeAmount:  React.ChangeEventHandler<HTMLInputElement> = event => {
-    setAmountInput(formatCurrencyInput(event));
+    setAmountInput(formatCurrencyInput(event.target.value));
   };
 
-  const formatCurrencyInput = (event: any) => {
-    let value = event.target.value.replace(/[^0-9.]/g, "").replace(/^0+/, "");
-    return value;
+  const formatCurrencyInput = (value: string) => {
+    return value.replace(/[^0-9.]/g, "").replace(/^0+/, "");
   };
 
   const handleCloseMessageModal = (path: string) => {
@@ -43,7 +42,7 @@ const BalanceRedeemFormScreen: React.FC = () => {
       const offerId = state.balance.instrument.id.unpack + "@" + state.balance.instrument.version + ".OffRamp"
       const offers = await ledger.query(SettlementOpenOffer, { offerId: { unpack: offerId } });
       const offersByIssuer = offers.filter(o => o.payload.offerers.map.has(state.balance.instrument.issuer));
-      let referenceIdUUID = uuid();
+      const referenceIdUUID = uuid();
       await ledger
         .exercise(
           OpenOffer.Take,
@@ -93,15 +92,15 @@ const BalanceRedeemFormScreen: React.FC = () => {
             <ContainerColumnValue>{state.balance.instrument.id.unpack} <Coin /></ContainerColumnValue>
             <ContainerColumnValue>${formatCurrency(state.balance.unlocked, "en-US")} <Coin /></ContainerColumnValue>
             <ContainerColumnValue>
-                {" "}<input
-                type="string"
-                id="amount"
-                name="amount"
-                value={amountInput}
-                onChange={handleChangeAmount}
-                style={{ width: "200px" }}
-                onInput={formatCurrencyInput}
-              />
+                {" "}
+                <input
+                  type="string"
+                  id="amount"
+                  name="amount"
+                  value={amountInput}
+                  onChange={handleChangeAmount}
+                  style={{ width: "200px" }}
+                />
                {" "}<Coin />
             </ContainerColumnValue>
           </ContainerColumn>

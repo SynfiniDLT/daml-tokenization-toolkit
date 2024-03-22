@@ -36,18 +36,10 @@ export const FundSubscribeFormScreen: React.FC = () => {
   repairMap(state.fund.payload.offerers.map);
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
-  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
   const [inputQtd, setInputQtd] = useState(0);
   const [referenceId, setReferenceId] = useState<string>("");
   const [total, setTotal] = useState(damlTypes.emptyMap<InstrumentKey, number>());
   const [error, setError] = useState("");
-
-  let walletClient: WalletViewsClient;
-
-  walletClient = new WalletViewsClient({
-    baseUrl: walletViewsBaseUrl,
-    token: ctx.token,
-  });
 
   const handleChangeInputQtd: ChangeEventHandler<HTMLInputElement> = (event) => {
     const q = parseInt(event.target.value);
@@ -153,14 +145,21 @@ export const FundSubscribeFormScreen: React.FC = () => {
                     id="qtd"
                     name="qtd"
                     step={1}
-                    min="0"
+                    min={state.fund.payload.minQuantity || "0"}
+                    max={state.fund.payload.maxQuantity || undefined}
                     value={inputQtd}
                     onChange={handleChangeInputQtd}
                     style={{ width: "50px", height: "25px" }}
                   />
                 </ContainerColumnValue>
                 <p><br/></p>
-                <ContainerColumnValue style={{verticalAlign:"-10px"}}>{total.entriesArray().map(entry => <>{formatCurrency(entry[1].toString(), "en-US") + " " + entry[0].id.unpack + " "}<Coin/></>)}</ContainerColumnValue>
+                <ContainerColumnValue style={{verticalAlign:"-10px"}}>
+                  {
+                    total
+                      .entriesArray()
+                      .map(entry => <>{formatCurrency(entry[1].toString(), "en-US") + " " + entry[0].id.unpack + " "}<Coin/></>)
+                  }
+                </ContainerColumnValue>
               </ContainerColumn>
             </ContainerDiv>
             
@@ -175,17 +174,16 @@ export const FundSubscribeFormScreen: React.FC = () => {
           <>
             <p><br/></p>
           <ContainerDiv>
-
             <ContainerColumn>
-            <ContainerColumnKey>Transaction Id:</ContainerColumnKey>
-            {/* <ContainerColumnKey>Quantity:</ContainerColumnKey>
-            <ContainerColumnKey>Total:</ContainerColumnKey> */}
-            <ContainerColumnKey></ContainerColumnKey>
-            <ContainerColumnKey></ContainerColumnKey>
-            <ContainerColumnKey></ContainerColumnKey>
-            <ContainerColumnKey><button className="button__login" style={{ width: "200px" }} onClick={() => nav("/wallet")}>
+              <ContainerColumnKey>Transaction Id:</ContainerColumnKey>
+              <ContainerColumnKey></ContainerColumnKey>
+              <ContainerColumnKey></ContainerColumnKey>
+              <ContainerColumnKey></ContainerColumnKey>
+              <ContainerColumnKey>
+                <button className="button__login" style={{ width: "200px" }} onClick={() => nav("/wallet")}>
                   Back
-                </button></ContainerColumnKey>
+                </button>
+              </ContainerColumnKey>
             </ContainerColumn>
 
             <ContainerColumn style={{minWidth: "400px"}}>
@@ -194,10 +192,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
                   {referenceId} {"    "}<BoxArrowUpRight />
                 </a>
               </ContainerColumnValue>
-              {/* <ContainerColumnValue> {inputQtd}</ContainerColumnValue>
-              <ContainerColumnValue>{formatCurrency(total.toString(), "en-US")} {state.fund.payload.paymentInstrument.id.unpack}  <Coin /></ContainerColumnValue> */}
               <ContainerColumnValue>
-                
               </ContainerColumnValue>
             </ContainerColumn>
           </ContainerDiv>
