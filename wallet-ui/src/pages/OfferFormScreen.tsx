@@ -16,7 +16,7 @@ import { RouteProvider } from "@daml.js/daml-finance-interface-settlement-2.0.0/
 import { Party, emptyMap } from "@daml/types";
 import { Set } from "@daml.js/97b883cd8a2b7f49f90d5d39c981cf6e110cf1f1c64427a28a6d58ec88c43657/lib/DA/Set/Types";
 import { v4 as uuid } from "uuid";
-import { arrayToSet } from "../components/Util";
+import { arrayToMap, arrayToSet } from "../components/Util";
 import Modal from "react-modal";
 
 export const OfferFormScreen: React.FC = () => {
@@ -58,8 +58,7 @@ export const OfferFormScreen: React.FC = () => {
     const description = state.instrument.tokenView?.token.description;
     const json_description = JSON.parse(description);
 
-    let idUUID = uuid();
-    let observers: Party[] = [producerInput];
+    const idUUID = uuid();
     await ledger
       .exercise(OneTimeOfferFactory.Create, oneTimeOfferFactory[0].contractId, {
         offerId: { unpack: idUUID },
@@ -68,7 +67,7 @@ export const OfferFormScreen: React.FC = () => {
         offeree: investorInput,
         settlementInstructors: arrayToSet([ctx.primaryParty]),
         settlers: arrayToSet([ctx.primaryParty, investorInput, producerInput]),
-        observers: emptyMap<string, Set<Party>>().set("initialObservers", arrayToSet(observers)),
+        observers: arrayToMap([["initialObservers", arrayToSet([producerInput])]]),
         settlementTime: null,
         steps: [{
           sender: ctx.primaryParty, receiver: producerInput, quantity: {amount: "1", unit: state.instrument.tokenView.token.instrument}

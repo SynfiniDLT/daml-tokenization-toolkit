@@ -5,11 +5,7 @@ import { userContext } from "../App";
 import AuthContextStore from "../store/AuthContextStore";
 import { formatCurrency } from "../components/Util";
 import { v4 as uuid } from "uuid";
-import * as damlTypes from "@daml/types";
-import { HoldingSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
 import { OpenOffer, OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer";
-import { WalletViewsClient } from "@synfini/wallet-views";
 import { ContainerColumn, ContainerDiv, ContainerColumnKey, DivBorderRoundContainer, ContainerColumnValue } from "../components/layout/general.styled";
 import Modal from "react-modal";
 import { Coin } from "react-bootstrap-icons";
@@ -20,21 +16,13 @@ const BalanceRedeemFormScreen: React.FC = () => {
   const { state } = useLocation();
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
-  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
 
   const [amountInput, setAmountInput] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isMessageOpen, setIsMessageOpen] = useState<boolean>(false);
 
-  let walletClient: WalletViewsClient;
-
-  walletClient = new WalletViewsClient({
-    baseUrl: walletViewsBaseUrl,
-    token: ctx.token,
-  });
-
-  const handleChangeAmount = (event: any) => {
+  const handleChangeAmount:  React.ChangeEventHandler<HTMLInputElement> = event => {
     setAmountInput(formatCurrencyInput(event));
   };
 
@@ -50,21 +38,6 @@ const BalanceRedeemFormScreen: React.FC = () => {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    let holdings: HoldingSummary[] = [];
-    let holdingUnlockedCidArr: damlTypes.ContractId<damlHoldingFungible.Fungible>[] = [];
-    holdings = (
-      await walletClient.getHoldings({
-        account: state.balance.account,
-        instrument: state.balance.instrument,
-      })
-    ).holdings;
-    holdings
-      .filter((holding) => holding.view.lock == null)
-      .map((holdingUnlocked) => {
-        holdingUnlockedCidArr.push(
-          holdingUnlocked.cid.toString() as damlTypes.ContractId<damlHoldingFungible.Fungible>
-        );
-      });
 
     try {
       const offerId = state.balance.instrument.id.unpack + "@" + state.balance.instrument.version + ".OffRamp"
@@ -82,7 +55,7 @@ const BalanceRedeemFormScreen: React.FC = () => {
             quantity: amountInput
           }
         )
-        .then((res) => {
+        .then(() => {
           setMessage("Your request has been successfully completed. \nTransaction id: " + referenceIdUUID);
         })
         .catch((e) => {

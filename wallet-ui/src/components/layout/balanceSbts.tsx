@@ -8,7 +8,7 @@ import {
 import Modal from "react-modal";
 import { Disclosure } from "@daml.js/daml-finance-interface-util/lib/Daml/Finance/Interface/Util/Disclosure";
 import { Party, Map, emptyMap, Unit, ContractId } from "@daml/types";
-import { wait } from "../Util";
+import { arrayToSet, wait } from "../Util";
 import HoverPopUp from "./hoverPopUp";
 
 export default function BalanceSbts(props: {
@@ -57,8 +57,8 @@ export default function BalanceSbts(props: {
   };
 
   const handleSendSBT = async () => {
-    const disclosers: Map<Party, Unit> = emptyMap();
-    const observers: Map<Party, Unit> = emptyMap();
+    const disclosers = arrayToSet([ctx.primaryParty]);
+    const observers = arrayToSet([partiesInput]);
     if (partiesInput === "")
       setError("You are required to provide the Party ID.");
     if (
@@ -69,10 +69,10 @@ export default function BalanceSbts(props: {
     ) {
       ledger
         .exercise(Disclosure.AddObservers, cid, {
-          disclosers: { map: disclosers.set(ctx.primaryParty, {}) },
+          disclosers,
           observersToAdd: {
             _1: partiesInput,
-            _2: { map: observers.set(partiesInput, {}) },
+            _2: observers,
           },
         })
         .then((res) => {
@@ -101,10 +101,10 @@ export default function BalanceSbts(props: {
     if (operation === "remove" && cid !== undefined) {
       ledger
         .exercise(Disclosure.RemoveObservers, cid, {
-          disclosers: { map: disclosers.set(ctx.primaryParty, {}) },
+          disclosers,
           observersToRemove: {
             _1: partiesInput,
-            _2: { map: observers.set(partiesInput, {}) },
+            _2: observers,
           },
         })
         .then((res) => {

@@ -69,3 +69,9 @@ export function arrayToSet<T>(elements: T[]): Set<T> {
     map: elements.reduce((m, x) => m.set(x, {}), empty),
   };
 }
+
+export function arrayToMap<K, V>(elements: [K, V][]): damlTypes.Map<K, V> {
+  const empty: Map<K, V> = emptyMap();
+
+  return elements.reduce((m, [k, v]) => m.set(k, v), empty);
+}

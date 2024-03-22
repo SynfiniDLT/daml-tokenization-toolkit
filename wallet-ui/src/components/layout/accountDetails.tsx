@@ -57,13 +57,13 @@ export function AccountDetailsSimple(props: AccountDetailsProps) {
   const nav = useNavigate();
   
 
-  const handleClick = (account: AccountSummary) => {
+  const handleClick = () => {
     nav("/wallet");
   };
 
   return (
     <CardContainer pointer style={{width: "50%"}}>
-      <ContainerDiv onClick={() => handleClick(props.account)} key={props.account.cid}>
+      <ContainerDiv onClick={() => handleClick()} key={props.account.cid}>
         <ContainerColumn>
           <ContainerColumnKey>Account ID:</ContainerColumnKey>
           <ContainerColumnKey>Description:</ContainerColumnKey>

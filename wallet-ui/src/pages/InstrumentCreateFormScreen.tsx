@@ -9,10 +9,9 @@ import {
   ContainerDiv,
   DivBorderRoundContainer,
 } from "../components/layout/general.styled";
-import { Party, emptyMap } from "@daml/types";
-import { arrayToSet } from "../components/Util";
+import { Party } from "@daml/types";
+import { arrayToMap, arrayToSet } from "../components/Util";
 import { Issuer as TokenIssuer } from "@daml.js/synfini-issuer-onboarding-instrument-token-interface/lib/Synfini/Interface/Onboarding/Issuer/Instrument/Token/Issuer";
-import { Set } from "@daml.js/97b883cd8a2b7f49f90d5d39c981cf6e110cf1f1c64427a28a6d58ec88c43657/lib/DA/Set/Types";
 import { v4 as uuid } from "uuid";
 import Modal from "react-modal";
 
@@ -97,7 +96,7 @@ export const InstrumentCreateFormScreen: React.FC = () => {
             description: JSON.stringify(desc_instrument),
             validAsOf: new Date().toISOString(),
           },
-          observers: emptyMap<string, Set<Party>>().set("initialObservers", arrayToSet(observers)),
+          observers: arrayToMap([["initialObservers", arrayToSet(observers)]]),
         })
         .then((res) => {
           if (res.length > 1) {
