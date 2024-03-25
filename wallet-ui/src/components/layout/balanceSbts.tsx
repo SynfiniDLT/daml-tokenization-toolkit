@@ -16,7 +16,7 @@ export default function BalanceSbts(
   props: {
     instruments?: InstrumentSummary[];
     account?: AccountSummary;
-    partyBoundAttributes?: damlTypes.Map<damlTypes.ContractId<any>, damlTypes.Party[]>;
+    instrumentObservers?: damlTypes.Map<damlTypes.ContractId<any>, damlTypes.Party[]>;
   }
 ) {
   const ctx = useContext(AuthContextStore);
@@ -141,7 +141,7 @@ export default function BalanceSbts(
   };
 
   const trBalances = props.instruments?.map((inst: InstrumentSummary) => {
-    const partiesSharedWith: damlTypes.Party[] = props.partyBoundAttributes?.get(inst.cid) || [];
+    const partiesSharedWith: damlTypes.Party[] = props.instrumentObservers?.get(inst.cid) || [];
 
     return (
       <tr key={inst.cid}>

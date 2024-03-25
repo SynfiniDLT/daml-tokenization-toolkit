@@ -25,7 +25,7 @@ const AccountBalanceSbtScreen: React.FC = () => {
 
   const [balances, setBalances] = useState<Balance[]>([]);
   const [instruments, setInstruments] = useState<InstrumentSummary[]>();
-  const [partyBoundAttributes, setPartyBoundAttributes] = useState<damlTypes.Map<damlTypes.ContractId<any>, damlTypes.Party[]>>();
+  const [instrumentObservers, setInstrumentObservers] = useState<damlTypes.Map<damlTypes.ContractId<any>, damlTypes.Party[]>>();
 
   const walletClient = new WalletViewsClient({
     baseUrl: walletViewsBaseUrl,
@@ -63,7 +63,7 @@ const AccountBalanceSbtScreen: React.FC = () => {
     return arr_instruments;
   }
 
-  const fetchFromLedger = async (instruments: InstrumentSummary[]) => {
+  const fetchObservers = async (instruments: InstrumentSummary[]) => {
     const contracts = await Promise.all(
       instruments.map(instrument => ledger.fetch(PartyBoundAttributes, instrument.cid as any))
     );
@@ -82,8 +82,7 @@ const AccountBalanceSbtScreen: React.FC = () => {
     const fetchInstrumentsAndObservers = async () => {
       const instruments = await fetchInstruments(balances);
       setInstruments(instruments);
-      const contracts = await fetchFromLedger(instruments);
-      setPartyBoundAttributes(contracts);
+      setInstrumentObservers(await fetchObservers(instruments));
     };
     fetchInstrumentsAndObservers();
   }, [ctx.primaryParty, balances])
@@ -102,7 +101,7 @@ const AccountBalanceSbtScreen: React.FC = () => {
         SBT Details
       </h3>
       {state.account.view.id.unpack === "sbt" && (
-        <BalanceSbts instruments={instruments} account={state.account} partyBoundAttributes={partyBoundAttributes} />
+        <BalanceSbts instruments={instruments} account={state.account} instrumentObservers={instrumentObservers} />
       )}
     </PageLayout>
   );
