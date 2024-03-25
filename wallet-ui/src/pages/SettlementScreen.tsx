@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { userContext } from "../App";
-import AuthContextStore from "../store/AuthContextStore";
+import AuthContextStore, { isDefinedPrimaryParty } from "../store/AuthContextStore";
 import { PageLoader } from "../components/layout/page-loader";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
@@ -26,7 +26,7 @@ const SettlementScreen: React.FC = () => {
   });
 
   const fetchSettlements = async () => {
-    if (ctx.primaryParty !== "") {
+    if (isDefinedPrimaryParty(ctx.primaryParty)) {
       const resp = await walletClient.getSettlements({ before: null, limit: null });
       setSettlements(resp.settlements);
     }

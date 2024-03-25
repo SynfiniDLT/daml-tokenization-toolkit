@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { userContext } from "../App";
-import AuthContextStore from "../store/AuthContextStore";
+import AuthContextStore, { isDefinedPrimaryParty } from "../store/AuthContextStore";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
 import { PageLoader } from "../components/layout/page-loader";
@@ -33,7 +33,7 @@ const AccountBalanceSbtScreen: React.FC = () => {
   });
 
   const fetchBalances = async () => {
-    if (ctx.primaryParty !== "") {
+    if (isDefinedPrimaryParty(ctx.primaryParty)) {
       const resp = await walletClient.getBalance({
         account: {
           owner: ctx.primaryParty,

@@ -4,7 +4,6 @@ import { userContext } from "../App";
 import AuthContextStore from "../store/AuthContextStore";
 import { PageLayout } from "../components/PageLayout";
 import { formatCurrency, formatOptionalCurrency, nameFromParty } from "../components/Util";
-import { WalletViewsClient } from "@synfini/wallet-views";
 import * as damlTypes from "@daml/types";
 import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
 import { v4 as uuid } from "uuid";

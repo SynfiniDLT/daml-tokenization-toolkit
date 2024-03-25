@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { PageLayout } from "../components/PageLayout";
-import AuthContextStore from "../store/AuthContextStore";
+import AuthContextStore, { isDefinedPrimaryParty } from "../store/AuthContextStore";
 import { userContext } from "../App";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
@@ -26,7 +26,7 @@ const IssuersScreen: React.FC = () => {
     token: ctx.token,
   });
   const fetchIssuers = async () => {
-    if (ctx.primaryParty !== "") {
+    if (isDefinedPrimaryParty(ctx.primaryParty)) {
       const resp = await walletClient.getIssuers({
         depository: wallet_depository,
         issuer: ctx.primaryParty,

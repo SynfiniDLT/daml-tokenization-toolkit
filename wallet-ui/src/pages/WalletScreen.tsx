@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { userContext } from "../App";
-import AuthContextStore, { undefinedPrimaryParty } from "../store/AuthContextStore";
+import AuthContextStore, { isDefinedPrimaryParty } from "../store/AuthContextStore";
 import { PageLoader } from "../components/layout/page-loader";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
@@ -23,7 +23,7 @@ const WalletScreen: React.FC = () => {
   });
 
   const fetchAccounts = async () => {
-    if (ctx.primaryParty !== undefinedPrimaryParty) {
+    if (isDefinedPrimaryParty(ctx.primaryParty)) {
       const resp = await walletClient.getAccounts({ owner: ctx.primaryParty, custodian: null });
       return resp.accounts;
     } else {
@@ -32,7 +32,7 @@ const WalletScreen: React.FC = () => {
   };
 
   const fetchBalances = async (account: AccountSummary) => {
-    if (ctx.primaryParty !== undefinedPrimaryParty) {
+    if (isDefinedPrimaryParty(ctx.primaryParty)) {
       const resp = await walletClient.getBalance({
         account: {
           owner: ctx.primaryParty,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { userContext } from "../App";
-import AuthContextStore from "../store/AuthContextStore";
+import AuthContextStore, { isDefinedPrimaryParty } from "../store/AuthContextStore";
 import { PageLoader } from "../components/layout/page-loader";
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
@@ -26,7 +26,7 @@ const DirectoryScreen: React.FC = () => {
   });
 
   const fetchInstruments = async () => {
-    if (ctx.primaryParty !== "" && sbtDepository!== undefined && sbtIssuer!== undefined) {
+    if (isDefinedPrimaryParty(ctx.primaryParty) && sbtDepository!== undefined && sbtIssuer!== undefined) {
       const resp = await walletClient.getInstruments(
         {
           depository: sbtDepository, 

@@ -35,7 +35,7 @@ const BalanceRedeemFormScreen: React.FC = () => {
     if (path !== "") nav("/" + path);
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit:  React.FormEventHandler<HTMLFormElement>= async (e) => {
     e.preventDefault();
 
     try {

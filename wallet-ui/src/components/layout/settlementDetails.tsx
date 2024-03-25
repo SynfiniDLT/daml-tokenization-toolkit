@@ -6,7 +6,7 @@ import { PlusCircleFill, DashCircleFill } from "react-bootstrap-icons";
 import styled from "styled-components";
 import { Field, FieldPending, FieldSettled } from "./general.styled";
 import CopyToClipboard from "./copyToClipboard";
-import AuthContextStore from "../../store/AuthContextStore";
+import AuthContextStore, { isDefinedPrimaryParty } from "../../store/AuthContextStore";
 import {
   AllocateAndApproveHelper,
   AllocationHelp,
@@ -192,7 +192,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
     if (path !== "") nav("/" + path);
   };
 
-  const handleAccountChange = (event: any) => {
+  const handleAccountChange: React.ChangeEventHandler<HTMLSelectElement> = (event) => {
     setSelectAccountInput(event.target.value);
   };
 
@@ -289,7 +289,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
     };
   }
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     const splitAccountInput = selectAccountInput.split("@");
     const custodianToAccount: damlTypes.Map<damlTypes.Party, Id> = arrayToMap(
@@ -369,7 +369,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
   };
 
   const fetchAccounts = async (custodian: string) => {
-    if (ctx.primaryParty !== "") {
+    if (isDefinedPrimaryParty(ctx.primaryParty)) {
       const respAcc = await walletClient.getAccounts({ owner: ctx.primaryParty, custodian: custodian });
       setAccounts(respAcc.accounts);
     }
