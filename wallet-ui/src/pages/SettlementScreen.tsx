@@ -20,9 +20,7 @@ const SettlementScreen: React.FC = () => {
   const [settlements, setSettlements] = useState<SettlementSummary[]>();
   const [filter, setFilter] = useState<string>("");
 
-  let walletClient: WalletViewsClient;
-
-  walletClient = new WalletViewsClient({
+  const  walletClient = new WalletViewsClient({
     baseUrl: walletViewsBaseUrl,
     token: ctx.token,
   });
@@ -33,11 +31,11 @@ const SettlementScreen: React.FC = () => {
       setSettlements(resp.settlements);
     }
   };
-  
+
   useEffect(() => {
     fetchDataForUserLedger(ctx, ledger);
   }, [ctx, ledger]);
-  
+
   useEffect(() => {
     fetchSettlements();
   }, []);
@@ -68,8 +66,8 @@ const SettlementScreen: React.FC = () => {
   let transactionSettledStyle = "button__sign-up";
   if (filter === 'pending') transactionPendingStyle = "button__sign-up-selected";
   if (filter === 'settled') transactionSettledStyle = "button__sign-up-selected";
-  
-  
+
+
   return (
     <PageLayout>
       <div>

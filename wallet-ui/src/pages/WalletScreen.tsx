@@ -17,9 +17,7 @@ const WalletScreen: React.FC = () => {
 
   const [accountBalances, setAccountBalances] = useState<AccountBalanceSummary[]>([]);
 
-  let walletClient: WalletViewsClient;
-
-  walletClient = new WalletViewsClient({
+  const walletClient = new WalletViewsClient({
     baseUrl: walletViewsBaseUrl,
     token: ctx.token,
   });

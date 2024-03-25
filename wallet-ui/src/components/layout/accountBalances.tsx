@@ -5,12 +5,13 @@ import { Coin } from "react-bootstrap-icons";
 import HoverPopUp from "./hoverPopUp";
 import InstrumentPopDetails from "./instrumentPopDetails";
 import { useState } from "react";
+import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 
 export type AccountBalanceSummary = {account: AccountSummary, balances: Balance[]};
 
 export default function AccountBalances(props: { accountBalances: AccountBalanceSummary[] }) {
   const nav = useNavigate();
-  const [instrument, setInstrument] = useState<InstrumentSummary>();
+  const [instrument, setInstrument] = useState<InstrumentKey>();
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   const handleSeeDetails = (account: AccountSummary) => {
@@ -21,7 +22,7 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
     nav("/wallet/account/balance/redeem", { state: { balance, account } });
   };
 
-  const handleInstrumentModal = (instrument: any) => {
+  const handleInstrumentModal = (instrument: InstrumentKey) => {
      setInstrument(instrument);
      setIsOpen(!isOpen);
   }
