@@ -29,7 +29,6 @@ const App: React.FC = () => {
 
   const [token, setToken] = useState<string>("");
   const [primaryParty, setPrimaryParty] = useState<string>('');
-  const [readOnly, setReadOnly] = useState<boolean>(false);
   const walletMode = process.env.REACT_APP_MODE || "";
   const modeStyle = {
     backgroundColor:
@@ -37,11 +36,10 @@ const App: React.FC = () => {
         ? 'var(--black)'
         : walletMode === 'issuer'
         ? 'var(--issuer)' 
-        : walletMode === 'fund'
+        : walletMode === 'fund' // TODO remove 'fund' mode?
         ? 'var(--fund)' 
         : 'var(--black)',
   };
-
 
   const fetchToken = async () => {
     const authToken = await getAccessTokenSilently();
@@ -60,7 +58,7 @@ const App: React.FC = () => {
     );
   }
   return (
-    <AuthContextStore.Provider value={{token: token, setPrimaryParty: setPrimaryParty, primaryParty: primaryParty, readOnly: readOnly}}>
+    <AuthContextStore.Provider value={{token, setPrimaryParty, primaryParty, readOnly: false}}>
       <userContext.DamlLedger token={token} party={primaryParty} >
       <style>
       {`
@@ -92,6 +90,8 @@ const App: React.FC = () => {
               <Route path="/" element={<AuthenticationGuard component={HomeScreen} />} />
               <Route path="/wallet" element={<AuthenticationGuard component={WalletScreen} />} />
               <Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />
+              <Route path="/wallet/account/balance/sbt" element={<AuthenticationGuard component={AccountBalanceSbtScreen} />} />
+              <Route path="/wallet/account/balance/redeem" element={<AuthenticationGuard component={BalanceRedeemFormScreen} />} />
               <Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />
               <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
               <Route path="/issuers/" element={<AuthenticationGuard component={IssuersScreen} />} />

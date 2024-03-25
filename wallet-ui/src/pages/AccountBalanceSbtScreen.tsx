@@ -11,8 +11,10 @@ import {
   InstrumentSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import BalanceSbts from "../components/layout/balanceSbts";
-import {Instrument as PartyBoundAttributes}  from "@daml.js/synfini-pbt/lib/Synfini/Interface/Instrument/PartyBoundAttributes/Instrument";
+import { Instrument as PartyBoundAttributes }  from "@daml.js/synfini-pbt/lib/Synfini/Interface/Instrument/PartyBoundAttributes/Instrument";
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
+import * as damlTypes from "@daml/types";
+import { arrayToMap } from "../components/Util";
 
 const AccountBalanceSbtScreen: React.FC = () => {
   const { isLoading } = useAuth0();
@@ -23,10 +25,9 @@ const AccountBalanceSbtScreen: React.FC = () => {
 
   const [balances, setBalances] = useState<Balance[]>([]);
   const [instruments, setInstruments] = useState<InstrumentSummary[]>();
-  const [partyBoundAttributes, setPartyBoundAttributes] = useState<PartyBoundAttributes[]>();
+  const [partyBoundAttributes, setPartyBoundAttributes] = useState<damlTypes.Map<damlTypes.ContractId<any>, damlTypes.Party[]>>();
 
-  let walletClient: WalletViewsClient;
-  walletClient = new WalletViewsClient({
+  const walletClient = new WalletViewsClient({
     baseUrl: walletViewsBaseUrl,
     token: ctx.token,
   });
@@ -62,16 +63,13 @@ const AccountBalanceSbtScreen: React.FC = () => {
     return arr_instruments;
   }
 
-  const fetchPartiesSharedWith = async (instruments: any[]) => {
-    let arr_partiesShared: any[] = [];
-    for (let index = 0; index < instruments.length; index++) {
-      const instrument = instruments[index];
-      const partiesShared = await ledger.fetch(PartyBoundAttributes, instrument.cid );
-      arr_partiesShared.push(partiesShared)
-    }
-    return arr_partiesShared;
+  const fetchFromLedger = async (instruments: InstrumentSummary[]) => {
+    const contracts = await Promise.all(
+      instruments.map(instrument => ledger.fetch(PartyBoundAttributes, instrument.cid as any))
+    );
+    return arrayToMap(contracts.flatMap(c => c == null ? [] : [[c.contractId, c.observers]]));
   }
-  
+
   useEffect(() => {
     fetchDataForUserLedger(ctx, ledger);
   }, [ctx, ledger]);
@@ -81,15 +79,14 @@ const AccountBalanceSbtScreen: React.FC = () => {
   }, [ctx.primaryParty, state]);
 
   useEffect(() => {
-    fetchInstruments(balances)
-      .then(res_instruments => {
-        setInstruments(res_instruments)
-        fetchPartiesSharedWith(res_instruments)
-        .then(res_partiesShared => {
-          setPartyBoundAttributes(res_partiesShared);
-        })
-    });
-  },[ctx.primaryParty, balances])
+    const fetchInstrumentsAndObservers = async () => {
+      const instruments = await fetchInstruments(balances);
+      setInstruments(instruments);
+      const contracts = await fetchFromLedger(instruments);
+      setPartyBoundAttributes(contracts);
+    };
+    fetchInstrumentsAndObservers();
+  }, [ctx.primaryParty, balances])
 
   if (isLoading) {
     return (
