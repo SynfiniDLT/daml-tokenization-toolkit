@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { useAuth0 } from "@auth0/auth0-react";
 import { AccountSummary, Balance, InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { formatCurrency, nameFromParty } from "../Util";
 import { Coin } from "react-bootstrap-icons";
@@ -10,18 +9,16 @@ import { useState } from "react";
 export type AccountBalanceSummary = {account: AccountSummary, balances: Balance[]};
 
 export default function AccountBalances(props: { accountBalances: AccountBalanceSummary[] }) {
-  const { user } = useAuth0();
   const nav = useNavigate();
   const [instrument, setInstrument] = useState<InstrumentSummary>();
   const [isOpen, setIsOpen] = useState<boolean>(false);
-
 
   const handleSeeDetails = (account: AccountSummary) => {
     nav("/wallet/account/balance/sbt", { state: { account: account } });
   };
 
-  const handleRedeem = (balance: any, account: any) => {
-    nav("/wallet/account/balance/redeem", { state: { balance: balance, account: account } });
+  const handleRedeem = (balance: Balance, account: AccountSummary) => {
+    nav("/wallet/account/balance/redeem", { state: { balance, account } });
   };
 
   const handleInstrumentModal = (instrument: any) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { formatCurrency, nameFromParty, toDateTimeString } from "../Util";
@@ -16,7 +16,6 @@ import {
 import { arrayToSet } from "../../components/Util";
 import * as damlTypes from "@daml/types";
 import {
-  AccountKey,
   Id,
   InstrumentKey,
   Quantity,
@@ -29,11 +28,6 @@ import { Batch } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finan
 import Modal from "react-modal";
 import AccountsSelect from "./accountsSelect";
 import { fetchDataForUserLedger } from "../UserLedgerFetcher";
-import { Tuple2 } from "@daml.js/40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7/lib/DA/Types";
-import {
-  Approval,
-  InstructionKey,
-} from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Types";
 
 interface SettlementDetailsProps {
   settlement: any;

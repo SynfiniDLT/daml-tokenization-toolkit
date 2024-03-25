@@ -6,19 +6,19 @@ import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 import { PageLoader } from "../components/layout/page-loader";
 import { OneTimeOffer } from "@daml.js/synfini-settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer";
 import Offers from "../components/layout/offers";
+import { CreateEvent } from "@daml/ledger";
 
 const OffersScreen: React.FC = () => {
   const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
 
   const [isLoading] = useState<boolean>(false);
-  const [offers, setOffers] = useState<any[]>();
+  const [offers, setOffers] = useState<CreateEvent<OneTimeOffer, undefined, string>[]>();
 
   const fetchOffers = async () => {
-    let res = await ledger.query(OneTimeOffer);
-    setOffers(res);
+    setOffers(await ledger.query(OneTimeOffer));
   }
-  
+
   useEffect(() => {
     fetchDataForUserLedger(ctx, ledger);
   }, [ctx, ledger]);
