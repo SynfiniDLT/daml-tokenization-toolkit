@@ -30,7 +30,7 @@ export default function BalanceSbts(
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
 
-  const handlePartiesInput = (event: any) => {
+  const handlePartiesInput: React.ChangeEventHandler<HTMLInputElement> = (event) => {
     setPartiesInput(event.target.value);
   };
 
@@ -47,8 +47,6 @@ export default function BalanceSbts(
   };
 
   const handleClickOk = async () => {
-    // ctx.setPrimaryParty("");
-    // await wait(4000);
     setIsMessageOpen(!isMessageOpen);
   };
 

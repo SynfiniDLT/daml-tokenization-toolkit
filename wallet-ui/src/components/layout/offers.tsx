@@ -16,7 +16,7 @@ export default function Offers(props: { offers?: CreateEvent<OneTimeOffer, undef
                 <div className="header-cell">Quantity</div>
                 <div className="header-cell">Actions</div>
               </div>
-              {props.offers.map((offer: any, index: number) => (
+              {props.offers.map((offer, index) => (
                 <OfferDetails offer={offer} key={index}/>
               ))}
             </div>
