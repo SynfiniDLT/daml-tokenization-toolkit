@@ -35,7 +35,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
     setAccountOffer(accountOffer);
   };
 
-  const handleAccountName = (event: any) => {
+  const handleAccountName: React.ChangeEventHandler<HTMLInputElement> = (event) => {
     setAccountName(event.target.value);
   };
 

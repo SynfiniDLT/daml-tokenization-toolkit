@@ -19,15 +19,10 @@ import { Coin, BoxArrowUpRight } from "react-bootstrap-icons";
 import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 import { CreateEvent } from "@daml/ledger";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
+import { repairMap } from "../components/Util";
 
 type FundSubscribeFormScreenState = {
   fund: CreateEvent<SettlementOpenOffer, undefined, string>
-}
-
-// React does not copy down the functions available on state variables, so we use this workaround to add these methods
-// back onto the `Map` instance
-function repairMap<K, V>(map: damlTypes.Map<K, V>) {
-  Object.setPrototypeOf(map, Object.getPrototypeOf(damlTypes.emptyMap<K, V>()));
 }
 
 export const FundSubscribeFormScreen: React.FC = () => {

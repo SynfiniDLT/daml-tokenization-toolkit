@@ -7,7 +7,7 @@ export default function AccountOffers(props: { accountOffers?: AccountOpenOfferS
       <div style={{ margin: "10px", padding: "10px" }}>
         {props.accountOffers !== undefined && (
           <>
-            {props.accountOffers.map((accountOffer: any, index: number) => (
+            {props.accountOffers.map((accountOffer, index) => (
               <div key={index}>
                 <AccountOfferDetails accountOffer={accountOffer} />
               </div>

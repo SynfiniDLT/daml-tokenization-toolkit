@@ -75,3 +75,12 @@ export function arrayToMap<K, V>(elements: [K, V][]): damlTypes.Map<K, V> {
 
   return elements.reduce((m, [k, v]) => m.set(k, v), empty);
 }
+
+// React does not copy down the functions available on state variables, so we use this workaround to add these methods
+// back onto the `Map` instance
+export function repairMap<K, V>(map: damlTypes.Map<K, V>) {
+  const mapProtoType = Object.getPrototypeOf(damlTypes.emptyMap<K, V>());
+  if (Object.getPrototypeOf(map) !== emptyMap) {
+    Object.setPrototypeOf(map, mapProtoType);
+  }
+}

@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { formatCurrency, nameFromParty, toDateTimeString } from "../Util";
+import { AccountSummary, SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { arrayToMap, formatCurrency, nameFromParty, repairMap, toDateTimeString } from "../Util";
 import { PlusCircleFill, DashCircleFill } from "react-bootstrap-icons";
 import styled from "styled-components";
 import { Field, FieldPending, FieldSettled } from "./general.styled";
@@ -30,7 +30,7 @@ import AccountsSelect from "./accountsSelect";
 import { fetchDataForUserLedger } from "../UserLedgerFetcher";
 
 interface SettlementDetailsProps {
-  settlement: any;
+  settlement: SettlementSummary;
 }
 
 export default function SettlementDetails(props: SettlementDetailsProps) {
@@ -161,6 +161,8 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
 }
 
 export function SettlementDetailsAction(props: SettlementDetailsProps) {
+  repairMap(props.settlement.requestors.map);
+  repairMap(props.settlement.settlers.map);
   const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
   const nav = useNavigate();
   const location = useLocation();
@@ -170,13 +172,11 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
-  const [accounts, setAccounts] = useState<any>();
+  const [accounts, setAccounts] = useState<AccountSummary[]>();
   const [selectAccountInput, setSelectAccountInput] = useState("");
   const [showExecute, setShowExecute] = useState<boolean>(false);
 
-  let walletClient: WalletViewsClient;
-
-  walletClient = new WalletViewsClient({
+  const walletClient = new WalletViewsClient({
     baseUrl: walletViewsBaseUrl,
     token: ctx.token,
   });
@@ -292,8 +292,9 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     const splitAccountInput = selectAccountInput.split("@");
-    let custodianToAccount: damlTypes.Map<damlTypes.Party, Id> = damlTypes.emptyMap();
-    custodianToAccount = custodianToAccount.set(splitAccountInput[0], { unpack: splitAccountInput[1] });
+    const custodianToAccount: damlTypes.Map<damlTypes.Party, Id> = arrayToMap(
+      [[splitAccountInput[0], { unpack: splitAccountInput[1] }]]
+    );
 
     const settlement: SettlementSummary = props.settlement;
     const { allocations, approvals, pledgeDescriptors } = acceptanceActions(custodianToAccount, settlement);
@@ -317,8 +318,9 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
       }
     }
 
-    let instructions: damlTypes.Map<Id, damlTypes.ContractId<Instruction>> = damlTypes.emptyMap();
-    settlement.steps.forEach((step) => (instructions = instructions.set(step.instructionId, step.instructionCid)));
+    const instructions: damlTypes.Map<Id, damlTypes.ContractId<Instruction>> = arrayToMap(
+      settlement.steps.map(step => [step.instructionId, step.instructionCid])
+    );
 
     await ledger
       .createAndExercise(
@@ -343,10 +345,19 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
   };
 
   const handleExecute = async () => {
+    if (props.settlement.batchCid == null) {
+      setError("Internal error");
+      return;
+    }
+
     await ledger
-      .exercise(Batch.Settle, props.settlement?.batchCid, {
-        actors: arrayToSet([ctx.primaryParty]),
-      })
+      .exercise(
+        Batch.Settle,
+        props.settlement.batchCid,
+        {
+          actors: arrayToSet([ctx.primaryParty]),
+        }
+      )
       .then((res) => {
         setMessage("Settlement submitted with success!");
         setIsModalOpen(!isModalOpen);
@@ -421,7 +432,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
       }
     });
 
-    if (stepNotReady===false && props.settlement.settlers.map._keys.includes(ctx.primaryParty)) {
+    if (!stepNotReady && props.settlement.settlers.map.has(ctx.primaryParty)) {
       setShowExecute(true);
     }
   }, []);
