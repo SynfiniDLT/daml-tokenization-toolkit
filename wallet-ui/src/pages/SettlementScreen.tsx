@@ -58,8 +58,8 @@ const SettlementScreen: React.FC = () => {
 
   let transactionPendingStyle = "button__sign-up";
   let transactionSettledStyle = "button__sign-up";
-  if (filter === 'pending') transactionPendingStyle = "button__sign-up-selected";
-  if (filter === 'settled') transactionSettledStyle = "button__sign-up-selected";
+  if (filter === "pending") transactionPendingStyle = "button__sign-up-selected";
+  if (filter === "settled") transactionSettledStyle = "button__sign-up-selected";
 
   return (
     <PageLayout>

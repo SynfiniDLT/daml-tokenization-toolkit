@@ -26,7 +26,7 @@ export default function FundDetails(props: FundDetailsProps) {
         const topPosition = targetElement.offsetTop + offset;
         window.scrollTo({
           top: topPosition,
-          behavior: 'smooth',
+          behavior: "smooth",
         });
       }
     }

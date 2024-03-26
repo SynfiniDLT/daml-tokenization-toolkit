@@ -44,7 +44,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
     let costsMap = damlTypes.emptyMap<InstrumentKey, number>();
 
     for (const step of state.fund.payload.steps) {
-      if (step.sender.tag === 'TakerEntity') {
+      if (step.sender.tag === "TakerEntity") {
         const existingCost = costsMap.get(step.quantity.unit) || 0;
         costsMap = costsMap.set(
           step.quantity.unit, existingCost + parseFloat(step.quantity.amount) * q

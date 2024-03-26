@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
-import { CopyToClipboardFromPopUp } from './copyToClipboard';
+import React, { useState } from "react";
+import styled from "styled-components";
+import { CopyToClipboardFromPopUp } from "./copyToClipboard";
 
 interface PopUpProps {
   isVisible: boolean;
@@ -15,7 +15,7 @@ const ContainerPopUp = styled.div`
 const PopUp = styled.div<PopUpProps>`
   position: absolute;
   top: -200%;
-  left: ${(props) => props.customLeft || '-10%'}; // Use customLeft or default to '-10%'
+  left: ${(props) => props.customLeft || "-10%"}; // Use customLeft or default to "-10%"
   color: black;
   transform: translateX(-50%);
   background-color: #f8f8f8;
@@ -24,7 +24,7 @@ const PopUp = styled.div<PopUpProps>`
   border-radius: 5px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   opacity: ${(props) => (props.isVisible ? 1 : 0)};
-  pointer-events: ${(props) => (props.isVisible ? 'auto' : 'none')};
+  pointer-events: ${(props) => (props.isVisible ? "auto" : "none")};
   transition: opacity 0.3s ease-in-out;
   white-space: nowrap;
 `;

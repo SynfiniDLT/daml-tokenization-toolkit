@@ -6,11 +6,11 @@ export function formatCurrency(amountString: string, locale: string): string {
   const amount = parseFloat(amountString);
   
   if (isNaN(amount)) {
-    return 'Invalid amount';
+    return "Invalid amount";
   }
 
   const formatter = new Intl.NumberFormat(locale, {
-    style: 'decimal',
+    style: "decimal",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -28,10 +28,10 @@ export function formatOptionalCurrency(amount: damlTypes.Optional<string>, local
 
 // TODO clean this function up
 export function nameFromParty(party: string) {
-  let name = '';
+  let name = "";
 
-  if (party === '' || party === undefined) {
-      return '';
+  if (party === "" || party === undefined) {
+      return "";
   }else{
       name = party.split("::")[0];
   } 
@@ -54,9 +54,9 @@ export const toDateTimeString = (inputDate: damlTypes.Time) => {
 export const formatPercentage = (percentageString: string) => {
   const percentage = parseFloat(percentageString);
   if (isNaN(percentage)) {
-    throw new Error('Invalid percentage string');
+    throw new Error("Invalid percentage string");
   }
-  const formattedPercentage = (percentage * 100).toFixed(0) + '%';
+  const formattedPercentage = (percentage * 100).toFixed(0) + "%";
   return formattedPercentage;
 }
 

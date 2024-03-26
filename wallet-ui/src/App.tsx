@@ -39,18 +39,18 @@ const App: React.FC = () => {
   const { isLoading, getAccessTokenSilently, isAuthenticated } = useAuth0();
 
   const [token, setToken] = useState("");
-  const [primaryParty, setPrimaryParty] = useState('');
+  const [primaryParty, setPrimaryParty] = useState("");
   const [readOnly, setReadOnly] = useState(false);
   const walletMode = process.env.REACT_APP_MODE || "";
   const modeStyle = {
     backgroundColor:
-      walletMode === 'investor'
-        ? 'var(--black)'
-        : walletMode === 'issuer'
-        ? 'var(--issuer)' 
-        : walletMode === 'fund' // TODO remove 'fund' mode?
-        ? 'var(--fund)' 
-        : 'var(--black)',
+      walletMode === "investor"
+        ? "var(--black)"
+        : walletMode === "issuer"
+        ? "var(--issuer)" 
+        : walletMode === "fund" // TODO remove "fund" mode?
+        ? "var(--fund)" 
+        : "var(--black)",
   };
 
   useEffect(() => {
@@ -129,7 +129,7 @@ const App: React.FC = () => {
 
 export default App;
 
-const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
+const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
 
 export function useWalletViews(): WalletViewsClient {
   const ctx = useContext(AuthContextStore);
