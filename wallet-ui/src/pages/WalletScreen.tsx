@@ -1,55 +1,42 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { userContext } from "../App";
-import AuthContextStore, { isDefinedPrimaryParty } from "../store/AuthContextStore";
 import { PageLoader } from "../components/layout/page-loader";
-import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import AccountBalances, { AccountBalanceSummary } from "../components/layout/accountBalances";
-import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
+import { useWalletViews, useWalletUser } from "../hooks/WalletViews";
 
 const WalletScreen: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
-  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
-  const ctx = useContext(AuthContextStore);
-  const ledger = userContext.useLedger();
+  const walletClient = useWalletViews();
+  const { primaryParty } = useWalletUser();
 
   const [accountBalances, setAccountBalances] = useState<AccountBalanceSummary[]>([]);
 
-  const walletClient = new WalletViewsClient({
-    baseUrl: walletViewsBaseUrl,
-    token: ctx.token,
-  });
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      if (primaryParty !== undefined) {
+        const resp = await walletClient.getAccounts({ owner: primaryParty, custodian: null });
+        return resp.accounts;
+      } else {
+        return [];
+      }
+    };
 
-  const fetchAccounts = async () => {
-    if (isDefinedPrimaryParty(ctx.primaryParty)) {
-      const resp = await walletClient.getAccounts({ owner: ctx.primaryParty, custodian: null });
-      return resp.accounts;
-    } else {
+    const fetchBalances = async (account: AccountSummary) => {
+      if (primaryParty !== undefined) {
+        const resp = await walletClient.getBalance({
+          account: {
+            owner: primaryParty,
+            custodian: account.view.custodian,
+            id: account.view.id,
+          },
+        });
+        return resp.balances;
+      }
       return [];
-    }
-  };
+    };
 
-  const fetchBalances = async (account: AccountSummary) => {
-    if (isDefinedPrimaryParty(ctx.primaryParty)) {
-      const resp = await walletClient.getBalance({
-        account: {
-          owner: ctx.primaryParty,
-          custodian: account.view.custodian,
-          id: account.view.id,
-        },
-      });
-      return resp.balances;
-    }
-    return [];
-  };
-
-  useEffect(() => {
-    fetchDataForUserLedger(ctx, ledger);
-  }, [ctx, ledger]);
-
-  useEffect(() => {
     const fetchAccountBalances = async () => {
       const accounts = await fetchAccounts();
       const accountsWithBalances = await Promise.all(
@@ -61,7 +48,7 @@ const WalletScreen: React.FC = () => {
       setAccountBalances(accountsWithBalances);
     }
     fetchAccountBalances();
-  }, [ctx.primaryParty]);
+  }, [primaryParty]);
 
   if (isLoading) {
     return (

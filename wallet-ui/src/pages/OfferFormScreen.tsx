@@ -1,9 +1,7 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
-import AuthContextStore from "../store/AuthContextStore";
 import { PageLayout } from "../components/PageLayout";
-import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 import {
   ContainerColumn,
   ContainerColumnField,
@@ -11,17 +9,19 @@ import {
   DivBorderRoundContainer,
 } from "../components/layout/general.styled";
 import { Factory as OneTimeOfferFactory } from "@daml.js/synfini-settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/Factory";
-import { Factory as SettlementFactory } from "@daml.js/daml-finance-interface-settlement-2.0.0/lib/Daml/Finance/Interface/Settlement/Factory";
-import { RouteProvider } from "@daml.js/daml-finance-interface-settlement-2.0.0/lib/Daml/Finance/Interface/Settlement/RouteProvider";
+import { Factory as SettlementFactory } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Factory";
+import { RouteProvider } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/RouteProvider";
 import { v4 as uuid } from "uuid";
 import { arrayToMap, arrayToSet } from "../components/Util";
 import Modal from "react-modal";
+import { useWalletUser } from "../hooks/WalletViews";
 
+// TODO add correct type annotations to this component instead of using `any`
 export const OfferFormScreen: React.FC = () => {
   const nav = useNavigate();
   const { state } = useLocation();
   const ledger = userContext.useLedger();
-  const ctx = useContext(AuthContextStore);
+  const { primaryParty } = useWalletUser();
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [producerInput, setProducerInput] = useState("");
@@ -39,7 +39,6 @@ export const OfferFormScreen: React.FC = () => {
     setInvestorInput(event.target.value);
   };
 
-
   const handleCloseModal = (path: string) => {
     setIsModalOpen(!isModalOpen);
     if (path !== "") nav("/" + path);
@@ -49,9 +48,15 @@ export const OfferFormScreen: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    let oneTimeOfferFactory = await ledger.query(OneTimeOfferFactory);
-    let settlementFactory = await ledger.query(SettlementFactory);
-    let routeProvider = await ledger.query(RouteProvider);
+    if (primaryParty === undefined) {
+      setError("Error primary party not set");
+      setIsModalOpen(true);
+      return;
+    }
+
+    const oneTimeOfferFactory = await ledger.query(OneTimeOfferFactory);
+    const settlementFactory = await ledger.query(SettlementFactory);
+    const routeProvider = await ledger.query(RouteProvider);
 
     const description = state.instrument.tokenView?.token.description;
     const json_description = JSON.parse(description);
@@ -61,14 +66,14 @@ export const OfferFormScreen: React.FC = () => {
       .exercise(OneTimeOfferFactory.Create, oneTimeOfferFactory[0].contractId, {
         offerId: { unpack: idUUID },
         offerDescription: "Offer for " + state.instrument.tokenView.token.instrument.id.unpack,
-        offerers: arrayToSet([ctx.primaryParty]),
+        offerers: arrayToSet([primaryParty]),
         offeree: investorInput,
-        settlementInstructors: arrayToSet([ctx.primaryParty]),
-        settlers: arrayToSet([ctx.primaryParty, investorInput, producerInput]),
+        settlementInstructors: arrayToSet([primaryParty]),
+        settlers: arrayToSet([primaryParty, investorInput, producerInput]),
         observers: arrayToMap([["initialObservers", arrayToSet([producerInput])]]),
         settlementTime: null,
         steps: [{
-          sender: ctx.primaryParty, receiver: producerInput, quantity: {amount: "1", unit: state.instrument.tokenView.token.instrument}
+          sender: primaryParty, receiver: producerInput, quantity: {amount: "1", unit: state.instrument.tokenView.token.instrument}
         },{
           sender: producerInput, receiver: investorInput, quantity: {amount: "1", unit: state.instrument.tokenView.token.instrument}
         }],
@@ -87,11 +92,6 @@ export const OfferFormScreen: React.FC = () => {
         setIsModalOpen(true);
       });
   };
-
-
-  useEffect(() => {
-    fetchDataForUserLedger(ctx, ledger);
-  }, [ctx, ledger]);
 
   return (
     <PageLayout>

@@ -1,7 +1,6 @@
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
-import AuthContextStore from "../store/AuthContextStore";
 import { PageLayout } from "../components/PageLayout";
 import {
   ContainerColumn,
@@ -14,12 +13,13 @@ import { arrayToMap, arrayToSet } from "../components/Util";
 import { Issuer as TokenIssuer } from "@daml.js/synfini-issuer-onboarding-instrument-token-interface/lib/Synfini/Interface/Onboarding/Issuer/Instrument/Token/Issuer";
 import { v4 as uuid } from "uuid";
 import Modal from "react-modal";
+import { useWalletUser } from "../hooks/WalletViews";
 
 export const InstrumentCreateFormScreen: React.FC = () => {
   const nav = useNavigate();
   const { state } = useLocation();
   const ledger = userContext.useLedger();
-  const ctx = useContext(AuthContextStore);
+  const { primaryParty } = useWalletUser();
   const wallet_depository = process.env.REACT_APP_PARTIES_ENVIRONMENTAL_TOKEN_DEPOSITORY || "";
   const wallet_operator = process.env.REACT_APP_PARTIES_WALLET_OPERATOR || "";
   const wallet_public = process.env.REACT_APP_PARTIES_PUBLIC || "";
@@ -66,17 +66,25 @@ export const InstrumentCreateFormScreen: React.FC = () => {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
+
+    if (primaryParty === undefined) {
+      setMessage("Error primary party not set");
+      setIsMessageOpen(true);
+      return;
+    }
+
     if (state.issuer.token.cid !== undefined) {
       setIsSubmitting(true);
-      let idUUID = uuid();
-      
-      let observers: Party[] = [];
+      const idUUID = uuid();
+
+      const observers: Party[] = [];
       observers.push(wallet_depository);
       observers.push(wallet_operator);
       observers.push(wallet_public);
-      observers.push(ctx.primaryParty);
-      if (observerInput!== undefined && observerInput!=="")
+      observers.push(primaryParty);
+      if (observerInput!== undefined && observerInput !== "") {
         observers.push(observerInput);
+      }
 
       const desc_instrument = {
         ipfs: ipfsInput,
@@ -89,7 +97,7 @@ export const InstrumentCreateFormScreen: React.FC = () => {
           token: {
             instrument: {
               depository: wallet_depository,
-              issuer: ctx.primaryParty,
+              issuer: primaryParty,
               id: { unpack: productTypeInput+"-"+productVersionInput },
               version: idUUID,
             },

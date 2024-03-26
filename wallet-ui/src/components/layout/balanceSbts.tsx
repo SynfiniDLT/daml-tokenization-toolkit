@@ -217,7 +217,7 @@ export default function BalanceSbts(
               <th>#</th>
             </tr>
           </thead>
-          <tbody>{trBalances == undefined ? [] : trBalances[0]}</tbody>
+          <tbody>{trBalances || []}</tbody>
         </table>
       )}
       <Modal

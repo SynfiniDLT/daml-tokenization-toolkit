@@ -1,9 +1,6 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
-import { userContext } from "../App";
-import AuthContextStore, { isDefinedPrimaryParty } from "../store/AuthContextStore";
-import { WalletViewsClient } from "@synfini/wallet-views";
 import Balances from "../components/layout/balances";
 import { PageLayout } from "../components/PageLayout";
 import { AccountDetailsSimple } from "../components/layout/accountDetails";
@@ -14,28 +11,22 @@ import {
   InstrumentSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import BalanceSbts from "../components/layout/balanceSbts";
-import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
+import { useWalletUser, useWalletViews } from "../hooks/WalletViews";
 
 const AccountBalanceScreen: React.FC = () => {
   const { isLoading } = useAuth0();
   const { state } = useLocation() as { state: { account: AccountSummary }};
-  const ledger = userContext.useLedger();
-  const ctx = useContext(AuthContextStore);
-  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
+  const walletClient = useWalletViews();
+  const { primaryParty } = useWalletUser();
 
   const [balances, setBalances] = useState<Balance[]>([]);
   const [instruments, setInstruments] = useState<(InstrumentSummary | undefined)[]>();
 
-  const walletClient: WalletViewsClient = new WalletViewsClient({
-    baseUrl: walletViewsBaseUrl,
-    token: ctx.token,
-  });
-
   const fetchBalances = async () => {
-    if (isDefinedPrimaryParty(ctx.primaryParty)) {
+    if (primaryParty !== undefined) {
       const resp = await walletClient.getBalance({
         account: {
-          owner: ctx.primaryParty,
+          owner: primaryParty,
           custodian: state.account.view.custodian,
           id: state.account.view.id,
         },
@@ -60,17 +51,13 @@ const AccountBalanceScreen: React.FC = () => {
   }
 
   useEffect(() => {
-    fetchDataForUserLedger(ctx, ledger);
-  }, [ctx, ledger]);
-
-  useEffect(() => {
     fetchBalances()
-  },[ctx.primaryParty]);
+  },[primaryParty]);
 
   useEffect(() => {
     fetchInstruments(balances)
     .then((res => setInstruments(res)));
-  },[ctx.primaryParty])
+  },[primaryParty])
 
   if (isLoading) {
     return (
@@ -89,7 +76,7 @@ const AccountBalanceScreen: React.FC = () => {
       {state.account.view.id.unpack !== "sbt" ? (
         <Balances balances={balances}></Balances>
         ) : (
-        <BalanceSbts instruments={instruments?.flatMap(i => i == undefined ? [] : [i])} />
+        <BalanceSbts instruments={instruments?.flatMap(i => i === undefined ? [] : [i])} />
       )}
     </PageLayout>
   );

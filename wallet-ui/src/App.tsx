@@ -27,8 +27,9 @@ export const userContext = createLedgerContext();
 const App: React.FC = () => {
   const { isLoading, getAccessTokenSilently, isAuthenticated } = useAuth0();
 
-  const [token, setToken] = useState<string>("");
-  const [primaryParty, setPrimaryParty] = useState<string>('');
+  const [token, setToken] = useState("");
+  const [primaryParty, setPrimaryParty] = useState('');
+  const [readOnly, setReadOnly] = useState(false);
   const walletMode = process.env.REACT_APP_MODE || "";
   const modeStyle = {
     backgroundColor:
@@ -41,12 +42,12 @@ const App: React.FC = () => {
         : 'var(--black)',
   };
 
-  const fetchToken = async () => {
-    const authToken = await getAccessTokenSilently();
-    setToken(authToken)
-  };
-  
   useEffect(() => {
+    const fetchToken = async () => {
+      const authToken = await getAccessTokenSilently();
+      setToken(authToken);
+    };
+
     fetchToken();
   });
 
@@ -58,7 +59,7 @@ const App: React.FC = () => {
     );
   }
   return (
-    <AuthContextStore.Provider value={{token, setPrimaryParty, primaryParty, readOnly: false}}>
+    <AuthContextStore.Provider value={{token, primaryParty, setPrimaryParty, readOnly, setReadOnly}}>
       <userContext.DamlLedger token={token} party={primaryParty} >
       <style>
       {`

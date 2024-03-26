@@ -1,21 +1,20 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useState } from "react";
 import { PageLayout } from "../components/PageLayout";
 import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
-import AuthContextStore from "../store/AuthContextStore";
 import { formatCurrency } from "../components/Util";
 import { v4 as uuid } from "uuid";
 import { OpenOffer, OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer";
 import { ContainerColumn, ContainerDiv, ContainerColumnKey, DivBorderRoundContainer, ContainerColumnValue } from "../components/layout/general.styled";
 import Modal from "react-modal";
 import { Coin } from "react-bootstrap-icons";
-import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
+import { useWalletUser } from "../hooks/WalletViews";
 
 const BalanceRedeemFormScreen: React.FC = () => {
   const nav = useNavigate();
   const { state } = useLocation();
   const ledger = userContext.useLedger();
-  const ctx = useContext(AuthContextStore);
+  const { primaryParty } = useWalletUser();
 
   const [amountInput, setAmountInput] = useState("");
   const [error, setError] = useState("");
@@ -38,6 +37,12 @@ const BalanceRedeemFormScreen: React.FC = () => {
   const handleSubmit:  React.FormEventHandler<HTMLFormElement>= async (e) => {
     e.preventDefault();
 
+    if (primaryParty === undefined) {
+      setIsMessageOpen(true);
+      setError("Primary party not set");
+      return;
+    }
+
     try {
       const offerId = state.balance.instrument.id.unpack + "@" + state.balance.instrument.version + ".OffRamp"
       const offers = await ledger.query(SettlementOpenOffer, { offerId: { unpack: offerId } });
@@ -50,7 +55,7 @@ const BalanceRedeemFormScreen: React.FC = () => {
           {
             id: { unpack: referenceIdUUID },
             description: "Redeem for fiat",
-            taker: ctx.primaryParty,
+            taker: primaryParty,
             quantity: amountInput
           }
         )
@@ -66,10 +71,6 @@ const BalanceRedeemFormScreen: React.FC = () => {
       setError("Error " + e.toString());
     }
   };
-
-  useEffect(() => {
-    fetchDataForUserLedger(ctx, ledger);
-  }, [ctx, ledger]);
 
   return (
     <PageLayout>

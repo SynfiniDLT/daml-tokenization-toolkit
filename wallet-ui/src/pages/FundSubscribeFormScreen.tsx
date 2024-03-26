@@ -1,7 +1,6 @@
-import { useState, useEffect, useContext, ChangeEventHandler } from "react";
+import { useState, ChangeEventHandler } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
-import AuthContextStore from "../store/AuthContextStore";
 import { PageLayout } from "../components/PageLayout";
 import { formatCurrency, formatOptionalCurrency, nameFromParty } from "../components/Util";
 import * as damlTypes from "@daml/types";
@@ -15,10 +14,10 @@ import {
   ContainerColumnValue,
 } from "../components/layout/general.styled";
 import { Coin, BoxArrowUpRight } from "react-bootstrap-icons";
-import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 import { CreateEvent } from "@daml/ledger";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 import { repairMap } from "../components/Util";
+import { useWalletUser } from "../hooks/WalletViews";
 
 type FundSubscribeFormScreenState = {
   fund: CreateEvent<SettlementOpenOffer, undefined, string>
@@ -29,7 +28,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
   const { state } = useLocation() as { state: FundSubscribeFormScreenState };
   repairMap(state.fund.payload.offerers.map);
   const ledger = userContext.useLedger();
-  const ctx = useContext(AuthContextStore);
+  const { primaryParty } = useWalletUser();
   const [inputQtd, setInputQtd] = useState(0);
   const [referenceId, setReferenceId] = useState<string>("");
   const [total, setTotal] = useState(damlTypes.emptyMap<InstrumentKey, number>());
@@ -45,7 +44,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
     let costsMap = damlTypes.emptyMap<InstrumentKey, number>();
 
     for (const step of state.fund.payload.steps) {
-      if (step.sender.tag == 'TakerEntity') {
+      if (step.sender.tag === 'TakerEntity') {
         const existingCost = costsMap.get(step.quantity.unit) || 0;
         costsMap = costsMap.set(
           step.quantity.unit, existingCost + parseFloat(step.quantity.amount) * q
@@ -56,12 +55,13 @@ export const FundSubscribeFormScreen: React.FC = () => {
     return costsMap;
   }
 
-  useEffect(() => {
-    fetchDataForUserLedger(ctx, ledger);
-  }, [ctx, ledger]);
-
   const handleSubmit:  React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
+    if (primaryParty === undefined) {
+      setError("Primary party not set");
+      return;
+    }
+
     let referenceIdUUID = uuid();
     try {
       await ledger.exercise(
@@ -69,7 +69,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
         state.fund.contractId,
         {
           id: { unpack: referenceIdUUID },
-          taker: ctx.primaryParty,
+          taker: primaryParty,
           quantity: inputQtd.toString(),
           description: "Investment request"
         }
@@ -126,7 +126,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
                 <ContainerColumnValue>
                   {
                     state.fund.payload.steps
-                      .filter(step => step.receiver.tag == "TakerEntity")
+                      .filter(step => step.receiver.tag === "TakerEntity")
                       .map(step =>
                         <p>{formatCurrency((parseFloat(step.quantity.amount) * inputQtd).toString(), "en-US") + " " + step.quantity.unit.id.unpack}</p>)
                   }

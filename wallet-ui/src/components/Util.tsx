@@ -26,6 +26,7 @@ export function formatOptionalCurrency(amount: damlTypes.Optional<string>, local
   }
 }
 
+// TODO clean this function up
 export function nameFromParty(party: string) {
   let name = '';
 

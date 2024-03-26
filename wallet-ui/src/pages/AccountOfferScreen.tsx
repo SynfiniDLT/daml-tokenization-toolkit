@@ -1,44 +1,31 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { PageLayout } from "../components/PageLayout";
-import AuthContextStore, { isDefinedPrimaryParty } from "../store/AuthContextStore";
-import { userContext } from "../App";
-import { WalletViewsClient } from "@synfini/wallet-views";
-import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 import { PageLoader } from "../components/layout/page-loader";
 import { AccountOpenOfferSummary, AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import AccountOffers from "../components/layout/accountOffers";
 import Accounts from "../components/layout/accounts";
+import { useWalletUser, useWalletViews } from "../hooks/WalletViews";
 
 const AccountOfferScreen: React.FC = () => {
-  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
-  const ctx = useContext(AuthContextStore);
-  const ledger = userContext.useLedger();
+  const walletClient = useWalletViews();
+  const { primaryParty } = useWalletUser();
 
   const [accountOffers, setAccountOffers] = useState<AccountOpenOfferSummary[]>();
   const [accounts, setAccounts] = useState<AccountSummary[]>();
   const [isLoading] = useState<boolean>(false);
 
-  const walletClient = new WalletViewsClient({
-    baseUrl: walletViewsBaseUrl,
-    token: ctx.token,
-  });
   const fetchAccounts = async () => {
-    if (isDefinedPrimaryParty(ctx.primaryParty)) {
+    if (primaryParty !== undefined) {
       const resp = await walletClient.getAccountOpenOffers({});
       setAccountOffers(resp.accountOpenOffers);
-      const respAcc = await walletClient.getAccounts({ owner: ctx.primaryParty, custodian: null });
+      const respAcc = await walletClient.getAccounts({ owner: primaryParty, custodian: null });
       setAccounts(respAcc.accounts);
     }
   };
 
   useEffect(() => {
-    fetchDataForUserLedger(ctx, ledger);
-  }, [ctx, ledger]);
-
-  useEffect(() => {
     fetchAccounts();
   }, []);
-
 
   if (isLoading) {
     return (

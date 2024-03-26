@@ -2,8 +2,6 @@ import { useState, useEffect, useContext } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { userContext } from "../App";
-import AuthContextStore, { isDefinedPrimaryParty } from "../store/AuthContextStore";
-import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
 import { PageLoader } from "../components/layout/page-loader";
 import {
@@ -12,40 +10,20 @@ import {
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import BalanceSbts from "../components/layout/balanceSbts";
 import { Instrument as PartyBoundAttributes }  from "@daml.js/synfini-pbt/lib/Synfini/Interface/Instrument/PartyBoundAttributes/Instrument";
-import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 import * as damlTypes from "@daml/types";
 import { arrayToMap } from "../components/Util";
+import { useWalletUser, useWalletViews } from "../hooks/WalletViews";
 
 const AccountBalanceSbtScreen: React.FC = () => {
   const { isLoading } = useAuth0();
   const { state } = useLocation();
   const ledger = userContext.useLedger();
-  const ctx = useContext(AuthContextStore);
-  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
+  const { primaryParty } = useWalletUser();
+  const walletClient = useWalletViews();
 
   const [balances, setBalances] = useState<Balance[]>([]);
   const [instruments, setInstruments] = useState<InstrumentSummary[]>();
   const [instrumentObservers, setInstrumentObservers] = useState<damlTypes.Map<damlTypes.ContractId<any>, damlTypes.Party[]>>();
-
-  const walletClient = new WalletViewsClient({
-    baseUrl: walletViewsBaseUrl,
-    token: ctx.token,
-  });
-
-  const fetchBalances = async () => {
-    if (isDefinedPrimaryParty(ctx.primaryParty)) {
-      const resp = await walletClient.getBalance({
-        account: {
-          owner: ctx.primaryParty,
-          custodian: state.account.view.custodian,
-          id: { unpack: state.account.view.id.unpack },
-        },
-      });
-      setBalances(resp.balances);
-      return resp.balances;
-    }
-    return [];
-  };
 
   const fetchInstruments = async (balancesIns: Balance[]) => {
     let arr_instruments: InstrumentSummary[] = [];
@@ -71,12 +49,21 @@ const AccountBalanceSbtScreen: React.FC = () => {
   }
 
   useEffect(() => {
-    fetchDataForUserLedger(ctx, ledger);
-  }, [ctx, ledger]);
+    const fetchBalances = async () => {
+      if (primaryParty !== undefined) {
+        const resp = await walletClient.getBalance({
+          account: {
+            owner: primaryParty,
+            custodian: state.account.view.custodian,
+            id: { unpack: state.account.view.id.unpack },
+          },
+        });
+        setBalances(resp.balances);
+      }
+    };
 
-  useEffect(() => {
-    fetchBalances()
-  }, [ctx.primaryParty, state]);
+    fetchBalances();
+  }, [primaryParty, walletClient]);
 
   useEffect(() => {
     const fetchInstrumentsAndObservers = async () => {
@@ -85,7 +72,7 @@ const AccountBalanceSbtScreen: React.FC = () => {
       setInstrumentObservers(await fetchObservers(instruments));
     };
     fetchInstrumentsAndObservers();
-  }, [ctx.primaryParty, balances])
+  }, [primaryParty, balances])
 
   if (isLoading) {
     return (

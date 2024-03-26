@@ -49,7 +49,7 @@ export const OfferAcceptFormScreen: React.FC = () => {
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    console.log("quantity", quantityInput);
+
     await ledger
       .exercise(
         OneTimeOffer.Accept,
