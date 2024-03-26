@@ -31,17 +31,7 @@ type AuthContext = {
   readOnly: boolean;
 };
 
-const undefinedToken = '';
-const undefinedPrimaryParty = '';
-
-const defaultState = ({
-  token: undefinedToken,
-  setPrimaryParty: (_: Party) => { },
-  setReadOnly: (_: boolean) => { },
-  primaryParty: undefinedPrimaryParty,
-  readOnly: false
-});
-const AuthContextStore: React.Context<AuthContext> = React.createContext(defaultState);
+const AuthContextStore = React.createContext<AuthContext | undefined>(undefined);
 
 export const userContext = createLedgerContext();
 
@@ -144,8 +134,8 @@ const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
 export function useWalletViews(): WalletViewsClient {
   const ctx = useContext(AuthContextStore);
   const walletViewsClient = useMemo(
-    () => new WalletViewsClient({ token: ctx.token, baseUrl: walletViewsBaseUrl }),
-    [ctx.token, walletViewsBaseUrl]
+    () => new WalletViewsClient({ token: ctx?.token || "", baseUrl: walletViewsBaseUrl }),
+    [ctx === undefined || ctx.token, walletViewsBaseUrl]
   );
   return walletViewsClient;
 }
@@ -156,7 +146,7 @@ export function useWalletUser(): { primaryParty?: Party; readOnly: boolean; } {
 
   useEffect(() => {
     const fetchPrimaryParty = async () => {
-      if (ctx.primaryParty === "" && ctx.token !== "") {
+      if (ctx !== undefined && ctx.primaryParty === "" && ctx.token !== "") {
         try {
           const user = await ledger.getUser();
           const rights = await ledger.listUserRights();
@@ -172,10 +162,10 @@ export function useWalletUser(): { primaryParty?: Party; readOnly: boolean; } {
       }
     };
     fetchPrimaryParty();
-  }, [ctx.token === ""]);
+  }, [ctx !== undefined && ctx.token === ""]);
 
   return {
-    primaryParty: ctx.primaryParty === "" ? undefined : ctx.primaryParty,
-    readOnly: ctx.readOnly
+    primaryParty: ctx?.primaryParty || "",
+    readOnly: ctx?.readOnly || false
   };
 }
