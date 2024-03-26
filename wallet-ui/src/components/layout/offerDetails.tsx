@@ -1,17 +1,18 @@
-import React, { useContext } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import HoverPopUp from "./hoverPopUp";
-import AuthContextStore from "../../store/AuthContextStore";
 import { CreateEvent } from "@daml/ledger";
 import { OneTimeOffer } from "@daml.js/synfini-settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer";
+import { useWalletUser } from "../../App";
 
 interface IssuerDetailsProps {
   offer: CreateEvent<OneTimeOffer, undefined, string>;
 }
 
 export default function OfferDetails(props: IssuerDetailsProps) {
+  const { primaryParty } = useWalletUser();
+
   const nav = useNavigate();
-  const ctx = useContext(AuthContextStore);
 
   const handleAcceptOffer = (offer: CreateEvent<OneTimeOffer, undefined, string>) => {
     nav("/offer/accept", { state: { offer } });
@@ -40,7 +41,7 @@ export default function OfferDetails(props: IssuerDetailsProps) {
           <div className="cell">{props.offer.payload.offerDescription}</div>
           <div className="cell">{props.offer.payload.maxQuantity}</div>
           <div className="cell">
-            {props.offer.payload.offeree === ctx.primaryParty && (
+            {props.offer.payload.offeree === primaryParty && (
               <button onClick={() => handleAcceptOffer(props.offer)}>Accept Offer</button>
             )}
           </div>

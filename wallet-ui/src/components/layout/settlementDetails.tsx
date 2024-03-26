@@ -25,7 +25,7 @@ import { Instruction } from "@daml.js/daml-finance-interface-settlement/lib/Daml
 import { Batch } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Batch";
 import Modal from "react-modal";
 import AccountsSelect from "./accountsSelect";
-import { useWalletUser, useWalletViews } from "../../hooks/WalletViews";
+import { useWalletUser, useWalletViews } from "../../App";
 
 interface SettlementDetailsProps {
   settlement: SettlementSummary;

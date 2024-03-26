@@ -1,10 +1,11 @@
 import { WalletViewsClient } from "@synfini/wallet-views";
 import { useContext, useEffect, useState } from "react";
 import Modal from "react-modal";
-import AuthContextStore from "../../store/AuthContextStore";
+import AuthContextStore from "../../App";
 import { ContainerColumn, ContainerColumnField, ContainerDiv } from "./general.styled";
 import { BoxArrowUpRight } from "react-bootstrap-icons";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
+import { useWalletViews } from "../../App";
 
 interface InstrumentDetailsProps {
   instrument?: InstrumentKey;
@@ -18,15 +19,8 @@ type InstrumentDesc = {
 };
 
 export default function InstrumentPopDetails(props: InstrumentDetailsProps) {
-  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
-
+  const walletClient = useWalletViews();
   const [instrumentDesc, setInstrumentDesc] = useState<InstrumentDesc>();
-
-  const ctx = useContext(AuthContextStore);
-  const walletClient = new WalletViewsClient({
-    baseUrl: walletViewsBaseUrl,
-    token: ctx.token,
-  });
 
   const { isOpen, handleClose } = props;
 

@@ -4,7 +4,7 @@ import { PageLoader } from "../components/layout/page-loader";
 import Issuers from "../components/layout/issuers";
 import { InstrumentSummary, IssuerSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import InstrumentsToken from "../components/layout/instrumentsToken";
-import { useWalletUser, useWalletViews } from "../hooks/WalletViews";
+import { useWalletUser, useWalletViews } from "../App";
 
 const IssuersScreen: React.FC = () => {
   const walletClient = useWalletViews();

@@ -8,7 +8,7 @@ import { OpenOffer, OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-se
 import { ContainerColumn, ContainerDiv, ContainerColumnKey, DivBorderRoundContainer, ContainerColumnValue } from "../components/layout/general.styled";
 import Modal from "react-modal";
 import { Coin } from "react-bootstrap-icons";
-import { useWalletUser } from "../hooks/WalletViews";
+import { useWalletUser } from "../App";
 
 const BalanceRedeemFormScreen: React.FC = () => {
   const nav = useNavigate();

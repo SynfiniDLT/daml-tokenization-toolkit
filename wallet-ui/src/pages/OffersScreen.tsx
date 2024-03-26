@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { PageLayout } from "../components/PageLayout";
-import AuthContextStore from "../store/AuthContextStore";
+import AuthContextStore from "../App";
 import { userContext } from "../App";
 import { PageLoader } from "../components/layout/page-loader";
 import { OneTimeOffer } from "@daml.js/synfini-settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer";

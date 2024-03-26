@@ -4,7 +4,7 @@ import { PageLoader } from "../components/layout/page-loader";
 import { PageLayout } from "../components/PageLayout";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import AccountBalances, { AccountBalanceSummary } from "../components/layout/accountBalances";
-import { useWalletViews, useWalletUser } from "../hooks/WalletViews";
+import { useWalletViews, useWalletUser } from "../App";
 
 const WalletScreen: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();

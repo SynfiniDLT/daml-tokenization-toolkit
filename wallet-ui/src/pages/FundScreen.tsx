@@ -6,7 +6,7 @@ import { PageLayout } from "../components/PageLayout";
 import Funds from "../components/layout/funds";
 import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
 import { CreateEvent } from "@daml/ledger";
-import { useWalletUser } from "../hooks/WalletViews";
+import { useWalletUser } from "../App";
 
 const FundScreen: React.FC = () => {
   const ledger = userContext.useLedger();

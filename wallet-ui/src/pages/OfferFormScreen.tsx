@@ -14,7 +14,7 @@ import { RouteProvider } from "@daml.js/daml-finance-interface-settlement/lib/Da
 import { v4 as uuid } from "uuid";
 import { arrayToMap, arrayToSet } from "../components/Util";
 import Modal from "react-modal";
-import { useWalletUser } from "../hooks/WalletViews";
+import { useWalletUser } from "../App";
 
 // TODO add correct type annotations to this component instead of using `any`
 export const OfferFormScreen: React.FC = () => {

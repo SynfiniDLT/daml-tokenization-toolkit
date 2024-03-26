@@ -9,19 +9,20 @@ import {
 } from "./general.styled";
 import { AccountOpenOfferSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { OpenOffer } from "@daml.js/synfini-account-onboarding-open-offer-interface/lib/Synfini/Interface/Onboarding/Account/OpenOffer/OpenOffer";
-import AuthContextStore from "../../store/AuthContextStore";
+import AuthContextStore from "../../App";
 import { userContext } from "../../App";
 import { v4 as uuid } from "uuid";
 import { nameFromParty, arrayToSet, arrayToMap } from "../Util";
 import HoverPopUp from "./hoverPopUp";
+import { useWalletUser } from "../../App";
 
 interface AccountOpenOfferSummaryProps {
   accountOffer: AccountOpenOfferSummary;
 }
 
 export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps) {
-  const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
+  const { primaryParty } = useWalletUser();
   const walletOperator = process.env.REACT_APP_PARTIES_WALLET_OPERATOR || "";
 
   const [accountOffer, setAccountOffer] = useState<AccountOpenOfferSummary>();
@@ -44,6 +45,13 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
   };
 
   const handleConfirm = () => {
+    if (primaryParty === undefined) {
+      setMessage("");
+      setError("Error primary party not set");
+      setIsModalOpen(false);
+      return;
+    }
+
     if (accountOffer?.cid !== undefined) {
       const idUUID = uuid();
       ledger
@@ -53,7 +61,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
           {
             accountDescription: accountName,
             accountObservers: arrayToMap([["initialObservers", arrayToSet([walletOperator])]]),
-            owner: ctx.primaryParty,
+            owner: primaryParty,
             id: { unpack: idUUID }
           }
         )

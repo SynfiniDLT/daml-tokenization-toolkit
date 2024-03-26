@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext, useMemo } from "react";
 import { Route, Routes } from "react-router-dom";
 import { createLedgerContext } from "@daml/react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { AuthenticationGuard } from "./components/authentication-guard";
 import { PageLoader } from "./components/layout/page-loader";
-import AuthContextStore from "./store/AuthContextStore";
 import FundScreen from "./pages/FundScreen";
 import AccountBalanceScreen from "./pages/AccountBalanceScreen";
 import SettlementScreen from "./pages/SettlementScreen";
@@ -21,6 +20,28 @@ import { OfferFormScreen } from "./pages/OfferFormScreen";
 import OffersScreen from "./pages/OffersScreen";
 import { OfferAcceptFormScreen } from "./pages/OfferAcceptFormScreen";
 import { SettlementActionScreen } from "./pages/SettlementActionScreen";
+import { Party } from "@daml/types";
+import { WalletViewsClient } from "@synfini/wallet-views";
+
+type AuthContext = {
+  token: string;
+  setPrimaryParty: (primaryParty: Party) => void;
+  setReadOnly: (readOnly: boolean) => void;
+  primaryParty: string;
+  readOnly: boolean;
+};
+
+const undefinedToken = '';
+const undefinedPrimaryParty = '';
+
+const defaultState = ({
+  token: undefinedToken,
+  setPrimaryParty: (_: Party) => { },
+  setReadOnly: (_: boolean) => { },
+  primaryParty: undefinedPrimaryParty,
+  readOnly: false
+});
+const AuthContextStore: React.Context<AuthContext> = React.createContext(defaultState);
 
 export const userContext = createLedgerContext();
 
@@ -117,3 +138,44 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
+
+export function useWalletViews(): WalletViewsClient {
+  const ctx = useContext(AuthContextStore);
+  const walletViewsClient = useMemo(
+    () => new WalletViewsClient({ token: ctx.token, baseUrl: walletViewsBaseUrl }),
+    [ctx.token, walletViewsBaseUrl]
+  );
+  return walletViewsClient;
+}
+
+export function useWalletUser(): { primaryParty?: Party; readOnly: boolean; } {
+  const ledger = userContext.useLedger();
+  const ctx = useContext(AuthContextStore);
+
+  useEffect(() => {
+    const fetchPrimaryParty = async () => {
+      if (ctx.primaryParty === "" && ctx.token !== "") {
+        try {
+          const user = await ledger.getUser();
+          const rights = await ledger.listUserRights();
+          const readOnly = (rights.find(right => right.type === "CanActAs" && right.party === user.primaryParty) === undefined);
+          ctx.setReadOnly(readOnly);
+
+          if (user.primaryParty !== undefined) {
+            ctx.setPrimaryParty(user.primaryParty);
+          }
+        } catch (err) {
+          console.log("error when fetching primary party 2", err);
+        }
+      }
+    };
+    fetchPrimaryParty();
+  }, [ctx.token === ""]);
+
+  return {
+    primaryParty: ctx.primaryParty === "" ? undefined : ctx.primaryParty,
+    readOnly: ctx.readOnly
+  };
+}

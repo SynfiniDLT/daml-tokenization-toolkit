@@ -5,7 +5,7 @@ import { PageLayout } from "../components/PageLayout";
 import Settlements from "../components/layout/settlements";
 import { SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { useLocation } from "react-router-dom";
-import { useWalletUser, useWalletViews } from "../hooks/WalletViews";
+import { useWalletUser, useWalletViews } from "../App";
 
 // TODO this type can probably be simplified
 type SettlementScreenState = null | {

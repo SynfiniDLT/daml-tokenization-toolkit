@@ -17,7 +17,7 @@ import { Coin, BoxArrowUpRight } from "react-bootstrap-icons";
 import { CreateEvent } from "@daml/ledger";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 import { repairMap } from "../components/Util";
-import { useWalletUser } from "../hooks/WalletViews";
+import { useWalletUser } from "../App";
 
 type FundSubscribeFormScreenState = {
   fund: CreateEvent<SettlementOpenOffer, undefined, string>

@@ -4,7 +4,7 @@ import { PageLoader } from "../components/layout/page-loader";
 import { AccountOpenOfferSummary, AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import AccountOffers from "../components/layout/accountOffers";
 import Accounts from "../components/layout/accounts";
-import { useWalletUser, useWalletViews } from "../hooks/WalletViews";
+import { useWalletUser, useWalletViews } from "../App";
 
 const AccountOfferScreen: React.FC = () => {
   const walletClient = useWalletViews();

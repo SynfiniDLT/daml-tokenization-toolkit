@@ -1,6 +1,4 @@
-import { useState, useContext } from "react";
-import AuthContextStore from "../../store/AuthContextStore";
-import { userContext } from "../../App";
+import { useState } from "react";
 import {
   InstrumentSummary,
   AccountSummary,
@@ -11,6 +9,8 @@ import { ContractId } from "@daml/types";
 import { arrayToSet } from "../Util";
 import HoverPopUp from "./hoverPopUp";
 import * as damlTypes from "@daml/types";
+import { useWalletUser } from "../../App";
+import { userContext } from "../../App";
 
 export default function BalanceSbts(
   props: {
@@ -19,8 +19,8 @@ export default function BalanceSbts(
     instrumentObservers?: damlTypes.Map<damlTypes.ContractId<any>, damlTypes.Party[]>;
   }
 ) {
-  const ctx = useContext(AuthContextStore);
   const ledger = userContext.useLedger();
+  const { primaryParty } = useWalletUser();
 
   const [cid, setCid] = useState<ContractId<any>>();
   const [operation, setOperation] = useState<string>("");
@@ -58,17 +58,24 @@ export default function BalanceSbts(
   };
 
   const handleSendSBT = async () => {
-    const disclosers = arrayToSet([ctx.primaryParty]);
-    const observers = arrayToSet([partiesInput]);
-    if (partiesInput === "")
+    if (partiesInput === "") {
       setError("You are required to provide the Party ID.");
+      return;
+    }
+    
+    if (primaryParty === undefined) {
+      setError("Error primary party is not set");
+      return;
+    }
+
+    const disclosers = arrayToSet([primaryParty]);
+    const observers = arrayToSet([partiesInput]);
     if (
       operation === "add" &&
       cid !== undefined &&
-      cid !== "" &&
-      partiesInput !== ""
+      cid !== ""
     ) {
-      ledger
+      await ledger
         .exercise(Disclosure.AddObservers, cid, {
           disclosers,
           observersToAdd: {
@@ -98,8 +105,7 @@ export default function BalanceSbts(
               JSON.stringify(err.errors[0])
           );
         });
-    }
-    if (operation === "remove" && cid !== undefined) {
+    } else if (operation === "remove" && cid !== undefined) {
       ledger
         .exercise(Disclosure.RemoveObservers, cid, {
           disclosers,

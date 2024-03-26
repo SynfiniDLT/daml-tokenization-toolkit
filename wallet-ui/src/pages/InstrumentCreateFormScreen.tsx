@@ -13,7 +13,7 @@ import { arrayToMap, arrayToSet } from "../components/Util";
 import { Issuer as TokenIssuer } from "@daml.js/synfini-issuer-onboarding-instrument-token-interface/lib/Synfini/Interface/Onboarding/Issuer/Instrument/Token/Issuer";
 import { v4 as uuid } from "uuid";
 import Modal from "react-modal";
-import { useWalletUser } from "../hooks/WalletViews";
+import { useWalletUser } from "../App";
 
 export const InstrumentCreateFormScreen: React.FC = () => {
   const nav = useNavigate();

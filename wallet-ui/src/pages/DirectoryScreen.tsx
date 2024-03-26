@@ -4,7 +4,7 @@ import { PageLoader } from "../components/layout/page-loader";
 import { PageLayout } from "../components/PageLayout";
 import Instruments from "../components/layout/instruments";
 import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { useWalletUser, useWalletViews } from "../hooks/WalletViews";
+import { useWalletUser, useWalletViews } from "../App";
 
 const DirectoryScreen: React.FC = () => {
   const sbtDepository = process.env.REACT_APP_PARTIES_SBT_INSTRUMENT_DEPOSITORY;
