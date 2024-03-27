@@ -1,10 +1,8 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { CardContainer, ContainerColumn, ContainerColumnKey, ContainerDiv, ContainerColumnValue } from "./general.styled";
-import { formatCurrency, formatPercentage } from "../Util";
 import { CreateEvent } from "@daml/ledger";
 import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
-import { Coin } from "react-bootstrap-icons";
 
 interface FundDetailsProps {
   fund: CreateEvent<SettlementOpenOffer, undefined, string>;
@@ -15,7 +13,7 @@ export default function FundDetails(props: FundDetailsProps) {
   const location = useLocation();
   console.log("FundDetailsProps:", props);
 
-  const handleClick = (fund: any) => {
+  const handleClick = (fund: CreateEvent<SettlementOpenOffer, undefined, string>) => {
     nav("/fund/subscribe", { state: { fund: fund } });
   };
 
@@ -28,7 +26,7 @@ export default function FundDetails(props: FundDetailsProps) {
         const topPosition = targetElement.offsetTop + offset;
         window.scrollTo({
           top: topPosition,
-          behavior: 'smooth',
+          behavior: "smooth",
         });
       }
     }
@@ -62,11 +60,6 @@ export default function FundDetails(props: FundDetailsProps) {
           <ContainerColumnValue>
             {props.fund.payload.offerDescription}
           </ContainerColumnValue>
-          {/* <ContainerColumnValue>
-            {props.fund.payload.costPerUnit} {props.fund.payload.paymentInstrument.id.unpack} <Coin />
-          </ContainerColumnValue>
-          <ContainerColumnValue>{formatCurrency(props.fund.payload.minInvesment, "en-US")} {props.fund.payload.paymentInstrument.id.unpack} <Coin /></ContainerColumnValue>
-          <ContainerColumnValue>{formatPercentage(props.fund.payload.commission)}</ContainerColumnValue> */}
         </ContainerColumn>
       </ContainerDiv>
     </CardContainer>

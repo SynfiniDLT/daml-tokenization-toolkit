@@ -7,7 +7,7 @@ import {
   ContainerColumnValue,
   ContainerColumnField,
 } from "./general.styled";
-import { toDateTimeString } from "../Util";
+import { toDateTimeString } from "../../Util";
 import { BoxArrowUpRight } from "react-bootstrap-icons";
 
 interface InstrumentDetailsProps {

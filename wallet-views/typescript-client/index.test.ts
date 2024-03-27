@@ -1,6 +1,6 @@
-import * as fs from 'fs';
-import { WalletViewsClient } from '.';
-import * as DamlTypes from '@daml/types';
+import * as fs from "fs";
+import { WalletViewsClient } from ".";
+import * as DamlTypes from "@daml/types";
 
 let alice: DamlTypes.Party;
 let aliceAccountId = "alice@custodian";
@@ -26,23 +26,23 @@ function findParty(parties: any, label: string): DamlTypes.Party {
 }
 
 beforeAll(() => {
-  const allocatePartiesOutput = JSON.parse(fs.readFileSync('.dops/parties.json', 'utf-8'));
-  alice = findParty(allocatePartiesOutput, 'alice');
-  custodian = findParty(allocatePartiesOutput, 'custodian');
-  issuer = findParty(allocatePartiesOutput, 'issuer');
-  depository = findParty(allocatePartiesOutput, 'depository');
+  const allocatePartiesOutput = JSON.parse(fs.readFileSync(".dops/parties.json", "utf-8"));
+  alice = findParty(allocatePartiesOutput, "alice");
+  custodian = findParty(allocatePartiesOutput, "custodian");
+  issuer = findParty(allocatePartiesOutput, "issuer");
+  depository = findParty(allocatePartiesOutput, "depository");
 
   if (process.env.WALLET_VIEWS_PORT === undefined) {
-    throw Error('WALLET_VIEWS_PORT not defined');
+    throw Error("WALLET_VIEWS_PORT not defined");
   }
 
   aliceClient = new WalletViewsClient({
-    baseUrl: 'http://localhost:' + process.env.WALLET_VIEWS_PORT,
-    token: generateToken('alice')
+    baseUrl: "http://localhost:" + process.env.WALLET_VIEWS_PORT,
+    token: generateToken("alice")
   });
 });
 
-test('Lists accounts', async () => {
+test("Lists accounts", async () => {
   const resp = await aliceClient.getAccounts({custodian: null, owner: alice});
   expect(resp.accounts.length).toEqual(1);
   let account = resp.accounts[0];
@@ -50,7 +50,7 @@ test('Lists accounts', async () => {
   expect(account.view.id.unpack).toEqual(aliceAccountId);
 });
 
-test('Returns balances', async () => {
+test("Returns balances", async () => {
   const resp = await aliceClient.getBalance({
     account: { owner: alice, custodian, id: { unpack: aliceAccountId } }
   });
@@ -60,7 +60,7 @@ test('Returns balances', async () => {
   expect(balance.instrument.issuer).toEqual(issuer);
 });
 
-test('Returns holdings', async () => {
+test("Returns holdings", async () => {
   const resp = await aliceClient.getHoldings({
     account: { owner: alice, custodian, id: { unpack: aliceAccountId } },
     instrument: { issuer, depository, id: { unpack: "Instrument1" }, version: "0" }
@@ -71,7 +71,7 @@ test('Returns holdings', async () => {
   expect(holding.view.instrument.issuer).toEqual(issuer);
 });
 
-test('Returns settlements', async () => {
+test("Returns settlements", async () => {
   const resp = await aliceClient.getSettlements({
     before: null,
     limit: "10"
@@ -84,14 +84,14 @@ test('Returns settlements', async () => {
   expect(step.routedStep.quantity.unit.issuer).toEqual(issuer);
 });
 
-test('Returns account open offers', async () => {
+test("Returns account open offers", async () => {
   const resp = await aliceClient.getAccountOpenOffers({});
   expect(resp.accountOpenOffers.length).toEqual(1);
   const offer = resp.accountOpenOffers[0];
   expect(offer.view.custodian).toEqual(custodian);
 });
 
-test('Returns issuers', async () => {
+test("Returns issuers", async () => {
   const resp = await aliceClient.getIssuers({ depository, issuer });
   expect(resp.issuers.length).toEqual(1);
   const issuerSummary = resp.issuers[0];

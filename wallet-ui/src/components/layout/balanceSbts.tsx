@@ -1,23 +1,26 @@
-import { useState, useContext } from "react";
-import AuthContextStore from "../../store/AuthContextStore";
-import { userContext } from "../../App";
+import { useState } from "react";
 import {
   InstrumentSummary,
   AccountSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import Modal from "react-modal";
 import { Disclosure } from "@daml.js/daml-finance-interface-util/lib/Daml/Finance/Interface/Util/Disclosure";
-import { Party, Map, emptyMap, Unit, ContractId } from "@daml/types";
-import { wait } from "../Util";
+import { ContractId } from "@daml/types";
+import { arrayToSet } from "../../Util";
 import HoverPopUp from "./hoverPopUp";
+import * as damlTypes from "@daml/types";
+import { useWalletUser } from "../../App";
+import { userContext } from "../../App";
 
-export default function BalanceSbts(props: {
-  instruments?: InstrumentSummary[];
-  account?: AccountSummary;
-  partyBoundAttributes?: any[];
-}) {
-  const ctx = useContext(AuthContextStore);
+export default function BalanceSbts(
+  props: {
+    instruments?: InstrumentSummary[];
+    account?: AccountSummary;
+    instrumentObservers?: damlTypes.Map<damlTypes.ContractId<any>, damlTypes.Party[]>;
+  }
+) {
   const ledger = userContext.useLedger();
+  const { primaryParty } = useWalletUser();
 
   const [cid, setCid] = useState<ContractId<any>>();
   const [operation, setOperation] = useState<string>("");
@@ -27,7 +30,7 @@ export default function BalanceSbts(props: {
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
 
-  const handlePartiesInput = (event: any) => {
+  const handlePartiesInput: React.ChangeEventHandler<HTMLInputElement> = (event) => {
     setPartiesInput(event.target.value);
   };
 
@@ -44,8 +47,6 @@ export default function BalanceSbts(props: {
   };
 
   const handleClickOk = async () => {
-    ctx.setPrimaryParty("");
-    await wait(4000);
     setIsMessageOpen(!isMessageOpen);
   };
 
@@ -57,22 +58,29 @@ export default function BalanceSbts(props: {
   };
 
   const handleSendSBT = async () => {
-    const disclosers: Map<Party, Unit> = emptyMap();
-    const observers: Map<Party, Unit> = emptyMap();
-    if (partiesInput === "")
+    if (partiesInput === "") {
       setError("You are required to provide the Party ID.");
+      return;
+    }
+    
+    if (primaryParty === undefined) {
+      setError("Error primary party is not set");
+      return;
+    }
+
+    const disclosers = arrayToSet([primaryParty]);
+    const observers = arrayToSet([partiesInput]);
     if (
       operation === "add" &&
       cid !== undefined &&
-      cid !== "" &&
-      partiesInput !== ""
+      cid !== ""
     ) {
-      ledger
+      await ledger
         .exercise(Disclosure.AddObservers, cid, {
-          disclosers: { map: disclosers.set(ctx.primaryParty, {}) },
+          disclosers,
           observersToAdd: {
             _1: partiesInput,
-            _2: { map: observers.set(partiesInput, {}) },
+            _2: observers,
           },
         })
         .then((res) => {
@@ -97,14 +105,13 @@ export default function BalanceSbts(props: {
               JSON.stringify(err.errors[0])
           );
         });
-    }
-    if (operation === "remove" && cid !== undefined) {
+    } else if (operation === "remove" && cid !== undefined) {
       ledger
         .exercise(Disclosure.RemoveObservers, cid, {
-          disclosers: { map: disclosers.set(ctx.primaryParty, {}) },
+          disclosers,
           observersToRemove: {
             _1: partiesInput,
-            _2: { map: observers.set(partiesInput, {}) },
+            _2: observers,
           },
         })
         .then((res) => {
@@ -137,71 +144,57 @@ export default function BalanceSbts(props: {
     setIsMessageOpen(true);
   };
 
-  let trBalances;
+  const trBalances = props.instruments?.map((inst: InstrumentSummary) => {
+    const partiesSharedWith: damlTypes.Party[] = props.instrumentObservers?.get(inst.cid) || [];
 
-  if (props.instruments !== undefined) {
-    props.instruments?.forEach((inst: InstrumentSummary, index) => {
-      let entity: any = inst.pbaView?.attributes.entriesArray();
-      let partiesSharedWith: string[] = [];
-      if (props.partyBoundAttributes!== undefined && props.partyBoundAttributes.length > 0){
-        if (props.partyBoundAttributes[index]!== null && props.partyBoundAttributes[index].observers !== null){
-          props.partyBoundAttributes[index].observers.forEach((el: string) => {
-            if (el !== ctx.primaryParty){
-              partiesSharedWith.push(el);
-            }
-          });
-        }
-      }
-
-      trBalances = (
-        <tr key={inst.cid}>
-          <td>
-            {inst.pbaView?.instrument.id.unpack} |{" "}{inst.pbaView?.instrument.version}
-          </td>
-          <td>
-            <HoverPopUp 
-              triggerText={inst.pbaView?.instrument.issuer.substring(0, 30) + "..."} 
-              popUpContent={inst.pbaView?.instrument.issuer} 
-            />
-          </td>
-          <td style={{width: "200px"}}>
-          {Array.from(entity, ([key, value]) => (
-              <>
-                {`${key} | ${value}`}
-                <br />
-              </>
+    return (
+      <tr key={inst.cid}>
+        <td>
+          {inst.pbaView?.instrument.id.unpack} |{" "}{inst.pbaView?.instrument.version}
+        </td>
+        <td>
+          <HoverPopUp 
+            triggerText={inst.pbaView?.instrument.issuer.substring(0, 30) + "..."} 
+            popUpContent={inst.pbaView?.instrument.issuer} 
+          />
+        </td>
+        <td style={{width: "200px"}}>
+        {inst.pbaView?.attributes.entriesArray().map(kv =>
+          <>
+            {`${kv[0]} | ${kv[1]}`}
+            <br />
+          </>
+        )}
+        </td>
+        <td style={{ whiteSpace: "pre-line", width: "350px"}}>
+          {partiesSharedWith.map((party, index) => (
+            <div key={index} style={{margin: "10px"}}>
+              - <HoverPopUp triggerText={party.substring(0,30)+ "..."} popUpContent={party} />
+            </div>
           ))}
-          </td>
-          <td style={{ whiteSpace: "pre-line", width: "350px"}}>
-            {partiesSharedWith.map((party, index) => (
-              <div key={index} style={{margin: "10px"}}>
-                - <HoverPopUp triggerText={party.substring(0,30)+ "..."} popUpContent={party} />
-              </div>
-            ))}
-          </td>
-          <td style={{width: "300px"}}>
-            <button
-              type="button"
-              className="button__login"
-              style={{ width: "100px" }}
-              onClick={() => handleShareSBT(inst, "add")}
-            >
-              Share SBT
-            </button>
+        </td>
+        <td style={{width: "300px"}}>
+          <button
+            type="button"
+            className="button__login"
+            style={{ width: "100px" }}
+            onClick={() => handleShareSBT(inst, "add")}
+          >
+            Share SBT
+          </button>
 
-            <button
-              type="button"
-              className="button__login"
-              style={{ width: "120px" }}
-              onClick={() => handleShareSBT(inst, "remove")}
-            >
-              Unshare SBT
-            </button>
-          </td>
-        </tr>
-      );
-    });
-  }
+          <button
+            type="button"
+            className="button__login"
+            style={{ width: "120px" }}
+            onClick={() => handleShareSBT(inst, "remove")}
+          >
+            Unshare SBT
+          </button>
+        </td>
+      </tr>
+    );
+  });
 
   return (
     <>
@@ -230,7 +223,7 @@ export default function BalanceSbts(props: {
               <th>#</th>
             </tr>
           </thead>
-          <tbody>{trBalances}</tbody>
+          <tbody>{trBalances || []}</tbody>
         </table>
       )}
       <Modal
@@ -310,17 +303,15 @@ export default function BalanceSbts(props: {
             )}
           </div>
           <p></p>
-          <p>
-            <div>
-              <button
-                type="button"
-                className="button__login"
-                onClick={handleClickOk}
-              >
-                Ok
-              </button>
-            </div>
-          </p>
+          <div>
+            <button
+              type="button"
+              className="button__login"
+              onClick={handleClickOk}
+            >
+              Ok
+            </button>
+          </div>
           <p></p>
         </>
       </Modal>

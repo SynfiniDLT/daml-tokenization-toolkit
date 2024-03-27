@@ -1,6 +1,6 @@
 {
   "name": "synfini-wallet-ui",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "",
   "private": true,
   "scripts": {
@@ -17,6 +17,7 @@
   "license": "ISC",
   "dependencies": {
     "@auth0/auth0-react": "^2.0.1",
+    "@daml.js/da-set": "file:daml.js/97b883cd8a2b7f49f90d5d39c981cf6e110cf1f1c64427a28a6d58ec88c43657",
     "@daml.js/daml-finance-interface-types-common": "file:daml.js/daml-finance-interface-types-common-1.0.1",
     "@daml.js/daml-finance-interface-holding": "file:daml.js/daml-finance-interface-holding-2.0.0",
     "@daml.js/daml-finance-interface-util": "file:daml.js/daml-finance-interface-util-2.0.0",

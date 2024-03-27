@@ -1,46 +1,31 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { PageLayout } from "../components/PageLayout";
-import AuthContextStore from "../store/AuthContextStore";
-import { userContext } from "../App";
-import { WalletViewsClient } from "@synfini/wallet-views";
-import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 import { PageLoader } from "../components/layout/page-loader";
-import { AccountOpenOfferSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { AccountOpenOfferSummary, AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import AccountOffers from "../components/layout/accountOffers";
 import Accounts from "../components/layout/accounts";
+import { useWalletUser, useWalletViews } from "../App";
 
 const AccountOfferScreen: React.FC = () => {
-  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
-  const ctx = useContext(AuthContextStore);
-  const ledger = userContext.useLedger();
+  const walletClient = useWalletViews();
+  const { primaryParty } = useWalletUser();
 
   const [accountOffers, setAccountOffers] = useState<AccountOpenOfferSummary[]>();
-  const [accounts, setAccounts] = useState<any>();
+  const [accounts, setAccounts] = useState<AccountSummary[]>();
   const [isLoading] = useState<boolean>(false);
 
-  let walletClient: WalletViewsClient;
-
-  walletClient = new WalletViewsClient({
-    baseUrl: walletViewsBaseUrl,
-    token: ctx.token,
-  });
-  const fetchAccounts = async () => {
-    if (ctx.primaryParty !== "") {
-      const resp = await walletClient.getAccountOpenOffers({});
-      setAccountOffers(resp.accountOpenOffers);
-      const respAcc = await walletClient.getAccounts({ owner: ctx.primaryParty, custodian: null });
-      setAccounts(respAcc.accounts);
-    }
-  };
-
   useEffect(() => {
-    fetchDataForUserLedger(ctx, ledger);
-  }, [ctx, ledger]);
+    const fetchAccounts = async () => {
+      if (primaryParty !== undefined) {
+        const resp = await walletClient.getAccountOpenOffers({});
+        setAccountOffers(resp.accountOpenOffers);
+        const respAcc = await walletClient.getAccounts({ owner: primaryParty, custodian: null });
+        setAccounts(respAcc.accounts);
+      }
+    };
 
-  useEffect(() => {
     fetchAccounts();
-  }, []);
-
+  }, [walletClient, primaryParty]);
 
   if (isLoading) {
     return (

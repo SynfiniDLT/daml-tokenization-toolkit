@@ -1,46 +1,36 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { userContext } from "../App";
-import AuthContextStore from "../store/AuthContextStore";
 import { PageLoader } from "../components/layout/page-loader";
-import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
 import Settlements from "../components/layout/settlements";
 import { SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 import { useLocation } from "react-router-dom";
+import { useWalletUser, useWalletViews } from "../App";
+
+// TODO this type can probably be simplified
+type SettlementScreenState = null | {
+  transactionId: null | string
+}
 
 const SettlementScreen: React.FC = () => {
-  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
-  const { state } = useLocation();
-  const ctx = useContext(AuthContextStore);
-  const ledger = userContext.useLedger();
+  const { state } = useLocation() as { state: SettlementScreenState };
+  const { primaryParty } = useWalletUser();
+  const walletClient = useWalletViews();
 
   const { isLoading } = useAuth0();
   const [settlements, setSettlements] = useState<SettlementSummary[]>();
   const [filter, setFilter] = useState<string>("");
 
-  let walletClient: WalletViewsClient;
-
-  walletClient = new WalletViewsClient({
-    baseUrl: walletViewsBaseUrl,
-    token: ctx.token,
-  });
-
-  const fetchSettlements = async () => {
-    if (ctx.primaryParty !== "") {
-      const resp = await walletClient.getSettlements({ before: null, limit: null });
-      setSettlements(resp.settlements);
-    }
-  };
-  
   useEffect(() => {
-    fetchDataForUserLedger(ctx, ledger);
-  }, [ctx, ledger]);
-  
-  useEffect(() => {
+    const fetchSettlements = async () => {
+      if (primaryParty !== undefined) {
+        const resp = await walletClient.getSettlements({ before: null, limit: null });
+        setSettlements(resp.settlements);
+      }
+    };
+
     fetchSettlements();
-  }, []);
+  }, [primaryParty, walletClient]);
 
   if (isLoading) {
     return (
@@ -57,19 +47,20 @@ const SettlementScreen: React.FC = () => {
     settlementsFiltered = settlement ? [settlement] : [];
   }
 
-  if (filter!== "" && settlementsFiltered!== undefined){
-    if (filter==="pending")
+  if (filter !== "" && settlementsFiltered!== undefined) {
+    if (filter === "pending") {
       settlementsFiltered = settlementsFiltered.filter(settlement => settlement.execution === null);
-      if (filter==="settled")
+    }
+    if (filter === "settled") {
       settlementsFiltered = settlementsFiltered.filter(settlement => settlement.execution !== null);
+    }
   }
 
   let transactionPendingStyle = "button__sign-up";
   let transactionSettledStyle = "button__sign-up";
-  if (filter === 'pending') transactionPendingStyle = "button__sign-up-selected";
-  if (filter === 'settled') transactionSettledStyle = "button__sign-up-selected";
-  
-  
+  if (filter === "pending") transactionPendingStyle = "button__sign-up-selected";
+  if (filter === "settled") transactionSettledStyle = "button__sign-up-selected";
+
   return (
     <PageLayout>
       <div>

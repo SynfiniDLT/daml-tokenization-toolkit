@@ -1,50 +1,37 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { userContext } from "../App";
-import AuthContextStore from "../store/AuthContextStore";
 import { PageLoader } from "../components/layout/page-loader";
-import { WalletViewsClient } from "@synfini/wallet-views";
 import { PageLayout } from "../components/PageLayout";
 import Instruments from "../components/layout/instruments";
 import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
+import { useWalletUser, useWalletViews } from "../App";
 
 const DirectoryScreen: React.FC = () => {
-  const sbt_depository = process.env.REACT_APP_PARTIES_SBT_INSTRUMENT_DEPOSITORY;
-  const sbt_issuer = process.env.REACT_APP_PARTIES_SBT_INSTRUMENT_ISSUER;
-  
-  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
-  const ctx = useContext(AuthContextStore);
-  const ledger = userContext.useLedger();
+  const sbtDepository = process.env.REACT_APP_PARTIES_SBT_INSTRUMENT_DEPOSITORY;
+  const sbtIssuer = process.env.REACT_APP_PARTIES_SBT_INSTRUMENT_ISSUER;
+
+  const walletClient = useWalletViews();
+  const { primaryParty } = useWalletUser();
 
   const { isLoading } = useAuth0();
   const [instruments, setInstruments] = useState<InstrumentSummary[]>();
 
-  let walletClient: WalletViewsClient;
-
-  walletClient = new WalletViewsClient({
-    baseUrl: walletViewsBaseUrl,
-    token: ctx.token,
-  });
-
-
-  const fetchInstruments = async () => {
-    if (ctx.primaryParty !== "" && sbt_depository!== undefined && sbt_issuer!== undefined) {
-      const resp = await walletClient.getInstruments({
-         depository: sbt_depository, 
-         issuer: sbt_issuer, 
-         id: {unpack:"EntityName"}, version: null });
-      setInstruments(resp.instruments.filter(instrument => instrument.pbaView?.owner !== ctx.primaryParty))
-    }
-  };
-
   useEffect(() => {
-    fetchDataForUserLedger(ctx, ledger);
-  }, [ctx, ledger]);
-
-  useEffect(() => {
+    const fetchInstruments = async () => {
+      if (primaryParty !== undefined && sbtDepository!== undefined && sbtIssuer!== undefined) {
+        const resp = await walletClient.getInstruments(
+          {
+            depository: sbtDepository, 
+            issuer: sbtIssuer, 
+            id: { unpack:"EntityName" },
+            version: null
+          }
+        );
+        setInstruments(resp.instruments.filter(instrument => instrument.pbaView?.owner !== primaryParty));
+      }
+    };
     fetchInstruments();
-  }, [ctx.primaryParty]);
+  }, [primaryParty, sbtDepository, sbtIssuer, walletClient]);
 
   if (isLoading) {
     return (

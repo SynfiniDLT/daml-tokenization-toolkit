@@ -1,46 +1,32 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useState } from "react";
 import { PageLayout } from "../components/PageLayout";
 import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
-import AuthContextStore from "../store/AuthContextStore";
-import { formatCurrency } from "../components/Util";
+import { formatCurrency } from "../Util";
 import { v4 as uuid } from "uuid";
-import * as damlTypes from "@daml/types";
-import { HoldingSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import * as damlHoldingFungible from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
 import { OpenOffer, OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer";
-import { WalletViewsClient } from "@synfini/wallet-views";
 import { ContainerColumn, ContainerDiv, ContainerColumnKey, DivBorderRoundContainer, ContainerColumnValue } from "../components/layout/general.styled";
 import Modal from "react-modal";
 import { Coin } from "react-bootstrap-icons";
-import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
+import { useWalletUser } from "../App";
 
 const BalanceRedeemFormScreen: React.FC = () => {
   const nav = useNavigate();
   const { state } = useLocation();
   const ledger = userContext.useLedger();
-  const ctx = useContext(AuthContextStore);
-  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
+  const { primaryParty } = useWalletUser();
 
   const [amountInput, setAmountInput] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isMessageOpen, setIsMessageOpen] = useState<boolean>(false);
 
-  let walletClient: WalletViewsClient;
-
-  walletClient = new WalletViewsClient({
-    baseUrl: walletViewsBaseUrl,
-    token: ctx.token,
-  });
-
-  const handleChangeAmount = (event: any) => {
-    setAmountInput(formatCurrencyInput(event));
+  const handleChangeAmount:  React.ChangeEventHandler<HTMLInputElement> = event => {
+    setAmountInput(formatCurrencyInput(event.target.value));
   };
 
-  const formatCurrencyInput = (event: any) => {
-    let value = event.target.value.replace(/[^0-9.]/g, "").replace(/^0+/, "");
-    return value;
+  const formatCurrencyInput = (value: string) => {
+    return value.replace(/[^0-9.]/g, "").replace(/^0+/, "");
   };
 
   const handleCloseMessageModal = (path: string) => {
@@ -48,29 +34,20 @@ const BalanceRedeemFormScreen: React.FC = () => {
     if (path !== "") nav("/" + path);
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit:  React.FormEventHandler<HTMLFormElement>= async (e) => {
     e.preventDefault();
-    let holdings: HoldingSummary[] = [];
-    let holdingUnlockedCidArr: damlTypes.ContractId<damlHoldingFungible.Fungible>[] = [];
-    holdings = (
-      await walletClient.getHoldings({
-        account: state.balance.account,
-        instrument: state.balance.instrument,
-      })
-    ).holdings;
-    holdings
-      .filter((holding) => holding.view.lock == null)
-      .map((holdingUnlocked) => {
-        holdingUnlockedCidArr.push(
-          holdingUnlocked.cid.toString() as damlTypes.ContractId<damlHoldingFungible.Fungible>
-        );
-      });
+
+    if (primaryParty === undefined) {
+      setIsMessageOpen(true);
+      setError("Primary party not set");
+      return;
+    }
 
     try {
       const offerId = state.balance.instrument.id.unpack + "@" + state.balance.instrument.version + ".OffRamp"
       const offers = await ledger.query(SettlementOpenOffer, { offerId: { unpack: offerId } });
       const offersByIssuer = offers.filter(o => o.payload.offerers.map.has(state.balance.instrument.issuer));
-      let referenceIdUUID = uuid();
+      const referenceIdUUID = uuid();
       await ledger
         .exercise(
           OpenOffer.Take,
@@ -78,11 +55,11 @@ const BalanceRedeemFormScreen: React.FC = () => {
           {
             id: { unpack: referenceIdUUID },
             description: "Redeem for fiat",
-            taker: ctx.primaryParty,
+            taker: primaryParty,
             quantity: amountInput
           }
         )
-        .then((res) => {
+        .then(() => {
           setMessage("Your request has been successfully completed. \nTransaction id: " + referenceIdUUID);
         })
         .catch((e) => {
@@ -94,10 +71,6 @@ const BalanceRedeemFormScreen: React.FC = () => {
       setError("Error " + e.toString());
     }
   };
-
-  useEffect(() => {
-    fetchDataForUserLedger(ctx, ledger);
-  }, [ctx, ledger]);
 
   return (
     <PageLayout>
@@ -120,15 +93,15 @@ const BalanceRedeemFormScreen: React.FC = () => {
             <ContainerColumnValue>{state.balance.instrument.id.unpack} <Coin /></ContainerColumnValue>
             <ContainerColumnValue>${formatCurrency(state.balance.unlocked, "en-US")} <Coin /></ContainerColumnValue>
             <ContainerColumnValue>
-                {" "}<input
-                type="string"
-                id="amount"
-                name="amount"
-                value={amountInput}
-                onChange={handleChangeAmount}
-                style={{ width: "200px" }}
-                onInput={formatCurrencyInput}
-              />
+                {" "}
+                <input
+                  type="string"
+                  id="amount"
+                  name="amount"
+                  value={amountInput}
+                  onChange={handleChangeAmount}
+                  style={{ width: "200px" }}
+                />
                {" "}<Coin />
             </ContainerColumnValue>
           </ContainerColumn>

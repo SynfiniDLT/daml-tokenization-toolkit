@@ -750,7 +750,7 @@ make build-wallet-views
 The TypeScript client can be built using:
 
 ```
-make build-wallet-views-client
+make build-wallet-views-ts-client
 ```
 
 ### Run the projection runner
@@ -864,7 +864,7 @@ make test-wallet-views
 There is a set of integration tests for the TypeScript client. They can be run using:
 
 ```
-make test-wallet-views-client
+make test-wallet-views-ts-client
 ```
 
 This will:

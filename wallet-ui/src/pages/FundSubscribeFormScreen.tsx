@@ -1,10 +1,8 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, ChangeEventHandler } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
-import AuthContextStore from "../store/AuthContextStore";
 import { PageLayout } from "../components/PageLayout";
-import { formatCurrency, formatOptionalCurrency, nameFromParty } from "../components/Util";
-import { WalletViewsClient } from "@synfini/wallet-views";
+import { formatCurrency, formatOptionalCurrency, nameFromParty } from "../Util";
 import * as damlTypes from "@daml/types";
 import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
 import { v4 as uuid } from "uuid";
@@ -16,9 +14,10 @@ import {
   ContainerColumnValue,
 } from "../components/layout/general.styled";
 import { Coin, BoxArrowUpRight } from "react-bootstrap-icons";
-import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
 import { CreateEvent } from "@daml/ledger";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
+import { repairMap } from "../Util";
+import { useWalletUser } from "../App";
 
 type FundSubscribeFormScreenState = {
   fund: CreateEvent<SettlementOpenOffer, undefined, string>
@@ -27,31 +26,25 @@ type FundSubscribeFormScreenState = {
 export const FundSubscribeFormScreen: React.FC = () => {
   const nav = useNavigate();
   const { state } = useLocation() as { state: FundSubscribeFormScreenState };
+  repairMap(state.fund.payload.offerers.map);
   const ledger = userContext.useLedger();
-  const ctx = useContext(AuthContextStore);
-  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || '';
+  const { primaryParty } = useWalletUser();
   const [inputQtd, setInputQtd] = useState(0);
   const [referenceId, setReferenceId] = useState<string>("");
   const [total, setTotal] = useState(damlTypes.emptyMap<InstrumentKey, number>());
   const [error, setError] = useState("");
 
-  let walletClient: WalletViewsClient;
-
-  walletClient = new WalletViewsClient({
-    baseUrl: walletViewsBaseUrl,
-    token: ctx.token,
-  });
-
-  const handleChangeInputQtd = (event: any) => {
-    setInputQtd(event.target.value);
-    setTotal(costForQuantity(event.target.value));
+  const handleChangeInputQtd: ChangeEventHandler<HTMLInputElement> = (event) => {
+    const q = parseInt(event.target.value);
+    setInputQtd(q);
+    setTotal(costForQuantity(q));
   };
 
   function costForQuantity(q: number): damlTypes.Map<InstrumentKey, number> {
     let costsMap = damlTypes.emptyMap<InstrumentKey, number>();
 
     for (const step of state.fund.payload.steps) {
-      if (step.sender.tag == 'TakerEntity') {
+      if (step.sender.tag === "TakerEntity") {
         const existingCost = costsMap.get(step.quantity.unit) || 0;
         costsMap = costsMap.set(
           step.quantity.unit, existingCost + parseFloat(step.quantity.amount) * q
@@ -62,12 +55,13 @@ export const FundSubscribeFormScreen: React.FC = () => {
     return costsMap;
   }
 
-  useEffect(() => {
-    fetchDataForUserLedger(ctx, ledger);
-  }, [ctx, ledger]);
-
-  const handleSubmit = async (e: any) => {
+  const handleSubmit:  React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
+    if (primaryParty === undefined) {
+      setError("Primary party not set");
+      return;
+    }
+
     let referenceIdUUID = uuid();
     try {
       await ledger.exercise(
@@ -75,7 +69,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
         state.fund.contractId,
         {
           id: { unpack: referenceIdUUID },
-          taker: ctx.primaryParty,
+          taker: primaryParty,
           quantity: inputQtd.toString(),
           description: "Investment request"
         }
@@ -123,11 +117,8 @@ export const FundSubscribeFormScreen: React.FC = () => {
                 <ContainerColumnKey>Total cost:</ContainerColumnKey>
               </ContainerColumn>
               <ContainerColumn>
-                {/* TODO: React does not copy down the functions available on state variables, hence
-                `state.fund.payload.map.entriesArray()` is not a function! Therefore we use the below hack to access the
-                keys of the map but there should be a better way to do this */}
                 <ContainerColumnValue>
-                  {(state.fund.payload.offerers.map as any)._keys.map((offerer: string) => nameFromParty(offerer)).join(", ")}
+                  {(state.fund.payload.offerers.map).entriesArray().map(entry => nameFromParty(entry[0])).join(", ")}
                 </ContainerColumnValue>
                 <ContainerColumnValue>
                   {costForQuantity(1).entriesArray().map(entry => <>{formatCurrency(entry[1].toString(), "en-US") + " " + entry[0].id.unpack + " "}<Coin/></>)}
@@ -135,7 +126,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
                 <ContainerColumnValue>
                   {
                     state.fund.payload.steps
-                      .filter(step => step.receiver.tag == "TakerEntity")
+                      .filter(step => step.receiver.tag === "TakerEntity")
                       .map(step =>
                         <p>{formatCurrency((parseFloat(step.quantity.amount) * inputQtd).toString(), "en-US") + " " + step.quantity.unit.id.unpack}</p>)
                   }
@@ -148,14 +139,21 @@ export const FundSubscribeFormScreen: React.FC = () => {
                     id="qtd"
                     name="qtd"
                     step={1}
-                    min="0"
+                    min={state.fund.payload.minQuantity || "0"}
+                    max={state.fund.payload.maxQuantity || undefined}
                     value={inputQtd}
                     onChange={handleChangeInputQtd}
                     style={{ width: "50px", height: "25px" }}
                   />
                 </ContainerColumnValue>
                 <p><br/></p>
-                <ContainerColumnValue style={{verticalAlign:"-10px"}}>{total.entriesArray().map(entry => <>{formatCurrency(entry[1].toString(), "en-US") + " " + entry[0].id.unpack + " "}<Coin/></>)}</ContainerColumnValue>
+                <ContainerColumnValue style={{verticalAlign:"-10px"}}>
+                  {
+                    total
+                      .entriesArray()
+                      .map(entry => <>{formatCurrency(entry[1].toString(), "en-US") + " " + entry[0].id.unpack + " "}<Coin/></>)
+                  }
+                </ContainerColumnValue>
               </ContainerColumn>
             </ContainerDiv>
             
@@ -170,17 +168,16 @@ export const FundSubscribeFormScreen: React.FC = () => {
           <>
             <p><br/></p>
           <ContainerDiv>
-
             <ContainerColumn>
-            <ContainerColumnKey>Transaction Id:</ContainerColumnKey>
-            {/* <ContainerColumnKey>Quantity:</ContainerColumnKey>
-            <ContainerColumnKey>Total:</ContainerColumnKey> */}
-            <ContainerColumnKey></ContainerColumnKey>
-            <ContainerColumnKey></ContainerColumnKey>
-            <ContainerColumnKey></ContainerColumnKey>
-            <ContainerColumnKey><button className="button__login" style={{ width: "200px" }} onClick={() => nav("/wallet")}>
+              <ContainerColumnKey>Transaction Id:</ContainerColumnKey>
+              <ContainerColumnKey></ContainerColumnKey>
+              <ContainerColumnKey></ContainerColumnKey>
+              <ContainerColumnKey></ContainerColumnKey>
+              <ContainerColumnKey>
+                <button className="button__login" style={{ width: "200px" }} onClick={() => nav("/wallet")}>
                   Back
-                </button></ContainerColumnKey>
+                </button>
+              </ContainerColumnKey>
             </ContainerColumn>
 
             <ContainerColumn style={{minWidth: "400px"}}>
@@ -189,10 +186,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
                   {referenceId} {"    "}<BoxArrowUpRight />
                 </a>
               </ContainerColumnValue>
-              {/* <ContainerColumnValue> {inputQtd}</ContainerColumnValue>
-              <ContainerColumnValue>{formatCurrency(total.toString(), "en-US")} {state.fund.payload.paymentInstrument.id.unpack}  <Coin /></ContainerColumnValue> */}
               <ContainerColumnValue>
-                
               </ContainerColumnValue>
             </ContainerColumn>
           </ContainerDiv>

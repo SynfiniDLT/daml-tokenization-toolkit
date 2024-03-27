@@ -1,34 +1,10 @@
-import React, { useContext, useEffect, useState } from "react";
+import React from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { PageLayout } from "../components/PageLayout";
-import { fetchDataForUserLedger } from "../components/UserLedgerFetcher";
-import AuthContextStore from "../store/AuthContextStore";
-import { userContext } from "../App";
-import { wait } from "../components/Util";
+import { walletMode } from "../App";
 
 const HomeScreen: React.FC = () => {
-  const walletMode = process.env.REACT_APP_MODE || "";
-  const ctx = useContext(AuthContextStore);
-  const ledger = userContext.useLedger();
   const { isAuthenticated, user } = useAuth0();
-  const [ready, setReady] = useState<boolean>();
-  
-
-  const setLoadingReady = async () => {
-    if (ctx.primaryParty !== "") {
-      await wait(100);
-      setReady(true);
-    }
-  };
-
-  useEffect(() => {
-    fetchDataForUserLedger(ctx, ledger);
-  }, [ctx, ledger]);
-
-  useEffect(() => {
-    setLoadingReady();
-  }, [ctx.primaryParty]);
-
 
   return (
     <PageLayout>

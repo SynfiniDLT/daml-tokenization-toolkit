@@ -1,6 +1,6 @@
 import React from "react";
 
-export const PageFooterHyperlink = ({ children, path }) => {
+export const PageFooterHyperlink: React.FC<{children: string, path: string}> = ({ children, path }) => {
   return (
     <a
       className="page-footer__hyperlink"

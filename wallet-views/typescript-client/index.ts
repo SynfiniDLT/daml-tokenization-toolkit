@@ -13,8 +13,8 @@ import {
   AccountOpenOffers,
   IssuersFilter,
   Issuers
-} from '@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types';
-import fetch from 'cross-fetch';
+} from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import fetch from "cross-fetch";
 
 type WalletViewsClientParams = {
   token: string,
@@ -69,10 +69,10 @@ export class WalletViewsClient {
     const fetchParams = {
       body: JSON.stringify(requestBody),
       headers: {
-        Authorization: 'Bearer ' + this.token,
-        'Content-Type': 'application/json'
+        Authorization: "Bearer " + this.token,
+        "Content-Type": "application/json"
       },
-      method: 'post'
+      method: "post"
     }
     const resp =  await fetch(this.baseUrl + "/wallet-views/v1" + endpoint, fetchParams);
     const json = await resp.json();

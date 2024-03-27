@@ -1,42 +1,34 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { formatCurrency, nameFromParty, toDateTimeString } from "../Util";
+import { AccountSummary, SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { arrayToMap, formatCurrency, nameFromParty, repairMap, toDateTimeString } from "../../Util";
 import { PlusCircleFill, DashCircleFill } from "react-bootstrap-icons";
 import styled from "styled-components";
 import { Field, FieldPending, FieldSettled } from "./general.styled";
 import CopyToClipboard from "./copyToClipboard";
-import AuthContextStore from "../../store/AuthContextStore";
 import {
   AllocateAndApproveHelper,
   AllocationHelp,
   ApprovalHelp,
   HoldingDescriptor,
 } from "@daml.js/synfini-settlement-helpers/lib/Synfini/Settlement/Helpers";
-import { arrayToSet } from "../../components/Util";
+import { arrayToSet } from "../../Util";
 import * as damlTypes from "@daml/types";
 import {
-  AccountKey,
   Id,
   InstrumentKey,
   Quantity,
 } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 import { userContext } from "../../App";
-import { WalletViewsClient } from "@synfini/wallet-views";
 import { Base } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Base";
 import { Instruction } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Instruction";
 import { Batch } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Batch";
 import Modal from "react-modal";
 import AccountsSelect from "./accountsSelect";
-import { fetchDataForUserLedger } from "../UserLedgerFetcher";
-import { Tuple2 } from "@daml.js/40f452260bef3f29dede136108fc08a88d5a5250310281067087da6f0baddff7/lib/DA/Types";
-import {
-  Approval,
-  InstructionKey,
-} from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Types";
+import { useWalletUser, useWalletViews } from "../../App";
 
 interface SettlementDetailsProps {
-  settlement: any;
+  settlement: SettlementSummary;
 }
 
 export default function SettlementDetails(props: SettlementDetailsProps) {
@@ -77,12 +69,10 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
       }
     }
 
-    props.settlement.steps.map((step: SettlementStep, index: number) => {
-      if (props.settlement.execution === null) {
-        return setIsActionRequired(true);
-      }
-    });
-  }, [location]);
+    if (props.settlement.execution === null) {
+      setIsActionRequired(true);
+    }
+  }, [location, props.settlement.execution]);
 
   return (
     <SettlementDetailsContainer>
@@ -167,25 +157,20 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
 }
 
 export function SettlementDetailsAction(props: SettlementDetailsProps) {
-  const walletViewsBaseUrl = process.env.REACT_APP_API_SERVER_URL || "";
+  repairMap(props.settlement.requestors.map);
+  repairMap(props.settlement.settlers.map);
   const nav = useNavigate();
   const location = useLocation();
-  const ctx = useContext(AuthContextStore);
+  const walletClient = useWalletViews();
+  const { primaryParty } = useWalletUser();
   const [toggleSteps, setToggleSteps] = useState(false);
   const ledger = userContext.useLedger();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
-  const [accounts, setAccounts] = useState<any>();
+  const [accounts, setAccounts] = useState<AccountSummary[]>();
   const [selectAccountInput, setSelectAccountInput] = useState("");
   const [showExecute, setShowExecute] = useState<boolean>(false);
-
-  let walletClient: WalletViewsClient;
-
-  walletClient = new WalletViewsClient({
-    baseUrl: walletViewsBaseUrl,
-    token: ctx.token,
-  });
 
   const setToggleCol = () => {
     setToggleSteps((prev) => {
@@ -198,7 +183,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
     if (path !== "") nav("/" + path);
   };
 
-  const handleAccountChange = (event: any) => {
+  const handleAccountChange: React.ChangeEventHandler<HTMLSelectElement> = (event) => {
     setSelectAccountInput(event.target.value);
   };
 
@@ -220,7 +205,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
       Id[]
     > = damlTypes.emptyMap();
     settlement.steps.forEach((step) => {
-      if (step.routedStep.receiver === ctx.primaryParty) {
+      if (step.routedStep.receiver === primaryParty) {
         const k = { custodian: step.routedStep.custodian, quantity: step.routedStep.quantity };
         const ids = custodianQuantitiesMap.get(k) || [];
         ids.push(step.instructionId);
@@ -233,7 +218,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
 
     // Update allocations
     settlement.steps.forEach((step) => {
-      if (step.routedStep.sender === ctx.primaryParty) {
+      if (step.routedStep.sender === primaryParty) {
         const availablePassThroughFroms =
           custodianQuantitiesMap.get({ custodian: step.routedStep.custodian, quantity: step.routedStep.quantity }) ||
           [];
@@ -263,7 +248,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
         }
       } else if (
         step.routedStep.sender === step.routedStep.custodian &&
-        step.routedStep.quantity.unit.issuer === ctx.primaryParty
+        step.routedStep.quantity.unit.issuer === primaryParty
       ) {
         // This is a "mint" instruction to be approved by the issuer
         allocations = allocations.set(step.instructionId, { tag: "AllocateMintHelp", value: {} });
@@ -274,14 +259,14 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
     settlement.steps
       .filter((step) => !approvals.has(step.instructionId))
       .forEach((step) => {
-        if (step.routedStep.receiver === ctx.primaryParty) {
+        if (step.routedStep.receiver === primaryParty) {
           const accountId = accounts.get(step.routedStep.custodian);
           if (accountId !== undefined) {
             approvals = approvals.set(step.instructionId, { tag: "TakeDeliveryHelp", value: { accountId } });
           }
         } else if (
           step.routedStep.receiver === step.routedStep.custodian &&
-          step.routedStep.quantity.unit.issuer === ctx.primaryParty
+          step.routedStep.quantity.unit.issuer === primaryParty
         ) {
           // This is a "burn" instruction to be approved by the issuer
           approvals = approvals.set(step.instructionId, { tag: "ApproveBurnHelp", value: {} });
@@ -295,11 +280,19 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
     };
   }
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
+
+    if (primaryParty === undefined) {
+      setError("Error primary party not set");
+      setIsModalOpen(!isModalOpen);
+      return;
+    }
+
     const splitAccountInput = selectAccountInput.split("@");
-    let custodianToAccount: damlTypes.Map<damlTypes.Party, Id> = damlTypes.emptyMap();
-    custodianToAccount = custodianToAccount.set(splitAccountInput[0], { unpack: splitAccountInput[1] });
+    const custodianToAccount: damlTypes.Map<damlTypes.Party, Id> = arrayToMap(
+      [[splitAccountInput[0], { unpack: splitAccountInput[1] }]]
+    );
 
     const settlement: SettlementSummary = props.settlement;
     const { allocations, approvals, pledgeDescriptors } = acceptanceActions(custodianToAccount, settlement);
@@ -311,7 +304,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
         if (accountId !== undefined) {
           const account = {
             custodian: holdingDescriptor.custodian,
-            owner: ctx.primaryParty,
+            owner: primaryParty,
             id: accountId,
           };
           const activeHoldings = await walletClient.getHoldings({ account, instrument: holdingDescriptor.instrument });
@@ -323,14 +316,15 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
       }
     }
 
-    let instructions: damlTypes.Map<Id, damlTypes.ContractId<Instruction>> = damlTypes.emptyMap();
-    settlement.steps.forEach((step) => (instructions = instructions.set(step.instructionId, step.instructionCid)));
+    const instructions: damlTypes.Map<Id, damlTypes.ContractId<Instruction>> = arrayToMap(
+      settlement.steps.map(step => [step.instructionId, step.instructionCid])
+    );
 
     await ledger
       .createAndExercise(
         AllocateAndApproveHelper.AllocateAndApprove,
         {
-          actors: arrayToSet([ctx.primaryParty]),
+          actors: arrayToSet([primaryParty]),
           instructions,
           holdings,
           allocations,
@@ -349,10 +343,26 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
   };
 
   const handleExecute = async () => {
+    if (props.settlement.batchCid === null) {
+      setError("Internal error");
+      setIsModalOpen(!isModalOpen);
+      return;
+    }
+
+    if (primaryParty === undefined) {
+      setError("Error primary party not set");
+      setIsModalOpen(!isModalOpen);
+      return;
+    }
+
     await ledger
-      .exercise(Batch.Settle, props.settlement?.batchCid, {
-        actors: arrayToSet([ctx.primaryParty]),
-      })
+      .exercise(
+        Batch.Settle,
+        props.settlement.batchCid,
+        {
+          actors: arrayToSet([primaryParty]),
+        }
+      )
       .then((res) => {
         setMessage("Settlement submitted with success!");
         setIsModalOpen(!isModalOpen);
@@ -361,13 +371,6 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
         setError("error when executing!" + err.errors[0]);
         setIsModalOpen(!isModalOpen);
       });
-  };
-
-  const fetchAccounts = async (custodian: string) => {
-    if (ctx.primaryParty !== "") {
-      const respAcc = await walletClient.getAccounts({ owner: ctx.primaryParty, custodian: custodian });
-      setAccounts(respAcc.accounts);
-    }
   };
 
   useEffect(() => {
@@ -386,32 +389,42 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
   }, [location]);
 
   useEffect(() => {
-    fetchDataForUserLedger(ctx, ledger);
-  }, [ctx, ledger]);
+    if (primaryParty === undefined) {
+      return
+    }
 
-  useEffect(() => {
+    const fetchAccounts = async (custodian: string) => {
+      if (primaryParty !== undefined) {
+        const respAcc = await walletClient.getAccounts({ owner: primaryParty, custodian: custodian });
+        setAccounts(respAcc.accounts);
+      }
+    };
+  
     // STEPS LOOP THROUGH
     let stepNotReady = false;
-    props.settlement.steps.map((step: SettlementStep, index: number) => {
+    props.settlement.steps.forEach((step: SettlementStep) => {
       let inputSelected = "";
 
       // CHECK STEPS APPROVAL / ALLOCATION
-      if (step.approval.tag !== "Unapproved" && step.routedStep.receiver === ctx.primaryParty) {
+      if (step.approval.tag !== "Unapproved" && step.routedStep.receiver === primaryParty) {
         if (selectAccountInput === "") {
           fetchAccounts(step.routedStep.custodian);
-          if (step.approval.tag == "TakeDelivery") {
+          if (step.approval.tag === "TakeDelivery") {
             inputSelected = step.routedStep.custodian + "@" + step.approval.value.id.unpack;
-          } else if (step.approval.tag == "PassThroughTo") {
+          } else if (step.approval.tag === "PassThroughTo") {
             inputSelected = step.routedStep.custodian + "@" + step.approval.value._1.id.unpack;
           }
           if (inputSelected !== "") {
             setSelectAccountInput(inputSelected);
           }
         }
-      } else if (step.routedStep.sender === ctx.primaryParty) {
+      } else if (step.routedStep.sender === primaryParty) {
         fetchAccounts(step.routedStep.custodian);
-        if (step.allocation.tag == "Pledge") {
-          ledger.fetch(Base, step.allocation.value).then((res) => {
+        if (step.allocation.tag === "Pledge") {
+          ledger.fetch(
+            Base,
+            step.allocation.value
+          ).then((res) => {
             inputSelected = res?.payload.account.custodian + "@" + res?.payload.account.id.unpack;
             setSelectAccountInput(inputSelected);
           });
@@ -427,10 +440,10 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
       }
     });
 
-    if (stepNotReady===false && props.settlement.settlers.map._keys.includes(ctx.primaryParty)) {
+    if (!stepNotReady && props.settlement.settlers.map.has(primaryParty)) {
       setShowExecute(true);
     }
-  }, []);
+  }, [primaryParty, ledger, walletClient, selectAccountInput, props.settlement]);
 
   return (
     <SettlementDetailsContainer>
@@ -475,7 +488,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
           </div>
 
           <hr></hr>
-          {props.settlement.steps.map((step: SettlementStep, index: number) => {
+          {primaryParty === undefined || props.settlement.steps.map((step: SettlementStep, index: number) => {
             return (
               <>
                 <div key={index}>
@@ -496,7 +509,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
                       <br />
                       <div
                         style={{
-                          ...(nameFromParty(step.routedStep.sender) === nameFromParty(ctx.primaryParty) &&
+                          ...(nameFromParty(step.routedStep.sender) === nameFromParty(primaryParty) && // TODO why is this using `nameFromParty`?
                           step.allocation.tag === "Unallocated"
                             ? { border: "1px solid", width: "300px" }
                             : {}),
@@ -506,7 +519,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
                         <span
                           style={{
                             fontWeight:
-                              nameFromParty(step.routedStep.sender) === nameFromParty(ctx.primaryParty)
+                              nameFromParty(step.routedStep.sender) === nameFromParty(primaryParty)
                                 ? "bold"
                                 : "normal",
                           }}
@@ -516,7 +529,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
                       </div>
                       <div
                         style={{
-                          ...(nameFromParty(step.routedStep.receiver) === nameFromParty(ctx.primaryParty) &&
+                          ...(nameFromParty(step.routedStep.receiver) === nameFromParty(primaryParty) &&
                           step.approval.tag === "Unapproved"
                             ? { border: "1px solid", width: "300px" }
                             : {}),
@@ -526,7 +539,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
                         <span
                           style={{
                             fontWeight:
-                              nameFromParty(step.routedStep.receiver) === nameFromParty(ctx.primaryParty)
+                              nameFromParty(step.routedStep.receiver) === nameFromParty(primaryParty)
                                 ? "bold"
                                 : "normal",
                           }}
