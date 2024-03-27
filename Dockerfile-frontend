@@ -1,9 +1,8 @@
-# Use a Node.js base image
 FROM node:19.8.1
 
 ENV NODE_OPTIONS=--openssl-legacy-provider
 
-COPY wallet-views /wallet-views
+COPY wallet-views/typescript-client /wallet-views/typescript-client
 
 WORKDIR /wallet-ui
 
@@ -13,7 +12,9 @@ RUN npm install
 
 COPY wallet-ui .
 
+RUN npm install -g serve
+
 EXPOSE 8090
 
-CMD ["sh","-c","npm start"]
+CMD ["sh", "-c", "npm run build && serve -s build -l 8090"]
 
