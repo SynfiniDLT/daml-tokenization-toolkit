@@ -6,7 +6,7 @@ import {
 import Modal from "react-modal";
 import { Disclosure } from "@daml.js/daml-finance-interface-util/lib/Daml/Finance/Interface/Util/Disclosure";
 import { ContractId } from "@daml/types";
-import { arrayToSet } from "../Util";
+import { arrayToSet } from "../../Util";
 import HoverPopUp from "./hoverPopUp";
 import * as damlTypes from "@daml/types";
 import { useWalletUser } from "../../App";

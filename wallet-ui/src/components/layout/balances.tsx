@@ -1,6 +1,6 @@
 import { Balance } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { QuestionCircle } from "react-bootstrap-icons";
-import { formatCurrency } from "../Util";
+import { formatCurrency } from "../../Util";
 import HoverPopUp from "./hoverPopUp";
 
 

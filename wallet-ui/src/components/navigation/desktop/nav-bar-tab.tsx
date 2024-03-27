@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 
-export const NavBarTab = ({ path, label }) => {
+export const NavBarTab: React.FC<{path: string, label: string}> = ({ path, label }) => {
   return (
     <NavLink
       to={path}

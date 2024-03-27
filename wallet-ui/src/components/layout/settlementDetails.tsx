@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AccountSummary, SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { arrayToMap, formatCurrency, nameFromParty, repairMap, toDateTimeString } from "../Util";
+import { arrayToMap, formatCurrency, nameFromParty, repairMap, toDateTimeString } from "../../Util";
 import { PlusCircleFill, DashCircleFill } from "react-bootstrap-icons";
 import styled from "styled-components";
 import { Field, FieldPending, FieldSettled } from "./general.styled";
@@ -12,7 +12,7 @@ import {
   ApprovalHelp,
   HoldingDescriptor,
 } from "@daml.js/synfini-settlement-helpers/lib/Synfini/Settlement/Helpers";
-import { arrayToSet } from "../../components/Util";
+import { arrayToSet } from "../../Util";
 import * as damlTypes from "@daml/types";
 import {
   Id,

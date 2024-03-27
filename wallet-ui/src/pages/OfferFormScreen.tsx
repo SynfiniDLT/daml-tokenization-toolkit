@@ -12,7 +12,7 @@ import { Factory as OneTimeOfferFactory } from "@daml.js/synfini-settlement-one-
 import { Factory as SettlementFactory } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Factory";
 import { RouteProvider } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/RouteProvider";
 import { v4 as uuid } from "uuid";
-import { arrayToMap, arrayToSet } from "../components/Util";
+import { arrayToMap, arrayToSet } from "../Util";
 import Modal from "react-modal";
 import { useWalletUser } from "../App";
 

@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { nameFromParty } from "../Util";
+import { nameFromParty } from "../../Util";
 import HoverPopUp from "./hoverPopUp";
 import {
   CardContainer,

@@ -11,7 +11,7 @@ import { AccountOpenOfferSummary } from "@daml.js/synfini-wallet-views-types/lib
 import { OpenOffer } from "@daml.js/synfini-account-onboarding-open-offer-interface/lib/Synfini/Interface/Onboarding/Account/OpenOffer/OpenOffer";
 import { userContext } from "../../App";
 import { v4 as uuid } from "uuid";
-import { nameFromParty, arrayToSet, arrayToMap } from "../Util";
+import { nameFromParty, arrayToSet, arrayToMap } from "../../Util";
 import HoverPopUp from "./hoverPopUp";
 import { useWalletUser } from "../../App";
 

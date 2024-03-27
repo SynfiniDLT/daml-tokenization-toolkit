@@ -9,7 +9,7 @@ import {
   DivBorderRoundContainer,
 } from "../components/layout/general.styled";
 import { Party } from "@daml/types";
-import { arrayToMap, arrayToSet } from "../components/Util";
+import { arrayToMap, arrayToSet } from "../Util";
 import { Issuer as TokenIssuer } from "@daml.js/synfini-issuer-onboarding-instrument-token-interface/lib/Synfini/Interface/Onboarding/Issuer/Instrument/Token/Issuer";
 import { v4 as uuid } from "uuid";
 import Modal from "react-modal";

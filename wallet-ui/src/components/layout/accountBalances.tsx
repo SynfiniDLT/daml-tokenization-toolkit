@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { AccountSummary, Balance } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { formatCurrency, nameFromParty } from "../Util";
+import { formatCurrency, nameFromParty } from "../../Util";
 import { Coin } from "react-bootstrap-icons";
 import HoverPopUp from "./hoverPopUp";
 import InstrumentPopDetails from "./instrumentPopDetails";

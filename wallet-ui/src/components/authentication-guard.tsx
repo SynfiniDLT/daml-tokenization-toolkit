@@ -2,7 +2,7 @@ import { withAuthenticationRequired } from "@auth0/auth0-react";
 import React from "react";
 import { PageLoader } from "./layout/page-loader";
 
-interface Props {
+type Props = {
   component: React.ComponentType<any>;
 }
 

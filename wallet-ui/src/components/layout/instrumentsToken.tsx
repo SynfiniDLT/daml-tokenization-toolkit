@@ -1,6 +1,6 @@
 import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { BoxArrowUpRight } from "react-bootstrap-icons";
-import { arrayToSet, toDateTimeString } from "../Util";
+import { arrayToSet, toDateTimeString } from "../../Util";
 import { useNavigate } from "react-router-dom";
 import { userContext } from "../../App";
 import { MinterBurner } from "@daml.js/synfini-issuer-onboarding-minter-burner-interface/lib/Synfini/Interface/Onboarding/Issuer/MinterBurner/MinterBurner";

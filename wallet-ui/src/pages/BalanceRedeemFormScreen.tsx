@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { PageLayout } from "../components/PageLayout";
 import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
-import { formatCurrency } from "../components/Util";
+import { formatCurrency } from "../Util";
 import { v4 as uuid } from "uuid";
 import { OpenOffer, OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer";
 import { ContainerColumn, ContainerDiv, ContainerColumnKey, DivBorderRoundContainer, ContainerColumnValue } from "../components/layout/general.styled";

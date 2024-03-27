@@ -2,7 +2,7 @@ import { useState, ChangeEventHandler } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
 import { PageLayout } from "../components/PageLayout";
-import { formatCurrency, formatOptionalCurrency, nameFromParty } from "../components/Util";
+import { formatCurrency, formatOptionalCurrency, nameFromParty } from "../Util";
 import * as damlTypes from "@daml/types";
 import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
 import { v4 as uuid } from "uuid";
@@ -16,7 +16,7 @@ import {
 import { Coin, BoxArrowUpRight } from "react-bootstrap-icons";
 import { CreateEvent } from "@daml/ledger";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
-import { repairMap } from "../components/Util";
+import { repairMap } from "../Util";
 import { useWalletUser } from "../App";
 
 type FundSubscribeFormScreenState = {
