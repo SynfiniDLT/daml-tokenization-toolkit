@@ -16,6 +16,7 @@ export const NavBarTabs = () => {
     </>
   );
 
+  // TODO can we move this?
   const fundTab = (
     <>
       <NavBarTab path="/" label="Home" />

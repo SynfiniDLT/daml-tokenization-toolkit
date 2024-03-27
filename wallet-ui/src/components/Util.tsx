@@ -81,7 +81,7 @@ export function arrayToMap<K, V>(elements: [K, V][]): damlTypes.Map<K, V> {
 // back onto the `Map` instance
 export function repairMap<K, V>(map: damlTypes.Map<K, V>) {
   const mapProtoType = Object.getPrototypeOf(damlTypes.emptyMap<K, V>());
-  if (Object.getPrototypeOf(map) !== emptyMap) {
+  if (Object.getPrototypeOf(map) !== mapProtoType) {
     Object.setPrototypeOf(map, mapProtoType);
   }
 }
