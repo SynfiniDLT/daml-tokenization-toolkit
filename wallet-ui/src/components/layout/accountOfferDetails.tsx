@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useState } from "react";
 import Modal from "react-modal";
 import {
   CardContainer,
@@ -9,7 +9,6 @@ import {
 } from "./general.styled";
 import { AccountOpenOfferSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { OpenOffer } from "@daml.js/synfini-account-onboarding-open-offer-interface/lib/Synfini/Interface/Onboarding/Account/OpenOffer/OpenOffer";
-import AuthContextStore from "../../App";
 import { userContext } from "../../App";
 import { v4 as uuid } from "uuid";
 import { nameFromParty, arrayToSet, arrayToMap } from "../Util";
@@ -143,48 +142,45 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
         onRequestClose={handleCloseMessageModal}
         contentLabel="Account Offer Details"
       >
-        <>
-          <h4 style={{ color: "white", fontSize: "1.5rem" }}></h4>
-          <form id="modalForm">
-            <div style={{ fontSize: "1.5rem" }}>
-              <table style={{ width: "300px" }}>
-                <tbody>
-                  {accountOffer!== undefined && 
+        <form id="modalForm">
+          <div style={{ fontSize: "1.5rem" }}>
+            <table style={{ width: "300px" }}>
+              <tbody>
+                {accountOffer!== undefined && 
+              <tr>
+                  <td style={{width: "95px"}}>Custodian:</td><td>{nameFromParty(accountOffer?.view.custodian)}</td>
+                </tr>
+              }
                 <tr>
-                    <td style={{width: "95px"}}>Custodian:</td><td>{nameFromParty(accountOffer?.view.custodian)}</td>
-                  </tr>
-                }
-                  <tr>
-                    <td style={{width: "95px"}}>Offer Name:</td><td>{accountOffer?.view.description}</td>
-                  </tr>
-                  <tr>
-                    <td style={{width: "95px"}}>Description:
-                      </td>
-                      <td>
+                  <td style={{width: "95px"}}>Offer Name:</td><td>{accountOffer?.view.description}</td>
+                </tr>
+                <tr>
+                  <td style={{width: "95px"}}>Description:
+                    </td>
+                    <td>
 
-                      <input
-                        type="text"
-                        id="accountName"
-                        name="accountName"
-                        style={{ width: "200px" }}
-                        value={accountName}
-                        onChange={handleAccountName}
-                      />
-                      </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div className="container-inline">
-              <button type="button" className="button__login" onClick={handleConfirm}>
-                Create
-              </button>
-              <button type="button" className="button__login" onClick={handleCloseMessageModal}>
-                Cancel
-              </button>
-            </div>
-          </form>
-        </>
+                    <input
+                      type="text"
+                      id="accountName"
+                      name="accountName"
+                      style={{ width: "200px" }}
+                      value={accountName}
+                      onChange={handleAccountName}
+                    />
+                    </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="container-inline">
+            <button type="button" className="button__login" onClick={handleConfirm}>
+              Create
+            </button>
+            <button type="button" className="button__login" onClick={handleCloseMessageModal}>
+              Cancel
+            </button>
+          </div>
+        </form>
       </Modal>
     </>
   );

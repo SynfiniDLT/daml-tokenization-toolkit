@@ -135,7 +135,7 @@ export function useWalletViews(): WalletViewsClient {
   const ctx = useContext(AuthContextStore);
   const walletViewsClient = useMemo(
     () => new WalletViewsClient({ token: ctx?.token || "", baseUrl: walletViewsBaseUrl }),
-    [ctx === undefined || ctx.token, walletViewsBaseUrl]
+    [ctx?.token]
   );
   return walletViewsClient;
 }
@@ -143,6 +143,8 @@ export function useWalletViews(): WalletViewsClient {
 export function useWalletUser(): { primaryParty?: Party; readOnly: boolean; } {
   const ledger = userContext.useLedger();
   const ctx = useContext(AuthContextStore);
+
+  const tokenIsPresent = ctx !== undefined && ctx.token === "";
 
   useEffect(() => {
     const fetchPrimaryParty = async () => {
@@ -162,7 +164,7 @@ export function useWalletUser(): { primaryParty?: Party; readOnly: boolean; } {
       }
     };
     fetchPrimaryParty();
-  }, [ctx !== undefined && ctx.token === ""]);
+  }, [tokenIsPresent, ctx, ledger]);
 
   return {
     primaryParty: ctx?.primaryParty || "",

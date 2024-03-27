@@ -1,7 +1,5 @@
-import { WalletViewsClient } from "@synfini/wallet-views";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Modal from "react-modal";
-import AuthContextStore from "../../App";
 import { ContainerColumn, ContainerColumnField, ContainerDiv } from "./general.styled";
 import { BoxArrowUpRight } from "react-bootstrap-icons";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
@@ -13,14 +11,20 @@ interface InstrumentDetailsProps {
   handleClose: () => void;
 }
 type InstrumentDesc = {
-  ipfs: "";
-  certificateQuantity: "";
-  price: "";
+  ipfs: string;
+  certificateQuantity: string;
+  price: string;
 };
 
 export default function InstrumentPopDetails(props: InstrumentDetailsProps) {
   const walletClient = useWalletViews();
-  const [instrumentDesc, setInstrumentDesc] = useState<InstrumentDesc>();
+  const [instrumentDesc, setInstrumentDesc] = useState<InstrumentDesc>(
+    {
+      ipfs: "",
+      certificateQuantity: "",
+      price: "",
+    }
+  );
 
   const { isOpen, handleClose } = props;
 
@@ -28,26 +32,21 @@ export default function InstrumentPopDetails(props: InstrumentDetailsProps) {
     return Object.values(instrument).every(value => value === "");
   };
 
-  const fetchInstruments = async () => {
-    setInstrumentDesc({
-      ipfs: "",
-      certificateQuantity: "",
-      price: "",
-    });
-    if (props.instrument !== undefined) {
-      const resp_instrument = await walletClient.getInstruments(props.instrument);
-      if (resp_instrument.instruments[0] !== undefined && resp_instrument.instruments[0].tokenView !== undefined) {
-        const description = resp_instrument.instruments[0].tokenView?.token.description;
-        if (description !== undefined) {
-          setInstrumentDesc(JSON.parse(description));
+  useEffect(() => {
+    const fetchInstruments = async () => {
+      if (props.instrument !== undefined) {
+        const resp_instrument = await walletClient.getInstruments(props.instrument);
+        if (resp_instrument.instruments[0] !== undefined && resp_instrument.instruments[0].tokenView !== undefined) {
+          const description = resp_instrument.instruments[0].tokenView?.token.description;
+          if (description !== undefined) {
+            setInstrumentDesc(JSON.parse(description));
+          }
         }
       }
-    }
-  };
+    };
 
-  useEffect(() => {
     fetchInstruments();
-  }, [props.instrument]);
+  }, [props.instrument, walletClient]);
 
   return (
     <>

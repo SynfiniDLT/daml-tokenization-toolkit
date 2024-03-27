@@ -15,16 +15,16 @@ const FundScreen: React.FC = () => {
   const { isLoading, user } = useAuth0();
   const [funds, setFunds] = useState<CreateEvent<SettlementOpenOffer, undefined, string>[]>();
 
-  const fetchFunds = async () => {
-    if (primaryParty !== undefined) {
-      const resp = await ledger.query(SettlementOpenOffer, { offerId: { unpack: "FundInvestment"} });
-      setFunds(resp);
-    }
-  };
-
   useEffect(() => {
+    const fetchFunds = async () => {
+      if (primaryParty !== undefined) {
+        const resp = await ledger.query(SettlementOpenOffer, { offerId: { unpack: "FundInvestment"} });
+        setFunds(resp);
+      }
+    };
+
     fetchFunds();
-  }, [primaryParty]);
+  }, [primaryParty, ledger]);
 
   if (isLoading) {
     return (

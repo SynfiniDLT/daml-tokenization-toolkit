@@ -48,7 +48,7 @@ const WalletScreen: React.FC = () => {
       setAccountBalances(accountsWithBalances);
     }
     fetchAccountBalances();
-  }, [primaryParty]);
+  }, [primaryParty, walletClient]);
 
   if (isLoading) {
     return (

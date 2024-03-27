@@ -443,7 +443,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
     if (!stepNotReady && props.settlement.settlers.map.has(primaryParty)) {
       setShowExecute(true);
     }
-  }, [primaryParty, ledger, selectAccountInput, props.settlement]);
+  }, [primaryParty, ledger, walletClient, selectAccountInput, props.settlement]);
 
   return (
     <SettlementDetailsContainer>

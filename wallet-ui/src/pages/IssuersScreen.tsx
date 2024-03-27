@@ -9,7 +9,7 @@ import { useWalletUser, useWalletViews } from "../App";
 const IssuersScreen: React.FC = () => {
   const walletClient = useWalletViews();
   const { primaryParty } = useWalletUser();
-  const wallet_depository = process.env.REACT_APP_PARTIES_ENVIRONMENTAL_TOKEN_DEPOSITORY || "";
+  const walletDepository = process.env.REACT_APP_PARTIES_ENVIRONMENTAL_TOKEN_DEPOSITORY || "";
 
   const [isLoading] = useState<boolean>(false);
   const [issuers, setIssuers] = useState<IssuerSummary[]>();
@@ -19,7 +19,7 @@ const IssuersScreen: React.FC = () => {
     const fetchIssuers = async () => {
       if (primaryParty !== undefined) {
         const resp = await walletClient.getIssuers({
-          depository: wallet_depository,
+          depository: walletDepository,
           issuer: primaryParty,
         });
         setIssuers(resp.issuers);
@@ -29,7 +29,7 @@ const IssuersScreen: React.FC = () => {
     const fetchInstruments = async () => {
       if (primaryParty !== undefined) {
         const resp_instrument = await walletClient.getInstruments({
-          depository: wallet_depository, 
+          depository: walletDepository, 
           issuer: primaryParty, 
           id: null, 
           version: null
@@ -40,7 +40,7 @@ const IssuersScreen: React.FC = () => {
 
     fetchIssuers();
     fetchInstruments();
-  }, []);
+  }, [primaryParty, walletClient, walletDepository]);
 
   if (isLoading) {
     return (

@@ -30,7 +30,7 @@ const SettlementScreen: React.FC = () => {
     };
 
     fetchSettlements();
-  }, []);
+  }, [primaryParty, walletClient]);
 
   if (isLoading) {
     return (

@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { userContext } from "../App";
@@ -25,29 +25,6 @@ const AccountBalanceSbtScreen: React.FC = () => {
   const [instruments, setInstruments] = useState<InstrumentSummary[]>();
   const [instrumentObservers, setInstrumentObservers] = useState<damlTypes.Map<damlTypes.ContractId<any>, damlTypes.Party[]>>();
 
-  const fetchInstruments = async (balancesIns: Balance[]) => {
-    let arr_instruments: InstrumentSummary[] = [];
-    for (let index = 0; index < balancesIns.length; index++) {
-      const balance = balancesIns[index];
-      const resp_instrument = await walletClient.getInstruments({
-            depository: balance.instrument.depository,
-            issuer: balance.instrument.issuer,
-            id: { unpack: balance.instrument.id.unpack },
-            version: balance.instrument.version,
-      });
-      if (resp_instrument.instruments.length > 0) 
-        arr_instruments.push(resp_instrument.instruments[0]);
-    }
-    return arr_instruments;
-  }
-
-  const fetchObservers = async (instruments: InstrumentSummary[]) => {
-    const contracts = await Promise.all(
-      instruments.map(instrument => ledger.fetch(PartyBoundAttributes, instrument.cid as any))
-    );
-    return arrayToMap(contracts.flatMap(c => c == null ? [] : [[c.contractId, c.observers]]));
-  }
-
   useEffect(() => {
     const fetchBalances = async () => {
       if (primaryParty !== undefined) {
@@ -63,16 +40,39 @@ const AccountBalanceSbtScreen: React.FC = () => {
     };
 
     fetchBalances();
-  }, [primaryParty, walletClient]);
+  }, [primaryParty, walletClient, state.account.view.custodian, state.account.view.id.unpack]);
 
   useEffect(() => {
+    const fetchInstruments = async (balancesIns: Balance[]) => {
+      let arr_instruments: InstrumentSummary[] = [];
+      for (let index = 0; index < balancesIns.length; index++) {
+        const balance = balancesIns[index];
+        const resp_instrument = await walletClient.getInstruments({
+              depository: balance.instrument.depository,
+              issuer: balance.instrument.issuer,
+              id: { unpack: balance.instrument.id.unpack },
+              version: balance.instrument.version,
+        });
+        if (resp_instrument.instruments.length > 0) 
+          arr_instruments.push(resp_instrument.instruments[0]);
+      }
+      return arr_instruments;
+    }
+
+    const fetchObservers = async (instruments: InstrumentSummary[]) => {
+      const contracts = await Promise.all(
+        instruments.map(instrument => ledger.fetch(PartyBoundAttributes, instrument.cid as any))
+      );
+      return arrayToMap(contracts.flatMap(c => c == null ? [] : [[c.contractId, c.observers]]));
+    }
+
     const fetchInstrumentsAndObservers = async () => {
       const instruments = await fetchInstruments(balances);
       setInstruments(instruments);
       setInstrumentObservers(await fetchObservers(instruments));
     };
     fetchInstrumentsAndObservers();
-  }, [primaryParty, balances])
+  }, [primaryParty, balances, walletClient, ledger])
 
   if (isLoading) {
     return (

@@ -31,7 +31,7 @@ const DirectoryScreen: React.FC = () => {
       }
     };
     fetchInstruments();
-  }, [primaryParty]);
+  }, [primaryParty, sbtDepository, sbtIssuer, walletClient]);
 
   if (isLoading) {
     return (

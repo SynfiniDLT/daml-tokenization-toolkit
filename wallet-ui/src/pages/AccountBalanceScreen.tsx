@@ -22,42 +22,42 @@ const AccountBalanceScreen: React.FC = () => {
   const [balances, setBalances] = useState<Balance[]>([]);
   const [instruments, setInstruments] = useState<(InstrumentSummary | undefined)[]>();
 
-  const fetchBalances = async () => {
-    if (primaryParty !== undefined) {
-      const resp = await walletClient.getBalance({
-        account: {
-          owner: primaryParty,
-          custodian: state.account.view.custodian,
-          id: state.account.view.id,
-        },
-      });
-      setBalances(resp.balances);
-      return resp.balances;
+  useEffect(() => {
+    const fetchBalances = async () => {
+      if (primaryParty !== undefined) {
+        const resp = await walletClient.getBalance({
+          account: {
+            owner: primaryParty,
+            custodian: state.account.view.custodian,
+            id: {
+              unpack: state.account.view.id.unpack
+            },
+          },
+        });
+        setBalances(resp.balances);
+      }
+    };
+
+    fetchBalances();
+  }, [primaryParty, walletClient, state.account.view.custodian, state.account.view.id.unpack]);
+
+  useEffect(() => {
+    const fetchInstruments = async (balancesIns: Balance[]) => {
+      const res = await Promise.all(
+        balancesIns.map(async (balance) => {
+          const instruments = await walletClient.getInstruments(balance.instrument);
+          if (instruments.instruments.length > 0) {
+            return instruments.instruments[0];
+          } else {
+            return undefined;
+          }
+        })
+      );
+      setInstruments(res);
     }
-    return [];
-  };
 
-  const fetchInstruments = async (balancesIns: Balance[]) => {
-    return await Promise.all(
-      balancesIns.map(async (balance) => {
-        const instruments = await walletClient.getInstruments(balance.instrument);
-        if (instruments.instruments.length > 0) {
-          return instruments.instruments[0];
-        } else {
-          return undefined;
-        }
-      })
-    );
-  }
-
-  useEffect(() => {
-    fetchBalances()
-  },[primaryParty]);
-
-  useEffect(() => {
-    fetchInstruments(balances)
-    .then((res => setInstruments(res)));
-  },[primaryParty])
+    fetchInstruments(balances);
+  }, [balances, walletClient]);
 
   if (isLoading) {
     return (

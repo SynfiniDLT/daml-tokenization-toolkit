@@ -14,18 +14,18 @@ const AccountOfferScreen: React.FC = () => {
   const [accounts, setAccounts] = useState<AccountSummary[]>();
   const [isLoading] = useState<boolean>(false);
 
-  const fetchAccounts = async () => {
-    if (primaryParty !== undefined) {
-      const resp = await walletClient.getAccountOpenOffers({});
-      setAccountOffers(resp.accountOpenOffers);
-      const respAcc = await walletClient.getAccounts({ owner: primaryParty, custodian: null });
-      setAccounts(respAcc.accounts);
-    }
-  };
-
   useEffect(() => {
+    const fetchAccounts = async () => {
+      if (primaryParty !== undefined) {
+        const resp = await walletClient.getAccountOpenOffers({});
+        setAccountOffers(resp.accountOpenOffers);
+        const respAcc = await walletClient.getAccounts({ owner: primaryParty, custodian: null });
+        setAccounts(respAcc.accounts);
+      }
+    };
+
     fetchAccounts();
-  }, []);
+  }, [walletClient, primaryParty]);
 
   if (isLoading) {
     return (

@@ -1,6 +1,5 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { PageLayout } from "../components/PageLayout";
-import AuthContextStore from "../App";
 import { userContext } from "../App";
 import { PageLoader } from "../components/layout/page-loader";
 import { OneTimeOffer } from "@daml.js/synfini-settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer";
@@ -12,14 +11,14 @@ const OffersScreen: React.FC = () => {
 
   const [isLoading] = useState<boolean>(false);
   const [offers, setOffers] = useState<CreateEvent<OneTimeOffer, undefined, string>[]>();
-  
+
   useEffect(() => {
     const fetchOffers = async () => {
       setOffers(await ledger.query(OneTimeOffer));
     }
 
     fetchOffers();
-  }, []);
+  }, [ledger]);
 
   if (isLoading) {
     return (
