@@ -249,7 +249,7 @@ $(wallet_ui_codegen): $(wallet_ui_package_json) \
   $(settlement_one_time_offer_interface_dar) \
   $(settlement_open_offer_interface_dar) \
   $(settlement_helpers_dar) \
-  $(pbt_interface_dar) 
+  $(pbt_interface_dar)
 	rm -rf $(wallet_ui_codegen)
 	daml codegen js \
 		$(account_onboarding_open_offer_interface_dar) \
