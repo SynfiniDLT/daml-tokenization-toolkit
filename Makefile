@@ -6,6 +6,16 @@ daml_finance_dir = .lib
 # Daml models directory
 models_src_dir = models
 
+# Wallet views directory
+wallet_views_dir = wallet-views
+wallet_views_types_dir = $(wallet_views_dir)/types
+wallet_views_ts_client_dir = $(wallet_views_dir)/typescript-client
+wallet_views_ts_client_package_json = $(wallet_views_ts_client_dir)/package.json
+
+# Wallet UI directory
+wallet_ui_dir = wallet-ui
+wallet_ui_package_json = $(wallet_ui_dir)/package.json
+
 # Dar build outputs
 build_dir = .build
 assert_dar = $(build_dir)/synfini-assert.dar
@@ -30,20 +40,22 @@ pbt_interface_dar = $(build_dir)/synfini-pbt-interface.dar
 wallet_views_types_dar = $(build_dir)/synfini-wallet-views-types.dar
 
 # Codegen outputs
-wallet_views_main_codegen = wallet-views/java/src/generated-main/java
-wallet_views_test_codegen = wallet-views/java/src/generated-test/java
-wallet_views_client_codegen = wallet-views/typescript-client/daml.js
-wallet_ui_codegen = wallet-ui/daml.js
+wallet_views_main_codegen = $(wallet_views_dir)/java/src/generated-main/java
+wallet_views_test_codegen = $(wallet_views_dir)/java/src/generated-test/java
+wallet_views_client_codegen = $(wallet_views_dir)/typescript-client/daml.js
+wallet_ui_codegen = $(wallet_ui_dir)/daml.js
 
 # npm outputs
-wallet_views_typescript_client_build = wallet-views/typescript-client/lib
+wallet_views_ts_client_node_modules = $(wallet_views_ts_client_dir)/node_modules
+wallet_views_ts_client_build = $(wallet_views_ts_client_dir)/lib
+wallet_ui_node_modules = $(wallet_ui_dir)/node_modules
 
 # Conf file is used to configure dependencies on Daml Finance
 # It has been copied from https://github.com/digital-asset/daml-finance/blob/8a4b826a683364f06f6dd1068a3d2f15f03ff6e6/docs/code-samples/tutorials-config/0.0.3.conf
 $(daml_finance_dir): dependencies.conf
 	./get-dependencies.sh
 
-CUSTOM_VIEWS_JAR = custom-views-assembly-LOCAL-SNAPSHOT.jar
+CUSTOM_VIEWS_JAR = $(proj_root)/$(build_dir)/custom-views-assembly-LOCAL-SNAPSHOT.jar
 .PHONY: install-custom-views
 install-custom-views:
 	cd custom-views && \
@@ -171,8 +183,8 @@ $(wallet_views_types_dar): $(daml_finance_dir) \
   $(account_onboarding_open_offer_interface_dar) \
   $(issuer_onboarding_token_interface_dar) \
   $(pbt_interface_dar) \
-  $(shell ./find-daml-project-files.sh wallet-views/types)
-	cd wallet-views/types && daml build -o $(proj_root)/$(wallet_views_types_dar)
+  $(shell ./find-daml-project-files.sh $(wallet_views_types_dir))
+	cd $(wallet_views_types_dir) && daml build -o $(proj_root)/$(wallet_views_types_dar)
 
 # Codegen - java
 $(wallet_views_main_codegen): $(wallet_views_types_dar)
@@ -207,25 +219,29 @@ test-wallet-views: $(wallet_views_main_codegen) $(wallet_views_test_codegen)
 	cd wallet-views/java && mvn test ${TEST_WALLET_VIEWS_ARGS}
 
 # Codegen - TypeScript
-$(wallet_views_client_codegen): wallet-views/typescript-client/package.json \
+$(wallet_views_client_codegen): $(wallet_views_ts_client_package_json) \
   $(wallet_views_types_dar)
 	rm -rf $(wallet_views_client_codegen)
 	daml codegen js $(wallet_views_types_dar) -o $(wallet_views_client_codegen)
 
-$(wallet_views_typescript_client_build): $(wallet_views_client_codegen) \
-  $(shell ./find-ts-project-files.sh wallet-views/typescript-client)
-	cd wallet-views/typescript-client && npm install && npm run build
+# TypeScript client
+$(wallet_views_ts_client_node_modules): $(wallet_views_ts_client_package_json) $(wallet_views_client_codegen)
+	cd $(wallet_views_ts_client_dir) && npm install
 
-.PHONY: build-wallet-views-client
-build-wallet-views-client: $(wallet_views_typescript_client_build)
+$(wallet_views_ts_client_build): $(wallet_views_ts_client_node_modules) \
+  $(shell ./find-ts-project-files.sh $(wallet_views_ts_client_dir))
+	cd $(wallet_views_ts_client_dir) && npm run build
 
-.PHONY: test-wallet-views-client
-test-wallet-views-client: install-operations compile-wallet-views $(wallet_views_typescript_client_build)
-	cd wallet-views/typescript-client && ./test.sh
+.PHONY: build-wallet-views-ts-client
+build-wallet-views-ts-client: $(wallet_views_ts_client_build)
+
+.PHONY: test-wallet-views-ts-client
+test-wallet-views-ts-client: install-operations compile-wallet-views $(wallet_views_ts_client_build)
+	cd $(wallet_views_ts_client_dir) && ./test.sh
 ## END wallet-views
 
 ## BEGIN wallet ui
-$(wallet_ui_codegen): wallet-ui/package.json \
+$(wallet_ui_codegen): $(wallet_ui_package_json) \
   $(daml_finance_dir) \
   $(account_onboarding_open_offer_interface_dar) \
   $(issuer_onboarding_token_interface_dar) \
@@ -248,13 +264,16 @@ $(wallet_ui_codegen): wallet-ui/package.json \
 		$(daml_finance_dir)/daml-finance-interface-settlement.dar \
 		$(pbt_interface_dar) -o $(wallet_ui_codegen)
 
+$(wallet_ui_node_modules): $(wallet_ui_codegen) $(wallet_ui_package_json)
+	cd $(wallet_ui_dir) && npm install
+
 .PHONY: build-wallet-ui
-build-wallet-ui: $(wallet_ui_codegen) $(wallet_views_typescript_client_build) $(shell ./find-ts-project-files.sh wallet-ui)
-	cd wallet-ui && npm install && npm run build
+build-wallet-ui: $(wallet_ui_node_modules) $(wallet_views_ts_client_build)
+	cd $(wallet_ui_dir) && npm run build
 
 .PHONY: start-wallet-ui
-start-wallet-ui: $(wallet_ui_codegen) $(wallet_views_typescript_client_build)
-	cd wallet-ui && npm install && npm start
+start-wallet-ui: $(wallet_ui_node_modules) $(wallet_views_ts_client_build)
+	cd $(wallet_ui_dir) && npm start
 ## END wallet ui
 
 .PHONY: clean
@@ -262,7 +281,7 @@ clean:
 	./clean-daml-projects.sh
 	cd wallet-views/java && mvn clean
 	rm -rf $(wallet_views_main_codegen) $(wallet_views_test_codegen)
-	rm -rf $(wallet_views_client_codegen) wallet-views/typescript-client/node_modules $(wallet_views_typescript_client_build)
-	rm -rf $(wallet_ui_codegen) wallet-ui/node_modules wallet-ui/build
+	rm -rf $(wallet_views_client_codegen) $(wallet_views_ts_client_node_modules) $(wallet_views_ts_client_build)
+	rm -rf $(wallet_ui_codegen) $(wallet_ui_node_modules) $(wallet_ui_dir)/build
 	rm -rf $(build_dir)
 	rm -rf $(daml_finance_dir)
