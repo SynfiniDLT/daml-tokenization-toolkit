@@ -1,9 +1,9 @@
 import React from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { PageLayout } from "../components/PageLayout";
+import { walletMode } from "../App";
 
 const HomeScreen: React.FC = () => {
-  const walletMode = process.env.REACT_APP_MODE || "";
   const { isAuthenticated, user } = useAuth0();
 
   return (

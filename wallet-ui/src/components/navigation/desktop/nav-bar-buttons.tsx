@@ -2,12 +2,11 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { LoginButton } from "../../buttons/login-button";
 import { LogoutButton } from "../../buttons/logout-button";
 import HoverPopUp from "../../layout/hoverPopUp";
-import { useWalletUser } from "../../../App";
+import { useWalletUser, walletMode } from "../../../App";
 
 export const NavBarButtons = () => {
   const { isAuthenticated, user } = useAuth0();
   const { primaryParty, readOnly } = useWalletUser();
-  const walletMode = process.env.REACT_APP_MODE || "";
 
   return (
     <div className="nav-bar__buttons">

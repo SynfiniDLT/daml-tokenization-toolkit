@@ -35,22 +35,23 @@ const AuthContextStore = React.createContext<AuthContext | undefined>(undefined)
 
 export const userContext = createLedgerContext();
 
+const walletModeVar = process.env.REACT_APP_MODE;
+if (walletModeVar !== "investor" && walletModeVar !== "issuer") {
+  throw Error(`Unsupported wallet mode: ${walletModeVar}`);
+}
+
+export type WalletMode = "investor" | "issuer";
+export const walletMode: WalletMode = walletModeVar === "investor" ? "investor" : "issuer";
+
 const App: React.FC = () => {
   const { isLoading, getAccessTokenSilently, isAuthenticated } = useAuth0();
 
   const [token, setToken] = useState("");
   const [primaryParty, setPrimaryParty] = useState("");
   const [readOnly, setReadOnly] = useState(false);
-  const walletMode = process.env.REACT_APP_MODE || "";
+  
   const modeStyle = {
-    backgroundColor:
-      walletMode === "investor"
-        ? "var(--black)"
-        : walletMode === "issuer"
-        ? "var(--issuer)" 
-        : walletMode === "fund" // TODO remove "fund" mode?
-        ? "var(--fund)" 
-        : "var(--black)",
+    backgroundColor: walletMode === "investor" ? "var(--black)" : "var(--issuer)"
   };
 
   useEffect(() => {
@@ -152,14 +153,16 @@ export function useWalletUser(): { primaryParty?: Party; readOnly: boolean; } {
         try {
           const user = await ledger.getUser();
           const rights = await ledger.listUserRights();
-          const readOnly = (rights.find(right => right.type === "CanActAs" && right.party === user.primaryParty) === undefined);
+          const readOnly = (
+            rights.find(right => right.type === "CanActAs" && right.party === user.primaryParty) === undefined
+          );
           ctx.setReadOnly(readOnly);
 
           if (user.primaryParty !== undefined) {
             ctx.setPrimaryParty(user.primaryParty);
           }
         } catch (err) {
-          console.log("error when fetching primary party 2", err);
+          console.log("Error fetching primary party", err);
         }
       }
     };

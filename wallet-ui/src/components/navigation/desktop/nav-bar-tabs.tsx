@@ -1,8 +1,8 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { NavBarTab } from "./nav-bar-tab";
+import { walletMode } from "../../../App";
 
 export const NavBarTabs = () => {
-  const walletMode = process.env.REACT_APP_MODE || "";
   const { isAuthenticated } = useAuth0();
 
   const investorTab = (
@@ -11,16 +11,6 @@ export const NavBarTabs = () => {
       <NavBarTab path="/account/create" label="Accounts" />
       <NavBarTab path="/offers" label="Offers" />
       <NavBarTab path="/fund" label="Invest" />
-      <NavBarTab path="/settlements" label="Transactions" />
-      <NavBarTab path="/directory" label="Directory" />
-    </>
-  );
-
-  // TODO can we move this?
-  const fundTab = (
-    <>
-      <NavBarTab path="/" label="Home" />
-      <NavBarTab path="/wallet" label="Fund Wallet" />
       <NavBarTab path="/settlements" label="Transactions" />
       <NavBarTab path="/directory" label="Directory" />
     </>
@@ -44,14 +34,12 @@ export const NavBarTabs = () => {
 
   let returnTab;
 
-  if (walletMode===("investor")){
+  if (walletMode === "investor"){
     returnTab = investorTab;
-  }else if (walletMode===("fund")){
-    returnTab = fundTab;
-  }else if  (walletMode===("issuer")){
+  } else if  (walletMode === "issuer") {
     returnTab = issuerTab;
   }
-  
+
   return (
     <div className="nav-bar__tabs">
       {isAuthenticated? returnTab: LoginTab}

@@ -2,7 +2,7 @@ import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/
 
 interface AccountsSelectProps {
   accounts?: AccountSummary[];
-  onChange:React.ChangeEventHandler<HTMLSelectElement>;
+  onChange: React.ChangeEventHandler<HTMLSelectElement>;
   selectedAccount: string;
 }
 
