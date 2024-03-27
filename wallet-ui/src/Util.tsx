@@ -1,4 +1,4 @@
-import { Set } from "@daml.js/97b883cd8a2b7f49f90d5d39c981cf6e110cf1f1c64427a28a6d58ec88c43657/lib/DA/Set/Types";
+import { Set } from "@daml.js/da-set/lib/DA/Set/Types";
 import * as damlTypes from "@daml/types";
 
 export function formatCurrency(amountString: string, locale: string): string {
