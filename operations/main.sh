@@ -39,6 +39,10 @@ export DOPS_INSTRUMENT_FACTORIES_FILE=${DOPS_INTERNAL}/instrument-factories.json
 if [ ! -f "${DOPS_INSTRUMENT_FACTORIES_FILE}" ]; then
   echo '{"instrumentFactories": []}' > "${DOPS_INSTRUMENT_FACTORIES_FILE}"
 fi
+export DOPS_INSTRUMENT_METADATA_FACTORIES_FILE=${DOPS_INTERNAL}/instrument-metadata-factories.json
+if [ ! -f "${DOPS_INSTRUMENT_METADATA_FACTORIES_FILE}" ]; then
+  echo '{"instrumentMetadataFactories": []}' > "${DOPS_INSTRUMENT_METADATA_FACTORIES_FILE}"
+fi
 export DOPS_ISSUER_FACTORIES_FILE=${DOPS_INTERNAL}/issuer-factories.json
 if [ ! -f "${DOPS_ISSUER_FACTORIES_FILE}" ]; then
   echo '{"issuerFactories": []}' > "${DOPS_ISSUER_FACTORIES_FILE}"

@@ -1,35 +1,53 @@
-module Synfini.Instrument.Metadata.Factory where
+module Synfini.Instrument.Metadata where
 
 import DA.Set qualified as Set
 
 import Daml.Finance.Util.Disclosure qualified as DisclosureUtil
 
-import Daml.Finance.Interface.Types.Common.Types (PartiesMap)
+import Daml.Finance.Interface.Types.Common.Types
 
 import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
-import Synfini.Instrument.Metadata.Metadata qualified as MetadataImpl
-
-import Synfini.Interface.Instrument.Metadata.Factory qualified as MetadataFactory
 import Synfini.Interface.Instrument.Metadata.Metadata qualified as Metadata
+import qualified Synfini.Interface.Instrument.Metadata.Factory as MetadataFactory
 
--- | Type synonym for `Factory`.
-type F = Factory
+template Metadata
+  with
+    instrument : InstrumentKey
+    attributes : Metadata.Attributes
+    disclosureControllers : Parties
+    observers : PartiesMap
+  where
+    signatory instrument.depository, instrument.issuer
+    observer Disclosure.flattenObservers observers, disclosureControllers
 
--- | Factory template for metadata creation.
+    interface instance Metadata.I for Metadata where
+      view = Metadata.View with instrument, attributes
+
+    interface instance Disclosure.I for Metadata where
+      view = Disclosure.View with
+        disclosureControllers = Set.fromList [instrument.issuer, instrument.depository]
+        observers
+      setObservers = DisclosureUtil.setObserversImpl this $
+        Some (Metadata.disclosureUpdateReference instrument)
+      addObservers = DisclosureUtil.addObserversImpl @Metadata this $
+        Some (Metadata.disclosureUpdateReference instrument)
+      removeObservers = DisclosureUtil.removeObserversImpl this $
+        Some (Metadata.disclosureUpdateReference instrument)
+
 template Factory
   with
-    provider : Party -- ^ The factory's provider.
-    observers : PartiesMap -- ^ The factory's observers.
+    provider : Party
+    observers : PartiesMap
   where
     signatory provider
     observer Disclosure.flattenObservers observers
 
-    interface instance MetadataFactory.F for Factory where
+    interface instance MetadataFactory.I for Factory where
       view = MetadataFactory.View with provider
       create' args = do
         cid <- toInterfaceContractId <$>
-          create MetadataImpl.Metadata with
+          create Metadata with
             instrument = args.instrument
             attributes = args.attributes
             disclosureControllers = args.disclosureControllers
