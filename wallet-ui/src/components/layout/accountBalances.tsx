@@ -14,7 +14,7 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
   const [instrument, setInstrument] = useState<InstrumentKey>();
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
-  const handleSeeDetails = (account: AccountSummary) => {
+  const handleSeeSbtDetails = (account: AccountSummary) => {
     nav("/wallet/account/balance/sbt", { state: { account: account } });
   };
 
@@ -27,12 +27,16 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
      setIsOpen(!isOpen);
   }
 
-  // let trAssets: JSX.Element[] = [];
-  // let trSbts: JSX.Element[] = [];
-
   const tableRows: [AccountSummary, JSX.Element[]][] = props.accountBalances.map(accountBalance => {
-    const trs = accountBalance.balances.map(balance =>
-      (
+    const trs = accountBalance.balances.map(balance => {
+      const actionButton =
+        (balance.instrument.id.unpack === process.env.REACT_APP_STABLECOIN_INSTRUMENT_ID) ?
+          (<button onClick={() => handleRedeem(balance, accountBalance.account)}>Redeem</button>) :
+        (balance.instrument.id.unpack === process.env.REACT_APP_PARTY_ATTRIBUTES_INSTRUMENT_ID) ?
+          (<button onClick={() => handleSeeSbtDetails(accountBalance.account)}>Manage access</button>) :
+          (<></>);
+
+      return (
         <tr key={balance.instrument.id.unpack}>
           <td>
             {balance.instrument.id.unpack === process.env.REACT_APP_STABLECOIN_INSTRUMENT_ID && (
@@ -47,87 +51,17 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
           </td>
           <td><HoverPopUp triggerText={nameFromParty(balance.instrument.issuer)} popUpContent={balance.instrument.issuer} /></td>
           <td>
-            {formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")} <Coin />
+            {formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")}
           </td>
-          <td>{formatCurrency(balance.unlocked, "en-US")} <Coin /></td>
-          <td>{formatCurrency(balance.locked, "en-US")} <Coin /></td>
-          <td>
-            {balance.instrument.id.unpack === process.env.REACT_APP_STABLECOIN_INSTRUMENT_ID && (
-              <button onClick={() => handleRedeem(balance, accountBalance.account)}>Redeem</button>
-              )}
-          </td>
+          <td>{formatCurrency(balance.unlocked, "en-US")} </td>
+          <td>{formatCurrency(balance.locked, "en-US")} </td>
+          <td>{actionButton}</td>
         </tr>
-      )
-    );
+      );
+    });
 
     return [accountBalance.account, trs];
   });
-  // props.accountBalances.forEach(accountBalance => {
-  //   if (accountBalance.account.view.id.unpack !== "sbt") {
-  //     accountBalance.balances.forEach(balance => {
-  //       const trAsset = (
-  //           <tr key={balance.instrument.id.unpack}>
-  //             <td>{balance.account.id.unpack} </td>
-  //             <td>
-  //               {balance.instrument.id.unpack === process.env.REACT_APP_STABLECOIN_INSTRUMENT_ID && (
-  //                 <>
-  //                   <Coin />
-  //                   &nbsp;&nbsp;
-  //                 </>
-  //               )}
-  //               <a href="#" onClick={() => handleInstrumentModal(balance.instrument)}>
-  //                 <HoverPopUp triggerText={balance.instrument.id.unpack} popUpContent={balance.instrument.version} />
-  //               </a>
-  //             </td>
-  //             <td>{accountBalance.account.view.description} </td>
-  //             <td><HoverPopUp triggerText={nameFromParty(balance.instrument.issuer)} popUpContent={balance.instrument.issuer} /></td>
-
-  //             {balance.instrument.id.unpack === process.env.REACT_APP_STABLECOIN_INSTRUMENT_ID ? (
-  //               <>
-  //                 <td>
-  //                   {formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")} <Coin />
-  //                 </td>
-  //                 <td>{formatCurrency(balance.unlocked, "en-US")} <Coin /></td>
-  //                 <td>{formatCurrency(balance.locked, "en-US")} <Coin /></td>
-  //               </>
-  //             ) : (
-  //               <>
-  //                 <td>{Number(balance.unlocked)}</td>
-  //                 <td>{Number(balance.unlocked)}</td>
-  //                 <td>-</td>
-  //               </>
-  //             )}
-  //             <td>
-  //               {balance.instrument.id.unpack === process.env.REACT_APP_STABLECOIN_INSTRUMENT_ID && (
-  //                 <button onClick={() => handleRedeem(balance, accountBalance.account)}>Redeem</button>
-  //                 )}
-  //             </td>
-  //           </tr>
-          
-  //       );
-  //       trAssets.push(trAsset);
-  //     });
-  //   }
-
-  //   if (accountBalance.account.view.id.unpack === "sbt") {
-  //     accountBalance.balances.forEach(balance => {
-  //       const trSbt = (
-  //         <tr key={balance.instrument.id.unpack}>
-  //           <td>
-  //             {balance.instrument.id.unpack} | {balance.instrument.version}
-  //           </td>
-  //           <td>
-  //             <HoverPopUp triggerText={balance.instrument.issuer.substring(0, 30) + "..."} popUpContent={balance.instrument.issuer} />
-  //           </td>
-  //           <td>
-  //             <button onClick={() => handleSeeDetails(accountBalance.account)}>See Details</button>
-  //           </td>
-  //         </tr>
-  //       );
-  //       trSbts.push(trSbt);
-  //     });
-  //   }
-  // });
 
   return (
     <>
