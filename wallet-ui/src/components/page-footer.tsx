@@ -10,7 +10,7 @@ export const PageFooter = () => {
         <div className="page-footer-grid__brand">
           <div className="page-footer-brand">
             <PageFooterHyperlink path="#">
-              DLT Solutions 
+              Synfini Wallet
             </PageFooterHyperlink>
           </div>
         </div>
