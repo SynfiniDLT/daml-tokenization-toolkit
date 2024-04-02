@@ -70,27 +70,8 @@ const App: React.FC = () => {
     );
   }
 
-  // const commonRoutes = (
-  //   <>
-  //     <Route path="/" element={<AuthenticationGuard component={WalletScreen} />} />
-  //     <Route path="/wallet" element={<AuthenticationGuard component={WalletScreen} />} />
-  //     <Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />
-  //     <Route path="/wallet/account/balance/sbt" element={<AuthenticationGuard component={AccountBalanceSbtScreen} />} />
-  //     <Route path="/wallet/account/balance/redeem" element={<AuthenticationGuard component={BalanceRedeemFormScreen} />} />
-  //     <Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />
-  //     <Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />
-  //     <Route path="/fund" element={<AuthenticationGuard component={FundScreen} />} />
-  //     <Route path="/fund/subscribe" element={<AuthenticationGuard component={FundSubscribeFormScreen} />} />
-  //     <Route path="/account/create" element={<AuthenticationGuard component={AccountOfferScreen} />} />
-  //     <Route path="/offers" element={<AuthenticationGuard component={OffersScreen} />} />
-  //     <Route path="/offer/accept" element={<AuthenticationGuard component={OfferAcceptFormScreen} />} />
-  //     <Route path="/settlement/action" element={<AuthenticationGuard component={SettlementActionScreen} />} />
-  //   </>
-  // );
-
   const commonRoutes = [
     (<Route path="/" element={<AuthenticationGuard component={WalletScreen} />} />),
-    // (<Route path="/wallet" element={<AuthenticationGuard component={WalletScreen} />} />),
     (<Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />),
     (<Route path="/wallet/account/balance/sbt" element={<AuthenticationGuard component={AccountBalanceSbtScreen} />} />),
     (<Route path="/wallet/account/balance/redeem" element={<AuthenticationGuard component={BalanceRedeemFormScreen} />} />),

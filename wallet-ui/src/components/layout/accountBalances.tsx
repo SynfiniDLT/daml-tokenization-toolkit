@@ -7,7 +7,10 @@ import InstrumentPopDetails from "./instrumentPopDetails";
 import { useState } from "react";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 
-export type AccountBalanceSummary = {account: AccountSummary, balances: Balance[]};
+export type AccountBalanceSummary = {
+  account: AccountSummary,
+  balances: Balance[]
+};
 
 export default function AccountBalances(props: { accountBalances: AccountBalanceSummary[] }) {
   const nav = useNavigate();
@@ -91,25 +94,6 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
                 </table>
               </div>
               <InstrumentPopDetails instrument={instrument} isOpen={isOpen} handleClose={() => setIsOpen(false)}/>
-              {/* {trSbts.length > 0 && (
-                <>
-                  <div style={{ marginTop: "15px" }}>
-                    <h4 className="profile__title">SBTs</h4>
-                  </div>
-                  <div style={{ margin: "10px", padding: "10px" }}>
-                    <table id="assets">
-                      <thead>
-                        <tr>
-                          <th>SBT ID</th>
-                          <th>Issuer</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>{trSbts}</tbody>
-                    </table>
-                  </div>
-                </>
-              )} */}
             </div>
           );
         })
