@@ -1,0 +1,120 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+
+module Synfini.Interface.Instrument.Metadata.Metadata where
+
+import DA.Map (Map)
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Util.Common (exerciseInterfaceByKeyHelper)
+
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+-- | Type synonym for 'Metadata'.
+type I = Metadata
+
+-- | Type synonym for 'View'.
+type V = View
+
+-- | An attribute of an instrument.
+data Attribute = Attribute
+  with
+    attributeValue : Text
+    displayType : Text
+  deriving (Show, Eq)
+
+-- | Type of attribute names.
+type AttributeName = Text
+
+-- | Type of a collection of attributes.
+type Attributes = Map AttributeName Attribute
+
+-- | View of an 'Instrument'.
+data View = View
+  with
+    instrument : InstrumentKey -- ^ The instrument's key.
+    attributes : Attributes -- ^ The instrument's attributes.
+  deriving (Eq, Show)
+
+-- | Interface which can capture various metadata or attributes associated with an instrument.
+interface Metadata requires Disclosure.I where
+  viewtype V
+
+  -- | Retrieves the interface view.
+  nonconsuming choice GetView : V
+    with
+      viewer : Party -- ^ The party retrieving the view.
+    controller viewer
+    do
+      pure $ view this
+
+-- | HIDE
+-- This template is used to key a Metadata contract. It allows for looking up this contract by
+-- key then acquiring the Metadata contract by fetching its contract id on this contract. As
+-- updates are made to an Metadata, this Reference contract is required to be kept in sync.
+template Reference
+  with
+    metadataView : V -- ^ The default view of the Metadata.
+    disclosureView : Disclosure.V -- ^ Disclosure view of the Metadata.
+    cid : ContractId I -- ^ The contract id of the Metadata.
+  where
+    signatory metadataView.instrument.depository, metadataView.instrument.issuer
+    observer Disclosure.flattenObservers disclosureView.observers, disclosureView.disclosureControllers
+
+    key metadataView.instrument : InstrumentKey
+    maintainer key.depository
+
+    -- | Get the 'Metadata''s contract id.
+    nonconsuming choice GetCid : ContractId I
+      with
+        viewer : Party
+      controller viewer
+      do
+        pure cid
+
+    -- | Set the Metadata cid. This choice should be called only from 'Metadata' implementations.
+    choice SetCid : ContractId R
+      with
+        newCid : ContractId I -- The metadata cid.
+      controller metadataView.instrument.depository, metadataView.instrument.issuer
+      do
+        create this with cid = newCid
+
+    -- | Set observers. This choice should be called only from 'Metadata' implementations.
+    choice SetObservers : ContractId R
+      with
+        newObservers : PartiesMap -- ^ The new observers.
+      controller metadataView.instrument.depository, metadataView.instrument.issuer
+      do
+        create this with disclosureView.observers = newObservers
+
+type R = Reference
+
+-- | Exercise interface by key.
+-- This method can be used to exercise a choice on a 'Metadata' given its 'View'.
+-- Requires as input the 'View', the actor fetching the metadata and the choice
+-- arguments. For example:
+exerciseInterfaceByKey : forall i d r. (HasInterfaceTypeRep i, HasExercise i d r)
+  => InstrumentKey  -- ^ The instrument key.
+  -> Party          -- ^ The actor fetching the metadata.
+  -> d              -- ^ The choice arguments.
+  -> Update r
+exerciseInterfaceByKey k viewer arg =
+  exerciseInterfaceByKeyHelper @R @I @i k (GetCid with viewer) arg
+
+-- | HIDE
+-- Create Reference for a metadata.
+createReference : Party -> ContractId I -> Update (ContractId R)
+createReference actor cid = do
+  metadataView <- exercise cid GetView with viewer = actor
+  disclosureView <- exercise (toInterfaceContractId @Disclosure.I cid) Disclosure.GetView with
+    viewer = actor
+  create Reference with metadataView, cid, disclosureView
+
+-- | HIDE
+-- Helper function to update the metadata reference once observers are added to the metadata.
+disclosureUpdateReference : InstrumentKey -> PartiesMap -> ContractId I -> Update (ContractId Disclosure.I)
+disclosureUpdateReference k newObservers iCid = do
+  exerciseByKey @Reference k SetCid with newCid = iCid
+  exerciseByKey @Reference k SetObservers with newObservers
+  pure $ toInterfaceContractId iCid

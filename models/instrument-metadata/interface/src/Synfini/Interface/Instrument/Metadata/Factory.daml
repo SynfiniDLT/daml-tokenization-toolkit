@@ -1,10 +1,10 @@
-module Synfini.Interface.Instrument.PartyBoundAttributes.Factory where
+module Synfini.Interface.Instrument.Metadata.Factory where
 
 import Daml.Finance.Interface.Types.Common.Types
 
 import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
-import Synfini.Interface.Instrument.PartyBoundAttributes.Instrument qualified as Instrument
+import Synfini.Interface.Instrument.Metadata.Metadata qualified as Metadata
 
 -- | Type synonym for 'Factory'.
 type F = Factory
@@ -18,30 +18,28 @@ data View = View
     provider : Party -- ^ Provider of the 'Factory'.
   deriving (Eq, Show)
 
--- | Factory to instantiate party-bound attributes 'Instrument's.
+-- | Factory to instantiate 'Metadata's.
 interface Factory requires Disclosure.I where
   viewtype V
 
   -- | Implementation of the 'Create' choice.
-  create' : Create -> Update (ContractId Instrument.I)
+  create' : Create -> Update (ContractId Metadata.I)
 
   -- | Implementation of 'Remove' choice.
   remove : Remove -> Update ()
 
-  -- | Create new party-bound attributes.
-  nonconsuming choice Create : ContractId Instrument.I
+  -- | Create new metadata.
+  nonconsuming choice Create : ContractId Metadata.I
     with
       instrument : InstrumentKey -- ^ The instrument's key.
-      description : Text -- ^ The description of the attributes.
-      validAsOf : Time -- ^ Timestamp as of which the attributes are valid.
-      owner : Party -- ^ Owner of the attributes.
-      attributes : Instrument.Attributes -- ^ Attributes of the party.
-      observers : PartiesMap -- ^ The instrument's observers.
+      attributes : Metadata.Attributes -- ^ Attributes of the instrument.
+      disclosureControllers : Parties -- ^ Controllers of the 'Disclosure' interface choices on the metadata.
+      observers : PartiesMap -- ^ The observers of the 'Metadata'.
     controller instrument.depository, instrument.issuer
     do
       create' this arg
 
-  -- | Archive party-bound attributes.
+  -- | Archive metadata.
   nonconsuming choice Remove : ()
     with
       instrument : InstrumentKey -- ^ The instrument's key.

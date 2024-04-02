@@ -27,6 +27,8 @@ account_onboarding_open_offer_interface_dar = $(build_dir)/synfini-account-onboa
 account_onboarding_open_offer_dar = $(build_dir)/synfini-account-onboarding-open-offer.dar
 issuer_onboarding_token_interface_dar = $(build_dir)/synfini-issuer-onboarding-token-interface.dar
 issuer_onboarding_token_dar = $(build_dir)/synfini-issuer-onboarding-token.dar
+issuer_onboarding_metadata_interface_dar = $(build_dir)/synfini-issuer-onboarding-metadata-interface.dar
+issuer_onboarding_metadata_dar = $(build_dir)/synfini-issuer-onboarding-metadata.dar
 operations_scripts_dar = $(build_dir)/synfini-operations.dar
 minter_burner_interface_dar = $(build_dir)/synfini-issuer-onboarding-minter-burner-interface.dar
 minter_burner_dar = $(build_dir)/synfini-issuer-onboarding-minter-burner.dar
@@ -35,8 +37,8 @@ settlement_one_time_offer_dar = $(build_dir)/synfini-settlement-one-time-offer.d
 settlement_open_offer_interface_dar = $(build_dir)/synfini-settlement-open-offer-interface.dar
 settlement_open_offer_dar = $(build_dir)/synfini-settlement-open-offer.dar
 settlement_helpers_dar = $(build_dir)/synfini-settlement-helpers.dar
-pbt_dar = $(build_dir)/synfini-pbt.dar
-pbt_interface_dar = $(build_dir)/synfini-pbt-interface.dar
+instrument_metadata_dar = $(build_dir)/synfini-instrument-metadata.dar
+instrument_metadata_interface_dar = $(build_dir)/synfini-instrument-metadata-interface.dar
 wallet_views_types_dar = $(build_dir)/synfini-wallet-views-types.dar
 
 # Codegen outputs
@@ -137,6 +139,10 @@ $(issuer_onboarding_token_dar): $(issuer_onboarding_token_interface_dar) \
   $(shell ./find-daml-project-files.sh $(models_src_dir)/issuer-onboarding/instrument-token-implementation)
 	cd $(models_src_dir)/issuer-onboarding/instrument-token-implementation && daml build -o $(proj_root)/$(issuer_onboarding_token_dar)
 
+$(issuer_onboarding_metadata_interface_dar): $(instrument_metadata_interface_dar) \
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/issuer-onboarding/metadata-interface)
+	cd $(models_src_dir)/issuer-onboarding/metadata-interface && daml build -o $(proj_root)/$(issuer_onboarding_metadata_interface_dar)
+
 $(minter_burner_interface_dar): $(daml_finance_dir) \
   $(shell ./find-daml-project-files.sh $(models_src_dir)/issuer-onboarding/minter-burner-interface)
 	cd $(models_src_dir)/issuer-onboarding/minter-burner-interface && daml build -o $(proj_root)/$(minter_burner_interface_dar)
@@ -161,7 +167,7 @@ $(operations_scripts_dar): $(daml_finance_dir) \
   $(settlement_helpers_dar) \
   $(trackable_holding_dar) \
   $(trackable_settlement_dar) \
-  $(pbt_dar) \
+  $(instrument_metadata_dar) \
   $(shell ./find-daml-project-files.sh operations/main)
 	cd operations/main && daml build -o $(proj_root)/$(operations_scripts_dar)
 
@@ -170,19 +176,22 @@ install-operations: $(operations_scripts_dar)
 	export DOPS_DAR=$(proj_root)/$(operations_scripts_dar) && cd operations && ./install.sh
 ## END onboarding
 
-## BEGIN pbt
-$(pbt_interface_dar): $(daml_finance_dir) $(shell ./find-daml-project-files.sh $(models_src_dir)/pbt/interface)
-	cd $(models_src_dir)/pbt/interface && daml build -o $(proj_root)/$(pbt_interface_dar)
+## BEGIN instrument metadata
+$(instrument_metadata_interface_dar): $(daml_finance_dir) \
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/instrument-metadata/interface)
+	cd $(models_src_dir)/instrument-metadata/interface && daml build -o $(proj_root)/$(instrument_metadata_interface_dar)
 
-$(pbt_dar): $(daml_finance_dir) $(pbt_interface_dar) $(shell ./find-daml-project-files.sh $(models_src_dir)/pbt/implementation)
-	cd $(models_src_dir)/pbt/implementation && daml build -o $(proj_root)/$(pbt_dar)
-## END pbt
+$(instrument_metadata_dar): $(daml_finance_dir) \
+  $(instrument_metadata_interface_dar) \
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/instrument-metadata/implementation)
+	cd $(models_src_dir)/instrument-metadata/implementation && daml build -o $(proj_root)/$(instrument_metadata_dar)
+## END instrument metadata
 
 ## BEGIN wallet-views
 $(wallet_views_types_dar): $(daml_finance_dir) \
   $(account_onboarding_open_offer_interface_dar) \
   $(issuer_onboarding_token_interface_dar) \
-  $(pbt_interface_dar) \
+  $(instrument_metadata_interface_dar) \
   $(shell ./find-daml-project-files.sh $(wallet_views_types_dir))
 	cd $(wallet_views_types_dir) && daml build -o $(proj_root)/$(wallet_views_types_dar)
 
@@ -194,7 +203,7 @@ $(wallet_views_main_codegen): $(wallet_views_types_dar)
 $(wallet_views_test_codegen): $(daml_finance_dir) \
   $(account_onboarding_open_offer_dar) \
   $(issuer_onboarding_token_dar) \
-  $(pbt_dar)
+  $(instrument_metadata_dar)
 	rm -rf $(wallet_views_test_codegen)
 	daml codegen java \
 		-o $(wallet_views_test_codegen) \
@@ -204,7 +213,7 @@ $(wallet_views_test_codegen): $(daml_finance_dir) \
 		$(daml_finance_dir)/daml-finance-instrument-token.dar \
 		$(account_onboarding_open_offer_dar) \
 		$(issuer_onboarding_token_dar) \
-		$(pbt_dar)
+		$(instrument_metadata_dar)
 
 .PHONY: compile-wallet-views
 compile-wallet-views: $(wallet_views_main_codegen)
@@ -249,7 +258,7 @@ $(wallet_ui_codegen): $(wallet_ui_package_json) \
   $(settlement_one_time_offer_interface_dar) \
   $(settlement_open_offer_interface_dar) \
   $(settlement_helpers_dar) \
-  $(pbt_interface_dar)
+  $(instrument_metadata_interface_dar)
 	rm -rf $(wallet_ui_codegen)
 	daml codegen js \
 		$(account_onboarding_open_offer_interface_dar) \
@@ -262,7 +271,7 @@ $(wallet_ui_codegen): $(wallet_ui_package_json) \
 		$(daml_finance_dir)/daml-finance-interface-util.dar \
 		$(daml_finance_dir)/daml-finance-interface-holding.dar \
 		$(daml_finance_dir)/daml-finance-interface-settlement.dar \
-		$(pbt_interface_dar) -o $(wallet_ui_codegen)
+		$(instrument_metadata_interface_dar) -o $(wallet_ui_codegen)
 
 $(wallet_ui_node_modules): $(wallet_ui_codegen) $(wallet_ui_package_json)
 	cd $(wallet_ui_dir) && npm install

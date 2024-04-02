@@ -1,0 +1,49 @@
+module Synfini.Instrument.Metadata.Factory where
+
+import DA.Set qualified as Set
+
+import Daml.Finance.Util.Disclosure qualified as DisclosureUtil
+
+import Daml.Finance.Interface.Types.Common.Types (PartiesMap)
+
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Synfini.Instrument.Metadata.Metadata qualified as MetadataImpl
+
+import Synfini.Interface.Instrument.Metadata.Factory qualified as MetadataFactory
+import Synfini.Interface.Instrument.Metadata.Metadata qualified as Metadata
+
+-- | Type synonym for `Factory`.
+type F = Factory
+
+-- | Factory template for metadata creation.
+template Factory
+  with
+    provider : Party -- ^ The factory's provider.
+    observers : PartiesMap -- ^ The factory's observers.
+  where
+    signatory provider
+    observer Disclosure.flattenObservers observers
+
+    interface instance MetadataFactory.F for Factory where
+      view = MetadataFactory.View with provider
+      create' args = do
+        cid <- toInterfaceContractId <$>
+          create MetadataImpl.Metadata with
+            instrument = args.instrument
+            attributes = args.attributes
+            disclosureControllers = args.disclosureControllers
+            observers = args.observers
+        Metadata.createReference args.instrument.depository $ toInterfaceContractId cid
+        pure cid
+      remove MetadataFactory.Remove {instrument} = do
+        (refCid, ref) <- fetchByKey @Metadata.R instrument
+        instrumentCid <- exercise refCid Metadata.GetCid with viewer = instrument.depository
+        archive instrumentCid
+        archive refCid
+
+    interface instance Disclosure.I for Factory where
+      view = Disclosure.View with disclosureControllers = Set.singleton provider; observers
+      setObservers = DisclosureUtil.setObserversImpl @Factory @Disclosure.I this None
+      addObservers = DisclosureUtil.addObserversImpl @Factory @Disclosure.I this None
+      removeObservers = DisclosureUtil.removeObserversImpl @Factory @Disclosure.I this None

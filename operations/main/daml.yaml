@@ -28,7 +28,7 @@ data-dependencies:
   - ../../.build/synfini-issuer-onboarding-minter-burner-interface.dar
   - ../../.build/synfini-settlement-one-time-offer-interface.dar
   - ../../.build/synfini-settlement-open-offer-interface.dar
-  - ../../.build/synfini-pbt-interface.dar
+  - ../../.build/synfini-instrument-metadata-interface.dar
 
   - ../../.build/synfini-trackable-holding.dar
   - ../../.build/synfini-trackable-settlement.dar
@@ -39,4 +39,4 @@ data-dependencies:
   - ../../.build/synfini-settlement-one-time-offer.dar
   - ../../.build/synfini-settlement-open-offer.dar
   - ../../.build/synfini-settlement-helpers.dar
-  - ../../.build/synfini-pbt.dar
+  - ../../.build/synfini-instrument-metadata.dar
