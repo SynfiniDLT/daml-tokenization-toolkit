@@ -118,7 +118,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
         <ContainerDiv>
           <ContainerColumn>
             <ContainerColumnKey>Offer Description:</ContainerColumnKey>
-            <ContainerColumnKey>Validator:</ContainerColumnKey>
+            <ContainerColumnKey>Provider:</ContainerColumnKey>
             <p></p>
             <button
               type="button"

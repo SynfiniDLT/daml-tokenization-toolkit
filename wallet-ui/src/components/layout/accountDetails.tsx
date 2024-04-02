@@ -30,7 +30,7 @@ export default function AccountDetails(props: AccountDetailsProps) {
       <ContainerDiv>
         <ContainerColumn>
           <ContainerColumnKey>Description:</ContainerColumnKey>
-          <ContainerColumnKey>Validator:</ContainerColumnKey>
+          <ContainerColumnKey>Provider:</ContainerColumnKey>
           <ContainerColumnKey>Contract ID:</ContainerColumnKey>
           <p></p>
           <p>

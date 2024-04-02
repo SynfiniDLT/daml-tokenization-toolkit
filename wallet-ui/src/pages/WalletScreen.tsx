@@ -71,8 +71,10 @@ const WalletScreen: React.FC = () => {
           </div>
         </div>
       )}
+      <br/>
 
       <div>
+        <h3 className="profile__title">{isAuthenticated ? "Accounts" : "Please login to view your assets"}</h3>
         <AccountBalances accountBalances={accountBalances} />
       </div>
     </PageLayout>
