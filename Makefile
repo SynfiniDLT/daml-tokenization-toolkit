@@ -143,6 +143,10 @@ $(issuer_onboarding_metadata_interface_dar): $(instrument_metadata_interface_dar
   $(shell ./find-daml-project-files.sh $(models_src_dir)/issuer-onboarding/metadata-interface)
 	cd $(models_src_dir)/issuer-onboarding/metadata-interface && daml build -o $(proj_root)/$(issuer_onboarding_metadata_interface_dar)
 
+$(issuer_onboarding_metadata_dar): $(issuer_onboarding_metadata_interface_dar) \
+  $(shell ./find-daml-project-files.sh $(models_src_dir)/issuer-onboarding/metadata-implementation)
+	cd $(models_src_dir)/issuer-onboarding/metadata-implementation && daml build -o $(proj_root)/$(issuer_onboarding_metadata_dar)
+
 $(minter_burner_interface_dar): $(daml_finance_dir) \
   $(shell ./find-daml-project-files.sh $(models_src_dir)/issuer-onboarding/minter-burner-interface)
 	cd $(models_src_dir)/issuer-onboarding/minter-burner-interface && daml build -o $(proj_root)/$(minter_burner_interface_dar)

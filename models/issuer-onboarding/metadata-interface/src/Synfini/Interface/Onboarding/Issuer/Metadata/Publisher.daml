@@ -12,17 +12,20 @@ data View = View
   with
     depository : Party -- ^ Depository of instruments at which the issuer can publish metadata.
     issuer : Party -- ^ Issuer which can create metadata for their instruments.
-    metadataFactoryCid : ContractId MetadataFactory.F -- ^ Factory used to create metadata instances.
+    metadataFactoryCid : ContractId MetadataFactory.I -- ^ Factory used to create metadata instances.
   deriving (Show, Eq)
 
 -- | Type synonym for 'View'.
 type V = View
 
+-- | Interface to allow issuers to publish metadata for their instruments at a depository.
 interface Publisher requires Disclosure.I where
   viewtype V
 
+  -- | Implementation of the 'PublishMetadata' choice.
   publishMetadata : PublishMetadata -> Update (ContractId Metadata.I)
 
+  -- | Implementation of the 'RemoveMetadata' choice.
   removeMetadata : RemoveMetadata -> Update ()
 
   nonconsuming choice PublishMetadata : ContractId Metadata.I
@@ -43,3 +46,6 @@ interface Publisher requires Disclosure.I where
     controller (view this).issuer
     do
       removeMetadata this arg
+
+-- | Type synonym for 'Publisher'.
+type I = Publisher

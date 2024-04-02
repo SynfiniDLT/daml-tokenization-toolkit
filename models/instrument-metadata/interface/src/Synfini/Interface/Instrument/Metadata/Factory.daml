@@ -7,7 +7,7 @@ import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 import Synfini.Interface.Instrument.Metadata.Metadata qualified as Metadata
 
 -- | Type synonym for 'Factory'.
-type F = Factory
+type I = Factory
 
 -- | Type synonym for 'View'.
 type V = View
