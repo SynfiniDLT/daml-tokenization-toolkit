@@ -7,8 +7,10 @@ import Daml.Finance.Instrument.Token.Factory qualified as TokenImpl
 import Synfini.Operations.Types
 
 import Synfini.Onboarding.Issuer.Instrument.Token qualified as TokenIssuerImpl
+import Synfini.Onboarding.Issuer.Metadata.Publisher qualified as MetadataPublisherImpl
 import Synfini.Instrument.Metadata qualified as MetadataImpl
 import Synfini.Interface.Instrument.Metadata.Factory qualified as MetadataFactory
+import qualified Synfini.Interface.Onboarding.Issuer.Metadata.Factory as MetadataPublisherFactory
 
 data InstrumentFactorySettings = InstrumentFactorySettings
   with
@@ -111,3 +113,34 @@ createMetadataFactories input = do
     cid <- submit provider do createCmd MetadataImpl.Factory with provider, observers
     pure MetadataFactory with label = settings.label, cid = toInterfaceContractId cid
   pure CreateMetadataFactoriesOutput with instrumentMetadataFactories
+
+data MetadataPublisherFactorySettings = MetadataPublisherFactorySettings
+  with
+    label : Text
+    provider : Text
+    observers : [Observer]
+
+data CreateMetadataPublisherFactoriesInput = CreateMetadataPublisherFactoriesInput
+  with
+    parties : [PartyInfo]
+    instrumentMetadataPublisherFactorySettings : [MetadataPublisherFactorySettings]
+
+data MetadataPublisherFactory = MetadataPublisherFactory
+  with
+    label : Text
+    cid : ContractId MetadataPublisherFactory.I
+
+data CreateMetadataPublisherFactoriesOutput = CreateMetadataPublisherFactoriesOutput
+  with
+    instrumentMetadataPublisherFactories : [MetadataPublisherFactory]
+
+createMetadataPublisherFactories : CreateMetadataPublisherFactoriesInput -> Script CreateMetadataPublisherFactoriesOutput
+createMetadataPublisherFactories input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  instrumentMetadataPublisherFactories <- forA input.instrumentMetadataPublisherFactorySettings $ \settings -> do
+    let observers = asPartiesMap p settings.observers
+    let provider = p settings.provider
+    cid <- submit provider do createCmd MetadataPublisherImpl.Factory with provider, observers
+    pure MetadataPublisherFactory with label = settings.label, cid = toInterfaceContractId cid
+  pure CreateMetadataPublisherFactoriesOutput with instrumentMetadataPublisherFactories
