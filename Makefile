@@ -165,6 +165,7 @@ $(operations_scripts_dar): $(daml_finance_dir) \
   $(account_onboarding_one_time_offer_dar) \
   $(account_onboarding_open_offer_dar) \
   $(issuer_onboarding_token_dar) \
+  $(issuer_onboarding_metadata_dar) \
   $(minter_burner_dar) \
   $(settlement_one_time_offer_dar) \
   $(settlement_open_offer_dar) \

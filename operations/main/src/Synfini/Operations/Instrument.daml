@@ -1,0 +1,28 @@
+module Synfini.Operations.Instrument where
+
+import Synfini.Operations.Types
+
+import qualified Synfini.Interface.Instrument.Metadata.Metadata as Metadata
+
+data AttributeSettings = AttributeSettings
+  with
+    attributeName : Text
+    attributeValue : Text
+    displayType : Text
+
+data MetadataSettings = MetadataSettings
+  with
+    publisher : Text
+    attributes : [AttributeSettings]
+    disclosureControllers : [Text]
+    observers : [Observer]
+
+data InstrumentSettings = InstrumentSettings
+  with
+    issuer : Text
+    version : Optional Text
+    description : Text
+    validAsOf : Time
+    instrumentType : Text
+    observers : [Observer]
+    metadata : Optional MetadataSettings

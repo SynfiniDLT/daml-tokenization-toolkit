@@ -8,7 +8,7 @@ $DOPS_UTIL/add-json.sh $DOPS_PARTIES_FILE $1 | $DOPS_UTIL/daml-script.sh \
   --input-file /dev/stdin \
   --output-file ${output_file} \
   --dar ${DOPS_DAR} \
-  --script-name Synfini.Operations.Factory.Instrument:createPublisherFactories \
+  --script-name Synfini.Operations.Factory.Instrument:createMetadataPublisherFactories \
   "${@:2}"
 
 new_factories_file=$(mktemp)

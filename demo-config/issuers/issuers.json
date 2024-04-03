@@ -4,14 +4,17 @@
     {
       "instruments" : [
         {
+          "label": "StableCoin.V1",
           "issuerFactory" : "token.V1",
           "instrumentFactory" : "token.V1",
-          "instrumentType": "token"
+          "instrumentType": "Token"
         }
       ],
-      "metadataPublisherFactory": "v1",
-      "metadataFactory": "v1",
-      "metadataPublisher": true,
+      "publisher": {
+        "label": "StableCoin.V1",
+        "publisherFactory": "v1",
+        "metadataFactory": "v1"
+      },
       "depository" : "StableCoinDepository",
       "issuer" : "StableCoinIssuer",
       "observers" : [
@@ -24,14 +27,17 @@
     {
       "instruments" : [
         {
+          "label": "EnvironmentalToken.V1",
           "issuerFactory" : "token.V1",
           "instrumentFactory" : "token.V1",
-          "instrumentType": "token"
+          "instrumentType": "Token"
         }
       ],
-      "metadataPublisherFactory": "v1",
-      "metadataFactory": "v1",
-      "metadataPublisher": true,
+      "publisher": {
+        "label": "EnvironmentalToken.V1",
+        "publisherFactory": "v1",
+        "metadataFactory": "v1"
+      },
       "depository" : "EnvironmentalTokenDepository",
       "issuer" : "EnvironmentalTokenIssuer",
       "observers" : [

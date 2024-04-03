@@ -68,8 +68,10 @@ dops create-settlement-factories ${config_dir}/factories/settlement-factories.js
 dops create-settlement-one-time-offer-factories ${config_dir}/factories/settlement-one-time-offer-factories.json
 dops create-settlement-open-offer-factories ${config_dir}/factories/settlement-open-offer-factories.json
 dops create-instrument-factories ${config_dir}/factories/instrument-factories.json
+dops create-instrument-metadata-factories  ${config_dir}/factories/instrument-metadata-factories.json
 dops create-account-open-offer-factories ${config_dir}/factories/account-open-offer-factories.json
 dops create-issuer-factories  ${config_dir}/factories/issuer-factories.json
+dops create-instrument-metadata-publisher-factories ${config_dir}/factories/instrument-metadata-publisher-factories.json
 dops create-minter-burner-factories ${config_dir}/factories/minter-burner-factories.json
 
 # Route Providers
@@ -92,7 +94,7 @@ burn_id=$(uuidgen)
 dops take-settlement-open-offer ${config_dir}/stablecoin/take-off-ramp-offer.json $burn_id
 
 # SBT
-dops create-pbas-unilateral ${config_dir}/sbt/pba.json
+# dops create-pbas-unilateral ${config_dir}/sbt/pba.json
 
 # Fund
 dops create-minter-burners ${config_dir}/fund/fundA-minter-burner.json

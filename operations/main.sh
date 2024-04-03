@@ -63,6 +63,14 @@ export DOPS_ACCOUNT_OPEN_OFFERS_FILE=${DOPS_INTERNAL}/account-open-offers.json
 if [ ! -f "${DOPS_ACCOUNT_OPEN_OFFERS_FILE}" ]; then
   echo '{"accountOpenOffers": []}' > "${DOPS_ACCOUNT_OPEN_OFFERS_FILE}"
 fi
+export DOPS_ISSUERS_FILE=${DOPS_INTERNAL}/issuers.json
+if [ ! -f "${DOPS_ISSUERS_FILE}" ]; then
+  echo '{"issuers": []}' > "${DOPS_ISSUERS_FILE}"
+fi
+export DOPS_INSTRUMENT_METADATA_PUBLISHERS_FILE=${DOPS_INTERNAL}/instrument-metadata-publishers.json
+if [ ! -f "${DOPS_INSTRUMENT_METADATA_PUBLISHERS_FILE}" ]; then
+  echo '{"instrumentMetadataPublishers": []}' > "${DOPS_INSTRUMENT_METADATA_PUBLISHERS_FILE}"
+fi
 
 if [ -z ${1+x} ]; then
   echo "Please provide command"
