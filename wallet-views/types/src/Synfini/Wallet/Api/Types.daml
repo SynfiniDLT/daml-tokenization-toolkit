@@ -14,7 +14,6 @@ import Daml.Finance.Interface.Instrument.Token.Instrument qualified as Token
 import Daml.Finance.Interface.Settlement.Batch qualified as Batch
 import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
 
-import Synfini.Interface.Instrument.PartyBoundAttributes.Instrument qualified as Pbt
 import Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer qualified as AccountOpenOffer
 import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Issuer qualified as TokenIssuer
 
@@ -141,7 +140,6 @@ data InstrumentSummary = InstrumentSummary
   with
     cid : ContractId Instrument.I
     tokenView : Optional Token.V
-    pbaView : Optional Pbt.V
   deriving (Show, Eq)
 
 data Instruments = Instruments

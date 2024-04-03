@@ -109,7 +109,6 @@ public class IntegrationTest {
   private static daml.finance.interface$.holding.factory.Factory.ContractId holdingFactoryCid;
   private static daml.finance.interface$.settlement.factory.Factory.ContractId settlementFactoryCid;
   private static daml.finance.interface$.instrument.token.factory.Factory.ContractId tokenInstrumentFactoryCid;
-  private static synfini.interface$.instrument.partyboundattributes.factory.Factory.ContractId  pbaInstrumentFactoryCid;
   private static synfini.interface$.onboarding.issuer.instrument.token.factory.Factory.ContractId tokenInstrumentIssuerFactoryCid;
 
   @Autowired
@@ -171,8 +170,7 @@ public class IntegrationTest {
             "daml-finance-settlement.dar",
             "daml-finance-instrument-token.dar",
             "synfini-account-onboarding-open-offer.dar",
-            "synfini-issuer-onboarding-token.dar",
-            "synfini-pbt.dar"
+            "synfini-issuer-onboarding-token.dar"
           )
         ) {
           uploadDarFile(darFileName, adminChannel);
@@ -270,7 +268,6 @@ public class IntegrationTest {
     final var holdingFactory = new daml.finance.holding.fungible.Factory(custodian, obsMap);
     final var settlementFactory = new daml.finance.settlement.factory.Factory(custodian, obs);
     final var tokenInstrumentFactory = new daml.finance.instrument.token.factory.Factory(custodian, obsMap);
-    final var pbaInstrumentFactory = new synfini.instrument.partyboundattributes.factory.Factory(custodian, obsMap);
     final var tokenIssuerFactory = new synfini.onboarding.issuer.instrument.token.Factory(custodian, obsMap);
     accountFactoryCid = new daml.finance.interface$.account.factory.Factory.ContractId(
       allPartiesLedgerClient
@@ -308,14 +305,6 @@ public class IntegrationTest {
       allPartiesLedgerClient
         .getCommandClient()
         .submitAndWaitForResult(allPartiesUpdateSubmission(tokenInstrumentFactory.create()))
-        .blockingGet()
-        .contractId
-        .contractId
-    );
-    pbaInstrumentFactoryCid = new synfini.interface$.instrument.partyboundattributes.factory.Factory.ContractId(
-      allPartiesLedgerClient
-        .getCommandClient()
-        .submitAndWaitForResult(allPartiesUpdateSubmission(pbaInstrumentFactory.create()))
         .blockingGet()
         .contractId
         .contractId
@@ -1535,13 +1524,11 @@ public class IntegrationTest {
 
     final var instrument1Summary = new InstrumentSummary(
       new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(token1Cid.contractId),
-      Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token1)),
-      Optional.empty()
+      Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token1))
     );
     final var instrument2Summary = new InstrumentSummary(
       new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(token2Cid.contractId),
-      Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token2)),
-      Optional.empty()
+      Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token2))
     );
     mvc
       .perform(
@@ -1581,65 +1568,6 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(toJson(new Instruments(List.of(instrument1Summary, instrument2Summary))))
-      );
-  }
-
-  @Test
-  void returnsPbaInstruments() throws Exception {
-    registerAuthMock(investor1User, 60 * 60 * 24);
-    startProjectionDaemon(investor1, investor1User);
-    delayForProjectionToStart();
-
-    final var instr = instrument1();
-    final var owner = investor1;
-    final var desc = "description";
-    final var validAsOf = Instant.EPOCH;
-    final var obs = Collections.singletonMap("o", arrayToSet(owner));
-    final var attributes = Map.of(
-      "attr1", "val1",
-      "attr2", "val2"
-    );
-    final var instrumentCid = allPartiesLedgerClient
-      .getCommandClient()
-      .submitAndWaitForResult(
-        allPartiesUpdateSubmission(
-          pbaInstrumentFactoryCid.exerciseCreate(instr, desc, validAsOf, owner, attributes, obs)
-        )
-      ).blockingGet().exerciseResult;
-    delayForProjectionIngestion();
-
-    mvc
-      .perform(
-        getInstrumentsBuilder(
-          instr.depository,
-          instr.issuer,
-          Optional.of(instr.id),
-          Optional.of(instr.version)
-        ).headers(userTokenHeader(investor1User))
-      )
-      .andExpect(status().isOk())
-      .andExpect(
-        content().json(
-          toJson(
-            new Instruments(
-              List.of(
-                new InstrumentSummary(
-                  new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(instrumentCid.contractId),
-                  Optional.empty(),
-                  Optional.of(
-                    new synfini.interface$.instrument.partyboundattributes.instrument.View(
-                      instr,
-                      desc,
-                      validAsOf,
-                      owner,
-                      attributes
-                    )
-                  )
-                )
-              )
-            )
-          )
-        )
       );
   }
 
