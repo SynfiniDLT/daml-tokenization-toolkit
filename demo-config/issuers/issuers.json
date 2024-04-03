@@ -2,9 +2,16 @@
   "readAs": ["SynfiniPublic"],
   "issuerSettings": [
     {
-      "issuerFactory" : "token.V1",
-      "instrumentFactory" : "token.V1",
-      "instrumentType" : "Token",
+      "instruments" : [
+        {
+          "issuerFactory" : "token.V1",
+          "instrumentFactory" : "token.V1",
+          "instrumentType": "token"
+        }
+      ],
+      "metadataPublisherFactory": "v1",
+      "metadataFactory": "v1",
+      "metadataPublisher": true,
       "depository" : "StableCoinDepository",
       "issuer" : "StableCoinIssuer",
       "observers" : [
@@ -15,9 +22,16 @@
       ]
     },
     {
-      "issuerFactory" : "token.V1",
-      "instrumentFactory" : "token.V1",
-      "instrumentType" : "Token",
+      "instruments" : [
+        {
+          "issuerFactory" : "token.V1",
+          "instrumentFactory" : "token.V1",
+          "instrumentType": "token"
+        }
+      ],
+      "metadataPublisherFactory": "v1",
+      "metadataFactory": "v1",
+      "metadataPublisher": true,
       "depository" : "EnvironmentalTokenDepository",
       "issuer" : "EnvironmentalTokenIssuer",
       "observers" : [

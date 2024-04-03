@@ -13,12 +13,22 @@ import Synfini.Operations.Factory.MinterBurner (MinterBurnerFactory)
 
 import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Factory qualified as TokenIssuerFactory
 import Synfini.Interface.Onboarding.Issuer.MinterBurner.Factory qualified as MinterBurnerFactory
+import qualified Synfini.Interface.Onboarding.Issuer.Metadata.Factory as MetadataPublisherFactory
+import qualified DA.Optional as O
+import DA.Action (void)
 
-data IssuerSettings = IssuerSettings
+data InstrumentSettings = InstrumentSettings
   with
     issuerFactory : Text
     instrumentFactory : Text
     instrumentType : Text
+
+data IssuerSettings = IssuerSettings
+  with
+    instruments : [InstrumentSettings]
+    metadataPublisher : Optional Bool
+    metadataPublisherFactory : Optional Text
+    metadataFactory : Optional Text
     depository : Text
     issuer : Text
     observers : [Observer]
@@ -29,6 +39,8 @@ data CreateIssuersInput = CreateIssuersInput
     readAs : [Text]
     issuerFactories : [IssuerFactory]
     instrumentFactories : [InstrumentFactory]
+    metadataPublisherFactories : [MetadataPublisherFactory]
+    metadataFactories : [MetadataFactory]
     issuerSettings : [IssuerSettings]
 
 createIssuers : CreateIssuersInput -> Script ()
@@ -39,20 +51,74 @@ createIssuers input = do
   forA_ input.issuerSettings $ \settings -> do
     let depository = p settings.depository
         issuer = p  settings.issuer
-        issuerFactoryCid = findFactoryContractId settings.issuerFactory input.issuerFactories
-        instrumentFactoryCid = findFactoryContractId settings.instrumentFactory input.instrumentFactories
+        metadataPublisherFactoryCid = findFactoryContractId <$> settings.metadataPublisherFactory <*> pure input.metadataPublisherFactories
+        metadataFactoryCid = findFactoryContractId <$> settings.metadataFactory <*> pure input.metadataFactories
         observers = asPartiesMap p settings.observers
-    case settings.instrumentType of
-      "Token" -> do
-        let tokenIssuerFactoryCid : ContractId TokenIssuerFactory.I = coerceContractId issuerFactoryCid
-            tokenInstrumentFactoryCid : ContractId TokenFactory.F = coerceContractId instrumentFactoryCid
-        submitMulti [depository] readAs do
-          exerciseCmd tokenIssuerFactoryCid TokenIssuerFactory.Create with
-            depository
-            issuer
-            instrumentFactoryCid = tokenInstrumentFactoryCid
-            observers
-      other -> error ("Unsupported token type: " <> other)
+    let issuerCreateCmd instr =
+          let issuerFactoryCid = findFactoryContractId instr.issuerFactory input.issuerFactories
+              instrumentFactoryCid = findFactoryContractId instr.instrumentFactory input.instrumentFactories
+          in
+          case instr.instrumentType of
+            "Token" ->
+              let tokenIssuerFactoryCid : ContractId TokenIssuerFactory.I = coerceContractId issuerFactoryCid
+                  tokenInstrumentFactoryCid : ContractId TokenFactory.F = coerceContractId instrumentFactoryCid
+              in
+                void $ exerciseCmd tokenIssuerFactoryCid TokenIssuerFactory.Create with
+                  depository
+                  issuer
+                  instrumentFactoryCid = tokenInstrumentFactoryCid
+                  observers
+            other -> error ("Unsupported token type: " <> other)
+    let issuerCreateCmds = issuerCreateCmd <$> settings.instruments
+    let metadataCmds =
+          if O.fromOptional True settings.metadataPublisher then
+            [
+              void $
+                exerciseCmd
+                (O.fromSomeNote "Metadata publisher factory not provided" metadataPublisherFactoryCid)
+                MetadataPublisherFactory.Create with
+                  depository
+                  issuer
+                  metadataFactoryCid = O.fromSomeNote "Metadata factory not provided" metadataFactoryCid
+                  observers
+            ]
+          else
+            []
+    submitMulti [depository] readAs (sequence $ issuerCreateCmds <> metadataCmds)
+
+-- data MetadataPublisherSettings = MetadataPublisherSettings
+--   with
+--     metadataPublisherFactory : Text
+--     metadataFactory : Text
+--     depository : Text
+--     issuer : Text
+--     observers : [Observer]
+
+-- data CreateMetadataPublishersInput = CreateMetadataPublishersInput
+--   with
+--     parties : [PartyInfo]
+--     readAs : [Text]
+--     metadataPublisherFactories : [MetadataPublisherFactory]
+--     metadataFactories : [MetadataFactory]
+--     metadataPublisherSettings : [MetadataPublisherSettings]
+
+-- createMetadataPublishers : CreateMetadataPublishersInput -> Script ()
+-- createMetadataPublishers input = do
+--   let pm = partyTable input.parties
+--   let p = getPartyId pm
+--   let readAs = p <$> input.readAs
+--   forA_ input.metadataPublisherSettings $ \settings -> do
+--     let depository = p settings.depository
+--         issuer = p settings.issuer
+--         metadataPublisherFactoryCid = findFactoryContractId settings.metadataPublisherFactory input.metadataPublisherFactories
+--         metadataFactoryCid = findFactoryContractId settings.metadataFactory input.metadataFactories
+--         observers = asPartiesMap p settings.observers
+--     submitMulti [depository] readAs do
+--       exerciseCmd metadataPublisherFactoryCid MetadataPublisherFactory.Create with
+--         depository
+--         issuer
+--         metadataFactoryCid
+--         observers
 
 data MinterBurnerSettings = MinterBurnerSettings
   with

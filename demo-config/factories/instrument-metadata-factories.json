@@ -1,0 +1,16 @@
+{
+  "instrumentMetadataFactorySettings": [
+    {
+      "label": "v1",
+      "provider": "SynfiniValidator",
+      "observers": [
+        {
+          "context": "setup",
+          "parties": [
+            "SynfiniPublic"
+          ]
+        }
+      ]
+    }
+  ]
+}
