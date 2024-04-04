@@ -62,8 +62,8 @@ module Synfini.Operations.PartyBoundAttributes.Unilateral where
 --       depository = p input.pbaInstrument.depository
 --       readAs = p <$> input.readAs
 --       instrumentFactoryCid : ContractId Pba.Factory = coerceContractId $
---         findFactoryContractId input.instrumentFactory input.instrumentFactories
---       settlementFactoryCid = findFactoryContractId input.settlementFactory input.settlementFactories
+--         findCidByLabel input.instrumentFactory input.instrumentFactories
+--       settlementFactoryCid = findCidByLabel input.settlementFactory input.settlementFactories
 --   forA_ input.pbas $ \pba -> do
 --     t <- getTime
 --     let instrument = InstrumentKey with depository, issuer, id = Id input.pbaInstrument.id, version = pba.version

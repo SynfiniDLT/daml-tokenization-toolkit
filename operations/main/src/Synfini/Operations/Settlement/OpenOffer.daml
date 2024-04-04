@@ -87,9 +87,9 @@ createSettlementOpenOffers input = do
         settlementInstructors = Set.fromList (asEntity p <$> settings.settlementInstructors)
         settlers = Set.fromList (asEntity p <$> settings.settlers)
         steps = asStep p <$> settings.steps
-        openOfferFactoryCid = findFactoryContractId settings.settlementOpenOfferFactory input.settlementOpenOfferFactories
-        routeProviderCid = findFactoryContractId settings.routeProvider input.routeProviders
-        settlementFactoryCid = findFactoryContractId settings.settlementFactory input.settlementFactories
+        openOfferFactoryCid = findCidByLabel settings.settlementOpenOfferFactory input.settlementOpenOfferFactories
+        routeProviderCid = findCidByLabel settings.routeProvider input.routeProviders
+        settlementFactoryCid = findCidByLabel settings.settlementFactory input.settlementFactories
         observers = asPartiesMap p settings.observers
     submitMulti (Set.toList offerers) readAs do
       exerciseCmd openOfferFactoryCid OpenOfferFactory.Create with

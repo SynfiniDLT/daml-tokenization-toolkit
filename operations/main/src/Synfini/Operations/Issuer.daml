@@ -15,7 +15,6 @@ import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Factory qualified as
 import Synfini.Interface.Onboarding.Issuer.MinterBurner.Factory qualified as MinterBurnerFactory
 import qualified Synfini.Interface.Onboarding.Issuer.Metadata.Factory as MetadataPublisherFactory
 import qualified DA.Optional as O
-import DA.Action (void)
 import qualified Synfini.Interface.Onboarding.Issuer.Metadata.Publisher as MetadataPublisher
 
 data InstrumentSettings = InstrumentSettings
@@ -53,11 +52,16 @@ data Issuer = Issuer
   with
     label : Text
     cid : ContractId ()
+    instrumentType : Text
+    issuer : Party
+    depository : Party
 
 data MetadataPublisher = MetadataPublisher
   with
     label : Text
     cid : ContractId MetadataPublisher.I
+    issuer : Party
+    depository : Party
 
 data CreateIssuersOutput = CreateIssuersOutput
   with
@@ -74,8 +78,8 @@ createIssuers input = do
         issuer = p  settings.issuer
         observers = asPartiesMap p settings.observers
     let issuerCreateCmd instr =
-          let issuerFactoryCid = findFactoryContractId instr.issuerFactory input.issuerFactories
-              instrumentFactoryCid = findFactoryContractId instr.instrumentFactory input.instrumentFactories
+          let issuerFactoryCid = findCidByLabel instr.issuerFactory input.issuerFactories
+              instrumentFactoryCid = findCidByLabel instr.instrumentFactory input.instrumentFactories
           in
           case instr.instrumentType of
             "Token" ->
@@ -90,18 +94,18 @@ createIssuers input = do
             other -> error ("Unsupported instrument type: " <> other)
     issuers <- forA settings.instruments $ \instr -> do
       issuerCid <- submitMulti [depository] readAs (issuerCreateCmd instr)
-      pure Issuer with cid = issuerCid, label = instr.label
+      pure Issuer with cid = issuerCid, label = instr.label, issuer, depository, instrumentType = instr.instrumentType
     publisher <- case settings.publisher of
       Some p -> do
         publisherCid <- submitMulti [depository] readAs do
           exerciseCmd
-            (findFactoryContractId p.publisherFactory input.instrumentMetadataPublisherFactories)
+            (findCidByLabel p.publisherFactory input.instrumentMetadataPublisherFactories)
             MetadataPublisherFactory.Create with
               depository
               issuer
-              metadataFactoryCid = findFactoryContractId p.metadataFactory input.instrumentMetadataFactories
+              metadataFactoryCid = findCidByLabel p.metadataFactory input.instrumentMetadataFactories
               observers
-        pure $ Some MetadataPublisher with cid = publisherCid, label = p.label
+        pure $ Some MetadataPublisher with cid = publisherCid, label = p.label, issuer, depository
       None -> pure None
     pure (issuers, publisher)
   pure CreateIssuersOutput with
@@ -132,8 +136,8 @@ createIssuers input = do
 --   forA_ input.metadataPublisherSettings $ \settings -> do
 --     let depository = p settings.depository
 --         issuer = p settings.issuer
---         metadataPublisherFactoryCid = findFactoryContractId settings.metadataPublisherFactory input.metadataPublisherFactories
---         metadataFactoryCid = findFactoryContractId settings.metadataFactory input.metadataFactories
+--         metadataPublisherFactoryCid = findCidByLabel settings.metadataPublisherFactory input.metadataPublisherFactories
+--         metadataFactoryCid = findCidByLabel settings.metadataFactory input.metadataFactories
 --         observers = asPartiesMap p settings.observers
 --     submitMulti [depository] readAs do
 --       exerciseCmd metadataPublisherFactoryCid MetadataPublisherFactory.Create with
@@ -164,7 +168,7 @@ createMinterBurners input = do
     let custodian = p settings.custodian
         depository = p settings.depository
         issuer = p settings.issuer
-        minterBurnerFactoryCid = findFactoryContractId settings.minterBurnerFactory input.minterBurnerFactories
+        minterBurnerFactoryCid = findCidByLabel settings.minterBurnerFactory input.minterBurnerFactories
         observers = asPartiesMap p settings.observers
     submit custodian do
       exerciseCmd minterBurnerFactoryCid MinterBurnerFactory.Create with

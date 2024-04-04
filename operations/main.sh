@@ -156,6 +156,8 @@ elif [ "$command" = "create-issuers" ]; then
   ${dops_commands}/create-issuers.sh $@
 elif [ "$command" = "create-minter-burners" ]; then
   ${dops_commands}/create-minter-burners.sh $@
+elif [ "$command" = "create-instruments" ]; then
+  ${dops_commands}/create-instruments.sh $@
 else
   echo "Unsupported command: $command"
   exit 1
