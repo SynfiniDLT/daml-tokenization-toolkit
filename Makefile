@@ -272,11 +272,12 @@ $(wallet_ui_codegen): $(wallet_ui_package_json) \
 		$(settlement_one_time_offer_interface_dar) \
 		$(settlement_open_offer_interface_dar) \
 		$(settlement_helpers_dar) \
+		$(instrument_metadata_interface_dar) \
 		$(daml_finance_dir)/daml-finance-interface-types-common.dar \
 		$(daml_finance_dir)/daml-finance-interface-util.dar \
 		$(daml_finance_dir)/daml-finance-interface-holding.dar \
 		$(daml_finance_dir)/daml-finance-interface-settlement.dar \
-		$(instrument_metadata_interface_dar) -o $(wallet_ui_codegen)
+		$(daml_finance_dir)/daml-finance-interface-instrument-token.dar -o $(wallet_ui_codegen)
 
 $(wallet_ui_node_modules): $(wallet_ui_codegen) $(wallet_ui_package_json)
 	cd $(wallet_ui_dir) && npm install

@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  InstrumentSummary,
   AccountSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import Modal from "react-modal";
@@ -9,21 +8,24 @@ import { ContractId } from "@daml/types";
 import { arrayToSet } from "../../Util";
 import HoverPopUp from "./hoverPopUp";
 import * as damlTypes from "@daml/types";
-import { useWalletUser } from "../../App";
+import { useWalletUser, useWalletViews } from "../../App";
 import { userContext } from "../../App";
+import { InstrumentMetadataSummary } from "../../Util";
 
-export default function BalanceSbts(
+type Operation = "share" | "unshare";
+
+const obsContext = "wallet.assetShare";
+
+export default function AssetDetails(
   props: {
-    instruments?: InstrumentSummary[];
-    account?: AccountSummary;
-    instrumentObservers?: damlTypes.Map<damlTypes.ContractId<any>, damlTypes.Party[]>;
+    instrument: InstrumentMetadataSummary;
+    holdingCid?: ContractId<any>
   }
 ) {
   const ledger = userContext.useLedger();
   const { primaryParty } = useWalletUser();
 
-  const [cid, setCid] = useState<ContractId<any>>();
-  const [operation, setOperation] = useState<string>("");
+  const [operation, setOperation] = useState<Operation | undefined>();
   const [partiesInput, setPartiesInput] = useState<string>("");
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isMessageOpen, setIsMessageOpen] = useState<boolean>(false);
@@ -37,64 +39,69 @@ export default function BalanceSbts(
   const handleCloseModal = () => {
     setPartiesInput("");
     setIsOpen(!isOpen);
-    setOperation("");
+    setOperation(undefined);
   };
 
   const handleCloseMessageModal = () => {
     setPartiesInput("");
     setIsMessageOpen(!isMessageOpen);
-    setOperation("");
+    setOperation(undefined);
   };
 
   const handleClickOk = async () => {
     setIsMessageOpen(!isMessageOpen);
   };
 
-  const handleShareSBT = (instrument: InstrumentSummary, operation: string) => {
+  const handleShareAsset = (operation: Operation) => {
     setPartiesInput("");
     setIsOpen(!isOpen);
-    setCid(instrument.cid);
     setOperation(operation);
   };
 
-  const handleSendSBT = async () => {
+  const handleSendAsset = async () => {
     if (partiesInput === "") {
       setError("You are required to provide the Party ID.");
       return;
     }
-    
+
     if (primaryParty === undefined) {
       setError("Error primary party is not set");
       return;
     }
 
+    if (metadata.disclosureView === undefined) {
+      setError("Contract observers not visible");
+      return;
+    }
+
     const disclosers = arrayToSet([primaryParty]);
     const observers = arrayToSet([partiesInput]);
-    if (
-      operation === "add" &&
-      cid !== undefined &&
-      cid !== ""
-    ) {
-      await ledger
-        .exercise(Disclosure.AddObservers, cid, {
-          disclosers,
-          observersToAdd: {
-            _1: partiesInput,
-            _2: observers,
-          },
-        })
+    if (operation === "share") {
+      const exerciseArgs = {
+        disclosers,
+        observersToAdd: {
+          _1: obsContext,
+          _2: observers,
+        },
+      };
+      const addInstrumentObs = ledger.exercise(
+        Disclosure.AddObservers,
+        props.instrument.instrument.cid as ContractId<any>,
+        exerciseArgs
+      );
+      const addMetadataObs = ledger.exercise(Disclosure.AddObservers, props.instrument.metadata.cid, exerciseArgs);
+      const addHoldingsObs = props.holdingCid != undefined ?
+        ledger.exercise(Disclosure.AddObservers, props.holdingCid, exerciseArgs) :
+        Promise.resolve();
+
+      await Promise.all([addInstrumentObs, addMetadataObs, addHoldingsObs])
         .then((res) => {
-          if (res[1]?.length > 0) {
-            setMessage(
-              "Operation completed with success! \n SBT was SHARED with party (" +
-                partiesInput +
-                ")."
-            );
-            setError("");
-          } else {
-            setMessage("");
-            setError("Operation error! \n error sharing with this party.");
-          }
+          setMessage(
+            "Operation completed with success! \n SBT was SHARED with party (" +
+              partiesInput +
+              ")."
+          );
+          setError("");
           setIsOpen(false);
         })
         .catch((err) => {
@@ -105,31 +112,31 @@ export default function BalanceSbts(
               JSON.stringify(err.errors[0])
           );
         });
-    } else if (operation === "remove" && cid !== undefined) {
-      ledger
-        .exercise(Disclosure.RemoveObservers, cid, {
-          disclosers,
-          observersToRemove: {
-            _1: partiesInput,
-            _2: observers,
-          },
-        })
+    } else if (operation === "unshare") {
+      const exerciseArgs = {
+        disclosers,
+        observersToRemove: {
+          _1: obsContext,
+          _2: observers,
+        },
+      };
+      const removeInstrumentObs = ledger.exercise(
+        Disclosure.RemoveObservers,
+        props.instrument.instrument.cid as ContractId<any>, exerciseArgs
+      );
+      const removeMetadataObs = ledger.exercise(Disclosure.RemoveObservers, props.instrument.metadata.cid, exerciseArgs);
+      const removeHoldingsObs = props.holdingCid != undefined ?
+        ledger.exercise(Disclosure.RemoveObservers, props.holdingCid, exerciseArgs) :
+        Promise.resolve();
+
+      await Promise.all([removeInstrumentObs, removeMetadataObs, removeHoldingsObs])
         .then((res) => {
-          if (res[1]?.length > 0) {
-            setMessage(
-              "Operation completed with success! \n SBT was UNSHARED with party (" +
-                partiesInput +
-                ")."
-            );
-            setError("");
-          } else {
-            setMessage("");
-            setError(
-              "Operation error! \nSBT was not shared with party(" +
-                partiesInput +
-                ")."
-            );
-          }
+          setMessage(
+            "Operation completed with success! \n SBT was UNSHARED with party (" +
+              partiesInput +
+              ")."
+          );
+          setError("");
           setIsOpen(false);
         })
         .catch((err) => {
@@ -144,57 +151,61 @@ export default function BalanceSbts(
     setIsMessageOpen(true);
   };
 
-  const trBalances = props.instruments?.map((inst: InstrumentSummary) => {
-    const partiesSharedWith: damlTypes.Party[] = props.instrumentObservers?.get(inst.cid) || [];
+  const metadata = props.instrument.metadata;
+  const partiesSharedWith: damlTypes.Party[] = metadata
+    .disclosureView
+    ?.observers
+    .entriesArray()
+    .flatMap(obsEntry => obsEntry[1].map.entriesArray().map(partyEntry => partyEntry[0])) || [];
 
-    return (
-      <tr key={inst.cid}>
-        <td>
-          {inst.pbaView?.instrument.id.unpack} |{" "}{inst.pbaView?.instrument.version}
-        </td>
-        <td>
-          <HoverPopUp 
-            triggerText={inst.pbaView?.instrument.issuer.substring(0, 30) + "..."} 
-            popUpContent={inst.pbaView?.instrument.issuer} 
-          />
-        </td>
-        <td style={{width: "200px"}}>
-        {inst.pbaView?.attributes.entriesArray().map(kv =>
-          <>
-            {`${kv[0]} | ${kv[1]}`}
-            <br />
-          </>
-        )}
-        </td>
-        <td style={{ whiteSpace: "pre-line", width: "350px"}}>
-          {partiesSharedWith.map((party, index) => (
-            <div key={index} style={{margin: "10px"}}>
-              - <HoverPopUp triggerText={party.substring(0,30)+ "..."} popUpContent={party} />
-            </div>
-          ))}
-        </td>
-        <td style={{width: "300px"}}>
-          <button
-            type="button"
-            className="button__login"
-            style={{ width: "100px" }}
-            onClick={() => handleShareSBT(inst, "add")}
-          >
-            Share SBT
-          </button>
+  const instrumentKey = props.instrument.metadata.view.instrument;
+  const trBalances = [(
+    <tr key={props.instrument.instrument.cid}>
+      <td>
+        {instrumentKey.id.unpack} (variant: {instrumentKey.version})
+      </td>
+      <td>
+        <HoverPopUp 
+          triggerText={instrumentKey.issuer.substring(0, 30) + "..."} 
+          popUpContent={instrumentKey.issuer} 
+        />
+      </td>
+      <td style={{width: "200px"}}>
+      {metadata.view.attributes.entriesArray().map(kv =>
+        <>
+          {`${kv[0]} | ${kv[1].attributeValue}`}
+          <br />
+        </>
+      )}
+      </td>
+      <td style={{ whiteSpace: "pre-line", width: "350px"}}>
+        {partiesSharedWith.map((party, index) => (
+          <div key={index} style={{margin: "10px"}}>
+            - <HoverPopUp triggerText={party.substring(0,30)+ "..."} popUpContent={party} />
+          </div>
+        ))}
+      </td>
+      <td style={{width: "300px"}}>
+        <button
+          type="button"
+          className="button__login"
+          style={{ width: "100px" }}
+          onClick={() => handleShareAsset("share")}
+        >
+          Share SBT
+        </button>
 
-          <button
-            type="button"
-            className="button__login"
-            style={{ width: "120px" }}
-            onClick={() => handleShareSBT(inst, "remove")}
-          >
-            Unshare SBT
-          </button>
-        </td>
-      </tr>
-    );
-  });
+        <button
+          type="button"
+          className="button__login"
+          style={{ width: "120px" }}
+          onClick={() => handleShareAsset("unshare")}
+        >
+          Unshare SBT
+        </button>
+      </td>
+    </tr>
+  )];
 
   return (
     <>
@@ -202,30 +213,26 @@ export default function BalanceSbts(
         <h5 className="profile__title">SBT</h5>
       </div>
 
-      {props.instruments?.length === 0 ? (
-        <p>There is no balance for this account.</p>
-      ) : (
-        <table id="assets">
-          <thead>
-            <tr>
-              <th>
-                SBT ID
-              </th>
-              <th>
-                Issuer
-              </th>
-              <th>
-                Attributes 
-              </th>
-              <th>
-                Organizations shared with
-              </th>
-              <th>#</th>
-            </tr>
-          </thead>
-          <tbody>{trBalances || []}</tbody>
-        </table>
-      )}
+      <table id="assets">
+        <thead>
+          <tr>
+            <th>
+              Asset ID
+            </th>
+            <th>
+              Issuer
+            </th>
+            <th>
+              Attributes 
+            </th>
+            <th>
+              Shared with
+            </th>
+            <th>#</th>
+          </tr>
+        </thead>
+        <tbody>{trBalances}</tbody>
+      </table>
       <Modal
         id="shareSbtModal"
         className="simpleModal"
@@ -235,7 +242,7 @@ export default function BalanceSbts(
       >
         <>
           <h4 style={{ color: "white", fontSize: "1.5rem" }}>
-            {operation === "add" ? "Share" : "Unshare"} SBT
+            {operation === "share" ? "Share" : "Unshare"} SBT
           </h4>
           <form id="modalForm">
             <div style={{ fontSize: "1.5rem" }}>
@@ -260,7 +267,7 @@ export default function BalanceSbts(
             <button
               type="button"
               className="button__login"
-              onClick={handleSendSBT}
+              onClick={handleSendAsset}
             >
               Send
             </button>

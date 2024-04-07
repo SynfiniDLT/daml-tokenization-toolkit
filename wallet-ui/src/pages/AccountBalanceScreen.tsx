@@ -10,10 +10,10 @@ import {
   Balance,
   InstrumentSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import BalanceSbts from "../components/layout/balanceSbts";
+import AssetDetails from "../components/layout/assetDetails";
 import { useWalletUser, useWalletViews } from "../App";
 
-const AccountBalanceScreen: React.FC = () => {
+/*const AccountBalanceScreen: React.FC = () => {
   const { isLoading } = useAuth0();
   const { state } = useLocation() as { state: { account: AccountSummary }};
   const walletClient = useWalletViews();
@@ -76,10 +76,10 @@ const AccountBalanceScreen: React.FC = () => {
       {state.account.view.id.unpack !== "sbt" ? (
         <Balances balances={balances}></Balances>
         ) : (
-        <BalanceSbts instruments={instruments?.flatMap(i => i === undefined ? [] : [i])} />
+        <AssetDetails instruments={instruments?.flatMap(i => i === undefined ? [] : [i])} />
       )}
     </PageLayout>
   );
 };
 
-export default AccountBalanceScreen;
+export default AccountBalanceScreen;*/

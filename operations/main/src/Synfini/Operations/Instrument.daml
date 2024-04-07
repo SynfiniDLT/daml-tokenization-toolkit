@@ -90,7 +90,7 @@ createInstruments input = do
               None -> []
               Some m ->
                 let publisher = findByLabel m.publisher input.instrumentMetadataPublishers in
-                if publisher.issuer /= iss.issuer || publisher.depository /= iss.issuer then
+                if publisher.issuer /= iss.issuer || publisher.depository /= iss.depository then
                   error "Publisher does not have matching issuer and/or depository"
                 else
                   pure . F.void $ exerciseCmd publisher.cid Publisher.PublishMetadata with

@@ -1,4 +1,8 @@
 import { Set } from "@daml.js/da-set/lib/DA/Set/Types";
+import { View as DisclosureView } from "@daml.js/daml-finance-interface-util/lib/Daml/Finance/Interface/Util/Disclosure";
+import { View as MetadataView } from "@daml.js/synfini-instrument-metadata-interface/lib/Synfini/Interface/Instrument/Metadata/Metadata";
+import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { CreateEvent } from "@daml/ledger";
 import * as damlTypes from "@daml/types";
 
 export function formatCurrency(amountString: string, locale: string): string {
@@ -84,3 +88,14 @@ export function repairMap<K, V>(map: damlTypes.Map<K, V>) {
     Object.setPrototypeOf(map, mapProtoType);
   }
 }
+
+export type MetadataSummary = {
+  cid: damlTypes.ContractId<any>;
+  view: MetadataView;
+  disclosureView?: DisclosureView;
+}
+
+export type InstrumentMetadataSummary = {
+  instrument: InstrumentSummary;
+  metadata: MetadataSummary;
+};

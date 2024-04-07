@@ -18,7 +18,7 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   const handleSeeSbtDetails = (account: AccountSummary) => {
-    nav("/wallet/account/balance/sbt", { state: { account: account } });
+    nav("/asset", { state: { account: account } });
   };
 
   const handleRedeem = (balance: Balance, account: AccountSummary) => {

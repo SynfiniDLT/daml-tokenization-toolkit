@@ -1,7 +1,7 @@
-import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import InstrumentDetails from "./instrumentDetails";
+import InstrumentDetails from "./identityDetails";
+import { InstrumentMetadataSummary } from "../../Util";
 
-export default function Instruments(props: { instruments?: InstrumentSummary[] }) {
+export default function IdentityCards(props: { instruments?: InstrumentMetadataSummary[] }) {
   return (
     <>
       <div style={{ margin: "10px", padding: "10px" }}>
@@ -10,11 +10,11 @@ export default function Instruments(props: { instruments?: InstrumentSummary[] }
           {props.instruments.length ===0 &&
             <span style={{color:"white"}}>No SBT contents have been shared with this user.</span>
           }
-            {props.instruments.map((instrument: InstrumentSummary, index: number) => (
+            {props.instruments.map((instrument, index) => (
               <div key={index}>
                 <InstrumentDetails
                   instrument={instrument}
-                  key={instrument.cid}
+                  key={instrument.instrument.cid}
                 ></InstrumentDetails>
               </div>
             ))}

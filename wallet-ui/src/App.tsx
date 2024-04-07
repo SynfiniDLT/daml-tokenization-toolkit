@@ -5,10 +5,10 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { AuthenticationGuard } from "./components/authentication-guard";
 import { PageLoader } from "./components/layout/page-loader";
 import FundScreen from "./pages/FundScreen";
-import AccountBalanceScreen from "./pages/AccountBalanceScreen";
+// import AccountBalanceScreen from "./pages/AccountBalanceScreen";
 import SettlementScreen from "./pages/SettlementScreen";
 import DirectoryScreen from "./pages/DirectoryScreen";
-import AccountBalanceSbtScreen from "./pages/AccountBalanceSbtScreen";
+import AssetDetailsScreen from "./pages/AssetDetailsScreen";
 import WalletScreen from "./pages/WalletScreen";
 import { FundSubscribeFormScreen } from "./pages/FundSubscribeFormScreen";
 import BalanceRedeemFormScreen from "./pages/BalanceRedeemFormScreen";
@@ -72,8 +72,8 @@ const App: React.FC = () => {
 
   const commonRoutes = [
     (<Route path="/" element={<AuthenticationGuard component={WalletScreen} />} />),
-    (<Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />),
-    (<Route path="/wallet/account/balance/sbt" element={<AuthenticationGuard component={AccountBalanceSbtScreen} />} />),
+    //(<Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />),
+    (<Route path="/asset" element={<AuthenticationGuard component={AssetDetailsScreen} />} />),
     (<Route path="/wallet/account/balance/redeem" element={<AuthenticationGuard component={BalanceRedeemFormScreen} />} />),
     (<Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />),
     (<Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />),
