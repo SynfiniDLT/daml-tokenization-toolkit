@@ -7,6 +7,14 @@ interface IdentityDetailsProps {
   instrument: InstrumentMetadataSummary;
 }
 
+function displayValue(attribute: Attribute) {
+  if (attribute.displayType === "flag") {
+    return ""
+  } else {
+    return ` : ${attribute.attributeValue}`;
+  }
+}
+
 export default function identityDetails(props: IdentityDetailsProps) {
   const entity: [string, Attribute][] = props.instrument.metadata.view.attributes.entriesArray();
 
@@ -27,7 +35,7 @@ export default function identityDetails(props: IdentityDetailsProps) {
       <div key={props.instrument.instrument.cid} id={props.instrument.instrument.tokenView?.token.instrument.id.unpack}>
         <Field>Asset attributes</Field>
         <br />
-        <FieldValue>{Array.from(entity, ([key, value]) => `${key}: ${value}`).join(", ")}</FieldValue>
+        <FieldValue>{entity.map(([key, value]) => <p>{key}{displayValue(value)}</p>)}</FieldValue>
         <br />
         <br />
         <Field>Issuer</Field>
