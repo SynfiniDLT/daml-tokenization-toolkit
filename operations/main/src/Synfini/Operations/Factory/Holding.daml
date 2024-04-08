@@ -13,6 +13,7 @@ import Daml.Finance.Interface.Holding.Factory qualified as Holding
 import Synfini.Operations.Types
 
 import Synfini.TrackableHolding.Fungible qualified as TrackableFungibleImpl
+import Synfini.TrackableHolding.NonTransferable qualified as TrackableNonTransferableImpl
 
 data HoldingFactorySettings = HoldingFactorySettings
   with
@@ -55,6 +56,10 @@ createHoldingFactories CreateHoldingFactoriesInput { parties, holdingFactorySett
         createCmd NonFungibleImpl.Factory with provider, observers
       ("NonTransferable", None) -> toInterfaceContractId <$> submit provider do
         createCmd NonTranferableImpl.Factory with provider, observers
+      ("NonTransferable", Some t) -> toInterfaceContractId <$> submit provider do
+        createCmd TrackableNonTransferableImpl.Factory with
+          defaultFactory = NonTranferableImpl.Factory with provider, observers
+          holdingTrackers = t
       other -> error ("Unsupported holding type: " <> show other)
     pure HoldingFactory with label = settings.label, cid
   pure CreateHoldingFactoriesOutput with holdingFactories

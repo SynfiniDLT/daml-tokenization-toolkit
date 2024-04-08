@@ -77,6 +77,9 @@ dops create-minter-burner-factories ${config_dir}/factories/minter-burner-factor
 # Route Providers
 dops create-route-providers ${config_dir}/route-providers/route-providers.json
 
+# Issuer
+dops create-issuers ${config_dir}/issuers/issuers.json
+
 # Accounts
 dops create-accounts-unilateral ${config_dir}/accounts/accounts.json
 dops create-account-open-offers ${config_dir}/accounts/account-open-offers.json
@@ -110,6 +113,3 @@ dops execute-settlement ${config_dir}/settlement/FundA-execute.json FundA,Invest
 
 # Environmental token
 dops create-minter-burners ${config_dir}/environmental-token/minter-burner.json
-
-# Issuer
-dops create-issuers ${config_dir}/issuers/issuers.json
