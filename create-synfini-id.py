@@ -8,19 +8,36 @@ import subprocess
 import tempfile
 
 def dops(command, input_json, *args):
-  with tempfile.NamedTemporaryFile(mode='w+') as tmp:
-    print(tmp.name)
-    json.dump(input_json, tmp)
-    tmp.flush()
-    subprocess.run(['dops', command, tmp.name] + list(args))
+  if type(input_json) is str:
+    _dops(command, input_json, *args)
+  else:
+    with tempfile.NamedTemporaryFile(mode='w+') as tmp:
+      print(tmp.name)
+      json.dump(input_json, tmp)
+      tmp.flush()
+      _dops(command, tmp.name, *args)
 
+def _dops(command, input_file, *args):
+  res = subprocess.run(['dops', command, input_file] + list(args)).returncode
+  if res != 0:
+    raise Exception('Non-zero exit code')
+  print('res = ', res)
+  print('type(res) = ', type(res))
+
+# Issuer arguments
 issuer_party_label = sys.argv[1]
 depository_party_label = sys.argv[2]
 issuer_contract_label = sys.argv[3]
 publisher_contract_label = sys.argv[4]
-owner_party_label = sys.argv[5]
-name = sys.argv[6]
-observers = sys.argv[7:]
+issuer_settlement_prefs_file = sys.argv[5]
+
+# Other arguments
+owner_party_label = sys.argv[6]
+owner_settlement_prefs_file = sys.argv[7]
+name = sys.argv[8]
+observers = []
+if len(sys.argv) > 9:
+  observers = sys.argv[9:]
 
 observers_with_context = [
   {
@@ -44,6 +61,11 @@ instrument = {
         'displayType': 'string'
       },
       {
+        'attributeName': 'This asset is assigned to a single holder and cannot be transferred',
+        'attributeValue': '',
+        'displayType': 'flag'
+      },
+      {
         'attributeName': 'ID value',
         'attributeValue': str(uuid.uuid4()),
         'displayType': 'string'
@@ -59,31 +81,34 @@ def hash_utf8(string):
   h.update(string.encode('utf-8'))
   return h.digest()
 
-hashes = []
-hashes.append(hash_utf8(instrument['description']))
-hashes.append(hash_utf8(instrument['validAsOf']))
+def compute_instrument_version():
+  hashes = []
+  hashes.append(hash_utf8(instrument['description']))
+  hashes.append(hash_utf8(instrument['validAsOf']))
 
-attribute_hashes = []
+  attribute_hashes = []
 
-for attribute in instrument['metadata']['attributes']:
-  hAttr = hashlib.sha256()
-  hAttr.update(hash_utf8(attribute['attributeName']))
-  hAttr.update(hash_utf8(attribute['attributeValue']))
-  hAttr.update(hash_utf8(attribute['displayType']))
+  for attribute in instrument['metadata']['attributes']:
+    hAttr = hashlib.sha256()
+    hAttr.update(hash_utf8(attribute['attributeName']))
+    hAttr.update(hash_utf8(attribute['attributeValue']))
+    hAttr.update(hash_utf8(attribute['displayType']))
 
-  attribute_hashes.append(hAttr.digest())
+    attribute_hashes.append(hAttr.digest())
 
-attribute_hashes.sort()
-hash_all_attributes = hashlib.sha256()
-for h in attribute_hashes:
-  hash_all_attributes.update(h)
-hashes.append(hash_all_attributes.digest())
+  attribute_hashes.sort()
+  hash_all_attributes = hashlib.sha256()
+  for h in attribute_hashes:
+    hash_all_attributes.update(h)
+  hashes.append(hash_all_attributes.digest())
 
-version_hash = hashlib.sha256()
-for h in hashes:
-  version_hash.update(h)
+  version_hash = hashlib.sha256()
+  for h in hashes:
+    version_hash.update(h)
 
-instrument['version'] = version_hash.hexdigest()
+  return version_hash.hexdigest()
+
+instrument['version'] = compute_instrument_version()
 
 create_instrument_json = {
   'readAs': ['SynfiniPublic'],
@@ -143,3 +168,16 @@ take_settlement_offer = {
 
 batch_id = str(uuid.uuid4())
 dops('take-settlement-open-offer', take_settlement_offer, batch_id)
+dops('accept-settlement', issuer_settlement_prefs_file, f'{issuer_party_label},{owner_party_label}', batch_id)
+dops('accept-settlement', owner_settlement_prefs_file, f'{issuer_party_label},{owner_party_label}', batch_id)
+dops(
+  'execute-settlement',
+  {
+    'readAs': ['SynfiniPublic'],
+    'settleSettings': {
+      'settler': issuer_party_label
+    }
+  },
+  f'{issuer_party_label},{owner_party_label}',
+  batch_id
+)

@@ -79,35 +79,14 @@
     },
     {
       "owner": "InvestorA",
-      "custodian": "SbtIssuer",
-      "id": "sbt",
-      "description": "sbt account",
+      "custodian": "SynfiniValidator",
+      "id": "sbt-001",
+      "description": "Soul bound tokens",
       "incomingControllers": [
-        "SbtIssuer"
+        "InvestorA"
       ],
       "outgoingControllers": [
-        "SbtIssuer"
-      ],
-      "holdingFactory": "NonTransferableV1",
-      "observers": [
-        {
-          "context": "setup",
-          "parties": [
-            "SynfiniValidator", "WalletOperator"
-          ]
-        }
-      ]
-    },
-    {
-      "owner": "InvestorB",
-      "custodian": "SbtIssuer",
-      "id": "sbt",
-      "description": "sbt account",
-      "incomingControllers": [
-        "SbtIssuer"
-      ],
-      "outgoingControllers": [
-        "SbtIssuer"
+        "InvestorA"
       ],
       "holdingFactory": "NonTransferableV1",
       "observers": [

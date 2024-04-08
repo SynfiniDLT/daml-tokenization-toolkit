@@ -1,0 +1,13 @@
+{
+  "acceptSettlementSettings": {
+    "acceptor": "SbtIssuer",
+    "settlementPreferences": [
+      {
+        "custodian": "SynfiniValidator",
+        "depository": "SbtDepository",
+        "issuer": "SbtIssuer",
+        "minterBurner": true
+      }
+    ]
+  }
+}

@@ -12,6 +12,12 @@
         "custodian": "SynfiniValidator",
         "depository": "FundDepository",
         "accountId": "002"
+      },
+      {
+        "custodian": "SynfiniValidator",
+        "issuer": "SbtIssuer",
+        "depository": "SbtDepository",
+        "accountId": "sbt-001"
       }
     ]
   }

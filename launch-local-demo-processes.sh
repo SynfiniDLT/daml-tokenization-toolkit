@@ -94,7 +94,9 @@ burn_id=$(uuidgen)
 dops take-settlement-open-offer ${config_dir}/stablecoin/take-off-ramp-offer.json $burn_id
 
 # SBT
-# dops create-pbas-unilateral ${config_dir}/sbt/pba.json
+dops create-minter-burners ${config_dir}/synfini-id/minter-burner.json
+issuer_sbt_args="SbtIssuer SbtDepository SbtIssuer.V1 SbtIssuer.V1 ${config_dir}/settlement/SbtIssuer-settlement-preferences.json"
+python3 create-synfini-id.py $issuer_sbt_args InvestorA ${config_dir}/settlement/investorA-settlement-preferences.json 'John Doe'
 
 # Fund
 dops create-minter-burners ${config_dir}/fund/fundA-minter-burner.json
