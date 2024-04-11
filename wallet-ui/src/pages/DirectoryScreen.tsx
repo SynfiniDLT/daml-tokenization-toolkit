@@ -4,7 +4,7 @@ import { PageLoader } from "../components/layout/page-loader";
 import { PageLayout } from "../components/PageLayout";
 import IdentityCards from "../components/layout/IdentityCards";
 import * as damlTypes from "@daml/types";
-import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { HoldingSummary, InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { Metadata, View as MetadataView } from "@daml.js/synfini-instrument-metadata-interface/lib/Synfini/Interface/Instrument/Metadata/Metadata";
 import { useWalletUser, useWalletViews, userContext } from "../App";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
@@ -12,6 +12,7 @@ import { CreateEvent } from "@daml/ledger";
 import { arrayToMap } from "../Util";
 
 const DirectoryScreen: React.FC = () => {
+  const sbtCustodian = process.env.REACT_APP_PARTIES_SBT_CUSTODIAN;
   const sbtDepository = process.env.REACT_APP_PARTIES_SBT_INSTRUMENT_DEPOSITORY;
   const sbtIssuer = process.env.REACT_APP_PARTIES_SBT_INSTRUMENT_ISSUER;
 
@@ -35,21 +36,27 @@ const DirectoryScreen: React.FC = () => {
           }
         );
         setInstruments(resp.instruments);
-        console.log('resp.instruments', resp.instruments);
+      }
+    };
+    fetchInstruments();
+  }, [primaryParty, sbtDepository, sbtIssuer, walletClient]);
 
+  useEffect(() => {
+    const fetchMetadatas = async () => {
+      if (instruments !== undefined) {
         const metadatasElems = await Promise.all(
-          resp.instruments.map(async ins => {
+          instruments.map(async ins => {
             const instrumentKey = ins.tokenView?.token.instrument
             let pair: [InstrumentKey, CreateEvent<Metadata>] | undefined = undefined;
-
+  
             if (instrumentKey !== undefined) {
               const metadataResp = await ledger.query(Metadata, { instrument: instrumentKey });
-
+  
               if (metadataResp.length === 1) {
                 pair = [instrumentKey, metadataResp[0]];
               }
             }
-
+  
             return pair === undefined ? [] : [pair]
           })
         );
@@ -57,8 +64,36 @@ const DirectoryScreen: React.FC = () => {
         setMetadatas(arrayToMap(metadatasElems.flatMap(kv => kv)));
       }
     };
-    fetchInstruments();
-  }, [primaryParty, sbtDepository, sbtIssuer, walletClient]);
+
+    fetchMetadatas();
+  }, [primaryParty, sbtDepository, sbtIssuer, ledger, instruments]);
+
+  // TODO cannot fetch Holdings until we relax restrictions on `HoldingsFilter`: account ID, and owner should be optional
+  /*
+  useEffect(() => {
+    const fetchHoldings = async () => {
+      if (instruments !== undefined) {
+        const holdingsElems = await Promise.all(
+          instruments.map(async ins => {
+            const instrumentKey = ins.tokenView?.token.instrument
+            let pair: [InstrumentKey, HoldingSummary] | undefined = undefined;
+  
+            if (instrumentKey !== undefined) {
+              const metadataResp = await walletClient.getHoldings(
+                {instrument: instrumentKey, account: { owner: }}
+              );
+  
+              if (metadataResp.length === 1) {
+                pair = [instrumentKey, metadataResp[0]];
+              }
+            }
+  
+            return pair === undefined ? [] : [pair]
+          })
+        );
+      }
+    }
+  }, [primaryParty, sbtDepository, sbtIssuer, walletClient, sbtCustodian])*/
 
   if (isLoading) {
     return (

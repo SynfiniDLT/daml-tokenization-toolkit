@@ -11,6 +11,7 @@ import * as damlTypes from "@daml/types";
 import { useWalletUser, useWalletViews } from "../../App";
 import { userContext } from "../../App";
 import { InstrumentMetadataSummary } from "../../Util";
+import { useNavigate } from "react-router-dom";
 
 type Operation = "share" | "unshare";
 
@@ -22,6 +23,8 @@ export default function AssetDetails(
     holdingCid?: ContractId<any>
   }
 ) {
+  const nav = useNavigate();
+
   const ledger = userContext.useLedger();
   const { primaryParty } = useWalletUser();
 
@@ -46,10 +49,14 @@ export default function AssetDetails(
     setPartiesInput("");
     setIsMessageOpen(!isMessageOpen);
     setOperation(undefined);
+
+    nav("/asset", { state: { instrument: props.instrument.metadata.view.instrument } });
   };
 
   const handleClickOk = async () => {
     setIsMessageOpen(!isMessageOpen);
+
+    nav("/asset", { state: { instrument: props.instrument.metadata.view.instrument } });
   };
 
   const handleShareAsset = (operation: Operation) => {
@@ -74,6 +81,9 @@ export default function AssetDetails(
       return;
     }
 
+    console.log('ins', props.instrument);
+    console.log('metadata', metadata);
+
     const disclosers = arrayToSet([primaryParty]);
     const observers = arrayToSet([partiesInput]);
     if (operation === "share") {
@@ -84,11 +94,14 @@ export default function AssetDetails(
           _2: observers,
         },
       };
-      const addInstrumentObs = ledger.exercise(
-        Disclosure.AddObservers,
-        props.instrument.instrument.cid as ContractId<any>,
-        exerciseArgs
-      );
+      const addInstrumentObs =
+        primaryParty === props.instrument.metadata.view.instrument.issuer ||
+        primaryParty === props.instrument.metadata.view.instrument.depository ?
+        ledger.exercise(
+          Disclosure.AddObservers,
+          props.instrument.instrument.cid as ContractId<any>,
+          exerciseArgs
+        ) : Promise.resolve();
       const addMetadataObs = ledger.exercise(Disclosure.AddObservers, props.instrument.metadata.cid, exerciseArgs);
       const addHoldingsObs = props.holdingCid != undefined ?
         ledger.exercise(Disclosure.AddObservers, props.holdingCid, exerciseArgs) :
@@ -120,10 +133,13 @@ export default function AssetDetails(
           _2: observers,
         },
       };
-      const removeInstrumentObs = ledger.exercise(
-        Disclosure.RemoveObservers,
-        props.instrument.instrument.cid as ContractId<any>, exerciseArgs
-      );
+      const removeInstrumentObs =
+        primaryParty === props.instrument.metadata.view.instrument.issuer ||
+        primaryParty === props.instrument.metadata.view.instrument.depository ?
+        ledger.exercise(
+          Disclosure.RemoveObservers,
+          props.instrument.instrument.cid as ContractId<any>, exerciseArgs
+        ) : Promise.resolve();
       const removeMetadataObs = ledger.exercise(Disclosure.RemoveObservers, props.instrument.metadata.cid, exerciseArgs);
       const removeHoldingsObs = props.holdingCid != undefined ?
         ledger.exercise(Disclosure.RemoveObservers, props.holdingCid, exerciseArgs) :
@@ -209,10 +225,6 @@ export default function AssetDetails(
 
   return (
     <>
-      <div style={{ marginTop: "15px" }}>
-        <h5 className="profile__title">SBT</h5>
-      </div>
-
       <table id="assets">
         <thead>
           <tr>

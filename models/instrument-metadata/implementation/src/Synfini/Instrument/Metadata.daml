@@ -25,9 +25,7 @@ template Metadata
       view = Metadata.View with instrument, attributes
 
     interface instance Disclosure.I for Metadata where
-      view = Disclosure.View with
-        disclosureControllers = Set.fromList [instrument.issuer, instrument.depository]
-        observers
+      view = Disclosure.View with disclosureControllers, observers
       setObservers = DisclosureUtil.setObserversImpl this $
         Some (Metadata.disclosureUpdateReference instrument)
       addObservers = DisclosureUtil.addObserversImpl @Metadata this $

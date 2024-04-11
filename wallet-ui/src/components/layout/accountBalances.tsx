@@ -17,8 +17,11 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
   const [instrument, setInstrument] = useState<InstrumentKey>();
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
-  const handleSeeSbtDetails = (account: AccountSummary) => {
-    nav("/asset", { state: { account: account } });
+  const handleSeeSbtDetails = () => {
+    console.log('ins in sbt', instrument);
+    if (instrument !== undefined) {
+      nav("/asset", { state: { instrument } });
+    }
   };
 
   const handleRedeem = (balance: Balance, account: AccountSummary) => {
@@ -26,8 +29,9 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
   };
 
   const handleInstrumentModal = (instrument: InstrumentKey) => {
-     setInstrument(instrument);
-     setIsOpen(!isOpen);
+    // setInstrument(instrument);
+    setIsOpen(!isOpen);
+    nav("/asset", { state: { instrument } });
   }
 
   const tableRows: [AccountSummary, JSX.Element[]][] = props.accountBalances.map(accountBalance => {
@@ -36,11 +40,19 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
         (balance.instrument.id.unpack === process.env.REACT_APP_STABLECOIN_INSTRUMENT_ID) ?
           (<button onClick={() => handleRedeem(balance, accountBalance.account)}>Redeem</button>) :
         (balance.instrument.id.unpack === process.env.REACT_APP_PARTY_ATTRIBUTES_INSTRUMENT_ID) ?
-          (<button onClick={() => handleSeeSbtDetails(accountBalance.account)}>Manage access</button>) :
+          (<button onClick={() => handleSeeSbtDetails()}>Manage access</button>) :
           (<></>);
 
+      const trKey = [
+        balance.account.custodian,
+        balance.account.id.unpack,
+        balance.instrument.depository,
+        balance.instrument.issuer,
+        balance.instrument.id.unpack,
+        balance.instrument.version
+      ].join(" ");
       return (
-        <tr key={balance.instrument.id.unpack}>
+        <tr key={trKey}>
           <td>
             {balance.instrument.id.unpack === process.env.REACT_APP_STABLECOIN_INSTRUMENT_ID && (
               <>
@@ -48,7 +60,7 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
                 &nbsp;&nbsp;
               </>
             )}
-            <a href="#" onClick={() => handleInstrumentModal(balance.instrument)}>
+            <a onClick={() => handleInstrumentModal(balance.instrument)}>
               <HoverPopUp triggerText={balance.instrument.id.unpack} popUpContent={balance.instrument.version} />
             </a>
           </td>

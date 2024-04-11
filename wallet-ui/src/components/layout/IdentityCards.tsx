@@ -1,4 +1,4 @@
-import InstrumentDetails from "./identityDetails";
+import IdentityDetails from "./identityDetails";
 import { InstrumentMetadataSummary } from "../../Util";
 
 export default function IdentityCards(props: { instruments?: InstrumentMetadataSummary[] }) {
@@ -12,10 +12,10 @@ export default function IdentityCards(props: { instruments?: InstrumentMetadataS
           }
             {props.instruments.map((instrument, index) => (
               <div key={index}>
-                <InstrumentDetails
+                <IdentityDetails
                   instrument={instrument}
                   key={instrument.instrument.cid}
-                ></InstrumentDetails>
+                ></IdentityDetails>
               </div>
             ))}
           </>
