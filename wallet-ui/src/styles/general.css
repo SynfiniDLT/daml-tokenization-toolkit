@@ -362,20 +362,20 @@ ul.form-stepper li a .form-stepper-circle {
 
 
 
-#assets {
+.assets {
   font-family: Arial, Helvetica, sans-serif;
   border-collapse: collapse;
   width: 100%;
 }
 
-#assets td, #assets th {
+.assets td, .assets th {
   border: 1px solid #ddd;
   padding: 8px;
 }
 
-/* #assets tr:hover {background-color: #b6b2b2;} */
+/* .assets tr:hover {background-color: #b6b2b2;} */
 
-#assets th {
+.assets th {
   padding-top: 12px;
   padding-bottom: 12px;
   text-align: left;
@@ -383,7 +383,7 @@ ul.form-stepper li a .form-stepper-circle {
   color: white;
 }
 
-#assets-div {
+.assets-div {
   font-family: Arial, Helvetica, sans-serif;
   display: flex;
   flex-direction: column;

@@ -80,6 +80,18 @@ export function arrayToMap<K, V>(elements: [K, V][]): damlTypes.Map<K, V> {
   return elements.reduce((m, [k, v]) => m.set(k, v), empty);
 }
 
+export function flattenObservers(observers: damlTypes.Map<string, Set<damlTypes.Party>>): damlTypes.Party[] {
+  const observersArray = observers
+    .entriesArray()
+    .flatMap(([_, obs]) => setToArray(obs));
+
+  return setToArray(arrayToSet(observersArray)); // Remove any duplicates by converting to set
+}
+
+export function setToArray<T>(set: Set<T>): T[] {
+  return set.map.entriesArray().map(([x, _]) => x);
+}
+
 // React does not copy down the functions available on state variables, so we use this workaround to add these methods
 // back onto the `Map` instance
 export function repairMap<K, V>(map: damlTypes.Map<K, V>) {

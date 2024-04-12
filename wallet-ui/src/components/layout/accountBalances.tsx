@@ -64,12 +64,14 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
               <HoverPopUp triggerText={balance.instrument.id.unpack} popUpContent={balance.instrument.version} />
             </a>
           </td>
+          <td>
+            {balance.instrument.version}
+          </td>
           <td><HoverPopUp triggerText={nameFromParty(balance.instrument.issuer)} popUpContent={balance.instrument.issuer} /></td>
           <td>
             {formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")}
           </td>
           <td>{formatCurrency(balance.unlocked, "en-US")} </td>
-          <td>{formatCurrency(balance.locked, "en-US")} </td>
           <td>{actionButton}</td>
         </tr>
       );
@@ -91,14 +93,14 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
                 <h5 className="profile__title">Account ID: {account.view.id.unpack}</h5>
               </div>
               <div style={{ margin: "10px", padding: "10px" }}>
-                <table id="assets">
+                <table className="assets">
                   <thead>
                     <tr>
                       <th>Asset</th>
+                      <th>Variant</th>
                       <th>Issuer</th>
                       <th>Balance</th>
-                      <th>Balance Unlocked</th>
-                      <th>Balance locked</th>
+                      <th>Available</th>
                       <th>Actions</th>
                     </tr>
                   </thead>

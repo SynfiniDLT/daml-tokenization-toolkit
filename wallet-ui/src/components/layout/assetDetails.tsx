@@ -225,7 +225,7 @@ export default function AssetDetails(
 
   return (
     <>
-      <table id="assets">
+      <table className="assets">
         <thead>
           <tr>
             <th>
