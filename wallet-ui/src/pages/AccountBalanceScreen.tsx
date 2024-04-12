@@ -10,7 +10,6 @@ import {
   Balance,
   InstrumentSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import AssetDetails from "../components/layout/assetDetails";
 import { useWalletUser, useWalletViews } from "../App";
 
 /*const AccountBalanceScreen: React.FC = () => {

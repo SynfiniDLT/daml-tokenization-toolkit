@@ -1,18 +1,14 @@
-import { useState, useEffect, ChangeEvent } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { userContext } from "../App";
 import { PageLayout } from "../components/PageLayout";
 import { PageLoader } from "../components/layout/page-loader";
 import {
-  Balance,
-  HoldingSummary,
   InstrumentSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import AssetDetails from "../components/layout/assetDetails";
-import { Instrument as TokenInstrument }  from "@daml.js/daml-finance-interface-instrument-token/lib/Daml/Finance/Interface/Instrument/Token/Instrument";
 import * as damlTypes from "@daml/types";
-import { arrayToMap, arrayToSet, flattenObservers } from "../Util";
+import { arrayToSet, flattenObservers } from "../Util";
 import { useWalletUser, useWalletViews } from "../App";
 import { CreateEvent } from "@daml/ledger";
 import { Metadata } from "@daml.js/synfini-instrument-metadata-interface/lib/Synfini/Interface/Instrument/Metadata/Metadata";
@@ -32,7 +28,6 @@ const obsContext = "wallet.assetShare";
 const AssetDetailsScreen: React.FC = () => {
   const { isLoading } = useAuth0();
   const { state } = useLocation() as { state: AssetDetailsState };
-  console.log('state = ', state);
   const ledger = userContext.useLedger();
   const { primaryParty } = useWalletUser();
   const walletClient = useWalletViews();
@@ -50,26 +45,8 @@ const AssetDetailsScreen: React.FC = () => {
 
   const [partyToShareWith, setPartyToShareWith] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  // const [isMessageOpen, setIsMessageOpen] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
-
-  // useEffect(() => {
-  //   const fetchBalances = async () => {
-  //     if (primaryParty !== undefined) {
-  //       const resp = await walletClient.getBalance({
-  //         account: {
-  //           owner: primaryParty,
-  //           custodian: state.account.view.custodian,
-  //           id: { unpack: state.account.view.id.unpack },
-  //         },
-  //       });
-  //       setBalances(resp.balances);
-  //     }
-  //   };
-
-  //   fetchBalances();
-  // }, [primaryParty, walletClient, state.account.view.custodian, state.account.view.id.unpack]);
 
   useEffect(() => {
     const fetchHoldings = async () => {
@@ -210,7 +187,6 @@ const AssetDetailsScreen: React.FC = () => {
   }
 
   const handleAddObserver = async () => {
-    console.log(`party "${partyToShareWith}"`);
     if (primaryParty === undefined || instrument === undefined || isFungible === undefined) {
       setIsModalOpen(true);
       setMessage("");
@@ -259,14 +235,12 @@ const AssetDetailsScreen: React.FC = () => {
   }
 
   function handleCloseModal(): void {
-    console.log('handleCloseModal');
     setIsModalOpen(false);
     setPartyToShareWith("");
     setToUnshare(damlTypes.emptyMap());
   }
 
   function handleClickOk(): void {
-    console.log('handleClickOk');
     setIsModalOpen(false);
     setPartyToShareWith("");
     setToUnshare(damlTypes.emptyMap());

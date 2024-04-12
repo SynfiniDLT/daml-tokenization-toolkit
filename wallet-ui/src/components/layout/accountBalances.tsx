@@ -14,22 +14,13 @@ export type AccountBalanceSummary = {
 
 export default function AccountBalances(props: { accountBalances: AccountBalanceSummary[] }) {
   const nav = useNavigate();
-  const [instrument, setInstrument] = useState<InstrumentKey>();
   const [isOpen, setIsOpen] = useState<boolean>(false);
-
-  const handleSeeSbtDetails = () => {
-    console.log('ins in sbt', instrument);
-    if (instrument !== undefined) {
-      nav("/asset", { state: { instrument } });
-    }
-  };
 
   const handleRedeem = (balance: Balance, account: AccountSummary) => {
     nav("/wallet/account/balance/redeem", { state: { balance, account } });
   };
 
   const handleInstrumentModal = (instrument: InstrumentKey) => {
-    // setInstrument(instrument);
     setIsOpen(!isOpen);
     nav("/asset", { state: { instrument } });
   }
@@ -38,9 +29,7 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
     const trs = accountBalance.balances.map(balance => {
       const actionButton =
         (balance.instrument.id.unpack === process.env.REACT_APP_STABLECOIN_INSTRUMENT_ID) ?
-          (<button onClick={() => handleRedeem(balance, accountBalance.account)}>Redeem</button>) :
-        (balance.instrument.id.unpack === process.env.REACT_APP_PARTY_ATTRIBUTES_INSTRUMENT_ID) ?
-          (<button onClick={() => handleSeeSbtDetails()}>Manage access</button>) :
+          (<>&nbsp;<button onClick={() => handleRedeem(balance, accountBalance.account)}>Redeem</button></>) :
           (<></>);
 
       const trKey = [
@@ -60,19 +49,18 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
                 &nbsp;&nbsp;
               </>
             )}
-            <a onClick={() => handleInstrumentModal(balance.instrument)}>
-              <HoverPopUp triggerText={balance.instrument.id.unpack} popUpContent={balance.instrument.version} />
-            </a>
+            {balance.instrument.id.unpack}
           </td>
           <td>
-            {balance.instrument.version}
+            <a onClick={() => handleInstrumentModal(balance.instrument)}>
+              {balance.instrument.version}
+            </a>
           </td>
           <td><HoverPopUp triggerText={nameFromParty(balance.instrument.issuer)} popUpContent={balance.instrument.issuer} /></td>
           <td>
             {formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")}
           </td>
-          <td>{formatCurrency(balance.unlocked, "en-US")} </td>
-          <td>{actionButton}</td>
+          <td>{formatCurrency(balance.unlocked, "en-US")}{actionButton}</td>
         </tr>
       );
     });
@@ -101,13 +89,11 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
                       <th>Issuer</th>
                       <th>Balance</th>
                       <th>Available</th>
-                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>{trs}</tbody>
                 </table>
               </div>
-              <InstrumentPopDetails instrument={instrument} isOpen={isOpen} handleClose={() => setIsOpen(false)}/>
             </div>
           );
         })
