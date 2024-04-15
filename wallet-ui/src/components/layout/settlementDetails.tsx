@@ -26,6 +26,7 @@ import { Batch } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finan
 import Modal from "react-modal";
 import AccountsSelect from "./accountsSelect";
 import { useWalletUser, useWalletViews } from "../../App";
+import { stableCoinInstrumentId } from "../../Configuration";
 
 interface SettlementDetailsProps {
   settlement: SettlementSummary;
@@ -115,7 +116,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
             <h5 className="profile__title">Step {index + 1}</h5>
             <div style={{ margin: "15px" }}>
               <Field>Amount: </Field>
-              {step.routedStep.quantity.unit.id.unpack === process.env.REACT_APP_STABLECOIN_INSTRUMENT_ID ? (
+              {step.routedStep.quantity.unit.id.unpack === stableCoinInstrumentId.unpack ? (
                 <>{formatCurrency(step.routedStep.quantity.amount, "en-US")}</>
               ) : (
                 <>{Number(step.routedStep.quantity.amount)}</>
@@ -495,7 +496,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
                   <h5 className="profile__title">Step {index + 1}</h5>
                   <div style={{ margin: "15px" }}>
                     <Field>Amount: </Field>
-                    {step.routedStep.quantity.unit.id.unpack === process.env.REACT_APP_STABLECOIN_INSTRUMENT_ID ? (
+                    {step.routedStep.quantity.unit.id.unpack === stableCoinInstrumentId.unpack ? (
                       <>{formatCurrency(step.routedStep.quantity.amount, "en-US")}</>
                     ) : (
                       <>{Number(step.routedStep.quantity.amount)}</>

@@ -8,7 +8,7 @@ import {
   InstrumentSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlTypes from "@daml/types";
-import { arrayToSet, flattenObservers } from "../Util";
+import { arrayToSet, flattenObservers, setToArray } from "../Util";
 import { useWalletUser, useWalletViews } from "../App";
 import { CreateEvent } from "@daml/ledger";
 import { Metadata } from "@daml.js/synfini-instrument-metadata-interface/lib/Synfini/Interface/Instrument/Metadata/Metadata";
@@ -18,12 +18,22 @@ import Modal from "react-modal";
 import { Base } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Base";
 import { Fungible } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
 import { Transferable } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Transferable";
+import { Set as DamlSet } from "@daml.js/da-set/lib/DA/Set/Types";
 
 export type AssetDetailsState = {
   instrument: InstrumentKey
 }
 
 const obsContext = "wallet.assetShare";
+
+function observersOnlyInContext(observers: damlTypes.Map<string, DamlSet<damlTypes.Party>>): DamlSet<damlTypes.Party> {
+  const otherObservers = arrayToSet(flattenObservers(observers.delete(obsContext)));
+  const observersArray = setToArray(
+    observers.get(obsContext) || arrayToSet<damlTypes.Party>([])
+  ).filter(party => !otherObservers.map.has(party));
+
+  return arrayToSet(observersArray);
+}
 
 const AssetDetailsScreen: React.FC = () => {
   const { isLoading } = useAuth0();
@@ -38,9 +48,10 @@ const AssetDetailsScreen: React.FC = () => {
   const [holdingDisclosure, setHoldingDisclosure] = useState<DisclosureView>();
   const [isFungible, setIsFungible] = useState<boolean>();
   const [isTransferable, setIsTransferable] = useState<boolean>();
-  const [instrument, setInstrument] = useState<InstrumentSummary>();
+  const [instrumentSummary, setInstrumentSummary] = useState<InstrumentSummary>();
   const [metadata, setMetadata] = useState<CreateEvent<Metadata>>();
-  const [assetDisclosure, setAssetDisclosure] = useState<DisclosureView>();
+  const [instrumentDisclosure, setInstrumentDisclosure] = useState<DisclosureView>();
+  const [metadataDisclosure, setMetadataDisclosure] = useState<DisclosureView>();
   const [toUnshare, setToUnshare] = useState<damlTypes.Map<damlTypes.Party, {}>>(damlTypes.emptyMap());
 
   const [partyToShareWith, setPartyToShareWith] = useState<string>("");
@@ -48,11 +59,12 @@ const AssetDetailsScreen: React.FC = () => {
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
 
-  useEffect(() => {
-    const fetchHoldings = async () => {
-      return await ledger.query(Base, { instrument: state.instrument, account: { owner: primaryParty }});
-    }
+  const fetchDisclosure = async (cid: damlTypes.ContractId<Disclosure>) => {
+    const disclosure = await ledger.fetch(Disclosure, cid);
+    return disclosure?.payload;
+  }
 
+  useEffect(() => {
     const fetchInstrument = async () => {
       const instruments = await walletClient.getInstruments({
         depository: state.instrument.depository,
@@ -60,65 +72,78 @@ const AssetDetailsScreen: React.FC = () => {
         id: { unpack: state.instrument.id.unpack },
         version: state.instrument.version,
       });
+
       if (instruments.instruments.length === 1) {
-        return instruments.instruments[0];
-      } else {
-        return undefined;
+        setInstrumentSummary(instruments.instruments[0]);
       }
     }
 
-    const fetchDisclosure = async (cid: damlTypes.ContractId<Disclosure>) => {
-      const disclosure = await ledger.fetch(Disclosure, cid);
-      return disclosure?.payload;
+    fetchInstrument();
+  }, [walletClient, ledger, refresh, state.instrument]);
+
+  useEffect(() => {
+    const fetchInstrumentDisclosure = async () => {
+      if (instrumentSummary !== undefined) {
+        const insDisc = await ledger.fetch(Disclosure, instrumentSummary.cid as damlTypes.ContractId<any>);
+        if (insDisc !== null) {
+          setInstrumentDisclosure(insDisc.payload);
+        }
+      }
     }
 
+    fetchInstrumentDisclosure();
+  }, [instrumentSummary, ledger]);
+
+  useEffect(() => {
     const fetchMetadata = async () => {
       const metadatas = await ledger.query(Metadata, { instrument: state.instrument });
       if (metadatas.length === 1) {
-        return metadatas[0]
-      } else {
-        return undefined;
+        setMetadata(metadatas[0]);
       }
     }
 
-    const fetchAll = async () => {
-      const instrument = await fetchInstrument();
-      setInstrument(instrument);
-      if (instrument !== undefined) {
-        const holdings = await fetchHoldings();
-        if (holdings.length == 1) {
-          const cid = holdings[0].contractId as damlTypes.ContractId<any>;
-          const fungible = await ledger.fetch(Fungible, cid);
-          if (fungible === null) {
-            setIsFungible(false);
+    fetchMetadata();
+  }, [ledger, refresh, state.instrument]);
+
+  useEffect(() => {
+    const fetchMetadataDisclosure = async () => {
+      if (metadata !== undefined) {
+        const metaDisc = await ledger.fetch(Disclosure, metadata.contractId as damlTypes.ContractId<any>);
+        if (metaDisc !== null) {
+          setMetadataDisclosure(metaDisc.payload);
+        }
+      }
+    }
+    fetchMetadataDisclosure();
+  }, [metadata, ledger, refresh]);
+
+  useEffect(() => {
+    const fetchHoldings = async () => {
+      const holdings = await ledger.query(Base, { instrument: state.instrument });
+      if (holdings.length > 0) {
+        const cid = holdings[0].contractId as damlTypes.ContractId<any>;
+        const fungible = await ledger.fetch(Fungible, cid);
+        if (fungible === null) {
+          setIsFungible(false);
+          if (holdings.length === 1) {
             setNonFungibleHolding(holdings[0]);
             const disc = await fetchDisclosure(cid);
             setHoldingDisclosure(disc);
-          } else {
-            setIsFungible(true);
           }
-          const transferable = await ledger.fetch(Transferable, cid);
-          if (transferable === null) {
-            setIsTransferable(false);
-          } else {
-            setIsTransferable(true);
-          }
-        }
-  
-        const metadata = await fetchMetadata();
-        setMetadata(metadata);
-        if (metadata !== undefined) {
-          const disc = await fetchDisclosure(metadata.contractId as damlTypes.ContractId<any>);
-          setAssetDisclosure(disc);
         } else {
-          const disc = await fetchDisclosure(instrument.cid as damlTypes.ContractId<any>);
-          setAssetDisclosure(disc)
+          setIsFungible(true);
+        }
+        const transferable = await ledger.fetch(Transferable, cid);
+        if (transferable === null) {
+          setIsTransferable(false);
+        } else {
+          setIsTransferable(true);
         }
       }
-    };
+    }
 
-    fetchAll();
-  }, [primaryParty, walletClient, ledger, refresh])
+    fetchHoldings();
+  }, [ledger, state.instrument, refresh]);
 
   if (isLoading) {
     return (
@@ -128,7 +153,9 @@ const AssetDetailsScreen: React.FC = () => {
     );
   }
 
-  const partiesSharedWith = assetDisclosure === undefined ? undefined : flattenObservers(assetDisclosure.observers);
+  const partiesSharedWith = metadataDisclosure === undefined ?
+    flattenObservers(instrumentDisclosure?.observers || damlTypes.emptyMap()) :
+    flattenObservers(metadataDisclosure.observers);
 
   const handleCheckboxChange = (party: damlTypes.Party) => {
     if (toUnshare.has(party)) {
@@ -139,7 +166,7 @@ const AssetDetailsScreen: React.FC = () => {
   };
 
   const handleRemoveObservers = async () => {
-    if (primaryParty === undefined || instrument === undefined || isFungible === undefined) {
+    if (primaryParty === undefined || instrumentSummary === undefined || isFungible === undefined) {
       setIsModalOpen(true);
       setMessage("");
       setError("Waiting for page data, please try again");
@@ -155,11 +182,10 @@ const AssetDetailsScreen: React.FC = () => {
       },
     };
     const removeInstrumentObs =
-      primaryParty === state.instrument.issuer ||
-      primaryParty === state.instrument.depository ?
+      metadata === undefined ?
       ledger.exercise(
         Disclosure.RemoveObservers,
-        instrument.cid as damlTypes.ContractId<any>, exerciseArgs
+        instrumentSummary.cid as damlTypes.ContractId<any>, exerciseArgs
       ) : Promise.resolve();
     const removeMetadataObs = metadata !== undefined ?
       ledger.exercise(Disclosure.RemoveObservers, metadata.contractId as damlTypes.ContractId<any>, exerciseArgs) :
@@ -187,7 +213,7 @@ const AssetDetailsScreen: React.FC = () => {
   }
 
   const handleAddObserver = async () => {
-    if (primaryParty === undefined || instrument === undefined || isFungible === undefined) {
+    if (primaryParty === undefined || instrumentSummary === undefined || isFungible === undefined) {
       setIsModalOpen(true);
       setMessage("");
       setError("Internal error");
@@ -202,11 +228,10 @@ const AssetDetailsScreen: React.FC = () => {
       },
     };
     const addInstrumentObs =
-      primaryParty === state.instrument.issuer ||
-      primaryParty === state.instrument.depository ?
+      metadata === undefined ?
       ledger.exercise(
         Disclosure.AddObservers,
-        instrument.cid as damlTypes.ContractId<any>,
+        instrumentSummary.cid as damlTypes.ContractId<any>,
         exerciseArgs
       ) : Promise.resolve();
     const addMetadataObs = metadata !== undefined ?
@@ -259,7 +284,7 @@ const AssetDetailsScreen: React.FC = () => {
   if (isFungible === false) {
     assetTypeTerms.push("non-fungible");
   }
-  if (instrument?.tokenView !== undefined) {
+  if (instrumentSummary?.tokenView !== undefined) {
     if (assetTypeTerms.length > 0) {
       assetTypeTerms[assetTypeTerms.length - 1] =
         assetTypeTerms[assetTypeTerms.length - 1] + " token";
@@ -270,33 +295,44 @@ const AssetDetailsScreen: React.FC = () => {
   const assetTypeDescription = assetTypeTerms.join(", ");
   const assetTypeDescriptionCapitalised = assetTypeDescription.at(0)?.toUpperCase() + assetTypeDescription.slice(1);
 
-  const canDisclose = primaryParty !== undefined && (
-    primaryParty === state.instrument.issuer ||
-    primaryParty === state.instrument.depository ||
-    assetDisclosure?.disclosureControllers.map.has(primaryParty));
+  let canDisclose = false;
+  if (metadataDisclosure === undefined) {
+    if (instrumentDisclosure !== undefined) {
+      canDisclose = primaryParty !== undefined && instrumentDisclosure.disclosureControllers.map.has(primaryParty);
+    }
+  } else {
+    canDisclose = primaryParty !== undefined && metadataDisclosure.disclosureControllers.map.has(primaryParty);
+  }
+
+  const removableInstrumentObservers = instrumentDisclosure !== undefined ?
+    observersOnlyInContext(instrumentDisclosure.observers) :
+    arrayToSet<damlTypes.Party>([]);
+  const removableMetadataObservers = metadataDisclosure !== undefined ?
+    observersOnlyInContext(metadataDisclosure.observers) :
+    arrayToSet<damlTypes.Party>([]);
 
   return (
     <PageLayout>
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
         Asset Details
       </h3>
-      {instrument !== undefined && metadata !== undefined && assetDisclosure !== undefined && (
+      {instrumentSummary !== undefined && instrumentDisclosure !== undefined && (
         <table className="assets">
           <caption>
             <h3 className="profile__title" style={{ marginTop: "10px" }}>
-              {metadata.payload.instrument.id.unpack}
+              {state.instrument.id.unpack}
             </h3>
             <h4 className="profile__title" style={{ marginTop: "10px" }}>
-              (variant: {metadata.payload.instrument.version})
+              {state.instrument.version}
             </h4>
             <h5 className="profile__title" style={{ marginTop: "10px", paddingBottom: "10px" }}>
-              {instrument.tokenView?.token.description}
+              {instrumentSummary.tokenView?.token.description}
             </h5>
           </caption>
           <tbody>
             <tr>
               <th>Issuer</th>
-              <td>{instrument.tokenView?.token.instrument.issuer}</td>
+              <td>{state.instrument.issuer}</td>
             </tr>
             <tr>
               <th>Asset type</th>
@@ -304,7 +340,7 @@ const AssetDetailsScreen: React.FC = () => {
             </tr>
             <tr>
               <th>Valid as of</th>
-              <td>{instrument.tokenView?.token.validAsOf}</td>
+              <td>{instrumentSummary.tokenView?.token.validAsOf}</td>
             </tr>
             {isFungible === false && nonFungbileHolding !== undefined && (
               <tr>
@@ -325,7 +361,7 @@ const AssetDetailsScreen: React.FC = () => {
           </caption>
           <tbody>
             {metadata.payload.attributes.entriesArray().map(([attributeName, attribute]) =>
-              <tr>
+              <tr key={attributeName}>
                 <th>{attributeName}</th>
                 <td>{attribute.attributeValue}</td>
               </tr>
@@ -353,14 +389,17 @@ const AssetDetailsScreen: React.FC = () => {
             <tbody>
               {partiesSharedWith?.map(p =>
                 <>
-                  <tr>
+                  <tr key={p}>
                     <td>{p}</td>
                     {canDisclose &&
                       <td>
                         <input
                           type="checkbox"
                           onChange={_ => handleCheckboxChange(p)}
-                          disabled={assetDisclosure?.observers.get(obsContext)?.map.has(p) ? false : true}
+                          disabled={
+                            !removableInstrumentObservers.map.has(p) ||
+                            (metadataDisclosure !== undefined && !removableMetadataObservers.map.has(p))
+                          }
                         />
                       </td>
                     }

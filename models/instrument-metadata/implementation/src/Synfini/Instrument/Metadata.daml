@@ -7,9 +7,15 @@ import Daml.Finance.Util.Disclosure qualified as DisclosureUtil
 import Daml.Finance.Interface.Types.Common.Types
 
 import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+import Daml.Finance.Interface.Instrument.Base.Instrument qualified as Instrument
 
 import Synfini.Interface.Instrument.Metadata.Metadata qualified as Metadata
 import qualified Synfini.Interface.Instrument.Metadata.Factory as MetadataFactory
+
+fetchInstrumentCid : InstrumentKey -> Update (ContractId Instrument.I)
+fetchInstrumentCid instrument = do
+  (_, ref) <- fetchByKey @Instrument.R instrument
+  pure ref.cid
 
 template Metadata
   with
@@ -26,12 +32,21 @@ template Metadata
 
     interface instance Disclosure.I for Metadata where
       view = Disclosure.View with disclosureControllers, observers
-      setObservers = DisclosureUtil.setObserversImpl this $
-        Some (Metadata.disclosureUpdateReference instrument)
-      addObservers = DisclosureUtil.addObserversImpl @Metadata this $
-        Some (Metadata.disclosureUpdateReference instrument)
-      removeObservers = DisclosureUtil.removeObserversImpl this $
-        Some (Metadata.disclosureUpdateReference instrument)
+      setObservers args = do
+        instrumentCid : ContractId Disclosure.I <- toInterfaceContractId <$> fetchInstrumentCid instrument
+        exercise instrumentCid args with
+          disclosers = args.disclosers <> Set.fromList (signatory this)
+        DisclosureUtil.setObserversImpl this (Some (Metadata.disclosureUpdateReference instrument)) args
+      addObservers args = do
+        instrumentCid : ContractId Disclosure.I <- toInterfaceContractId <$> fetchInstrumentCid instrument
+        exercise instrumentCid args with
+          disclosers = args.disclosers <> Set.fromList (signatory this)
+        DisclosureUtil.addObserversImpl @Metadata this (Some (Metadata.disclosureUpdateReference instrument)) args
+      removeObservers self args = do
+        instrumentCid : ContractId Disclosure.I <- toInterfaceContractId <$> fetchInstrumentCid instrument
+        exercise instrumentCid args with
+          disclosers = args.disclosers <> Set.fromList (signatory this)
+        DisclosureUtil.removeObserversImpl this (Some (Metadata.disclosureUpdateReference instrument)) self args
 
 template Factory
   with

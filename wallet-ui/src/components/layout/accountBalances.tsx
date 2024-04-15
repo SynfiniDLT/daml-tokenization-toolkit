@@ -6,6 +6,7 @@ import HoverPopUp from "./hoverPopUp";
 import InstrumentPopDetails from "./instrumentPopDetails";
 import { useState } from "react";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
+import { stableCoinInstrumentId } from "../../Configuration";
 
 export type AccountBalanceSummary = {
   account: AccountSummary,
@@ -28,7 +29,7 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
   const tableRows: [AccountSummary, JSX.Element[]][] = props.accountBalances.map(accountBalance => {
     const trs = accountBalance.balances.map(balance => {
       const actionButton =
-        (balance.instrument.id.unpack === process.env.REACT_APP_STABLECOIN_INSTRUMENT_ID) ?
+        (balance.instrument.id.unpack === stableCoinInstrumentId.unpack) ?
           (<>&nbsp;<button onClick={() => handleRedeem(balance, accountBalance.account)}>Redeem</button></>) :
           (<></>);
 
@@ -43,7 +44,7 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
       return (
         <tr key={trKey}>
           <td>
-            {balance.instrument.id.unpack === process.env.REACT_APP_STABLECOIN_INSTRUMENT_ID && (
+            {balance.instrument.id.unpack === stableCoinInstrumentId.unpack && (
               <>
                 <Coin />
                 &nbsp;&nbsp;

@@ -1,6 +1,6 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { NavBarTab } from "./nav-bar-tab";
-import { walletMode } from "../../../App";
+import { walletMode } from "../../../Configuration";
 
 export const NavBarTabs = () => {
   const { isAuthenticated } = useAuth0();

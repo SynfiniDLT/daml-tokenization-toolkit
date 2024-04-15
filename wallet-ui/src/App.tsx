@@ -15,12 +15,12 @@ import BalanceRedeemFormScreen from "./pages/BalanceRedeemFormScreen";
 import AccountOfferScreen from "./pages/AccountOfferScreen";
 import IssuersScreen from "./pages/IssuersScreen";
 import { InstrumentCreateFormScreen } from "./pages/InstrumentCreateFormScreen";
-import { OfferFormScreen } from "./pages/OfferFormScreen";
 import OffersScreen from "./pages/OffersScreen";
 import { OfferAcceptFormScreen } from "./pages/OfferAcceptFormScreen";
 import { SettlementActionScreen } from "./pages/SettlementActionScreen";
 import { Party } from "@daml/types";
 import { WalletViewsClient } from "@synfini/wallet-views";
+import { walletMode } from "./Configuration";
 
 type AuthContext = {
   token: string;
@@ -33,14 +33,6 @@ type AuthContext = {
 const AuthContextStore = React.createContext<AuthContext | undefined>(undefined);
 
 export const userContext = createLedgerContext();
-
-const walletModeVar = process.env.REACT_APP_MODE;
-if (walletModeVar !== "investor" && walletModeVar !== "issuer") {
-  throw Error(`Unsupported wallet mode: ${walletModeVar}`);
-}
-
-export type WalletMode = "investor" | "issuer";
-export const walletMode: WalletMode = walletModeVar === "investor" ? "investor" : "issuer";
 
 const App: React.FC = () => {
   const { isLoading, getAccessTokenSilently, isAuthenticated } = useAuth0();

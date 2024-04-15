@@ -11,5 +11,5 @@ data-dependencies:
   - ../../../.lib/daml-finance-interface-types-common.dar
   - ../../../.lib/daml-finance-interface-util.dar
   - ../../../.lib/daml-finance-util.dar
-  - ../../../.lib/daml-finance-lifecycle.dar
+  - ../../../.lib/daml-finance-interface-instrument-base.dar
   - ../../../.build/synfini-instrument-metadata-interface.dar
