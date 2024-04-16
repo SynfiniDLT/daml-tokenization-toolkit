@@ -142,8 +142,6 @@ elif [ "$command" = "create-account-open-offers" ]; then
   ${dops_commands}/create-open-account-offer.sh $@
 elif [ "$command" = "take-account-open-offers" ]; then
   ${dops_commands}/take-open-account-offer.sh $@
-elif [ "$command" = "create-pbas-unilateral" ]; then
-  ${dops_commands}/create-pbas-unilateral.sh $@
 elif [ "$command" = "create-settlement-open-offers" ]; then
   ${dops_commands}/create-settlement-open-offers.sh $@
 elif [ "$command" = "take-settlement-open-offer" ]; then
