@@ -149,6 +149,7 @@ dops create-minter-burners ${config_dir}/synfini-id/minter-burner.json
 create_identity_token InvestorA "John Doe"
 
 # Fund
+dops create-instruments ${config_dir}/fund/FundA-instrument.json
 dops create-minter-burners ${config_dir}/fund/FundA-minter-burner.json
 dops create-settlement-open-offers ${config_dir}/fund/FundA-invest-offer.json
 invest_id=$(uuidgen)

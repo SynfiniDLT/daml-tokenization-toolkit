@@ -1,0 +1,18 @@
+{
+  "readAs": ["SynfiniPublic"],
+  "instrumentSettings": [
+    {
+      "issuer": "FundA.V1",
+      "id": "FundA",
+      "version": "0",
+      "description": "Growth opportunities managed fund",
+      "validAsOf": "2024-01-01T04:30:23.123456Z",
+      "observers" : [
+        {
+          "context": "setup",
+          "parties": ["WalletOperator", "SynfiniPublic"]
+        }
+      ]
+    }
+  ]
+}
