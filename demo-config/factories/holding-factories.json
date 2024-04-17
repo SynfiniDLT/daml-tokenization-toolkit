@@ -27,20 +27,6 @@
         }
       ],
       "holdingTrackers": ["WalletOperator"]
-    },
-    {
-      "label": "NonTransferablePublicV1",
-      "holdingType": "NonTransferable",
-      "provider": "SynfiniValidator",
-      "observers": [
-        {
-          "context": "setup",
-          "parties": [
-            "SynfiniPublic"
-          ]
-        }
-      ],
-      "holdingTrackers": ["WalletOperator", "SynfiniPublic"]
     }
   ]
 }

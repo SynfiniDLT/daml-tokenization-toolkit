@@ -9,7 +9,7 @@
       "description": "Soul bound tokens",
       "incomingControllers": ["StableCoinIssuer"],
       "outgoingControllers": ["StableCoinIssuer"],
-      "holdingFactory": "NonTransferablePublicV1",
+      "holdingFactory": "NonTransferableV1",
       "observers": [
         {
           "context": "setup",
@@ -105,7 +105,7 @@
       "description": "Soul bound tokens",
       "incomingControllers": ["FundA"],
       "outgoingControllers": ["FundA"],
-      "holdingFactory": "NonTransferablePublicV1",
+      "holdingFactory": "NonTransferableV1",
       "observers": [
         {
           "context": "setup",
