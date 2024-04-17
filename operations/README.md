@@ -467,6 +467,66 @@ dops create-instrument-factories <path to JSON file>
 ```
 
 ---
+#### Create Instrument Metadata Factories
+
+Create factory contracts for creating `Metadata`s.
+
+##### Input File Format
+
+```js
+{
+  "instrumentMetadataFactorySettings": [ // One or more factories to create
+    {
+      "label": "label1",
+      "provider": "alice", // Label of the factory provider party
+      "observers": [ // Zero or more sets of observers
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["bob"] // One or more labels of the observer parties
+        }
+      ]
+    }
+  ]
+}
+```
+
+##### Command
+
+```bash
+dops create-instrument-metadata-factories <path to JSON file>
+```
+
+---
+#### Create Instrument Metadata Publisher Factories
+
+Create factory contracts for creating `Publisher`s of `Metadata`.
+
+##### Input File Format
+
+```js
+{
+  "instrumentMetadataPublisherFactorySettings": [ // One or more factories to create
+    {
+      "label": "label1",
+      "provider": "alice", // Label of the factory provider party
+      "observers": [ // Zero or more sets of observers
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["bob"] // One or more labels of the observer parties
+        }
+      ]
+    }
+  ]
+}
+```
+
+##### Command
+
+```bash
+dops create-instrument-metadata-factories <path to JSON file>
+```
+
+---
 #### Create Issuer Factories
 
 Create factory contracts for creating `Issuers`s. The factory interfaces and templates are defined in the
@@ -870,7 +930,7 @@ templates used in this section.
 
 #### Create Issuer Contracts
 
-Acting as a depository, create `Issuer` contracts to allow issuers to create new instruments.
+Acting as a depository, create `Issuer` contracts to allow issuers to create new instruments and associated metadata.
 
 ##### Input File Format
 
@@ -882,11 +942,21 @@ Acting as a depository, create `Issuer` contracts to allow issuers to create new
     {
       "issuer": "alice", // Label of the issuer party
       "depository": "bob", // Label of the depository party
-      "instrumentType": "Token", // Type of instrument the issuer factory is for. "Token" is the only type that is
-        // currently supported
-      "issuerFactory": "label1", // Label of the factory to use to create the `Issuer`
-      "instrumentFactory": "label1", // Label of the instrument factory of the `Issuer`
-      "observers" : [ // Zero or more sets of observers of the `Issuer`
+      "instruments": [ // Configuration of one or more instrument types the issuer will be authorised to create
+        {
+          "label": "label1", // Label which can be used to refer to this `Issuer` contract in other files
+          "issuerFactory" : "label1",  // Label of the factory to use to create the `Issuer`
+          "instrumentFactory" : "label1", // Label of the instrument factory of the `Issuer`
+          "instrumentType": "Token" // Type of instrument the issuer factory is for. "Token" is the only type that is
+            // currently supported
+        }
+      ],
+      "publisher": { // Optional settings, which if provided, allow the issuer to publish metadata for their instruments
+        "label": "label1", // Label which can be used to refer to this `Publisher` contract in other files
+        "publisherFactory": "label1", // Label of the factory to use to create the `Publisher`
+        "metadataFactory": "label1" // Label of the factory that the issuer will be able to use to create `Metadata`
+      },
+      "observers" : [ // Zero or more sets of observers of the `Issuer`(and `Publisher` if the issuer is provided one)
         {
           "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
           "parties": ["charlie"] // One or more labels of the observer parties
