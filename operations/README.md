@@ -281,8 +281,8 @@ dops create-account-factories <path to JSON file>
 ---
 #### Create Account OpenOffer Factories
 
-Create factory contracts for creating `Account` `OpenOffer`s. The factory interfaces and templates are defined in the
-`account-onboarding` folder at the base of this repository.
+Create factory contracts for creating `Account` `OpenOffer`s. Please refer to the factory interfaces and templates which
+are defined [here](/models/account-onboarding).
 
 ##### Input File Format
 
@@ -375,8 +375,8 @@ dops create-settlement-factories <path to JSON file>
 ---
 #### Create Settlement OneTimeOffer Factories
 
-Create factory contracts for creating settlement `OneTimeOffer`s. The factory interfaces and templates are defined in
-the `settlement` folder at the base of this repository.
+Create factory contracts for creating settlement `OneTimeOffer`s. Please refer to the factory interfaces and templates which
+are defined [here](/models/settlement).
 
 ##### Input File Format
 
@@ -406,8 +406,8 @@ dops create-settlement-one-time-offer-factories <path to JSON file>
 ---
 #### Create Settlement OpenOffer Factories
 
-Create factory contracts for creating settlement `OpenOffer`s. The factory interfaces and templates are defined in the
-`settlement` folder at the base of this repository.
+Create factory contracts for creating settlement `OpenOffer`s. Please refer to the factory interfaces and templates which
+are defined [here](/models/settlement).
 
 ##### Input File Format
 
@@ -437,7 +437,8 @@ dops create-settlement-open-offer-factories <path to JSON file>
 ---
 #### Create Instrument Factories
 
-Create factory contracts for creating `Instrument`s.
+Create factory contracts for creating `Instrument`s. Please refer to the factory interfaces and templates which
+are defined [here](/models/issuer-onboarding).
 
 ##### Input File Format
 
@@ -469,7 +470,8 @@ dops create-instrument-factories <path to JSON file>
 ---
 #### Create Instrument Metadata Factories
 
-Create factory contracts for creating `Metadata`s.
+Create factory contracts for creating `Metadata`s. Please refer to the factory interfaces and templates which
+are defined [here](/models/instrument-metadata).
 
 ##### Input File Format
 
@@ -499,7 +501,8 @@ dops create-instrument-metadata-factories <path to JSON file>
 ---
 #### Create Instrument Metadata Publisher Factories
 
-Create factory contracts for creating `Publisher`s of `Metadata`.
+Create factory contracts for creating `Publisher`s of `Metadata`. Please refer to the factory interfaces and templates
+which are defined [here](/models/issuer-onboarding).
 
 ##### Input File Format
 
@@ -529,8 +532,8 @@ dops create-instrument-metadata-factories <path to JSON file>
 ---
 #### Create Issuer Factories
 
-Create factory contracts for creating `Issuers`s. The factory interfaces and templates are defined in the
-`issuer-onboarding` folder at the base of this repository.
+Create factory contracts for creating `Issuers`s. Please refer to the factory interfaces and templates which are defined
+[here](/models/issuer-onboarding).
 
 ##### Input File Format
 
@@ -562,8 +565,8 @@ dops create-issuer-factories <path to JSON file>
 ---
 #### Create MinterBurner Factories
 
-Create factory contracts for creating `MinterBurner`s. The factory interfaces and templates are defined in the
-`issuer-onboarding` folder at the base of this repository.
+Create factory contracts for creating `MinterBurner`s. Please refer to the factory interfaces and templates which are
+defined [here](/models/issuer-onboarding).
 
 ##### Input File Format
 
@@ -659,8 +662,8 @@ dops create-accounts-unilateral <path to JSON file>
 ---
 #### Create Account OpenOffers
 
-As a custodian, create `OpenOffer` contracts to allow parties to create accounts. For more information on the interfaces
-and templates used in this section refer to the `account-onboarding` folder at the base of this repository.
+As a custodian, create `OpenOffer` contracts to allow parties to create accounts. Please refer to the interfaces and
+templates which are defined [here](/models/account-onboarding).
 
 ##### Input File Format
 
@@ -698,8 +701,8 @@ dops create-account-open-offers <path to JSON file>
 ---
 #### Take Account OpenOffers
 
-As an account owner, take up an `Account` `OpenOffer` to create an `Account`. For more information on the interfaces
-and templates used in this section refer to the `account-onboarding` folder at the base of this repository.
+As an account owner, take up an `Account` `OpenOffer` to create an `Account`. Please refer to the interfaces and
+templates which are defined [here](/models/account-onboarding).
 
 ##### Input File Format
 
@@ -734,8 +737,8 @@ dops take-account-open-offers <path to JSON file>
 ### Settlement
 #### Create OpenOffers for Settlement
 
-Create settlement `OpenOffer`s. Refer to the the `settlement` folder of this respository for more information on the
-`OpenOffer` interfaces and templates.
+Create settlement `OpenOffer`s. Please refer to the interfaces and templates which are defined
+[here](/models/settlement).
 
 A party involved in the proposed settlement is captured using the following JSON structure:
 
@@ -925,8 +928,8 @@ dops execute-settlement preferences.json alice,bob abc123
 
 ### Issuer Setup
 
-Refer to the `issuer-onboarding` folder at the base of this repository for more information on the interfaces and
-templates used in this section.
+Refer to this [folder](/models/issuer-onboarding) at the base of this repository for more information on the interfaces
+and templates used in this section.
 
 #### Create Issuer Contracts
 
