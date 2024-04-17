@@ -3,6 +3,40 @@
 set -eu
 
 tokenization_lib_home=$(pwd)
+config_dir=${tokenization_lib_home}/demo-config
+
+function create_identity_token() {
+  owner=$1
+  name=$2
+
+  sbt_offer_id=$(uuidgen)
+  python3 create-synfini-id-offer.py \
+    --issuer SbtIssuer \
+    --depository SbtDepository \
+    --custodian SynfiniValidator \
+    --issuer-contract SbtIssuer.V1 \
+    --publisher-contract SbtIssuer.V1 \
+    --offer-id $sbt_offer_id \
+    --owner "$owner" \
+    --name "$name" \
+    --observers WalletOperator \
+    --settlement-open-offer-factory V1 \
+    --settlement-factory V1 \
+    --route-provider validatorCustodianV1 \
+    --read-as SynfiniPublic
+  sbt_batch_id=$(uuidgen)
+  dops \
+    take-settlement-open-offer \
+    "${config_dir}/settlement/${owner}-take-open-offer.json" \
+    SbtIssuer \
+    $sbt_offer_id \
+    $sbt_batch_id \
+    1 \
+    SBT
+  dops accept-settlement "${config_dir}/settlement/${owner}-settlement-preferences.json" "SbtIssuer,$owner" $sbt_batch_id
+  dops accept-settlement ${config_dir}/settlement/SbtIssuer-settlement-preferences.json "SbtIssuer,$owner" $sbt_batch_id
+  dops execute-settlement ${config_dir}/settlement/SbtIssuer-execute.json "SbtIssuer,$owner" $sbt_batch_id
+}
 
 make compile-wallet-views
 make install-operations
@@ -31,7 +65,6 @@ json_api_pg_id=$(ps --pid $json_api_pid -o "pgid" --no-headers)
 echo $json_api_pg_id > $tokenization_lib_home/json-api.pgid
 
 rm -rf .dops
-config_dir=${tokenization_lib_home}/demo-config
 dops upload-dar
 dops allocate-parties ${config_dir}/parties/parties.json
 read_as=$(./party-id-from-label.sh WalletOperator)
@@ -88,25 +121,45 @@ dops create-account-open-offers ${config_dir}/accounts/account-open-offers.json
 dops create-minter-burners ${config_dir}/stablecoin/minter-burner.json
 dops create-settlement-open-offers ${config_dir}/stablecoin/on-ramp-offer.json
 mint_id=$(uuidgen)
-dops take-settlement-open-offer ${config_dir}/stablecoin/take-on-ramp-offer.json $mint_id
-dops accept-settlement ${config_dir}/settlement/investorA-settlement-preferences.json StableCoinIssuer,InvestorA $mint_id
-dops accept-settlement ${config_dir}/settlement/stablecoin-issuer-settlement-preferences.json StableCoinIssuer,InvestorA $mint_id
-dops execute-settlement ${config_dir}/settlement/stablecoin-issuer-execute.json StableCoinIssuer,InvestorA $mint_id
+dops \
+  take-settlement-open-offer \
+  ${config_dir}/settlement/InvestorA-take-open-offer.json \
+  StableCoinIssuer \
+  StableCoin@0.OnRamp \
+  $mint_id \
+  100000 \
+  Mint
+dops accept-settlement ${config_dir}/settlement/InvestorA-settlement-preferences.json StableCoinIssuer,InvestorA $mint_id
+dops accept-settlement ${config_dir}/settlement/StableCoinIssuer-settlement-preferences.json StableCoinIssuer,InvestorA $mint_id
+dops execute-settlement ${config_dir}/settlement/StableCoinIssuer-execute.json StableCoinIssuer,InvestorA $mint_id
 dops create-settlement-open-offers ${config_dir}/stablecoin/off-ramp-offer.json
 burn_id=$(uuidgen)
-dops take-settlement-open-offer ${config_dir}/stablecoin/take-off-ramp-offer.json $burn_id
+dops \
+  take-settlement-open-offer \
+  ${config_dir}/settlement/InvestorA-take-open-offer.json \
+  StableCoinIssuer \
+  StableCoin@0.OffRamp \
+  $burn_id \
+  100 \
+  Burn
 
 # SBT
 dops create-minter-burners ${config_dir}/synfini-id/minter-burner.json
-issuer_sbt_args="SbtIssuer SbtDepository SbtIssuer.V1 SbtIssuer.V1 ${config_dir}/settlement/SbtIssuer-settlement-preferences.json"
-python3 create-synfini-id.py $issuer_sbt_args InvestorA ${config_dir}/settlement/investorA-settlement-preferences.json 'John Doe' WalletOperator
+create_identity_token InvestorA "John Doe"
 
 # Fund
-dops create-minter-burners ${config_dir}/fund/fundA-minter-burner.json
-dops create-settlement-open-offers ${config_dir}/fund/fundA-invest-offer.json
+dops create-minter-burners ${config_dir}/fund/FundA-minter-burner.json
+dops create-settlement-open-offers ${config_dir}/fund/FundA-invest-offer.json
 invest_id=$(uuidgen)
-dops take-settlement-open-offer ${config_dir}/fund/take-fundA-invest-offer.json $invest_id
-dops accept-settlement ${config_dir}/settlement/investorA-settlement-preferences.json FundA,InvestorA $invest_id
+dops \
+  take-settlement-open-offer \
+  ${config_dir}/settlement/InvestorA-take-open-offer.json \
+  FundA \
+  FundAInvestment \
+  $invest_id \
+  10 \
+  Buy
+dops accept-settlement ${config_dir}/settlement/InvestorA-settlement-preferences.json FundA,InvestorA $invest_id
 dops accept-settlement ${config_dir}/settlement/FundA-settlement-preferences.json FundA,InvestorA $invest_id
 dops accept-settlement ${config_dir}/settlement/FundManagerA-settlement-preferences.json FundA,InvestorA $invest_id
 dops execute-settlement ${config_dir}/settlement/FundA-execute.json FundA,InvestorA $invest_id

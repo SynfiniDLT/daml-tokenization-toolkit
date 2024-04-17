@@ -453,8 +453,8 @@ Create factory contracts for creating `Instrument`s.
           "parties": ["bob"] // One or more labels of the observer parties
         }
       ],
-      "instrumentType": "Pba" // One of: "Token" or "Pba". "Token" will use the default Token factory implementation
-        // from Daml Finance. "Pba" will use the PartyBoundAttributes instrument from this repository.
+      "instrumentType": "Token" // Currently this must be set to "Token". Only the token instrument type is supported
+        // but other instrument types may be added in future e.g. bonds, options etc.
     }
   ]
 }
@@ -671,65 +671,6 @@ dops take-account-open-offers <path to JSON file>
 ```
 
 ---
-### Party/soul-bound Tokens
-
-For more information on the interfaces and templates used in this section refer to the `pbt` folder at the base of this
-repository.
-
-#### Create PartyBoundAttributes Unilaterally
-
-As an issuer of `PartyBoundAttributes` (PBA), unilaterally create the instrument and corresponding `Holding`. As this
-is a unilateral workflow, it is only practical for testing scenarios where the issuer, depository, custodian and owner
-all exist on one node.
-
-##### Input File Format
-
-```js
-{
-  "readAs": ["public"], // Labels of zero or more parties to use to read contracts (can be useful for fetching the
-    // factory contracts)
-  "pbaInstrument": { // Details of the PBA instrument
-    "issuer": "alice",
-    "depository": "bob",
-    "id": "abc123...", // Instrument ID
-    "description": "abc123...",
-    "custodian": "charlie" // Label of the custodian of Holdings of this instrument
-  },
-  "settlementFactory": "label1", // Label of the settlement factory used to instruct settlement to create the Holding
-  "instrumentFactory": "label1", // Label of the instrument factory used to create the PBA instrument
-  "pbas": [ // One or more PBAs to create
-    {
-      "owner": "david", // Label of the owner of the PBA
-      "accountId": "abc123..",
-      "attributes": [ // One or more key-value pairs (attributes assigned to the party)
-        ["k1", "v1"]
-      ],
-      "validAsOf": "2023-10-03T23:15:48.569796Z",
-      "version": "abc123...",
-      "instrumentObservers": [ // Zero or more sets of observers of the Instrument contract
-        {
-          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
-          "parties": ["bob"] // One or more labels of the observer parties
-        }
-      ],
-      "holdingObservers": [ // Zero or more sets of observers of the Holding contract
-        {
-          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
-          "parties": ["bob"] // One or more labels of the observer parties
-        }
-      ]
-    }
-  ]
-}
-```
-
-##### Command
-
-```bash
-dops create-pbas-unilateral <path to JSON file>
-```
-
----
 ### Settlement
 #### Create OpenOffers for Settlement
 
@@ -811,23 +752,29 @@ Contract Set to find an `OpenOffer` with matching `offerId` and `offerers`.
   "readAs": ["public"], // Labels of zero or more parties to use to read contracts (can be useful for fetching the
     // factory contracts)
   "takeOpenOfferSettings": {
-    "offerId": "abc123...", // Offer ID
-    "offerers": ["alice"], // Labels of the authorisers of the offer
     "taker": "bob", // Label of the party to take the offer
-    "description": "abc123...", // Settlement description
-    "quantity": 1e3
   }
 }
 ```
 
 ##### Command
 
-The unique identifier must be generated and provided as the second argument in the command. This will be used as the
-Batch ID of the settlement.
+The second argument is a comma-delimited list of the labels of the parties which authorised offer. The third argument is
+the offer ID and the fourth argument is the batch ID of the settlement instructions that will be generated. The batch
+ID should be a unique, randomly generated value. The final two arguments are the unit quantity specified and batch
+description chosen by the taker.
 
 ```bash
-dops take-settlement-open-offer <path to JSON file> <Batch ID>
+dops take-settlement-open-offer <path to JSON file> <offerer1>,<offerer2>...<offererN> <offer ID> <Batch ID> <quantity> <description>
 ```
+
+For example, for an offer authorised by parties labeled "alice" and "bob", having ID "offer1":
+
+```bash
+dops take-settlement-open-offer take-offer.json alice,bob offer1 abc123 10 lorem
+```
+
+Note: the description value cannot contain whitespace characters due to a bug in the implementation.
 
 ---
 #### Accept Settlement Instructions
