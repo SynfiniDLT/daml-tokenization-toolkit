@@ -15,10 +15,8 @@ instance HasField "observers" NonTransferable PartiesMap where
   getField f = f.defaultNonTransferable.observers
   setField obs f = f with defaultNonTransferable.observers = obs
 
--- | NonTransferable holding which can be tracked by additional observers: i.e. any consuming choices such as 'Split',
--- 'Transfer' etc. will result in a new holding which maintains the same additional observers. This can be useful in
--- cases where it is strictly required to maintain these observers. For example, a regulatory reporting application
--- would need to be able to track holding movements.
+-- | Non-transferable and non-fungible holding which can be tracked by additional observers: i.e. any consuming choices
+-- will result in a new holding which maintains the same additional observers.
 template NonTransferable
   with
     defaultNonTransferable : Default.NonTransferable -- ^ Default implementation of a non-transferable, non-fungible
