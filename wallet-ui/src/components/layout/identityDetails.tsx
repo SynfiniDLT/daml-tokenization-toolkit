@@ -7,12 +7,9 @@ interface IdentityDetailsProps {
   instrument: InstrumentMetadataSummary;
 }
 
+// TODO consider if we need to change the way attribute values are displayed based on their display type
 function displayValue(attribute: Attribute) {
-  if (attribute.displayType === "flag") {
-    return ""
-  } else {
-    return ` : ${attribute.attributeValue}`;
-  }
+  return attribute.attributeValue;
 }
 
 export default function identityDetails(props: IdentityDetailsProps) {

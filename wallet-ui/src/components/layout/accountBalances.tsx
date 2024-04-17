@@ -50,11 +50,8 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
                 &nbsp;&nbsp;
               </>
             )}
-            {balance.instrument.id.unpack}
-          </td>
-          <td>
             <a onClick={() => handleInstrumentModal(balance.instrument)}>
-              {balance.instrument.version}
+              {`${balance.instrument.id.unpack}: ${balance.instrument.version}`}
             </a>
           </td>
           <td><HoverPopUp triggerText={nameFromParty(balance.instrument.issuer)} popUpContent={balance.instrument.issuer} /></td>
@@ -86,7 +83,6 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
                   <thead>
                     <tr>
                       <th>Asset</th>
-                      <th>Variant</th>
                       <th>Issuer</th>
                       <th>Balance</th>
                       <th>Available</th>

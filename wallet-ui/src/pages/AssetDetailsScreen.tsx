@@ -320,11 +320,8 @@ const AssetDetailsScreen: React.FC = () => {
         <table className="assets">
           <caption>
             <h3 className="profile__title" style={{ marginTop: "10px" }}>
-              {state.instrument.id.unpack}
+              {`${state.instrument.id.unpack}: ${state.instrument.version}`}
             </h3>
-            <h4 className="profile__title" style={{ marginTop: "10px" }}>
-              {state.instrument.version}
-            </h4>
             <h5 className="profile__title" style={{ marginTop: "10px", paddingBottom: "10px" }}>
               {instrumentSummary.tokenView?.token.description}
             </h5>
