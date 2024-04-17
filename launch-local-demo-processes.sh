@@ -118,6 +118,7 @@ dops create-accounts-unilateral ${config_dir}/accounts/accounts.json
 dops create-account-open-offers ${config_dir}/accounts/account-open-offers.json
 
 # Stablecoin
+dops create-instruments ${config_dir}/stablecoin/instrument.json
 dops create-minter-burners ${config_dir}/stablecoin/minter-burner.json
 dops create-settlement-open-offers ${config_dir}/stablecoin/on-ramp-offer.json
 mint_id=$(uuidgen)
