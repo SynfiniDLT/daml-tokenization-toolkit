@@ -6,11 +6,11 @@ import Daml.Finance.Util.Disclosure qualified as DisclosureUtil
 
 import Daml.Finance.Interface.Types.Common.Types
 
-import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 import Daml.Finance.Interface.Instrument.Base.Instrument qualified as Instrument
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
 
+import Synfini.Interface.Instrument.Metadata.Factory qualified as MetadataFactory
 import Synfini.Interface.Instrument.Metadata.Metadata qualified as Metadata
-import qualified Synfini.Interface.Instrument.Metadata.Factory as MetadataFactory
 
 fetchInstrumentCid : InstrumentKey -> Update (ContractId Instrument.I)
 fetchInstrumentCid instrument = do

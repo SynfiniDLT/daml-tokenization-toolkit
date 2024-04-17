@@ -29,7 +29,7 @@ type AttributeName = Text
 -- | Type of a collection of attributes.
 type Attributes = Map AttributeName Attribute
 
--- | View of an 'Instrument'.
+-- | View of a 'Metadata'.
 data View = View
   with
     instrument : InstrumentKey -- ^ The instrument's key.
