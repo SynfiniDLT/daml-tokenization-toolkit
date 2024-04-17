@@ -2,7 +2,7 @@
   "readAs": ["SynfiniPublic"],
   "settlementOpenOfferSettings": [
     {
-      "offerId": "FundAInvestment",
+      "offerId": "FundInvestment",
       "offerers": ["FundA"],
       "offerDescription": "Purchase units in FundA",
       "settlementInstructors": [{"party": "FundA"}, {"taker": {}}],

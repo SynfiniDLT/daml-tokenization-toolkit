@@ -155,7 +155,7 @@ dops \
   take-settlement-open-offer \
   ${config_dir}/settlement/InvestorA-take-open-offer.json \
   FundA \
-  FundAInvestment \
+  FundInvestment \
   $invest_id \
   10 \
   Buy
