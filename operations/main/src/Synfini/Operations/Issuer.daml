@@ -2,6 +2,8 @@ module Synfini.Operations.Issuer where
 
 import DA.Foldable (forA_)
 
+import DA.Optional qualified as O
+
 import Daml.Script
 
 import Daml.Finance.Interface.Instrument.Token.Factory qualified as TokenFactory
@@ -12,10 +14,9 @@ import Synfini.Operations.Types
 import Synfini.Operations.Factory.MinterBurner (MinterBurnerFactory)
 
 import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Factory qualified as TokenIssuerFactory
+import Synfini.Interface.Onboarding.Issuer.Metadata.Factory qualified as MetadataPublisherFactory
+import Synfini.Interface.Onboarding.Issuer.Metadata.Publisher qualified as MetadataPublisher
 import Synfini.Interface.Onboarding.Issuer.MinterBurner.Factory qualified as MinterBurnerFactory
-import qualified Synfini.Interface.Onboarding.Issuer.Metadata.Factory as MetadataPublisherFactory
-import qualified DA.Optional as O
-import qualified Synfini.Interface.Onboarding.Issuer.Metadata.Publisher as MetadataPublisher
 
 data InstrumentSettings = InstrumentSettings
   with
@@ -111,40 +112,6 @@ createIssuers input = do
   pure CreateIssuersOutput with
     issuers = concatMap fst contracts
     instrumentMetadataPublishers = O.mapOptional snd contracts
-
--- data MetadataPublisherSettings = MetadataPublisherSettings
---   with
---     metadataPublisherFactory : Text
---     metadataFactory : Text
---     depository : Text
---     issuer : Text
---     observers : [Observer]
-
--- data CreateMetadataPublishersInput = CreateMetadataPublishersInput
---   with
---     parties : [PartyInfo]
---     readAs : [Text]
---     metadataPublisherFactories : [MetadataPublisherFactory]
---     metadataFactories : [MetadataFactory]
---     metadataPublisherSettings : [MetadataPublisherSettings]
-
--- createMetadataPublishers : CreateMetadataPublishersInput -> Script ()
--- createMetadataPublishers input = do
---   let pm = partyTable input.parties
---   let p = getPartyId pm
---   let readAs = p <$> input.readAs
---   forA_ input.metadataPublisherSettings $ \settings -> do
---     let depository = p settings.depository
---         issuer = p settings.issuer
---         metadataPublisherFactoryCid = findCidByLabel settings.metadataPublisherFactory input.metadataPublisherFactories
---         metadataFactoryCid = findCidByLabel settings.metadataFactory input.metadataFactories
---         observers = asPartiesMap p settings.observers
---     submitMulti [depository] readAs do
---       exerciseCmd metadataPublisherFactoryCid MetadataPublisherFactory.Create with
---         depository
---         issuer
---         metadataFactoryCid
---         observers
 
 data MinterBurnerSettings = MinterBurnerSettings
   with

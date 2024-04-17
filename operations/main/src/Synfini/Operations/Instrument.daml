@@ -1,19 +1,24 @@
 module Synfini.Operations.Instrument where
 
-import Synfini.Operations.Types
-import Synfini.Operations.Issuer (Issuer(..), MetadataPublisher(..))
+import DA.Functor qualified as F
+import DA.List qualified as L
+import DA.Map qualified as Map
+import DA.Set qualified as Set
+import DA.Text qualified as TX
 
-import qualified Synfini.Interface.Instrument.Metadata.Metadata as Metadata
 import Daml.Script
-import qualified Synfini.Interface.Onboarding.Issuer.Instrument.Token.Issuer as TokenIssuer
-import Daml.Finance.Interface.Instrument.Token.Types (Token(..))
-import qualified DA.Set as Set
+
 import Daml.Finance.Interface.Types.Common.Types
-import qualified DA.Text as TX
-import qualified DA.List as L
-import qualified Synfini.Interface.Onboarding.Issuer.Metadata.Publisher as Publisher
-import qualified DA.Map as Map
-import qualified DA.Functor as F
+
+import Daml.Finance.Interface.Instrument.Token.Types (Token (..))
+
+import Synfini.Operations.Types
+
+import Synfini.Operations.Issuer (Issuer (..), MetadataPublisher (..))
+
+import Synfini.Interface.Instrument.Metadata.Metadata qualified as Metadata
+import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Issuer qualified as TokenIssuer
+import Synfini.Interface.Onboarding.Issuer.Metadata.Publisher qualified as Publisher
 
 data AttributeSettings = AttributeSettings
   with
@@ -38,7 +43,7 @@ data InstrumentSettings = InstrumentSettings
   with
     issuer : Text
     id : Text
-    version : Optional Text
+    version : Text
     description : Text
     validAsOf : Time
     observers : [Observer]
@@ -52,26 +57,13 @@ data CreateInstrumentsInput = CreateInstrumentsInput
     instrumentMetadataPublishers : [MetadataPublisher]
     instrumentSettings : [InstrumentSettings]
 
-getOrCalculateVersion : Optional MetadataSettings -> Optional Text -> Text
-getOrCalculateVersion None None = error "Please provide at least one of 'metadata' or 'version'"
-getOrCalculateVersion _ (Some v) = v
-getOrCalculateVersion (Some MetadataSettings { attributes }) None =
-  let hashedAttributes = hashAttribute <$> attributes in
-  TX.sha256 (mconcat $ L.sort hashedAttributes)
-
-  where
-    hashAttribute AttributeSettings { attributeName, attributeValue, displayType } = TX.sha256 $
-      mconcat (TX.sha256 <$> [attributeName, attributeValue, displayType])
-
 createInstruments : CreateInstrumentsInput -> Script ()
 createInstruments input = do
   let pm = partyTable input.parties
   let p = getPartyId pm
   let readAs = p <$> input.readAs
   let cmd InstrumentSettings { issuer, id, version, description, validAsOf, observers, metadata } =
-        let iss = findByLabel issuer input.issuers
-            v = getOrCalculateVersion metadata version
-        in
+        let iss = findByLabel issuer input.issuers in
         let instrumentCmd = case iss.instrumentType of
               "Token" -> do
                 let tokenIssuerCid : ContractId TokenIssuer.I = coerceContractId iss.cid
@@ -81,7 +73,7 @@ createInstruments input = do
                       issuer = iss.issuer
                       depository = iss.depository
                       id = Id id
-                      version = v
+                      version
                     description
                     validAsOf
                   observers = asPartiesMap p observers
@@ -95,7 +87,7 @@ createInstruments input = do
                 else
                   pure . F.void $ exerciseCmd publisher.cid Publisher.PublishMetadata with
                     id = Id id
-                    version = v
+                    version
                     attributes = toAttributes m.attributes
                     disclosureControllers = Set.fromList (p <$> m.disclosureControllers)
                     observers = asPartiesMap p m.observers

@@ -7,6 +7,7 @@ import uuid
 import json
 import subprocess
 import tempfile
+from datetime import datetime
 
 parser = argparse.ArgumentParser(
   description='Create identity token by creating the instrument and metadata contracts. In addition a settlement offer contract will be created to allow the intended owner to acquire ownership of the token'
@@ -48,7 +49,7 @@ instrument = {
   'issuer': args.issuer_contract,
   'id': 'Synfini ID',
   'description': 'Identifier of Synfini ecosystem member',
-  'validAsOf': '2023-10-03T23:15:48.569796Z',
+  'validAsOf': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f') + 'Z',
   'observers': [
     {
       'context': 'setup',
