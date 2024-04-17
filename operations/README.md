@@ -928,8 +928,8 @@ dops execute-settlement preferences.json alice,bob abc123
 
 ### Issuer Setup
 
-Refer to this [folder](/models/issuer-onboarding) at the base of this repository for more information on the interfaces
-and templates used in this section.
+Refer to this [folder](/models/issuer-onboarding) for more information on the interfaces and templates used in this
+section.
 
 #### Create Issuer Contracts
 
