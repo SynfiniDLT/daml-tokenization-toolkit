@@ -5,7 +5,6 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { AuthenticationGuard } from "./components/authentication-guard";
 import { PageLoader } from "./components/layout/page-loader";
 import FundScreen from "./pages/FundScreen";
-// import AccountBalanceScreen from "./pages/AccountBalanceScreen";
 import SettlementScreen from "./pages/SettlementScreen";
 import DirectoryScreen from "./pages/DirectoryScreen";
 import AssetDetailsScreen from "./pages/AssetDetailsScreen";
@@ -64,7 +63,6 @@ const App: React.FC = () => {
 
   const commonRoutes = [
     (<Route path="/" element={<AuthenticationGuard component={WalletScreen} />} />),
-    //(<Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />),
     (<Route path="/asset" element={<AuthenticationGuard component={AssetDetailsScreen} />} />),
     (<Route path="/wallet/account/balance/redeem" element={<AuthenticationGuard component={BalanceRedeemFormScreen} />} />),
     (<Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />),

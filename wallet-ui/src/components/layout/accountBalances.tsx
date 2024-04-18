@@ -3,7 +3,6 @@ import { AccountSummary, Balance } from "@daml.js/synfini-wallet-views-types/lib
 import { formatCurrency, nameFromParty } from "../../Util";
 import { Coin } from "react-bootstrap-icons";
 import HoverPopUp from "./hoverPopUp";
-import InstrumentPopDetails from "./instrumentPopDetails";
 import { useState } from "react";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 import { stableCoinInstrumentId } from "../../Configuration";

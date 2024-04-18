@@ -38,8 +38,8 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
   const [toggleSteps, setToggleSteps] = useState(false);
   const [isActionRequired, setIsActionRequired] = useState<boolean>(false);
 
+  // TODO this should be refactored into a common utility
   const handleInstrumentModal = (instrument: InstrumentKey) => {
-    // setIsOpen(!isOpen);
     nav("/asset", { state: { instrument } });
   }
 
@@ -137,7 +137,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
                   key={step.routedStep.quantity.unit.id.unpack}
                 >
                   Issuer: {nameFromParty(step.routedStep.quantity.unit.issuer)}
-              </div>
+                </div>
                 <Field>Type: </Field>
                 {step.routedStep.sender === step.routedStep.custodian ? <> Mint<br/></> :
                   step.routedStep.receiver === step.routedStep.custodian ? <> Burn<br/></> :
@@ -185,6 +185,10 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
   const [accounts, setAccounts] = useState<AccountSummary[]>();
   const [selectAccountInput, setSelectAccountInput] = useState("");
   const [showExecute, setShowExecute] = useState<boolean>(false);
+
+  const handleInstrumentModal = (instrument: InstrumentKey) => {
+    nav("/asset", { state: { instrument } });
+  }
 
   const setToggleCol = () => {
     setToggleSteps((prev) => {
@@ -516,10 +520,18 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
                     )}
                     <br />
                     <div onClick={setToggleCol} id={step.routedStep.quantity.unit.id.unpack} key={step.instructionCid}>
-                      <Field>Instrument:</Field>
-                      {step.routedStep.quantity.unit.id.unpack}
-                      <Field>Version:</Field>
-                      {step.routedStep.quantity.unit.version}
+                      <Field>Asset:</Field>
+                      <a onClick={() => handleInstrumentModal(step.routedStep.quantity.unit)}>
+                        {`${step.routedStep.quantity.unit.id.unpack} ${step.routedStep.quantity.unit.version}`}
+                      </a>
+                      <br />
+                      <div
+                        className="settlement-content"
+                        style={{ height: toggleSteps ? "60px" : "0px" }}
+                        key={step.routedStep.quantity.unit.id.unpack}
+                      >
+                        Issuer: {nameFromParty(step.routedStep.quantity.unit.issuer)}
+                      </div>
                       <br />
                       <div
                         style={{

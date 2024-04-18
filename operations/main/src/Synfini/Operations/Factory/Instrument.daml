@@ -6,11 +6,12 @@ import Daml.Finance.Instrument.Token.Factory qualified as TokenImpl
 
 import Synfini.Operations.Types
 
+import Synfini.Instrument.Metadata qualified as MetadataImpl
 import Synfini.Onboarding.Issuer.Instrument.Token qualified as TokenIssuerImpl
 import Synfini.Onboarding.Issuer.Metadata.Publisher qualified as MetadataPublisherImpl
-import Synfini.Instrument.Metadata qualified as MetadataImpl
+
 import Synfini.Interface.Instrument.Metadata.Factory qualified as MetadataFactory
-import qualified Synfini.Interface.Onboarding.Issuer.Metadata.Factory as MetadataPublisherFactory
+import Synfini.Interface.Onboarding.Issuer.Metadata.Factory qualified as MetadataPublisherFactory
 
 data InstrumentFactorySettings = InstrumentFactorySettings
   with
