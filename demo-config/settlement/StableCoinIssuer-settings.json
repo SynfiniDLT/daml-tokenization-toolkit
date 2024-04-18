@@ -1,0 +1,26 @@
+{
+  "readAs": ["SynfiniPublic"],
+  "takeOpenOfferSettings": {
+    "taker": "StableCoinIssuer"
+  },
+  "acceptSettlementSettings": {
+    "acceptor": "StableCoinIssuer",
+    "settlementPreferences": [
+      {
+        "custodian": "SynfiniValidator",
+        "depository": "StableCoinDepository",
+        "issuer": "StableCoinIssuer",
+        "minterBurner": true
+      },
+      {
+        "custodian": "SynfiniValidator",
+        "depository": "SbtDepository",
+        "issuer": "SbtIssuer",
+        "accountId": "sbt-001"
+      }
+    ]
+  },
+  "settleSettings": {
+    "settler": "StableCoinIssuer"
+  }
+}

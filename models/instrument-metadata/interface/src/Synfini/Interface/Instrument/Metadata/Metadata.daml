@@ -19,8 +19,8 @@ type V = View
 -- | An attribute of an instrument.
 data Attribute = Attribute
   with
-    attributeValue : Text
-    displayType : Text
+    attributeValue : Text -- ^ Textual value of the attribute.
+    displayType : Text -- ^ Display type of the attribute to indicate if it is a string, date etc.
   deriving (Show, Eq)
 
 -- | Type of attribute names.
@@ -32,8 +32,8 @@ type Attributes = Map AttributeName Attribute
 -- | View of a 'Metadata'.
 data View = View
   with
-    instrument : InstrumentKey -- ^ The instrument's key.
-    attributes : Attributes -- ^ The instrument's attributes.
+    instrument : InstrumentKey -- ^ The key of the instrument which the metadata is for.
+    attributes : Attributes -- ^ The attributes assigned to the instrument.
   deriving (Eq, Show)
 
 -- | Interface which can capture various metadata or attributes associated with an instrument.

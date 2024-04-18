@@ -6,10 +6,15 @@ These environment variables in the .env file defines party name and IAM url for 
 
 1. REACT_APP_PARTIES_SBT_INSTRUMENT_DEPOSITORY: Party ID of the depository entity for SBT (Soulbound Token). (Participant ID not included)
 1. REACT_APP_PARTIES_SBT_INSTRUMENT_ISSUER: Party ID of the issuer entity for SBT (Soulbound Token).
+1. REACT_APP_PARTIES_SBT_CUSTODIAN: Party ID of the custodian at which the SBTs are held.
 1. REACT_APP_PARTIES_WALLET_OPERATOR: Party ID of the wallet operator.
 1. REACT_APP_PARTIES_ENVIRONMENTAL_TOKEN_DEPOSITORY: Party ID of the issuer.
 1. REACT_APP_PARTIES_PUBLIC: Party ID of the public party.
 1. REACT_APP_MODE: specifies the operational mode of the wallet app, serving either as an investor or issuer, adapting its functionalities accordingly.
+1. REACT_APP_PARTIES_PUBLIC: Party ID of the public party.
+1. REACT_APP_STABLECOIN_INSTRUMENT_ID: Instrument ID of the stablecoin instrument.
+1. REACT_APP_PARTY_ATTRIBUTES_INSTRUMENT_ID: Instrument ID of the SBT used to identify ecosystem members.
+1. REACT_APP_PARTY_ATTRIBUTES_NAME: Name of the attribute on the metadata contracts for the REACT_APP_PARTY_ATTRIBUTES_INSTRUMENT_ID. The value of this attribute is the display name of the party.
 
 ## Project Deployment Guide
 

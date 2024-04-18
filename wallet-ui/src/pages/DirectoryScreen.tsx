@@ -4,12 +4,11 @@ import { PageLoader } from "../components/layout/page-loader";
 import { PageLayout } from "../components/PageLayout";
 import IdentityCards from "../components/layout/IdentityCards";
 import * as damlTypes from "@daml/types";
-import { HoldingSummary, InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { Metadata, View as MetadataView } from "@daml.js/synfini-instrument-metadata-interface/lib/Synfini/Interface/Instrument/Metadata/Metadata";
+import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { Metadata } from "@daml.js/synfini-instrument-metadata-interface/lib/Synfini/Interface/Instrument/Metadata/Metadata";
 import { useWalletUser, useWalletViews, userContext } from "../App";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 import { CreateEvent } from "@daml/ledger";
-import { arrayToMap } from "../Util";
 import { partyAttributesInstrumentId, sbtCustodian, sbtDepository, sbtIssuer } from "../Configuration";
 import { Base } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Base";
 
@@ -51,7 +50,7 @@ const DirectoryScreen: React.FC = () => {
               const metadataResp = await ledger.query(Metadata, { instrument: instrumentKey });
   
               if (metadataResp.length === 1) {
-                setMetadatas(metadatas.set(instrumentKey, metadataResp[0]));
+                setMetadatas(currentMetadatas => currentMetadatas.set(instrumentKey, metadataResp[0]));
               }
             }
           })
@@ -62,6 +61,7 @@ const DirectoryScreen: React.FC = () => {
     fetchMetadatas();
   }, [ledger, instruments]);
 
+  // TODO cannot fetch Holdings from wallet views API until we relax restrictions on `HoldingsFilter`: account ID, and owner should be optional
   useEffect(() => {
     const fetchHoldings = async () => {
       if (instruments !== undefined) {
@@ -79,7 +79,7 @@ const DirectoryScreen: React.FC = () => {
               );
   
               if (holdingsResp.length === 1) {
-                setHoldings(holdings.set(instrumentKey, holdingsResp[0]));
+                setHoldings(currentHoldings => currentHoldings.set(instrumentKey, holdingsResp[0]));
               }
             }
           })
@@ -89,43 +89,6 @@ const DirectoryScreen: React.FC = () => {
 
     fetchHoldings();
   }, [sbtCustodian, ledger, instruments]);
-
-  // TODO cannot fetch Holdings until we relax restrictions on `HoldingsFilter`: account ID, and owner should be optional
-  /*
-  useEffect(() => {
-    const fetchHoldings = async () => {
-      if (instruments !== undefined) {
-        const holdingsElems = await Promise.all(
-          instruments.map(async ins => {
-            const instrumentKey = ins.tokenView?.token.instrument
-            let pair: [InstrumentKey, HoldingSummary] | undefined = undefined;
-  
-            if (instrumentKey !== undefined) {
-              const metadataResp = await walletClient.getHoldings(
-                {instrument: instrumentKey, account: { owner: }}
-              );
-  
-              if (metadataResp.length === 1) {
-                pair = [instrumentKey, metadataResp[0]];
-              }
-            }
-  
-            return pair === undefined ? [] : [pair]
-          })
-        );
-      }
-    }
-  }, [primaryParty, sbtDepository, sbtIssuer, walletClient, sbtCustodian])*/
-
-  if (isLoading) {
-    return (
-      <div>
-        <PageLoader />
-      </div>
-    );
-  }
-
-  console.log('instruments = ', instruments);
 
   const summaries = instruments?.flatMap(ins => {
     const instrumentKey = ins.tokenView?.token.instrument;
@@ -148,7 +111,13 @@ const DirectoryScreen: React.FC = () => {
     return []
   });
 
-  console.log('summaries = ', summaries);
+  if (isLoading) {
+    return (
+      <div>
+        <PageLoader />
+      </div>
+    );
+  }
 
   return (
     <PageLayout>

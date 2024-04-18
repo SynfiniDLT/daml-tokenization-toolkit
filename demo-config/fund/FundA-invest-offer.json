@@ -14,7 +14,7 @@
           "instrumentDepository": "FundDepository",
           "instrumentIssuer": "FundA",
           "instrumentId": "FundA",
-          "instrumentVersion": "0",
+          "instrumentVersion": "v1",
           "amount": 1
         },
         {
@@ -23,7 +23,7 @@
           "instrumentDepository": "StableCoinDepository",
           "instrumentIssuer": "StableCoinIssuer",
           "instrumentId": "StableCoin",
-          "instrumentVersion": "0",
+          "instrumentVersion": "v1",
           "amount": 42
         },
         {
@@ -32,7 +32,7 @@
           "instrumentDepository": "StableCoinDepository",
           "instrumentIssuer": "StableCoinIssuer",
           "instrumentId": "StableCoin",
-          "instrumentVersion": "0",
+          "instrumentVersion": "v1",
           "amount": 0.42
         }
       ],

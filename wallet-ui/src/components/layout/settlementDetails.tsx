@@ -38,6 +38,11 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
   const [toggleSteps, setToggleSteps] = useState(false);
   const [isActionRequired, setIsActionRequired] = useState<boolean>(false);
 
+  const handleInstrumentModal = (instrument: InstrumentKey) => {
+    // setIsOpen(!isOpen);
+    nav("/asset", { state: { instrument } });
+  }
+
   const setToggleCol = () => {
     setToggleSteps((prev) => {
       return !prev;
@@ -98,16 +103,14 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
           )}
           <br />
           <Field>Created Time:</Field>
-          {toDateTimeString(props.settlement.witness.effectiveTime)} | Offset:
-          {props.settlement.witness.offset} <br />
+          {toDateTimeString(props.settlement.witness.effectiveTime)}
+          <br />
           {props.settlement.execution !== null && (
             <>
               <Field>Settled Time:</Field>
             </>
           )}
           {props.settlement.execution !== null && toDateTimeString(props.settlement.execution.effectiveTime)}
-          {props.settlement.execution !== null && <> | Offset: </>}
-          {props.settlement.execution !== null && props.settlement.execution.offset}
         </div>
 
         <hr></hr>
@@ -123,29 +126,39 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
               )}
               <br />
               <div onClick={setToggleCol} id={step.routedStep.quantity.unit.id.unpack} key={step.instructionCid}>
-                <Field>Instrument:</Field>
-                {step.routedStep.quantity.unit.id.unpack}
-                <Field>Version:</Field>
-                {step.routedStep.quantity.unit.version} <br />
-                <Field>Sender: </Field>
-                {nameFromParty(step.routedStep.sender)}
+                <Field>Asset:</Field>
+                  <a onClick={() => handleInstrumentModal(step.routedStep.quantity.unit)}>
+                    {`${step.routedStep.quantity.unit.id.unpack} ${step.routedStep.quantity.unit.version}`}
+                  </a>
                 <br />
+                <div
+                  className="settlement-content"
+                  style={{ height: toggleSteps ? "60px" : "0px" }}
+                  key={step.routedStep.quantity.unit.id.unpack}
+                >
+                  Issuer: {nameFromParty(step.routedStep.quantity.unit.issuer)}
+              </div>
+                <Field>Type: </Field>
+                {step.routedStep.sender === step.routedStep.custodian ? <> Mint<br/></> :
+                  step.routedStep.receiver === step.routedStep.custodian ? <> Burn<br/></> :
+                  <> Transfer<br/></>
+                }
+                {step.routedStep.sender !== step.routedStep.custodian &&
+                step.routedStep.receiver !== step.routedStep.custodian &&
+                <>
+                  <Field>Sender: </Field>
+                  {nameFromParty(step.routedStep.sender)}
+                  <br />
+                </>
+                }
+
                 <Field>Receiver: </Field>
                 {nameFromParty(step.routedStep.receiver)}
                 <br />
-                <Field>Custodian: </Field>
+                <Field>Provider: </Field>
                 {nameFromParty(step.routedStep.custodian)}
                 <br />
                 {toggleSteps ? <DashCircleFill /> : <PlusCircleFill />}
-              </div>
-              <div
-                className="settlement-content"
-                style={{ height: toggleSteps ? "60px" : "0px" }}
-                key={step.routedStep.quantity.unit.id.unpack}
-              >
-                Depository: {nameFromParty(step.routedStep.quantity.unit.depository)}
-                <br />
-                Issuer: {nameFromParty(step.routedStep.quantity.unit.issuer)}
               </div>
               <hr></hr>
             </div>

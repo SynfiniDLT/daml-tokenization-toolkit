@@ -1,4 +1,5 @@
 {
+  "readAs": ["SynfiniPublic"],
   "acceptSettlementSettings": {
     "acceptor": "SbtIssuer",
     "settlementPreferences": [
@@ -9,5 +10,8 @@
         "minterBurner": true
       }
     ]
+  },
+  "settleSettings": {
+    "settler": "SbtIssuer"
   }
 }

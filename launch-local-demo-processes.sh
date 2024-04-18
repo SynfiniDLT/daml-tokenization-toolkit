@@ -8,6 +8,9 @@ config_dir=${tokenization_lib_home}/demo-config
 function create_identity_token() {
   owner=$1
   name=$2
+  set +u
+  settle=$3
+  set -u
 
   sbt_offer_id=$(uuidgen)
   python3 create-synfini-id-offer.py \
@@ -27,15 +30,18 @@ function create_identity_token() {
   sbt_batch_id=$(uuidgen)
   dops \
     take-settlement-open-offer \
-    "${config_dir}/settlement/${owner}-take-open-offer.json" \
+    "${config_dir}/settlement/${owner}-settings.json" \
     SbtIssuer \
     $sbt_offer_id \
     $sbt_batch_id \
     1 \
     SBT
-  dops accept-settlement "${config_dir}/settlement/${owner}-settlement-preferences.json" "SbtIssuer,$owner" $sbt_batch_id
-  dops accept-settlement ${config_dir}/settlement/SbtIssuer-settlement-preferences.json "SbtIssuer,$owner" $sbt_batch_id
-  dops execute-settlement ${config_dir}/settlement/SbtIssuer-execute.json "SbtIssuer,$owner" $sbt_batch_id
+
+  if [ "$settle" = "settle" ]; then
+    dops accept-settlement "${config_dir}/settlement/${owner}-settings.json" "SbtIssuer,$owner" $sbt_batch_id
+    dops accept-settlement ${config_dir}/settlement/SbtIssuer-settings.json "SbtIssuer,$owner" $sbt_batch_id
+    dops execute-settlement ${config_dir}/settlement/SbtIssuer-settings.json "SbtIssuer,$owner" $sbt_batch_id
+  fi
 }
 
 make compile-wallet-views
@@ -124,22 +130,22 @@ dops create-settlement-open-offers ${config_dir}/stablecoin/on-ramp-offer.json
 mint_id=$(uuidgen)
 dops \
   take-settlement-open-offer \
-  ${config_dir}/settlement/InvestorA-take-open-offer.json \
+  ${config_dir}/settlement/InvestorA-settings.json \
   StableCoinIssuer \
-  StableCoin@0.OnRamp \
+  StableCoin@v1.OnRamp \
   $mint_id \
   100000 \
   Mint
-dops accept-settlement ${config_dir}/settlement/InvestorA-settlement-preferences.json StableCoinIssuer,InvestorA $mint_id
-dops accept-settlement ${config_dir}/settlement/StableCoinIssuer-settlement-preferences.json StableCoinIssuer,InvestorA $mint_id
-dops execute-settlement ${config_dir}/settlement/StableCoinIssuer-execute.json StableCoinIssuer,InvestorA $mint_id
+dops accept-settlement ${config_dir}/settlement/InvestorA-settings.json StableCoinIssuer,InvestorA $mint_id
+dops accept-settlement ${config_dir}/settlement/StableCoinIssuer-settings.json StableCoinIssuer,InvestorA $mint_id
+dops execute-settlement ${config_dir}/settlement/StableCoinIssuer-settings.json StableCoinIssuer,InvestorA $mint_id
 dops create-settlement-open-offers ${config_dir}/stablecoin/off-ramp-offer.json
 burn_id=$(uuidgen)
 dops \
   take-settlement-open-offer \
-  ${config_dir}/settlement/InvestorA-take-open-offer.json \
+  ${config_dir}/settlement/InvestorA-settings.json \
   StableCoinIssuer \
-  StableCoin@0.OffRamp \
+  StableCoin@v1.OffRamp \
   $burn_id \
   100 \
   Burn
@@ -147,6 +153,10 @@ dops \
 # SBT
 dops create-minter-burners ${config_dir}/synfini-id/minter-burner.json
 create_identity_token InvestorA "John Doe"
+create_identity_token InvestorB "Jane Smith" settle
+create_identity_token StableCoinIssuer "Acme Bank" settle
+create_identity_token FundA "ABC Investments" settle
+create_identity_token FundManagerA "ABC Fund Manager" settle
 
 # Fund
 dops create-instruments ${config_dir}/fund/FundA-instrument.json
@@ -155,16 +165,16 @@ dops create-settlement-open-offers ${config_dir}/fund/FundA-invest-offer.json
 invest_id=$(uuidgen)
 dops \
   take-settlement-open-offer \
-  ${config_dir}/settlement/InvestorA-take-open-offer.json \
+  ${config_dir}/settlement/InvestorA-settings.json \
   FundA \
   FundInvestment \
   $invest_id \
   10 \
   Buy
-dops accept-settlement ${config_dir}/settlement/InvestorA-settlement-preferences.json FundA,InvestorA $invest_id
-dops accept-settlement ${config_dir}/settlement/FundA-settlement-preferences.json FundA,InvestorA $invest_id
-dops accept-settlement ${config_dir}/settlement/FundManagerA-settlement-preferences.json FundA,InvestorA $invest_id
-dops execute-settlement ${config_dir}/settlement/FundA-execute.json FundA,InvestorA $invest_id
+dops accept-settlement ${config_dir}/settlement/InvestorA-settings.json FundA,InvestorA $invest_id
+dops accept-settlement ${config_dir}/settlement/FundA-settings.json FundA,InvestorA $invest_id
+dops accept-settlement ${config_dir}/settlement/FundManagerA-settings.json FundA,InvestorA $invest_id
+dops execute-settlement ${config_dir}/settlement/FundA-settings.json FundA,InvestorA $invest_id
 
 # Environmental token
 dops create-minter-burners ${config_dir}/environmental-token/minter-burner.json

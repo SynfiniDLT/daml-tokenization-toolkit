@@ -31,18 +31,12 @@ def truncated_uuid():
   return f'{uuid.uuid4().int & ((1<<48) - 1):012x}'
 
 def dops(command, input_json, *args):
-  if type(input_json) is str:
-    _dops(command, input_json, *args)
-  else:
-    with tempfile.NamedTemporaryFile(mode='w+') as tmp:
-      json.dump(input_json, tmp)
-      tmp.flush()
-      _dops(command, tmp.name, *args)
-
-def _dops(command, input_file, *args):
-  res = subprocess.run(['dops', command, input_file] + list(args)).returncode
-  if res != 0:
-    raise Exception('Non-zero exit code')
+  with tempfile.NamedTemporaryFile(mode='w+') as tmp:
+    json.dump(input_json, tmp)
+    tmp.flush()
+    res = subprocess.run(['dops', command, tmp.name] + list(args)).returncode
+    if res != 0:
+      raise Exception('Non-zero exit code')
 
 observers = args.observers.split(',')
 instrument = {

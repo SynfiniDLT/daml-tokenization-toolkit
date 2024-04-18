@@ -1,4 +1,8 @@
 {
+  "readAs": ["SynfiniPublic"],
+  "takeOpenOfferSettings": {
+    "taker": "InvestorA"
+  },
   "acceptSettlementSettings": {
     "acceptor": "InvestorA",
     "settlementPreferences": [
@@ -6,17 +10,17 @@
         "custodian": "SynfiniValidator",
         "depository": "StableCoinDepository",
         "issuer": "StableCoinIssuer",
-        "accountId": "001"
+        "accountId": "hold-001"
       },
       {
         "custodian": "SynfiniValidator",
         "depository": "FundDepository",
-        "accountId": "002"
+        "accountId": "hold-001"
       },
       {
         "custodian": "SynfiniValidator",
-        "issuer": "SbtIssuer",
         "depository": "SbtDepository",
+        "issuer": "SbtIssuer",
         "accountId": "sbt-001"
       }
     ]

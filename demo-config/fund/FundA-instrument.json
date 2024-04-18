@@ -4,8 +4,8 @@
     {
       "issuer": "FundA.V1",
       "id": "FundA",
-      "version": "0",
-      "description": "Growth opportunities managed fund",
+      "version": "v1",
+      "description": "Growth opportunities managed fund units",
       "validAsOf": "2024-01-01T04:30:23.123456Z",
       "observers" : [
         {

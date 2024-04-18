@@ -4,7 +4,7 @@
     {
       "issuer": "StableCoin.V1",
       "id": "StableCoin",
-      "version": "0",
+      "version": "v1",
       "description": "Synfini stablecoin",
       "validAsOf": "2024-01-01T04:30:23.123456Z",
       "observers" : [

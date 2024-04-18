@@ -4,7 +4,6 @@ import DA.Functor qualified as F
 import DA.List qualified as L
 import DA.Map qualified as Map
 import DA.Set qualified as Set
-import DA.Text qualified as TX
 
 import Daml.Script
 

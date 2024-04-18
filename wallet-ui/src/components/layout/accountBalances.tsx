@@ -15,7 +15,7 @@ export type AccountBalanceSummary = {
 
 export default function AccountBalances(props: { accountBalances: AccountBalanceSummary[] }) {
   const nav = useNavigate();
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isOpen, setIsOpen] = useState<boolean>(false); // TODO remove?
 
   const handleRedeem = (balance: Balance, account: AccountSummary) => {
     nav("/wallet/account/balance/redeem", { state: { balance, account } });
@@ -51,7 +51,7 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
               </>
             )}
             <a onClick={() => handleInstrumentModal(balance.instrument)}>
-              {`${balance.instrument.id.unpack}: ${balance.instrument.version}`}
+              {`${balance.instrument.id.unpack} ${balance.instrument.version}`}
             </a>
           </td>
           <td><HoverPopUp triggerText={nameFromParty(balance.instrument.issuer)} popUpContent={balance.instrument.issuer} /></td>

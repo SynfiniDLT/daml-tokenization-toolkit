@@ -28,21 +28,23 @@ interface Publisher requires Disclosure.I where
   -- | Implementation of the 'RemoveMetadata' choice.
   removeMetadata : RemoveMetadata -> Update ()
 
+  -- | Create a 'Metadata' contract.
   nonconsuming choice PublishMetadata : ContractId Metadata.I
     with
-      id : Id
-      version : Text
-      attributes : Metadata.Attributes
-      disclosureControllers : Parties
-      observers : PartiesMap
+      id : Id -- ^ ID of the instrument which the metadata is for.
+      version : Text -- ^ Version of the instrument which the metadata is for.
+      attributes : Metadata.Attributes -- ^ Attributes to store on the metadata.
+      disclosureControllers : Parties -- ^ Disclosure controllers of the metadata.
+      observers : PartiesMap -- ^ Observers of the metadata.
     controller (view this).issuer
     do
       publishMetadata this arg
 
+  -- | Archive a 'Metadata' contract.
   nonconsuming choice RemoveMetadata : ()
     with
-      id : Id
-      version : Text
+      id : Id -- ^ ID of the instrument which the metadata is for.
+      version : Text -- ^ Version of the instrument which the metadata is for.
     controller (view this).issuer
     do
       removeMetadata this arg

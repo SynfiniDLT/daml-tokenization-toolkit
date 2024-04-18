@@ -159,9 +159,9 @@ const AssetDetailsScreen: React.FC = () => {
 
   const handleCheckboxChange = (party: damlTypes.Party) => {
     if (toUnshare.has(party)) {
-      setToUnshare(toUnshare.delete(party))
+      setToUnshare(current => current.delete(party))
     } else {
-      setToUnshare(toUnshare.set(party, {}));
+      setToUnshare(current => current.set(party, {}));
     }
   };
 
@@ -320,7 +320,7 @@ const AssetDetailsScreen: React.FC = () => {
         <table className="assets">
           <caption>
             <h3 className="profile__title" style={{ marginTop: "10px" }}>
-              {`${state.instrument.id.unpack}: ${state.instrument.version}`}
+              {`${state.instrument.id.unpack} ${state.instrument.version}`}
             </h3>
             <h5 className="profile__title" style={{ marginTop: "10px", paddingBottom: "10px" }}>
               {instrumentSummary.tokenView?.token.description}
