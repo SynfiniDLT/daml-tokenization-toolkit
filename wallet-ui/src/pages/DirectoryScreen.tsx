@@ -37,7 +37,7 @@ const DirectoryScreen: React.FC = () => {
       }
     };
     fetchInstruments();
-  }, [primaryParty, sbtDepository, sbtIssuer, walletClient]);
+  }, [primaryParty, walletClient]);
 
   useEffect(() => {
     const fetchMetadatas = async () => {
@@ -88,7 +88,7 @@ const DirectoryScreen: React.FC = () => {
     }
 
     fetchHoldings();
-  }, [sbtCustodian, ledger, instruments]);
+  }, [ledger, instruments]);
 
   const summaries = instruments?.flatMap(ins => {
     const instrumentKey = ins.tokenView?.token.instrument;

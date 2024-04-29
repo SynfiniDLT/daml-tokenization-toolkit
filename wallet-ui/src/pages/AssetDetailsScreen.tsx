@@ -59,11 +59,6 @@ const AssetDetailsScreen: React.FC = () => {
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
 
-  const fetchDisclosure = async (cid: damlTypes.ContractId<Disclosure>) => {
-    const disclosure = await ledger.fetch(Disclosure, cid);
-    return disclosure?.payload;
-  }
-
   useEffect(() => {
     const fetchInstrument = async () => {
       const instruments = await walletClient.getInstruments({
@@ -127,8 +122,8 @@ const AssetDetailsScreen: React.FC = () => {
           setIsFungible(false);
           if (holdings.length === 1) {
             setNonFungibleHolding(holdings[0]);
-            const disc = await fetchDisclosure(cid);
-            setHoldingDisclosure(disc);
+            const disc = await ledger.fetch(Disclosure, cid as damlTypes.ContractId<any>);
+            setHoldingDisclosure(disc?.payload);
           }
         } else {
           setIsFungible(true);

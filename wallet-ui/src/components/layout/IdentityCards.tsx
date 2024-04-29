@@ -1,4 +1,4 @@
-import { InstrumentMetadataSummary, nameFromParty } from "../../Util";
+import { InstrumentMetadataSummary } from "../../Util";
 import { partyNameAttribute } from "../../Configuration";
 import HoverPopUp from "./hoverPopUp";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
