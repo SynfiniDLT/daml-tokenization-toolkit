@@ -20,10 +20,10 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
     nav("/wallet/account/balance/redeem", { state: { balance, account } });
   };
 
-  const handleInstrumentModal = (instrument: InstrumentKey) => {
+  const handleInstrumentClick = (instrument: InstrumentKey) => {
     setIsOpen(!isOpen);
     nav("/asset", { state: { instrument } });
-  }
+  };
 
   const tableRows: [AccountSummary, JSX.Element[]][] = props.accountBalances.map(accountBalance => {
     const trs = accountBalance.balances.map(balance => {
@@ -49,7 +49,7 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
                 &nbsp;&nbsp;
               </>
             )}
-            <a onClick={() => handleInstrumentModal(balance.instrument)}>
+            <a onClick={() => handleInstrumentClick(balance.instrument)}>
               {`${balance.instrument.id.unpack} ${balance.instrument.version}`}
             </a>
           </td>

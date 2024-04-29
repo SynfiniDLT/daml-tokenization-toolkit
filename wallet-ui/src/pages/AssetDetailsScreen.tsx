@@ -8,7 +8,7 @@ import {
   InstrumentSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlTypes from "@daml/types";
-import { arrayToSet, flattenObservers, setToArray } from "../Util";
+import { arrayToSet, flattenObservers, setToArray, toDateTimeString } from "../Util";
 import { useWalletUser, useWalletViews } from "../App";
 import { CreateEvent } from "@daml/ledger";
 import { Metadata } from "@daml.js/synfini-instrument-metadata-interface/lib/Synfini/Interface/Instrument/Metadata/Metadata";
@@ -337,7 +337,13 @@ const AssetDetailsScreen: React.FC = () => {
             </tr>
             <tr>
               <th>Valid as of</th>
-              <td>{instrumentSummary.tokenView?.token.validAsOf}</td>
+              <td>
+                {
+                  instrumentSummary.tokenView?.token.validAsOf !== undefined ?
+                  toDateTimeString(instrumentSummary.tokenView?.token.validAsOf) :
+                  "N/A"
+                }
+              </td>
             </tr>
             {isFungible === false && nonFungbileHolding !== undefined && (
               <tr>
@@ -419,7 +425,9 @@ const AssetDetailsScreen: React.FC = () => {
           {canDisclose &&
             <p>
               <br/>
+              <br/>
               Share asset details:
+              <br/>
               <input
                 type="text"
                 id="partyToShare"
@@ -432,6 +440,7 @@ const AssetDetailsScreen: React.FC = () => {
               <button
                 type="button"
                 className="button__login"
+                style={{ width: "100px" }}
                 onClick={_ => handleAddObserver()}
               >
                 Share
