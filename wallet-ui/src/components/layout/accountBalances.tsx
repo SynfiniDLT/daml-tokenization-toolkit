@@ -74,7 +74,7 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
             <div>
               <div style={{ marginTop: "15px" }}>
                 <h4 className="profile__title">{account.view.description}</h4>
-                <h5 className="profile__title">Provider: {account.view.custodian}</h5>
+                <h5 className="profile__title">Register: {account.view.custodian}</h5>
                 <h5 className="profile__title">Account ID: {account.view.id.unpack}</h5>
               </div>
               <div style={{ margin: "10px", padding: "10px" }}>
