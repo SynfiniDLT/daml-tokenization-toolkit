@@ -6,14 +6,14 @@ export const NavBarTabs = () => {
   const { isAuthenticated } = useAuth0();
 
   const commonsTabs = [
-    (<NavBarTab path="/" label="Home" />),
-    (<NavBarTab path="/account/create" label="Open Account" />),
-    (<NavBarTab path="/offers" label="Offers" />),
-    (<NavBarTab path="/fund" label="Invest" />),
-    (<NavBarTab path="/settlements" label="Transactions" />),
-    (<NavBarTab path="/directory" label="Directory" />)
+    (<NavBarTab path="/" key="home" label="Home" />),
+    (<NavBarTab path="/account/create" key="account-create" label="Open Account" />),
+    (<NavBarTab path="/offers" key="offers" label="Offers" />),
+    (<NavBarTab path="/fund" key="fund" label="Invest" />),
+    (<NavBarTab path="/settlements" key="settlements" label="Transactions" />),
+    (<NavBarTab path="/directory" key="directory" label="Directory" />)
   ];
-  const issuerTabs = [(<NavBarTab path="/issuers" label="Environmental Tokens" />)];
+  const issuerTabs = [(<NavBarTab path="/issuers" key="issuers" label="Environmental Tokens" />)];
   const tabs = walletMode === "investor" ? commonsTabs : commonsTabs.concat(issuerTabs);
   const loginTab = (
     <NavBarTab path="/" label="Home" />

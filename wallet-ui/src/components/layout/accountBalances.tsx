@@ -32,14 +32,16 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
           (<>&nbsp;<button onClick={() => handleRedeem(balance, accountBalance.account)}>Redeem</button></>) :
           (<></>);
 
-      const trKey = [
-        balance.account.custodian,
-        balance.account.id.unpack,
-        balance.instrument.depository,
-        balance.instrument.issuer,
-        balance.instrument.id.unpack,
-        balance.instrument.version
-      ].join(" ");
+      const trKey = JSON.stringify(
+        [
+          balance.account.custodian,
+          balance.account.id.unpack,
+          balance.instrument.depository,
+          balance.instrument.issuer,
+          balance.instrument.id.unpack,
+          balance.instrument.version
+        ]
+      );
       return (
         <tr key={trKey}>
           <td>
@@ -70,8 +72,9 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
       {
         tableRows.map(row => {
           const [account, trs] = row;
+          const accountKey = JSON.stringify([account.view.custodian, account.view.id.unpack]);
           return (
-            <div>
+            <div key={accountKey}>
               <div style={{ marginTop: "15px" }}>
                 <h4 className="profile__title">{account.view.description}</h4>
                 <h5 className="profile__title">Register: {account.view.custodian}</h5>
