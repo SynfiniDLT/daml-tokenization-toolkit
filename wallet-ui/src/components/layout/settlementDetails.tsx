@@ -26,6 +26,24 @@ import { Batch } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finan
 import Modal from "react-modal";
 import AccountsSelect from "./accountsSelect";
 import { useWalletUser, useWalletViews } from "../../App";
+import { stableCoinInstrumentId } from "../../Configuration";
+import { RoutedStep } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Types";
+
+function isMint(step: RoutedStep): boolean {
+  return step.custodian === step.sender || step.quantity.unit.issuer === step.sender;
+}
+
+function isBurn(step: RoutedStep): boolean {
+  return step.custodian === step.receiver || step.quantity.unit.issuer === step.receiver;
+}
+
+function requiresIssuerAction(primaryParty: damlTypes.Party, step: SettlementStep): boolean {
+  return primaryParty === step.routedStep.quantity.unit.issuer &&
+    (
+      (isMint(step.routedStep) && step.allocation.tag === "Unallocated") ||
+      (isBurn(step.routedStep) && step.approval.tag === "Unapproved")
+    );
+}
 
 interface SettlementDetailsProps {
   settlement: SettlementSummary;
@@ -36,6 +54,11 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
   const location = useLocation();
   const [toggleSteps, setToggleSteps] = useState(false);
   const [isActionRequired, setIsActionRequired] = useState<boolean>(false);
+
+  // TODO this should be refactored into a common utility
+  const handleInstrumentModal = (instrument: InstrumentKey) => {
+    nav("/asset", { state: { instrument } });
+  }
 
   const setToggleCol = () => {
     setToggleSteps((prev) => {
@@ -97,16 +120,14 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
           )}
           <br />
           <Field>Created Time:</Field>
-          {toDateTimeString(props.settlement.witness.effectiveTime)} | Offset:
-          {props.settlement.witness.offset} <br />
+          {toDateTimeString(props.settlement.witness.effectiveTime)}
+          <br />
           {props.settlement.execution !== null && (
             <>
               <Field>Settled Time:</Field>
             </>
           )}
           {props.settlement.execution !== null && toDateTimeString(props.settlement.execution.effectiveTime)}
-          {props.settlement.execution !== null && <> | Offset: </>}
-          {props.settlement.execution !== null && props.settlement.execution.offset}
         </div>
 
         <hr></hr>
@@ -114,37 +135,51 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
           <div key={index}>
             <h5 className="profile__title">Step {index + 1}</h5>
             <div style={{ margin: "15px" }}>
+              <Field>Type: </Field>
+              {
+                isMint(step.routedStep) ? <> Issuance<br/></> :
+                isBurn(step.routedStep) ? <> Redemption<br/></> : <> Transfer<br/></>
+              }
               <Field>Amount: </Field>
-              {step.routedStep.quantity.unit.id.unpack === process.env.REACT_APP_STABLECOIN_INSTRUMENT_ID ? (
+              {step.routedStep.quantity.unit.id.unpack === stableCoinInstrumentId.unpack ? (
                 <>{formatCurrency(step.routedStep.quantity.amount, "en-US")}</>
               ) : (
                 <>{Number(step.routedStep.quantity.amount)}</>
               )}
               <br />
               <div onClick={setToggleCol} id={step.routedStep.quantity.unit.id.unpack} key={step.instructionCid}>
-                <Field>Instrument:</Field>
-                {step.routedStep.quantity.unit.id.unpack}
-                <Field>Version:</Field>
-                {step.routedStep.quantity.unit.version} <br />
-                <Field>Sender: </Field>
-                {nameFromParty(step.routedStep.sender)}
+                <Field>Asset:</Field>
+                  <a onClick={() => handleInstrumentModal(step.routedStep.quantity.unit)}>
+                    {`${step.routedStep.quantity.unit.id.unpack} ${step.routedStep.quantity.unit.version}`}
+                  </a>
                 <br />
-                <Field>Receiver: </Field>
-                {nameFromParty(step.routedStep.receiver)}
-                <br />
-                <Field>Custodian: </Field>
+                <div
+                  className="settlement-content"
+                  style={{ height: toggleSteps ? "60px" : "0px" }}
+                  key={step.routedStep.quantity.unit.id.unpack}
+                >
+                  Issuer: {nameFromParty(step.routedStep.quantity.unit.issuer)}
+                </div>
+                {!isMint(step.routedStep) &&
+                  <>
+                    <Field>Sender: </Field>
+                    {nameFromParty(step.routedStep.sender)}
+                    <br />
+                  </>
+                }
+
+                {!isBurn(step.routedStep) &&
+                  <>
+                    <Field>Receiver: </Field>
+                    {nameFromParty(step.routedStep.receiver)}
+                    <br />
+                  </>
+                }
+
+                <Field>Register: </Field>
                 {nameFromParty(step.routedStep.custodian)}
                 <br />
                 {toggleSteps ? <DashCircleFill /> : <PlusCircleFill />}
-              </div>
-              <div
-                className="settlement-content"
-                style={{ height: toggleSteps ? "60px" : "0px" }}
-                key={step.routedStep.quantity.unit.id.unpack}
-              >
-                Depository: {nameFromParty(step.routedStep.quantity.unit.depository)}
-                <br />
-                Issuer: {nameFromParty(step.routedStep.quantity.unit.issuer)}
               </div>
               <hr></hr>
             </div>
@@ -171,6 +206,10 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
   const [accounts, setAccounts] = useState<AccountSummary[]>();
   const [selectAccountInput, setSelectAccountInput] = useState("");
   const [showExecute, setShowExecute] = useState<boolean>(false);
+
+  const handleInstrumentModal = (instrument: InstrumentKey) => {
+    nav("/asset", { state: { instrument } });
+  }
 
   const setToggleCol = () => {
     setToggleSteps((prev) => {
@@ -475,8 +514,8 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
             )}
             <br />
             <Field>Created Time:</Field>
-            {toDateTimeString(props.settlement.witness.effectiveTime)} | Offset:
-            {props.settlement.witness.offset} <br />
+            {toDateTimeString(props.settlement.witness.effectiveTime)}
+            <br />
             {props.settlement.execution !== null && (
               <>
                 <Field>Settled Time:</Field>
@@ -494,39 +533,62 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
                 <div key={index}>
                   <h5 className="profile__title">Step {index + 1}</h5>
                   <div style={{ margin: "15px" }}>
+                    <div
+                      style={{
+                        ...(requiresIssuerAction(primaryParty, step)
+                          ? { border: "1px solid", width: "300px" }
+                          : {}),
+                      }}
+                    >
+                      <Field>Type: </Field>
+                      {
+                        isMint(step.routedStep) ? <> Issuance<br/></> :
+                        isBurn(step.routedStep) ? <> Redemption<br/></> : <> Transfer<br/></>
+                      }
+                    </div>
                     <Field>Amount: </Field>
-                    {step.routedStep.quantity.unit.id.unpack === process.env.REACT_APP_STABLECOIN_INSTRUMENT_ID ? (
+                    {step.routedStep.quantity.unit.id.unpack === stableCoinInstrumentId.unpack ? (
                       <>{formatCurrency(step.routedStep.quantity.amount, "en-US")}</>
                     ) : (
                       <>{Number(step.routedStep.quantity.amount)}</>
                     )}
                     <br />
                     <div onClick={setToggleCol} id={step.routedStep.quantity.unit.id.unpack} key={step.instructionCid}>
-                      <Field>Instrument:</Field>
-                      {step.routedStep.quantity.unit.id.unpack}
-                      <Field>Version:</Field>
-                      {step.routedStep.quantity.unit.version}
+                      <Field>Asset:</Field>
+                      <a onClick={() => handleInstrumentModal(step.routedStep.quantity.unit)}>
+                        {`${step.routedStep.quantity.unit.id.unpack} ${step.routedStep.quantity.unit.version}`}
+                      </a>
                       <br />
                       <div
-                        style={{
-                          ...(nameFromParty(step.routedStep.sender) === nameFromParty(primaryParty) && // TODO why is this using `nameFromParty`?
-                          step.allocation.tag === "Unallocated"
-                            ? { border: "1px solid", width: "300px" }
-                            : {}),
-                        }}
+                        className="settlement-content"
+                        style={{ height: toggleSteps ? "60px" : "0px" }}
+                        key={step.routedStep.quantity.unit.id.unpack}
                       >
-                        <Field>Sender: </Field>
-                        <span
+                        Issuer: {nameFromParty(step.routedStep.quantity.unit.issuer)}
+                      </div>
+                      <br />
+                      {!isMint(step.routedStep) &&
+                        <div
                           style={{
-                            fontWeight:
-                              nameFromParty(step.routedStep.sender) === nameFromParty(primaryParty)
-                                ? "bold"
-                                : "normal",
+                            ...(nameFromParty(step.routedStep.sender) === nameFromParty(primaryParty) && // TODO why is this using `nameFromParty`?
+                            step.allocation.tag === "Unallocated"
+                              ? { border: "1px solid", width: "300px" }
+                              : {}),
                           }}
                         >
-                          {nameFromParty(step.routedStep.sender)}
-                        </span>
-                      </div>
+                          <Field>Sender: </Field>
+                          <span
+                            style={{
+                              fontWeight:
+                                nameFromParty(step.routedStep.sender) === nameFromParty(primaryParty)
+                                  ? "bold"
+                                  : "normal",
+                            }}
+                          >
+                            {nameFromParty(step.routedStep.sender)}
+                          </span>
+                        </div>
+                      }
                       <div
                         style={{
                           ...(nameFromParty(step.routedStep.receiver) === nameFromParty(primaryParty) &&
@@ -547,7 +609,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
                           {nameFromParty(step.routedStep.receiver)}
                         </span>
                       </div>
-                      <Field>Custodian: </Field>
+                      <Field>Register: </Field>
                       {nameFromParty(step.routedStep.custodian)}
                       <br />
                       <Field>Allocation: </Field>

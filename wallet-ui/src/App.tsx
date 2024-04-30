@@ -5,22 +5,21 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { AuthenticationGuard } from "./components/authentication-guard";
 import { PageLoader } from "./components/layout/page-loader";
 import FundScreen from "./pages/FundScreen";
-import AccountBalanceScreen from "./pages/AccountBalanceScreen";
 import SettlementScreen from "./pages/SettlementScreen";
 import DirectoryScreen from "./pages/DirectoryScreen";
-import AccountBalanceSbtScreen from "./pages/AccountBalanceSbtScreen";
+import AssetDetailsScreen from "./pages/AssetDetailsScreen";
 import WalletScreen from "./pages/WalletScreen";
 import { FundSubscribeFormScreen } from "./pages/FundSubscribeFormScreen";
 import BalanceRedeemFormScreen from "./pages/BalanceRedeemFormScreen";
 import AccountOfferScreen from "./pages/AccountOfferScreen";
 import IssuersScreen from "./pages/IssuersScreen";
 import { InstrumentCreateFormScreen } from "./pages/InstrumentCreateFormScreen";
-import { OfferFormScreen } from "./pages/OfferFormScreen";
 import OffersScreen from "./pages/OffersScreen";
 import { OfferAcceptFormScreen } from "./pages/OfferAcceptFormScreen";
 import { SettlementActionScreen } from "./pages/SettlementActionScreen";
 import { Party } from "@daml/types";
 import { WalletViewsClient } from "@synfini/wallet-views";
+import { walletMode } from "./Configuration";
 
 type AuthContext = {
   token: string;
@@ -33,14 +32,6 @@ type AuthContext = {
 const AuthContextStore = React.createContext<AuthContext | undefined>(undefined);
 
 export const userContext = createLedgerContext();
-
-const walletModeVar = process.env.REACT_APP_MODE;
-if (walletModeVar !== "investor" && walletModeVar !== "issuer") {
-  throw Error(`Unsupported wallet mode: ${walletModeVar}`);
-}
-
-export type WalletMode = "investor" | "issuer";
-export const walletMode: WalletMode = walletModeVar === "investor" ? "investor" : "issuer";
 
 const App: React.FC = () => {
   const { isLoading, getAccessTokenSilently, isAuthenticated } = useAuth0();
@@ -71,22 +62,21 @@ const App: React.FC = () => {
   }
 
   const commonRoutes = [
-    (<Route path="/" element={<AuthenticationGuard component={WalletScreen} />} />),
-    (<Route path="/wallet/account/balance" element={<AuthenticationGuard component={AccountBalanceScreen} />} />),
-    (<Route path="/wallet/account/balance/sbt" element={<AuthenticationGuard component={AccountBalanceSbtScreen} />} />),
-    (<Route path="/wallet/account/balance/redeem" element={<AuthenticationGuard component={BalanceRedeemFormScreen} />} />),
-    (<Route path="/settlements" element={<AuthenticationGuard component={SettlementScreen} />} />),
-    (<Route path="/directory" element={<AuthenticationGuard component={DirectoryScreen} />} />),
-    (<Route path="/fund" element={<AuthenticationGuard component={FundScreen} />} />),
-    (<Route path="/fund/subscribe" element={<AuthenticationGuard component={FundSubscribeFormScreen} />} />),
-    (<Route path="/account/create" element={<AuthenticationGuard component={AccountOfferScreen} />} />),
-    (<Route path="/offers" element={<AuthenticationGuard component={OffersScreen} />} />),
-    (<Route path="/offer/accept" element={<AuthenticationGuard component={OfferAcceptFormScreen} />} />),
-    (<Route path="/settlement/action" element={<AuthenticationGuard component={SettlementActionScreen} />} />)
+    (<Route path="/" key="wallet" element={<AuthenticationGuard component={WalletScreen} />} />),
+    (<Route path="/asset" key="asset" element={<AuthenticationGuard component={AssetDetailsScreen} />} />),
+    (<Route path="/wallet/account/balance/redeem" key="redeem" element={<AuthenticationGuard component={BalanceRedeemFormScreen} />} />),
+    (<Route path="/settlements" key="settlements" element={<AuthenticationGuard component={SettlementScreen} />} />),
+    (<Route path="/directory" key="directory" element={<AuthenticationGuard component={DirectoryScreen} />} />),
+    (<Route path="/fund" key="fund" element={<AuthenticationGuard component={FundScreen} />} />),
+    (<Route path="/fund/subscribe" key="fund-subscribe" element={<AuthenticationGuard component={FundSubscribeFormScreen} />} />),
+    (<Route path="/account/create" key="account-create" element={<AuthenticationGuard component={AccountOfferScreen} />} />),
+    (<Route path="/offers" key="offers" element={<AuthenticationGuard component={OffersScreen} />} />),
+    (<Route path="/offer/accept" key="offers-accept" element={<AuthenticationGuard component={OfferAcceptFormScreen} />} />),
+    (<Route path="/settlement/action" key="settlement-act" element={<AuthenticationGuard component={SettlementActionScreen} />} />)
   ];
   const issuerRoutes = [
-    (<Route path="/issuers/" element={<AuthenticationGuard component={IssuersScreen} />} />),
-    (<Route path="/issuers/instrument/create" element={<AuthenticationGuard component={InstrumentCreateFormScreen} />} />)
+    (<Route path="/issuers/" key="issuers" element={<AuthenticationGuard component={IssuersScreen} />} />),
+    (<Route path="/issuers/instrument/create" key="instrument-create" element={<AuthenticationGuard component={InstrumentCreateFormScreen} />} />)
   ];
   const routes = walletMode === "investor" ? commonRoutes : commonRoutes.concat(issuerRoutes);
 

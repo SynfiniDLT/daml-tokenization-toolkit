@@ -1,6 +1,3 @@
--- Hstore (key/value) data type must be enabled
-CREATE EXTENSION hstore;
-
 CREATE TABLE account_open_offers
 (
   cid VARCHAR NOT NULL,
@@ -181,26 +178,6 @@ CREATE TABLE token_instruments
 );
 
 CREATE INDEX token_instruments_key_index ON token_instruments
-  (instrument_depository, instrument_id, instrument_issuer, instrument_version);
-
-CREATE TABLE pba_instruments
-(
-  instrument_depository VARCHAR NOT NULL,
-  instrument_issuer VARCHAR NOT NULL,
-  instrument_id VARCHAR NOT NULL,
-  instrument_version VARCHAR NOT NULL,
-  cid VARCHAR NOT NULL UNIQUE,
-  description VARCHAR NOT NULL,
-  valid_as_of TIMESTAMP NOT NULL,
-  owner VARCHAR NOT NULL,
-  attributes HSTORE NOT NULL,
-  create_offset VARCHAR,
-  create_effective_time TIMESTAMP,
-  archive_offset VARCHAR,
-  archive_effective_time TIMESTAMP
-);
-
-CREATE INDEX pba_instruments_key_index ON pba_instruments
   (instrument_depository, instrument_id, instrument_issuer, instrument_version);
 
 CREATE TABLE instrument_witnesses

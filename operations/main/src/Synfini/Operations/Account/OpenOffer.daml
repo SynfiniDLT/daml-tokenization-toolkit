@@ -59,9 +59,9 @@ createOpenAccountOffer input = do
         additionalControllers = Account.Controllers with
           incoming = Set.fromList (p <$> offerSetting.additionalIncomingControllers)
           outgoing = Set.fromList (p <$> offerSetting.additionalOutgoingControllers)
-        accountFactoryCid = findFactoryContractId offerSetting.accountFactory input.accountFactories
-        holdingFactoryCid = findFactoryContractId offerSetting.holdingFactory input.holdingFactories
-        accountOpenOfferFactoryCid = findFactoryContractId offerSetting.accountOpenOfferFactory input.accountOpenOfferFactories
+        accountFactoryCid = findCidByLabel offerSetting.accountFactory input.accountFactories
+        holdingFactoryCid = findCidByLabel offerSetting.holdingFactory input.holdingFactories
+        accountOpenOfferFactoryCid = findCidByLabel offerSetting.accountOpenOfferFactory input.accountOpenOfferFactories
     cid <- submit custodian do
       exerciseCmd accountOpenOfferFactoryCid AccountOpenOfferFactory.Create with
         custodian

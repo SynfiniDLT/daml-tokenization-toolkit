@@ -6,8 +6,12 @@ import Daml.Finance.Instrument.Token.Factory qualified as TokenImpl
 
 import Synfini.Operations.Types
 
-import Synfini.Instrument.PartyBoundAttributes.Factory qualified as PbaImpl
+import Synfini.Instrument.Metadata qualified as MetadataImpl
 import Synfini.Onboarding.Issuer.Instrument.Token qualified as TokenIssuerImpl
+import Synfini.Onboarding.Issuer.Metadata.Publisher qualified as MetadataPublisherImpl
+
+import Synfini.Interface.Instrument.Metadata.Factory qualified as MetadataFactory
+import Synfini.Interface.Onboarding.Issuer.Metadata.Factory qualified as MetadataPublisherFactory
 
 data InstrumentFactorySettings = InstrumentFactorySettings
   with
@@ -41,9 +45,6 @@ createInstrumentFactories CreateInstrumentFactoriesInput { parties, instrumentFa
       "Token" ->
         coerceContractId <$> submit provider do
           createCmd TokenImpl.Factory with provider, observers
-      "Pba" ->
-        coerceContractId <$> submit provider do
-          createCmd PbaImpl.Factory with provider, observers
       other -> error ("Unsupported instrument type: " <> show other)
     pure InstrumentFactory with label = settings.label, cid
   pure CreateInstrumentFactoriesOutput with instrumentFactories
@@ -82,3 +83,65 @@ createIssuerFactories input = do
       other -> error ("Unsupported instrument type: " <> show other)
     pure IssuerFactory with label = settings.label, cid
   pure CreateIssuerFactoriesOutput with issuerFactories
+
+data MetadataFactorySettings = MetadataFactorySettings
+  with
+    label : Text
+    provider : Text
+    observers : [Observer]
+
+data CreateMetadataFactoriesInput = CreateMetadataFactoriesInput
+  with
+    parties : [PartyInfo]
+    instrumentMetadataFactorySettings : [MetadataFactorySettings]
+
+data MetadataFactory = MetadataFactory
+  with
+    label : Text
+    cid : ContractId MetadataFactory.I
+
+data CreateMetadataFactoriesOutput = CreateMetadataFactoriesOutput
+  with
+    instrumentMetadataFactories : [MetadataFactory]
+
+createMetadataFactories : CreateMetadataFactoriesInput -> Script CreateMetadataFactoriesOutput
+createMetadataFactories input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  instrumentMetadataFactories <- forA input.instrumentMetadataFactorySettings $ \settings -> do
+    let observers = asPartiesMap p settings.observers
+    let provider = p settings.provider
+    cid <- submit provider do createCmd MetadataImpl.Factory with provider, observers
+    pure MetadataFactory with label = settings.label, cid = toInterfaceContractId cid
+  pure CreateMetadataFactoriesOutput with instrumentMetadataFactories
+
+data MetadataPublisherFactorySettings = MetadataPublisherFactorySettings
+  with
+    label : Text
+    provider : Text
+    observers : [Observer]
+
+data CreateMetadataPublisherFactoriesInput = CreateMetadataPublisherFactoriesInput
+  with
+    parties : [PartyInfo]
+    instrumentMetadataPublisherFactorySettings : [MetadataPublisherFactorySettings]
+
+data MetadataPublisherFactory = MetadataPublisherFactory
+  with
+    label : Text
+    cid : ContractId MetadataPublisherFactory.I
+
+data CreateMetadataPublisherFactoriesOutput = CreateMetadataPublisherFactoriesOutput
+  with
+    instrumentMetadataPublisherFactories : [MetadataPublisherFactory]
+
+createMetadataPublisherFactories : CreateMetadataPublisherFactoriesInput -> Script CreateMetadataPublisherFactoriesOutput
+createMetadataPublisherFactories input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  instrumentMetadataPublisherFactories <- forA input.instrumentMetadataPublisherFactorySettings $ \settings -> do
+    let observers = asPartiesMap p settings.observers
+    let provider = p settings.provider
+    cid <- submit provider do createCmd MetadataPublisherImpl.Factory with provider, observers
+    pure MetadataPublisherFactory with label = settings.label, cid = toInterfaceContractId cid
+  pure CreateMetadataPublisherFactoriesOutput with instrumentMetadataPublisherFactories

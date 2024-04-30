@@ -2,7 +2,7 @@
   "readAs": ["SynfiniPublic"],
   "settlementOpenOfferSettings": [
     {
-      "offerId": "StableCoin@0.OnRamp",
+      "offerId": "StableCoin@v1.OnRamp",
       "offerers": ["StableCoinIssuer"],
       "offerDescription": "Request stablecoin on-ramp from fiat",
       "settlementInstructors": [{"party": "StableCoinIssuer"}, {"taker": {}}],
@@ -14,7 +14,7 @@
           "instrumentDepository": "StableCoinDepository",
           "instrumentIssuer": "StableCoinIssuer",
           "instrumentId": "StableCoin",
-          "instrumentVersion": "0",
+          "instrumentVersion": "v1",
           "amount": 1
         }
       ],

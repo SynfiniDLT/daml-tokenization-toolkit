@@ -1,0 +1,14 @@
+# Warning: make sure to keep this sdk version updated to be the same as the other daml.yaml files
+# and the daml version in the java pom.xml
+sdk-version: 2.6.3
+name: synfini-issuer-onboarding-metadata-interface
+source: src
+version: 0.0.1
+dependencies:
+  - daml-prim
+  - daml-stdlib
+data-dependencies:
+  - ../../../.lib/daml-finance-interface-types-common.dar
+  - ../../../.lib/daml-finance-interface-util.dar
+
+  - ../../../.build/synfini-instrument-metadata-interface.dar

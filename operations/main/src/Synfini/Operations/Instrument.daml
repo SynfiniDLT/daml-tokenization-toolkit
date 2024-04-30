@@ -1,0 +1,98 @@
+module Synfini.Operations.Instrument where
+
+import DA.Functor qualified as F
+import DA.List qualified as L
+import DA.Map qualified as Map
+import DA.Set qualified as Set
+
+import Daml.Script
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Instrument.Token.Types (Token (..))
+
+import Synfini.Operations.Types
+
+import Synfini.Operations.Issuer (Issuer (..), MetadataPublisher (..))
+
+import Synfini.Interface.Instrument.Metadata.Metadata qualified as Metadata
+import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Issuer qualified as TokenIssuer
+import Synfini.Interface.Onboarding.Issuer.Metadata.Publisher qualified as Publisher
+
+data AttributeSettings = AttributeSettings
+  with
+    attributeName : Text
+    attributeValue : Text
+    displayType : Text
+
+toAttributes : [AttributeSettings] -> Metadata.Attributes
+toAttributes attrs = Map.fromList $
+  (\AttributeSettings { attributeName, attributeValue, displayType } ->
+    (attributeName, Metadata.Attribute with attributeValue, displayType)
+  ) <$> attrs
+
+data MetadataSettings = MetadataSettings
+  with
+    publisher : Text
+    attributes : [AttributeSettings]
+    disclosureControllers : [Text]
+    observers : [Observer]
+
+data InstrumentSettings = InstrumentSettings
+  with
+    issuer : Text
+    id : Text
+    version : Text
+    description : Text
+    validAsOf : Time
+    observers : [Observer]
+    metadata : Optional MetadataSettings
+
+data CreateInstrumentsInput = CreateInstrumentsInput
+  with
+    readAs : [Text]
+    parties : [PartyInfo]
+    issuers : [Issuer]
+    instrumentMetadataPublishers : [MetadataPublisher]
+    instrumentSettings : [InstrumentSettings]
+
+createInstruments : CreateInstrumentsInput -> Script ()
+createInstruments input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let readAs = p <$> input.readAs
+  let cmd InstrumentSettings { issuer, id, version, description, validAsOf, observers, metadata } =
+        let iss = findByLabel issuer input.issuers in
+        let instrumentCmd = case iss.instrumentType of
+              "Token" -> do
+                let tokenIssuerCid : ContractId TokenIssuer.I = coerceContractId iss.cid
+                F.void $ exerciseCmd tokenIssuerCid TokenIssuer.CreateInstrument with
+                  token = Token with
+                    instrument = InstrumentKey with
+                      issuer = iss.issuer
+                      depository = iss.depository
+                      id = Id id
+                      version
+                    description
+                    validAsOf
+                  observers = asPartiesMap p observers
+              other -> error ("Unsupported instrument type: " <> other)
+            metadataCmd = case metadata of
+              None -> []
+              Some m ->
+                let publisher = findByLabel m.publisher input.instrumentMetadataPublishers in
+                if publisher.issuer /= iss.issuer || publisher.depository /= iss.depository then
+                  error "Publisher does not have matching issuer and/or depository"
+                else
+                  pure . F.void $ exerciseCmd publisher.cid Publisher.PublishMetadata with
+                    id = Id id
+                    version
+                    attributes = toAttributes m.attributes
+                    disclosureControllers = Set.fromList (p <$> m.disclosureControllers)
+                    observers = asPartiesMap p m.observers
+        in
+        (iss.issuer, sequence $ instrumentCmd :: metadataCmd)
+  let cmds = cmd <$> input.instrumentSettings
+  let actAs = L.dedup $ fst <$> cmds
+  submitMulti actAs readAs (sequence $ snd <$> cmds)
+  pure ()

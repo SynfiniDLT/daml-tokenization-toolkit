@@ -14,6 +14,7 @@ import { v4 as uuid } from "uuid";
 import { nameFromParty, arrayToSet, arrayToMap } from "../../Util";
 import HoverPopUp from "./hoverPopUp";
 import { useWalletUser } from "../../App";
+import { walletOperator } from "../../Configuration";
 
 interface AccountOpenOfferSummaryProps {
   accountOffer: AccountOpenOfferSummary;
@@ -22,7 +23,6 @@ interface AccountOpenOfferSummaryProps {
 export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps) {
   const ledger = userContext.useLedger();
   const { primaryParty } = useWalletUser();
-  const walletOperator = process.env.REACT_APP_PARTIES_WALLET_OPERATOR || "";
 
   const [accountOffer, setAccountOffer] = useState<AccountOpenOfferSummary>();
   const [accountName, setAccountName] = useState("");

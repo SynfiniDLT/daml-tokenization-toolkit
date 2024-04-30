@@ -2,6 +2,8 @@ module Synfini.Operations.Issuer where
 
 import DA.Foldable (forA_)
 
+import DA.Optional qualified as O
+
 import Daml.Script
 
 import Daml.Finance.Interface.Instrument.Token.Factory qualified as TokenFactory
@@ -12,13 +14,27 @@ import Synfini.Operations.Types
 import Synfini.Operations.Factory.MinterBurner (MinterBurnerFactory)
 
 import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Factory qualified as TokenIssuerFactory
+import Synfini.Interface.Onboarding.Issuer.Metadata.Factory qualified as MetadataPublisherFactory
+import Synfini.Interface.Onboarding.Issuer.Metadata.Publisher qualified as MetadataPublisher
 import Synfini.Interface.Onboarding.Issuer.MinterBurner.Factory qualified as MinterBurnerFactory
 
-data IssuerSettings = IssuerSettings
+data InstrumentSettings = InstrumentSettings
   with
+    label : Text
     issuerFactory : Text
     instrumentFactory : Text
     instrumentType : Text
+
+data MetadataPublisherSettings = MetadataPublisherSettings
+  with
+    label : Text
+    publisherFactory : Text
+    metadataFactory : Text
+
+data IssuerSettings = IssuerSettings
+  with
+    instruments : [InstrumentSettings]
+    publisher : Optional MetadataPublisherSettings
     depository : Text
     issuer : Text
     observers : [Observer]
@@ -29,30 +45,73 @@ data CreateIssuersInput = CreateIssuersInput
     readAs : [Text]
     issuerFactories : [IssuerFactory]
     instrumentFactories : [InstrumentFactory]
+    instrumentMetadataPublisherFactories : [MetadataPublisherFactory]
+    instrumentMetadataFactories : [MetadataFactory]
     issuerSettings : [IssuerSettings]
 
-createIssuers : CreateIssuersInput -> Script ()
+data Issuer = Issuer
+  with
+    label : Text
+    cid : ContractId ()
+    instrumentType : Text
+    issuer : Party
+    depository : Party
+
+data MetadataPublisher = MetadataPublisher
+  with
+    label : Text
+    cid : ContractId MetadataPublisher.I
+    issuer : Party
+    depository : Party
+
+data CreateIssuersOutput = CreateIssuersOutput
+  with
+    issuers : [Issuer]
+    instrumentMetadataPublishers : [MetadataPublisher]
+
+createIssuers : CreateIssuersInput -> Script CreateIssuersOutput
 createIssuers input = do
   let pm = partyTable input.parties
   let p = getPartyId pm
   let readAs = p <$> input.readAs
-  forA_ input.issuerSettings $ \settings -> do
+  contracts <- forA input.issuerSettings $ \settings -> do
     let depository = p settings.depository
         issuer = p  settings.issuer
-        issuerFactoryCid = findFactoryContractId settings.issuerFactory input.issuerFactories
-        instrumentFactoryCid = findFactoryContractId settings.instrumentFactory input.instrumentFactories
         observers = asPartiesMap p settings.observers
-    case settings.instrumentType of
-      "Token" -> do
-        let tokenIssuerFactoryCid : ContractId TokenIssuerFactory.I = coerceContractId issuerFactoryCid
-            tokenInstrumentFactoryCid : ContractId TokenFactory.F = coerceContractId instrumentFactoryCid
-        submitMulti [depository] readAs do
-          exerciseCmd tokenIssuerFactoryCid TokenIssuerFactory.Create with
-            depository
-            issuer
-            instrumentFactoryCid = tokenInstrumentFactoryCid
-            observers
-      other -> error ("Unsupported token type: " <> other)
+    let issuerCreateCmd instr =
+          let issuerFactoryCid = findCidByLabel instr.issuerFactory input.issuerFactories
+              instrumentFactoryCid = findCidByLabel instr.instrumentFactory input.instrumentFactories
+          in
+          case instr.instrumentType of
+            "Token" ->
+              let tokenIssuerFactoryCid : ContractId TokenIssuerFactory.I = coerceContractId issuerFactoryCid
+                  tokenInstrumentFactoryCid : ContractId TokenFactory.F = coerceContractId instrumentFactoryCid
+              in
+              coerceContractId <$> exerciseCmd tokenIssuerFactoryCid TokenIssuerFactory.Create with
+                depository
+                issuer
+                instrumentFactoryCid = tokenInstrumentFactoryCid
+                observers
+            other -> error ("Unsupported instrument type: " <> other)
+    issuers <- forA settings.instruments $ \instr -> do
+      issuerCid <- submitMulti [depository] readAs (issuerCreateCmd instr)
+      pure Issuer with cid = issuerCid, label = instr.label, issuer, depository, instrumentType = instr.instrumentType
+    publisher <- case settings.publisher of
+      Some p -> do
+        publisherCid <- submitMulti [depository] readAs do
+          exerciseCmd
+            (findCidByLabel p.publisherFactory input.instrumentMetadataPublisherFactories)
+            MetadataPublisherFactory.Create with
+              depository
+              issuer
+              metadataFactoryCid = findCidByLabel p.metadataFactory input.instrumentMetadataFactories
+              observers
+        pure $ Some MetadataPublisher with cid = publisherCid, label = p.label, issuer, depository
+      None -> pure None
+    pure (issuers, publisher)
+  pure CreateIssuersOutput with
+    issuers = concatMap fst contracts
+    instrumentMetadataPublishers = O.mapOptional snd contracts
 
 data MinterBurnerSettings = MinterBurnerSettings
   with
@@ -76,7 +135,7 @@ createMinterBurners input = do
     let custodian = p settings.custodian
         depository = p settings.depository
         issuer = p settings.issuer
-        minterBurnerFactoryCid = findFactoryContractId settings.minterBurnerFactory input.minterBurnerFactories
+        minterBurnerFactoryCid = findCidByLabel settings.minterBurnerFactory input.minterBurnerFactories
         observers = asPartiesMap p settings.observers
     submit custodian do
       exerciseCmd minterBurnerFactoryCid MinterBurnerFactory.Create with

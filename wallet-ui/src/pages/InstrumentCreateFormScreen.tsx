@@ -14,6 +14,7 @@ import { Issuer as TokenIssuer } from "@daml.js/synfini-issuer-onboarding-instru
 import { v4 as uuid } from "uuid";
 import Modal from "react-modal";
 import { useWalletUser } from "../App";
+import { walletOperator } from "../Configuration";
 
 export const InstrumentCreateFormScreen: React.FC = () => {
   const nav = useNavigate();
@@ -21,7 +22,7 @@ export const InstrumentCreateFormScreen: React.FC = () => {
   const ledger = userContext.useLedger();
   const { primaryParty } = useWalletUser();
   const wallet_depository = process.env.REACT_APP_PARTIES_ENVIRONMENTAL_TOKEN_DEPOSITORY || "";
-  const wallet_operator = process.env.REACT_APP_PARTIES_WALLET_OPERATOR || "";
+  const wallet_operator = walletOperator;
   const wallet_public = process.env.REACT_APP_PARTIES_PUBLIC || "";
 
   const [productTypeInput, setProductTypeInput] = useState("");

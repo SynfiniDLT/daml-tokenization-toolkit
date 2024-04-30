@@ -231,27 +231,13 @@ public class WalletRepository {
       ps.setString(6, versionStr);
       ps.setString(7, versionStr);
     };
-    final var instruments = jdbcTemplate.query(
+    return jdbcTemplate.query(
     commonSelect + "\n" +
       "FROM token_instruments t INNER JOIN instrument_witnesses ON t.cid = instrument_witnesses.cid\n" +
       commonWhereOrder,
       commonSetVars,
       new TokenInstrumentRowMapper()
     );
-
-    instruments.addAll(
-      jdbcTemplate.query(
-      commonSelect + ",\n" +
-        "  t.owner AS owner,\n" +
-        "  t.attributes attributes\n" +
-        "FROM pba_instruments t INNER JOIN instrument_witnesses ON t.cid = instrument_witnesses.cid\n" +
-        commonWhereOrder,
-        commonSetVars,
-        new PbtInstrumentRowMapper()
-      )
-    );
-
-    return instruments;
   }
 
   public List<IssuerSummary> issuers(Optional<String> depository, Optional<String> issuer, List<String> readAs) {
@@ -618,26 +604,6 @@ public class WalletRepository {
               rs.getString("description"),
               rs.getTimestamp("valid_as_of").toInstant()
             )
-          )
-        ),
-        Optional.empty()
-      );
-    }
-  }
-
-  private static class PbtInstrumentRowMapper implements RowMapper<InstrumentSummary> {
-    @Override
-    public InstrumentSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return new InstrumentSummary(
-        new Instrument.ContractId(rs.getString("cid")),
-        Optional.empty(),
-        Optional.of(
-          new synfini.interface$.instrument.partyboundattributes.instrument.View(
-            getInstrumentKey(rs),
-            rs.getString("description"),
-            rs.getTimestamp("valid_as_of").toInstant(),
-            rs.getString("owner"),
-            (Map<String, String>) rs.getObject("attributes")
           )
         )
       );

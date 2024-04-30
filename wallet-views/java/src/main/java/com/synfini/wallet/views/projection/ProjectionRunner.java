@@ -16,7 +16,6 @@ import com.synfini.wallet.views.projection.generators.batch.BatchesProjectionGen
 import com.synfini.wallet.views.projection.generators.holding.HoldingsProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.instruction.InstructionExecutionsProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.instruction.InstructionsProjectionGenerator;
-import com.synfini.wallet.views.projection.generators.instrument.PbaProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.instrument.TokenProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.issuer.TokenIssuerProjectionGenerator;
 import com.synfini.wallet.views.projection.generators.witness.WitnessProjectionGenerator;
@@ -90,7 +89,7 @@ public class ProjectionRunner implements Callable<Integer> {
     dbConfig.setJdbcUrl(springDbConfig.url);
     dbConfig.setUsername(springDbConfig.user);
     dbConfig.setPassword(springDbConfig.password);
-    dbConfig.setMaximumPoolSize(28); // TODO this should be set based on the number projections (e.g. 2 * numProjections)
+    dbConfig.setMaximumPoolSize(26); // TODO this should be set based on the number projections (e.g. 2 * numProjections)
 
     final Optional<SharedTokenCallCredentials> tokenCreds;
     if (tokenUrl.isPresent()) {
@@ -173,17 +172,10 @@ public class ProjectionRunner implements Callable<Integer> {
 
       // Instruments
       new TokenProjectionGenerator(readAs),
-      new PbaProjectionGenerator(readAs),
       new WitnessProjectionGenerator(
         readAs,
         "token_instruments",
         daml.finance.interface$.instrument.token.instrument.Instrument.INTERFACE,
-        "instrument_witnesses"
-      ),
-      new WitnessProjectionGenerator(
-        readAs,
-        "pba_instruments",
-        synfini.interface$.instrument.partyboundattributes.instrument.Instrument.INTERFACE,
         "instrument_witnesses"
       ),
 

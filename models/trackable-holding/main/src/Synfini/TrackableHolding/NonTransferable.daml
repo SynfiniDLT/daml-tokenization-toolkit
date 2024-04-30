@@ -1,0 +1,71 @@
+module Synfini.TrackableHolding.NonTransferable where
+
+import Daml.Finance.Holding.NonTransferable qualified as Default
+import Daml.Finance.Holding.Util qualified as ImplUtil
+import Daml.Finance.Util.Disclosure qualified as ImplUtil
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Holding.Base qualified as Base
+import Daml.Finance.Interface.Holding.Factory qualified as Base
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+-- HasField observers instance needed to make the implementation of Disclosure.I compile
+instance HasField "observers" NonTransferable PartiesMap where
+  getField f = f.defaultNonTransferable.observers
+  setField obs f = f with defaultNonTransferable.observers = obs
+
+-- | Non-transferable and non-fungible holding which can be tracked by additional observers: i.e. any consuming choices
+-- will result in a new holding which maintains the same additional observers.
+template NonTransferable
+  with
+    defaultNonTransferable : Default.NonTransferable -- ^ Default implementation of a non-transferable, non-fungible
+      -- Holding.
+    trackers : Parties -- ^ Additional observers which cannot be removed from the contract.
+  where
+    signatory (signatory defaultNonTransferable)
+    observer (observer defaultNonTransferable), trackers
+
+    ensure (ensure defaultNonTransferable)
+
+    interface instance Disclosure.I for NonTransferable where
+      view = view @Disclosure.I (toInterface defaultNonTransferable)
+      setObservers = ImplUtil.setObserversImpl @_ @Disclosure.I this None
+      addObservers = ImplUtil.addObserversImpl @_ @Disclosure.I this None
+      removeObservers = ImplUtil.removeObserversImpl @_ @Disclosure.I this None
+
+    interface instance Base.I for NonTransferable where
+      view = view @Base.I (toInterface defaultNonTransferable)
+      acquire = ImplUtil.acquireImpl this.defaultNonTransferable.lock (\lock -> this with defaultNonTransferable.lock = lock)
+      release = ImplUtil.releaseImpl this.defaultNonTransferable.lock (\lock -> this with defaultNonTransferable.lock = lock)
+
+-- HasField observers instance needed to make the implementation of Disclosure.I compile
+instance HasField "observers" Factory PartiesMap where
+  getField f = f.defaultFactory.observers
+  setField obs f = f with defaultFactory.observers = obs
+
+-- | Factory use to create instances of trackable, non-transferable, non-fungible holdings.
+template Factory
+  with
+    defaultFactory : Default.Factory -- ^ Default implementation of the 'Factory' interface.
+    holdingTrackers : Parties -- ^ Parties which are always added as observers onto any Holdings created with this
+      -- factory.
+  where
+    signatory (signatory defaultFactory)
+    observer (observer defaultFactory)
+
+    interface instance Base.F for Factory
+      where
+        view = view @Base.F (toInterface defaultFactory)
+        create' args = do
+          defaultNonTransferableCid <- Base.create' (toInterface defaultFactory) args
+          defaultNonTransferable <- fetch (coerceContractId defaultNonTransferableCid)
+          archive defaultNonTransferableCid
+          toInterfaceContractId <$>
+            create NonTransferable with defaultNonTransferable, trackers = holdingTrackers
+
+    interface instance Disclosure.I for Factory where
+      view = view @Disclosure.I (toInterface defaultFactory)
+      setObservers = ImplUtil.setObserversImpl @Factory @Disclosure.I this None
+      addObservers = ImplUtil.addObserversImpl @Factory @Disclosure.I this None
+      removeObservers = ImplUtil.removeObserversImpl @Factory @Disclosure.I this None

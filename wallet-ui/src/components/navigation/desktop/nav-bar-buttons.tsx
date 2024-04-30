@@ -2,7 +2,8 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { LoginButton } from "../../buttons/login-button";
 import { LogoutButton } from "../../buttons/logout-button";
 import HoverPopUp from "../../layout/hoverPopUp";
-import { useWalletUser, walletMode } from "../../../App";
+import { useWalletUser } from "../../../App";
+import { walletMode } from "../../../Configuration";
 
 export const NavBarButtons = () => {
   const { isAuthenticated, user } = useAuth0();

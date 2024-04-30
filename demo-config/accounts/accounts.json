@@ -3,10 +3,25 @@
   "accountFactory": "v1",
   "accountSettings": [
     {
+      "owner": "StableCoinIssuer",
+      "custodian": "SynfiniValidator",
+      "id": "sbt-001",
+      "description": "Soul bound tokens",
+      "incomingControllers": ["StableCoinIssuer"],
+      "outgoingControllers": ["StableCoinIssuer"],
+      "holdingFactory": "NonTransferableV1",
+      "observers": [
+        {
+          "context": "setup",
+          "parties": ["WalletOperator"]
+        }
+      ]
+    },
+    {
       "owner": "InvestorA",
       "custodian": "SynfiniValidator",
-      "id": "001",
-      "description": "Synfini account 1",
+      "id": "hold-001",
+      "description": "Synfini holdings",
       "incomingControllers": ["InvestorA"],
       "outgoingControllers": ["InvestorA"],
       "holdingFactory": "FungibleV1",
@@ -18,10 +33,27 @@
       ]
     },
     {
+      "owner": "InvestorA",
+      "custodian": "SynfiniValidator",
+      "id": "sbt-001",
+      "description": "Soul bound tokens",
+      "incomingControllers": ["InvestorA"],
+      "outgoingControllers": ["InvestorA"],
+      "holdingFactory": "NonTransferableV1",
+      "observers": [
+        {
+          "context": "setup",
+          "parties": [
+            "SynfiniValidator", "WalletOperator"
+          ]
+        }
+      ]
+    },
+    {
       "owner": "InvestorB",
       "custodian": "SynfiniValidator",
-      "id": "001",
-      "description": "Synfini account 1",
+      "id": "hold-001",
+      "description": "Synfini holdings",
       "incomingControllers": ["InvestorB"],
       "outgoingControllers": ["InvestorB"],
       "holdingFactory": "FungibleV1",
@@ -33,10 +65,31 @@
       ]
     },
     {
+      "owner": "InvestorB",
+      "custodian": "SynfiniValidator",
+      "id": "sbt-001",
+      "description": "Soul bound tokens",
+      "incomingControllers": [
+        "InvestorB"
+      ],
+      "outgoingControllers": [
+        "InvestorB"
+      ],
+      "holdingFactory": "NonTransferableV1",
+      "observers": [
+        {
+          "context": "setup",
+          "parties": [
+            "SynfiniValidator", "WalletOperator"
+          ]
+        }
+      ]
+    },
+    {
       "owner": "FundA",
       "custodian": "SynfiniValidator",
-      "id": "001",
-      "description": "Synfini account 1",
+      "id": "hold-001",
+      "description": "Synfini holdings",
       "incomingControllers": ["FundA"],
       "outgoingControllers": ["FundA"],
       "holdingFactory": "FungibleV1",
@@ -48,10 +101,25 @@
       ]
     },
     {
+      "owner": "FundA",
+      "custodian": "SynfiniValidator",
+      "id": "sbt-001",
+      "description": "Soul bound tokens",
+      "incomingControllers": ["FundA"],
+      "outgoingControllers": ["FundA"],
+      "holdingFactory": "NonTransferableV1",
+      "observers": [
+        {
+          "context": "setup",
+          "parties": ["WalletOperator"]
+        }
+      ]
+    },
+    {
       "owner": "FundManagerA",
       "custodian": "SynfiniValidator",
-      "id": "001",
-      "description": "Synfini account 1",
+      "id": "hold-001",
+      "description": "Synfini holdings",
       "incomingControllers": ["FundManagerA"],
       "outgoingControllers": ["FundManagerA"],
       "holdingFactory": "FungibleV1",
@@ -63,13 +131,13 @@
       ]
     },
     {
-      "owner": "InvestorA",
+      "owner": "FundManagerA",
       "custodian": "SynfiniValidator",
-      "id": "002",
-      "description": "Synfini account 2",
-      "incomingControllers": ["InvestorA"],
-      "outgoingControllers": ["InvestorA"],
-      "holdingFactory": "FungibleV1",
+      "id": "sbt-001",
+      "description": "Soul bound tokens",
+      "incomingControllers": ["FundManagerA"],
+      "outgoingControllers": ["FundManagerA"],
+      "holdingFactory": "NonTransferableV1",
       "observers": [
         {
           "context": "setup",
@@ -78,52 +146,10 @@
       ]
     },
     {
-      "owner": "InvestorA",
-      "custodian": "SbtIssuer",
-      "id": "sbt",
-      "description": "sbt account",
-      "incomingControllers": [
-        "SbtIssuer"
-      ],
-      "outgoingControllers": [
-        "SbtIssuer"
-      ],
-      "holdingFactory": "NonTransferableV1",
-      "observers": [
-        {
-          "context": "setup",
-          "parties": [
-            "SynfiniValidator", "WalletOperator"
-          ]
-        }
-      ]
-    },
-    {
-      "owner": "InvestorB",
-      "custodian": "SbtIssuer",
-      "id": "sbt",
-      "description": "sbt account",
-      "incomingControllers": [
-        "SbtIssuer"
-      ],
-      "outgoingControllers": [
-        "SbtIssuer"
-      ],
-      "holdingFactory": "NonTransferableV1",
-      "observers": [
-        {
-          "context": "setup",
-          "parties": [
-            "SynfiniValidator", "WalletOperator"
-          ]
-        }
-      ]
-    },
-    {
       "owner": "EnvironmentalTokenIssuer",
       "custodian": "SynfiniValidator",
-      "id": "001",
-      "description": "Synfini account 1",
+      "id": "hold-001",
+      "description": "Synfini holdings",
       "incomingControllers": ["EnvironmentalTokenIssuer"],
       "outgoingControllers": ["EnvironmentalTokenIssuer"],
       "holdingFactory": "FungibleV1",
@@ -137,8 +163,8 @@
     {
       "owner": "ProducerA",
       "custodian": "SynfiniValidator",
-      "id": "001",
-      "description": "Synfini account 1",
+      "id": "hold-001",
+      "description": "Synfini holdings",
       "incomingControllers": ["ProducerA"],
       "outgoingControllers": ["ProducerA"],
       "holdingFactory": "FungibleV1",

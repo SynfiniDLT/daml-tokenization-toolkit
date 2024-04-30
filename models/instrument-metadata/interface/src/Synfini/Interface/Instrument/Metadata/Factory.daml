@@ -1,0 +1,48 @@
+module Synfini.Interface.Instrument.Metadata.Factory where
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Synfini.Interface.Instrument.Metadata.Metadata qualified as Metadata
+
+-- | Type synonym for 'Factory'.
+type I = Factory
+
+-- | Type synonym for 'View'.
+type V = View
+
+-- | View of 'Factory'.
+data View = View
+  with
+    provider : Party -- ^ Provider of the 'Factory'.
+  deriving (Eq, Show)
+
+-- | Factory to instantiate 'Metadata's.
+interface Factory requires Disclosure.I where
+  viewtype V
+
+  -- | Implementation of the 'Create' choice.
+  create' : Create -> Update (ContractId Metadata.I)
+
+  -- | Implementation of 'Remove' choice.
+  remove : Remove -> Update ()
+
+  -- | Create new metadata.
+  nonconsuming choice Create : ContractId Metadata.I
+    with
+      instrument : InstrumentKey -- ^ The instrument's key.
+      attributes : Metadata.Attributes -- ^ Attributes of the instrument.
+      disclosureControllers : Parties -- ^ Controllers of the 'Disclosure' interface choices on the metadata.
+      observers : PartiesMap -- ^ The observers of the 'Metadata'.
+    controller instrument.depository, instrument.issuer
+    do
+      create' this arg
+
+  -- | Archive metadata.
+  nonconsuming choice Remove : ()
+    with
+      instrument : InstrumentKey -- ^ The instrument's key.
+    controller instrument.depository, instrument.issuer
+      do
+        remove this arg

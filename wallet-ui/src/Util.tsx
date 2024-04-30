@@ -1,4 +1,8 @@
-import { Set } from "@daml.js/da-set/lib/DA/Set/Types";
+import { Set as DamlSet } from "@daml.js/da-set/lib/DA/Set/Types";
+import { View as HoldingView } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Base";
+import { View as DisclosureView } from "@daml.js/daml-finance-interface-util/lib/Daml/Finance/Interface/Util/Disclosure";
+import { View as MetadataView } from "@daml.js/synfini-instrument-metadata-interface/lib/Synfini/Interface/Instrument/Metadata/Metadata";
+import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlTypes from "@daml/types";
 
 export function formatCurrency(amountString: string, locale: string): string {
@@ -45,8 +49,7 @@ export const toDateTimeString = (inputDate: damlTypes.Time) => {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
-    fractionalSecondDigits: 3,
+    hourCycle: "h12"
   });
 };
 
@@ -62,7 +65,7 @@ export const formatPercentage = (percentageString: string) => {
 
 export const wait = (n: number) => new Promise((resolve) => setTimeout(resolve, n));
 
-export function arrayToSet<T>(elements: T[]): Set<T> {
+export function arrayToSet<T>(elements: T[]): DamlSet<T> {
   const empty: damlTypes.Map<T, {}> = damlTypes.emptyMap();
 
   return {
@@ -76,6 +79,18 @@ export function arrayToMap<K, V>(elements: [K, V][]): damlTypes.Map<K, V> {
   return elements.reduce((m, [k, v]) => m.set(k, v), empty);
 }
 
+export function flattenObservers(observers: damlTypes.Map<string, DamlSet<damlTypes.Party>>): damlTypes.Party[] {
+  const observersArray = observers
+    .entriesArray()
+    .flatMap(([_, obs]) => setToArray(obs));
+
+  return setToArray(arrayToSet(observersArray)); // Remove any duplicates by converting to set
+}
+
+export function setToArray<T>(set: DamlSet<T>): T[] {
+  return set.map.entriesArray().map(([x, _]) => x);
+}
+
 // React does not copy down the functions available on state variables, so we use this workaround to add these methods
 // back onto the `Map` instance
 export function repairMap<K, V>(map: damlTypes.Map<K, V>) {
@@ -84,3 +99,17 @@ export function repairMap<K, V>(map: damlTypes.Map<K, V>) {
     Object.setPrototypeOf(map, mapProtoType);
   }
 }
+
+export type MetadataSummary = {
+  cid: damlTypes.ContractId<any>;
+  view: MetadataView;
+  disclosureView?: DisclosureView;
+}
+
+export type InstrumentMetadataSummary = {
+  instrument: InstrumentSummary;
+  metadata: MetadataSummary;
+  holding: {
+    view: HoldingView
+  }
+};

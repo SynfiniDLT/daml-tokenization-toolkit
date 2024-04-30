@@ -94,7 +94,7 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
               <span style={{ color: "white" }}>There aren"t any environmental tokens created by this party.</span>
             ) : (
               <>
-                <table id="assets">
+                <table className="assets">
                   <thead>
                     <tr>
                       <th>Product Type</th>

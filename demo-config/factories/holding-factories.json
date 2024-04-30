@@ -25,7 +25,8 @@
             "SynfiniPublic"
           ]
         }
-      ]
+      ],
+      "holdingTrackers": ["WalletOperator", "SbtIssuer"]
     }
   ]
 }

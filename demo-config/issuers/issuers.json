@@ -2,9 +2,19 @@
   "readAs": ["SynfiniPublic"],
   "issuerSettings": [
     {
-      "issuerFactory" : "token.V1",
-      "instrumentFactory" : "token.V1",
-      "instrumentType" : "Token",
+      "instruments" : [
+        {
+          "label": "StableCoin.V1",
+          "issuerFactory" : "token.V1",
+          "instrumentFactory" : "token.V1",
+          "instrumentType": "Token"
+        }
+      ],
+      "publisher": {
+        "label": "StableCoin.V1",
+        "publisherFactory": "v1",
+        "metadataFactory": "v1"
+      },
       "depository" : "StableCoinDepository",
       "issuer" : "StableCoinIssuer",
       "observers" : [
@@ -15,11 +25,67 @@
       ]
     },
     {
-      "issuerFactory" : "token.V1",
-      "instrumentFactory" : "token.V1",
-      "instrumentType" : "Token",
+      "instruments" : [
+        {
+          "label": "FundA.V1",
+          "issuerFactory" : "token.V1",
+          "instrumentFactory" : "token.V1",
+          "instrumentType": "Token"
+        }
+      ],
+      "publisher": {
+        "label": "FundA.V1",
+        "publisherFactory": "v1",
+        "metadataFactory": "v1"
+      },
+      "depository" : "FundDepository",
+      "issuer" : "FundA",
+      "observers" : [
+        {
+          "context": "setup",
+          "parties": ["WalletOperator"]
+        }
+      ]
+    },
+    {
+      "instruments" : [
+        {
+          "label": "EnvironmentalToken.V1",
+          "issuerFactory" : "token.V1",
+          "instrumentFactory" : "token.V1",
+          "instrumentType": "Token"
+        }
+      ],
+      "publisher": {
+        "label": "EnvironmentalToken.V1",
+        "publisherFactory": "v1",
+        "metadataFactory": "v1"
+      },
       "depository" : "EnvironmentalTokenDepository",
       "issuer" : "EnvironmentalTokenIssuer",
+      "observers" : [
+        {
+          "context": "setup",
+          "parties": ["WalletOperator"]
+        }
+      ]
+    },
+    {
+      "instruments" : [
+        {
+          "label": "SbtIssuer.V1",
+          "issuerFactory" : "token.V1",
+          "instrumentFactory" : "token.V1",
+          "instrumentType": "Token"
+        }
+      ],
+      "publisher": {
+        "label": "SbtIssuer.V1",
+        "publisherFactory": "v1",
+        "metadataFactory": "v1"
+      },
+      "depository" : "SbtDepository",
+      "issuer" : "SbtIssuer",
       "observers" : [
         {
           "context": "setup",

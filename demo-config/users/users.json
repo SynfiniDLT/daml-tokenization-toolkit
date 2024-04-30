@@ -78,6 +78,16 @@
       "readAs": [
         "SynfiniPublic"
       ]
+    },
+    {
+      "userId": "auth0|6620701796f4af12900c8182",
+      "primaryParty": "SbtIssuer",
+      "actAs": [
+        "SbtIssuer"
+      ],
+      "readAs": [
+        "SynfiniPublic"
+      ]
     }
   ]
 }

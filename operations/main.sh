@@ -39,9 +39,17 @@ export DOPS_INSTRUMENT_FACTORIES_FILE=${DOPS_INTERNAL}/instrument-factories.json
 if [ ! -f "${DOPS_INSTRUMENT_FACTORIES_FILE}" ]; then
   echo '{"instrumentFactories": []}' > "${DOPS_INSTRUMENT_FACTORIES_FILE}"
 fi
+export DOPS_INSTRUMENT_METADATA_FACTORIES_FILE=${DOPS_INTERNAL}/instrument-metadata-factories.json
+if [ ! -f "${DOPS_INSTRUMENT_METADATA_FACTORIES_FILE}" ]; then
+  echo '{"instrumentMetadataFactories": []}' > "${DOPS_INSTRUMENT_METADATA_FACTORIES_FILE}"
+fi
 export DOPS_ISSUER_FACTORIES_FILE=${DOPS_INTERNAL}/issuer-factories.json
 if [ ! -f "${DOPS_ISSUER_FACTORIES_FILE}" ]; then
   echo '{"issuerFactories": []}' > "${DOPS_ISSUER_FACTORIES_FILE}"
+fi
+export DOPS_INSTRUMENT_METADATA_PUBLISHER_FACTORIES_FILE=${DOPS_INTERNAL}/instrument-metadata-publisher-factories.json
+if [ ! -f "${DOPS_INSTRUMENT_METADATA_PUBLISHER_FACTORIES_FILE}" ]; then
+  echo '{"instrumentMetadataPublisherFactories": []}' > "${DOPS_INSTRUMENT_METADATA_PUBLISHER_FACTORIES_FILE}"
 fi
 export DOPS_MINTER_BURNER_FACTORIES_FILE=${DOPS_INTERNAL}/minter-burner-factories.json
 if [ ! -f "${DOPS_MINTER_BURNER_FACTORIES_FILE}" ]; then
@@ -54,6 +62,14 @@ fi
 export DOPS_ACCOUNT_OPEN_OFFERS_FILE=${DOPS_INTERNAL}/account-open-offers.json
 if [ ! -f "${DOPS_ACCOUNT_OPEN_OFFERS_FILE}" ]; then
   echo '{"accountOpenOffers": []}' > "${DOPS_ACCOUNT_OPEN_OFFERS_FILE}"
+fi
+export DOPS_ISSUERS_FILE=${DOPS_INTERNAL}/issuers.json
+if [ ! -f "${DOPS_ISSUERS_FILE}" ]; then
+  echo '{"issuers": []}' > "${DOPS_ISSUERS_FILE}"
+fi
+export DOPS_INSTRUMENT_METADATA_PUBLISHERS_FILE=${DOPS_INTERNAL}/instrument-metadata-publishers.json
+if [ ! -f "${DOPS_INSTRUMENT_METADATA_PUBLISHERS_FILE}" ]; then
+  echo '{"instrumentMetadataPublishers": []}' > "${DOPS_INSTRUMENT_METADATA_PUBLISHERS_FILE}"
 fi
 
 if [ -z ${1+x} ]; then
@@ -110,8 +126,12 @@ elif [ "$command" = "create-settlement-open-offer-factories" ]; then
   ${dops_commands}/create-settlement-open-offer-factories.sh $@
 elif [ "$command" = "create-instrument-factories" ]; then
   ${dops_commands}/create-instrument-factories.sh $@
+elif [ "$command" = "create-instrument-metadata-factories" ]; then
+  ${dops_commands}/create-instrument-metadata-factories.sh $@
 elif [ "$command" = "create-issuer-factories" ]; then
   ${dops_commands}/create-issuer-factories.sh $@
+elif [ "$command" = "create-instrument-metadata-publisher-factories" ]; then
+  ${dops_commands}/create-instrument-metadata-publisher-factories.sh $@
 elif [ "$command" = "create-minter-burner-factories" ]; then
   ${dops_commands}/create-minter-burner-factories.sh $@
 elif [ "$command" = "create-route-providers" ]; then
@@ -122,8 +142,6 @@ elif [ "$command" = "create-account-open-offers" ]; then
   ${dops_commands}/create-open-account-offer.sh $@
 elif [ "$command" = "take-account-open-offers" ]; then
   ${dops_commands}/take-open-account-offer.sh $@
-elif [ "$command" = "create-pbas-unilateral" ]; then
-  ${dops_commands}/create-pbas-unilateral.sh $@
 elif [ "$command" = "create-settlement-open-offers" ]; then
   ${dops_commands}/create-settlement-open-offers.sh $@
 elif [ "$command" = "take-settlement-open-offer" ]; then
@@ -136,6 +154,8 @@ elif [ "$command" = "create-issuers" ]; then
   ${dops_commands}/create-issuers.sh $@
 elif [ "$command" = "create-minter-burners" ]; then
   ${dops_commands}/create-minter-burners.sh $@
+elif [ "$command" = "create-instruments" ]; then
+  ${dops_commands}/create-instruments.sh $@
 else
   echo "Unsupported command: $command"
   exit 1

@@ -1,0 +1,46 @@
+module Synfini.Interface.Onboarding.Issuer.Metadata.Factory where
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Synfini.Interface.Onboarding.Issuer.Metadata.Publisher qualified as Publisher
+import Synfini.Interface.Instrument.Metadata.Factory qualified as MetadataFactory
+
+-- | View of a 'Factory'.
+data View = View
+  with
+    provider : Party -- ^ Provider of the 'Factory'.
+  deriving (Show, Eq)
+
+-- | Type synonym for 'View'.
+type V = View
+
+-- | Factory to create instances of 'Publisher'.
+interface Factory requires Disclosure.I where
+  viewtype V
+
+  -- | Implementation of the 'Create' choice.
+  create' : Create -> Update (ContractId Publisher.I)
+
+  -- | Retrieves the interface view.
+  nonconsuming choice GetView : V
+    with
+      viewer : Party -- ^ The party retrieving the view.
+    controller viewer
+    do
+      pure $ view this
+
+  -- | Create a 'Publisher'.
+  nonconsuming choice Create : ContractId Publisher.I
+    with
+      depository : Party -- ^ Depository of instruments at which the issuer can publish metadata.
+      issuer : Party -- ^ Issuer which can create metadata for their instruments.
+      metadataFactoryCid : ContractId MetadataFactory.I -- ^ Factory used to create metadata instances.
+      observers : PartiesMap -- ^ Observers of the 'Publisher'.
+    controller depository
+    do
+      create' this arg
+
+-- | Type synonym for 'Factory'.
+type I = Factory

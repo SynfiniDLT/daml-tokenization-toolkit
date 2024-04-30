@@ -1,0 +1,16 @@
+{
+  "minterBurnerSettings": [
+    {
+      "minterBurnerFactory": "v1",
+      "custodian": "SynfiniValidator",
+      "depository": "SbtDepository",
+      "issuer": "SbtIssuer",
+      "observers": [
+        {
+          "context": "setup",
+          "parties": ["WalletOperator"]
+        }
+      ]
+    }
+  ]
+}

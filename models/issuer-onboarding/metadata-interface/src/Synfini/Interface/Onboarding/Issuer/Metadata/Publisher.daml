@@ -1,0 +1,53 @@
+module Synfini.Interface.Onboarding.Issuer.Metadata.Publisher where
+
+import Daml.Finance.Interface.Types.Common.Types
+
+import Daml.Finance.Interface.Util.Disclosure qualified as Disclosure
+
+import Synfini.Interface.Instrument.Metadata.Metadata qualified as Metadata
+import Synfini.Interface.Instrument.Metadata.Factory qualified as MetadataFactory
+
+-- | View of a 'Publisher'.
+data View = View
+  with
+    depository : Party -- ^ Depository of instruments at which the issuer can publish metadata.
+    issuer : Party -- ^ Issuer which can create metadata for their instruments.
+    metadataFactoryCid : ContractId MetadataFactory.I -- ^ Factory used to create metadata instances.
+  deriving (Show, Eq)
+
+-- | Type synonym for 'View'.
+type V = View
+
+-- | Interface to allow issuers to publish metadata for their instruments at a depository.
+interface Publisher requires Disclosure.I where
+  viewtype V
+
+  -- | Implementation of the 'PublishMetadata' choice.
+  publishMetadata : PublishMetadata -> Update (ContractId Metadata.I)
+
+  -- | Implementation of the 'RemoveMetadata' choice.
+  removeMetadata : RemoveMetadata -> Update ()
+
+  -- | Create a 'Metadata' contract.
+  nonconsuming choice PublishMetadata : ContractId Metadata.I
+    with
+      id : Id -- ^ ID of the instrument which the metadata is for.
+      version : Text -- ^ Version of the instrument which the metadata is for.
+      attributes : Metadata.Attributes -- ^ Attributes to store on the metadata.
+      disclosureControllers : Parties -- ^ Disclosure controllers of the metadata.
+      observers : PartiesMap -- ^ Observers of the metadata.
+    controller (view this).issuer
+    do
+      publishMetadata this arg
+
+  -- | Archive a 'Metadata' contract.
+  nonconsuming choice RemoveMetadata : ()
+    with
+      id : Id -- ^ ID of the instrument which the metadata is for.
+      version : Text -- ^ Version of the instrument which the metadata is for.
+    controller (view this).issuer
+    do
+      removeMetadata this arg
+
+-- | Type synonym for 'Publisher'.
+type I = Publisher
