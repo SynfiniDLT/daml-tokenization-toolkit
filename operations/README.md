@@ -744,9 +744,9 @@ A party involved in the proposed settlement is captured using the following JSON
 
 ```js
  // Either:
-{"party": "alice"}, // Label of an instructor party
+{"party": "alice"}, // Label of the party
 // ... or ...
-{"taker": {}} // An instructor party which will be set to the taker party when the `Accept` choice is exercised. The
+{"taker": {}} // A party which will be set to the taker party when the `Accept` choice is exercised. The
 // empty JSON `{}` is required
 ```
 
