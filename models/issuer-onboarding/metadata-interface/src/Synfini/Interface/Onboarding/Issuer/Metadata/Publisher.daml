@@ -28,6 +28,14 @@ interface Publisher requires Disclosure.I where
   -- | Implementation of the 'RemoveMetadata' choice.
   removeMetadata : RemoveMetadata -> Update ()
 
+  -- | Retrieves the interface view.
+  nonconsuming choice GetView : V
+    with
+      viewer : Party -- ^ The party fetching the view.
+    controller viewer
+    do
+      pure (view this)
+
   -- | Create a 'Metadata' contract.
   nonconsuming choice PublishMetadata : ContractId Metadata.I
     with

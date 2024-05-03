@@ -43,10 +43,10 @@ const AssetDetailsScreen: React.FC = () => {
   const walletClient = useWalletViews();
 
   const [refreshInstrument, setRefreshInstrument] = useState(0);
-  const [isInstrumentDirty, setIsInstrumentDirty] = useState(true);
+  const [isInstrumentDirty, setIsInstrumentDirty] = useState<boolean>();
 
   const [refreshMetadata, setRefreshMetadata] = useState(0);
-  const [isMetadataDirty, setIsMetadataDirty] = useState(true);
+  const [isMetadataDirty, setIsMetadataDirty] = useState<boolean>();
 
   const [nonFungbileHolding, setNonFungibleHolding] = useState<CreateEvent<Base>>();
   const [holdingDisclosure, setHoldingDisclosure] = useState<DisclosureView>();
@@ -76,7 +76,7 @@ const AssetDetailsScreen: React.FC = () => {
       }
     };
 
-    if (isInstrumentDirty) {
+    if (isInstrumentDirty === true || isInstrumentDirty === undefined) {
       fetchInstrument();
     }
   }, [walletClient, ledger, refreshInstrument, isInstrumentDirty, state.instrument]);
@@ -106,7 +106,7 @@ const AssetDetailsScreen: React.FC = () => {
       }
     };
 
-    if (isMetadataDirty) {
+    if (isMetadataDirty === true || isMetadataDirty === undefined) {
       fetchMetadata();
     }
   }, [ledger, refreshMetadata, isMetadataDirty, state.instrument]);
@@ -152,13 +152,13 @@ const AssetDetailsScreen: React.FC = () => {
   }, [ledger, state.instrument, instrumentSummary]);
 
   useEffect(() => {
-    if (isInstrumentDirty) {
+    if (isInstrumentDirty === true) {
       setRefreshInstrument(r => r + 1);
     }
   });
 
   useEffect(() => {
-    if (isMetadataDirty) {
+    if (isMetadataDirty === true) {
       setRefreshMetadata(r => r + 1);
     }
   });
@@ -191,6 +191,9 @@ const AssetDetailsScreen: React.FC = () => {
       return;
     }
 
+    setIsInstrumentDirty(true);
+    setIsMetadataDirty(true);
+
     const disclosers = arrayToSet([primaryParty]);
     const exerciseArgs = {
       disclosers,
@@ -206,17 +209,17 @@ const AssetDetailsScreen: React.FC = () => {
         Disclosure.RemoveObservers,
         instrumentSummary.cid as damlTypes.ContractId<any>, exerciseArgs
       ).then(([cid, _]) => {
-        if (cid !== null) {
-          setIsInstrumentDirty(true);
+        if (cid === null) {
+          setIsInstrumentDirty(false);
         }
       });
     const removeMetadataObs = metadata === undefined ?
       Promise.resolve() :
       ledger.exercise(Disclosure.RemoveObservers, metadata.contractId as damlTypes.ContractId<any>, exerciseArgs)
         .then(([cid, _]) => {
-          if (cid !== null) {
-            setIsInstrumentDirty(true);
-            setIsMetadataDirty(true);
+          if (cid === null) {
+            setIsInstrumentDirty(false);
+            setIsMetadataDirty(false);
           }
         });
     const removeHoldingsObs =
@@ -232,6 +235,8 @@ const AssetDetailsScreen: React.FC = () => {
         // setRefresh(refresh + 1);
       })
       .catch((err) => {
+        setIsInstrumentDirty(false);
+        setIsMetadataDirty(false);
         setIsModalOpen(true);
         setMessage("");
         setError(
@@ -248,6 +253,10 @@ const AssetDetailsScreen: React.FC = () => {
       setError("Internal error");
       return;
     }
+
+    setIsInstrumentDirty(true);
+    setIsMetadataDirty(true);
+
     const disclosers = arrayToSet([primaryParty]);
     const exerciseArgs = {
       disclosers,
@@ -263,14 +272,10 @@ const AssetDetailsScreen: React.FC = () => {
         Disclosure.AddObservers,
         instrumentSummary.cid as damlTypes.ContractId<any>,
         exerciseArgs
-      ).then(_ => setIsInstrumentDirty(true));
+      );
     const addMetadataObs = metadata === undefined ?
       Promise.resolve() :
-      ledger.exercise(Disclosure.AddObservers, metadata.contractId as damlTypes.ContractId<any>, exerciseArgs)
-        .then(_ => {
-          setIsInstrumentDirty(true);
-          setIsMetadataDirty(true);
-        });
+      ledger.exercise(Disclosure.AddObservers, metadata.contractId as damlTypes.ContractId<any>, exerciseArgs);
     const addHoldingsObs =
       nonFungbileHolding !== undefined && holdingDisclosure?.disclosureControllers.map.has(primaryParty) ?
       ledger.exercise(Disclosure.AddObservers, nonFungbileHolding.contractId as damlTypes.ContractId<any>, exerciseArgs) :
@@ -283,6 +288,8 @@ const AssetDetailsScreen: React.FC = () => {
         setIsModalOpen(true);
       })
       .catch((err) => {
+        setIsInstrumentDirty(false);
+        setIsMetadataDirty(false);
         setIsModalOpen(true);
         setMessage("");
         setError(
