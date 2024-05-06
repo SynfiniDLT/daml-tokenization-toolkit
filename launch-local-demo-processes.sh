@@ -157,6 +157,8 @@ create_identity_token InvestorB "Jane Smith" settle
 create_identity_token StableCoinIssuer "Acme Bank" settle
 create_identity_token FundA "ABC Investments" settle
 create_identity_token FundManagerA "ABC Fund Manager" settle
+create_identity_token EnvironmentalTokenIssuer "ESG Certifier Corp" settle
+create_identity_token ProducerA "Farmer XYZ" settle
 
 # Fund
 dops create-instruments ${config_dir}/fund/FundA-instrument.json

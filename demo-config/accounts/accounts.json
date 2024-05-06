@@ -161,6 +161,21 @@
       ]
     },
     {
+      "owner": "EnvironmentalTokenIssuer",
+      "custodian": "SynfiniValidator",
+      "id": "sbt-001",
+      "description": "Soul bound tokens",
+      "incomingControllers": ["EnvironmentalTokenIssuer"],
+      "outgoingControllers": ["EnvironmentalTokenIssuer"],
+      "holdingFactory": "NonTransferableV1",
+      "observers": [
+        {
+          "context": "setup",
+          "parties": ["WalletOperator"]
+        }
+      ]
+    },
+    {
       "owner": "ProducerA",
       "custodian": "SynfiniValidator",
       "id": "hold-001",
@@ -168,6 +183,21 @@
       "incomingControllers": ["ProducerA"],
       "outgoingControllers": ["ProducerA"],
       "holdingFactory": "FungibleV1",
+      "observers": [
+        {
+          "context": "setup",
+          "parties": ["WalletOperator"]
+        }
+      ]
+    },
+    {
+      "owner": "ProducerA",
+      "custodian": "SynfiniValidator",
+      "id": "sbt-001",
+      "description": "Soul bound tokens",
+      "incomingControllers": ["ProducerA"],
+      "outgoingControllers": ["ProducerA"],
+      "holdingFactory": "NonTransferableV1",
       "observers": [
         {
           "context": "setup",
