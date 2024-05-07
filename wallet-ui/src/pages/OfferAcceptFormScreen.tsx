@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { PageLayout } from "../components/PageLayout";
-import { userContext } from "../App";
+import { useWalletUser, userContext } from "../App";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   ContainerColumn,
@@ -12,6 +12,9 @@ import {
 import { OneTimeOffer } from "@daml.js/synfini-settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer";
 import Modal from "react-modal";
 import { CreateEvent } from "@daml/ledger";
+import { repairMap, setToArray } from "../Util";
+import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
+import { Step } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Types";
 
 type OfferAcceptFormScreenState = {
   offer: CreateEvent<OneTimeOffer, undefined, string>
@@ -20,14 +23,22 @@ type OfferAcceptFormScreenState = {
 export const OfferAcceptFormScreen: React.FC = () => {
   const nav = useNavigate();
   const { state } = useLocation() as { state: OfferAcceptFormScreenState };
+  repairMap(state.offer.payload.offerers.map);
+
   const ledger = userContext.useLedger();
+  const { primaryParty } = useWalletUser();
   const [transactionRefInput, setTransactionRefInput] = useState("");
-  const defaultQuantity = state.offer.payload.minQuantity || "0";
+  const defaultQuantity = state.offer.payload.minQuantity || "1";
   const [quantityInput, setQuantityInput] = useState(defaultQuantity);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
+
+  const handleInstrumentClick = (instrument: InstrumentKey) => {
+    nav("/asset", { state: { instrument } });
+  };
+
 
   const handleTransactionRef: React.ChangeEventHandler<HTMLInputElement> = (event) => {
     setTransactionRefInput(event.target.value);
@@ -77,6 +88,24 @@ export const OfferAcceptFormScreen: React.FC = () => {
       });
   };
 
+  function stepElements(delivery: boolean, steps: Step[]) {
+    const stepValues = steps
+      .filter(step => delivery ? step.sender === primaryParty : step.receiver === primaryParty)
+      .map((step, index) =>
+        <div key={index}>
+          <a onClick={_ => handleInstrumentClick(step.quantity.unit)}>
+            {parseFloat(quantityInput) * parseFloat(step.quantity.amount)} {step.quantity.unit.id.unpack} {step.quantity.unit.version}
+          </a>
+          {delivery ? ` to ${step.receiver}` : ` from ${step.sender}`}
+        </div>
+      );
+
+    return stepValues.length > 0 ? stepValues : <div>N/A</div>
+  }
+
+  const fixedAmount = state.offer.payload.maxQuantity !== null &&
+    state.offer.payload.maxQuantity === state.offer.payload.minQuantity;
+
   return (
     <PageLayout>
       <h3 className="profile__title">Accept Offer</h3>
@@ -84,12 +113,16 @@ export const OfferAcceptFormScreen: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <ContainerDiv style={{ height: "200px" }}>
             <ContainerColumn>
-              <ContainerColumnField>Offer: </ContainerColumnField>
-              <ContainerColumnField>Offer quantity: </ContainerColumnField>
-              <ContainerColumnField>Accept quantity: </ContainerColumnField>
-              <ContainerColumnField style={{ width: "200px", height: "20em" }}>Txn Reference: </ContainerColumnField>
+              <ContainerColumnField>ID: </ContainerColumnField>
+              <ContainerColumnField>Description: </ContainerColumnField>
+              <ContainerColumnField>Offered by: </ContainerColumnField>
+              <ContainerColumnField>Receivable: </ContainerColumnField>
+              <ContainerColumnField>Deliverable: </ContainerColumnField>
+              {!fixedAmount && <ContainerColumnField>Select amount: </ContainerColumnField>}
+              <ContainerColumnField>Reference: </ContainerColumnField>
+              {/* <ContainerColumnField style={{ width: "200px", height: "20em" }}>Txn Reference: </ContainerColumnField>
               <p></p>
-              <p></p>
+              <p></p> */}
               <button type="submit" className="button__login" disabled={isSubmitting}>
                 Submit
               </button>
@@ -98,32 +131,33 @@ export const OfferAcceptFormScreen: React.FC = () => {
               <ContainerColumnField style={{ width: "600px" }}>
                 {state.offer.payload.offerId.unpack}
               </ContainerColumnField>
-              <ContainerColumnAutoField style={{ width: "800px" }}>
-                {state.offer.payload.steps.map((step) => {
-                  return (
-                    <>
-                      <div>{step.quantity.unit.id.unpack}</div>
-                      <div>Issuer: {step.quantity.unit.issuer}</div>
-                      <div>Sender: {step.sender}</div>
-                      <p></p>
-                    </>
-                  );
-                })}
-              </ContainerColumnAutoField>
-              <ContainerColumnField></ContainerColumnField>
-              <ContainerColumnField>{state.offer.payload.maxQuantity}</ContainerColumnField>
-              <ContainerColumnField>
-                <input
-                  type="number"
-                  name="quantity"
-                  style={{ width: "100px" }}
-                  onChange={handleQuantityInput}
-                  required
-                  min={state.offer.payload.minQuantity || "0"}
-                  max={state.offer.payload.maxQuantity || undefined}
-                  defaultValue={defaultQuantity}
-                />
+              <ContainerColumnField style={{ width: "600px" }}>
+                {state.offer.payload.offerDescription}
               </ContainerColumnField>
+              <ContainerColumnField style={{ width: "600px" }}>
+                {setToArray(state.offer.payload.offerers).map(party => <>{party}<br/></>)}
+              </ContainerColumnField>
+              <ContainerColumnAutoField style={{ width: "800px" }}>
+                {stepElements(false, state.offer.payload.steps)}
+              </ContainerColumnAutoField>
+              <ContainerColumnAutoField style={{ width: "800px" }}>
+                {stepElements(true, state.offer.payload.steps)}
+              </ContainerColumnAutoField>
+              {/* <ContainerColumnField>{state.offer.payload.maxQuantity}</ContainerColumnField> */}
+              {!fixedAmount &&
+                <ContainerColumnField>
+                  <input
+                    type="number"
+                    name="quantity"
+                    style={{ width: "100px" }}
+                    onChange={handleQuantityInput}
+                    required
+                    min={state.offer.payload.minQuantity || "0"}
+                    max={state.offer.payload.maxQuantity || undefined}
+                    defaultValue={defaultQuantity}
+                  />
+                </ContainerColumnField>
+              }
               <ContainerColumnField>
                 <input
                   type="text"
