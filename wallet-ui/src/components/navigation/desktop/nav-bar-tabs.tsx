@@ -8,7 +8,7 @@ export const NavBarTabs = () => {
   const commonsTabs = [
     (<NavBarTab path="/" key="home" label="Home" />),
     (<NavBarTab path="/account/create" key="account-create" label="Open Account" />),
-    (<NavBarTab path="/offers" key="offers" label="Offers" />),
+    (<NavBarTab path="/offers" key="requests" label="Requests" />),
     (<NavBarTab path="/settlements" key="settlements" label="Transactions" />),
     (<NavBarTab path="/directory" key="directory" label="Directory" />)
   ];

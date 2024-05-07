@@ -88,8 +88,11 @@ export const OfferAcceptFormScreen: React.FC = () => {
       });
   };
 
-  function stepElements(delivery: boolean, steps: Step[]) {
-    const stepValues = steps
+  function stepElements(delivery: boolean) {
+    const stepValues = state
+      .offer
+      .payload
+      .steps
       .filter(step => delivery ? step.sender === primaryParty : step.receiver === primaryParty)
       .map((step, index) =>
         <div key={index}>
@@ -108,67 +111,65 @@ export const OfferAcceptFormScreen: React.FC = () => {
 
   return (
     <PageLayout>
-      <h3 className="profile__title">Accept Offer</h3>
-      <DivBorderRoundContainer style={{ height: "31em" }}>
+      <h3 className="profile__title">Settlement Request</h3>
+      <DivBorderRoundContainer style={{ height: "auto" }}>
         <form onSubmit={handleSubmit}>
-          <ContainerDiv style={{ height: "200px" }}>
-            <ContainerColumn>
-              <ContainerColumnField>ID: </ContainerColumnField>
-              <ContainerColumnField>Description: </ContainerColumnField>
-              <ContainerColumnField>Offered by: </ContainerColumnField>
-              <ContainerColumnField>Receivable: </ContainerColumnField>
-              <ContainerColumnField>Deliverable: </ContainerColumnField>
-              {!fixedAmount && <ContainerColumnField>Select amount: </ContainerColumnField>}
-              <ContainerColumnField>Reference: </ContainerColumnField>
-              {/* <ContainerColumnField style={{ width: "200px", height: "20em" }}>Txn Reference: </ContainerColumnField>
-              <p></p>
-              <p></p> */}
-              <button type="submit" className="button__login" disabled={isSubmitting}>
-                Submit
-              </button>
-            </ContainerColumn>
-            <ContainerColumn>
-              <ContainerColumnField style={{ width: "600px" }}>
-                {state.offer.payload.offerId.unpack}
-              </ContainerColumnField>
-              <ContainerColumnField style={{ width: "600px" }}>
-                {state.offer.payload.offerDescription}
-              </ContainerColumnField>
-              <ContainerColumnField style={{ width: "600px" }}>
-                {setToArray(state.offer.payload.offerers).map(party => <>{party}<br/></>)}
-              </ContainerColumnField>
-              <ContainerColumnAutoField style={{ width: "800px" }}>
-                {stepElements(false, state.offer.payload.steps)}
-              </ContainerColumnAutoField>
-              <ContainerColumnAutoField style={{ width: "800px" }}>
-                {stepElements(true, state.offer.payload.steps)}
-              </ContainerColumnAutoField>
-              {/* <ContainerColumnField>{state.offer.payload.maxQuantity}</ContainerColumnField> */}
+          {/* <ContainerDiv style={{ height: "200px" }}> */}
+            <table className="request">
+              <tr>
+                <th>ID:</th>
+                <td>{state.offer.payload.offerId.unpack}</td>
+              </tr>
+              <tr>
+                <th>Description:</th>
+                <td>{state.offer.payload.offerDescription}</td>
+              </tr>
+              <tr>
+                <th>Requested by:</th>
+                <td>{setToArray(state.offer.payload.offerers).map(party => <>{party}<br/></>)}</td>
+              </tr>
+              <tr>
+                <th>Receivable:</th>
+                <td>{stepElements(false)}</td>
+              </tr>
+              <tr>
+                <th>Deliverable:</th>
+                <td>{stepElements(true)}</td>
+              </tr>
               {!fixedAmount &&
-                <ContainerColumnField>
-                  <input
-                    type="number"
-                    name="quantity"
-                    style={{ width: "100px" }}
-                    onChange={handleQuantityInput}
-                    required
-                    min={state.offer.payload.minQuantity || "0"}
-                    max={state.offer.payload.maxQuantity || undefined}
-                    defaultValue={defaultQuantity}
-                  />
-                </ContainerColumnField>
+                <tr>
+                  <th>Select amount:</th>
+                  <td>
+                    <input
+                      type="number"
+                      name="quantity"
+                      style={{ width: "100px" }}
+                      onChange={handleQuantityInput}
+                      required
+                      min={state.offer.payload.minQuantity || "0"}
+                      max={state.offer.payload.maxQuantity || undefined}
+                      defaultValue={defaultQuantity}
+                    />
+                  </td>
+                </tr>
               }
-              <ContainerColumnField>
-                <input
-                  type="text"
-                  name="transactionRef"
-                  style={{ width: "300px" }}
-                  onChange={handleTransactionRef}
-                  required
-                />
-              </ContainerColumnField>
-            </ContainerColumn>
-          </ContainerDiv>
+              <tr>
+                <th>Reference:</th>
+                <td>
+                  <input
+                    type="text"
+                    name="transactionRef"
+                    style={{ width: "300px" }}
+                    onChange={handleTransactionRef}
+                    required
+                  />
+                </td>
+              </tr>
+            </table>
+            <button type="submit" className="button__login" style={{ width: "150px" }}>
+              Accept
+            </button>
+          {/* </ContainerDiv> */}
         </form>
       </DivBorderRoundContainer>
       <Modal

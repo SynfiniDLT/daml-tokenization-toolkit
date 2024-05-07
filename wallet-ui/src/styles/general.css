@@ -390,6 +390,16 @@ ul.form-stepper li a .form-stepper-circle {
   width: 100%;
 }
 
+.request th {
+  width: 20%;
+}
+
+.request td, .request th {
+  padding-right: 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
 .row {
   display: flex;
   width: 100%;

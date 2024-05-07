@@ -6,12 +6,13 @@ export default function Offers(props: { offers?: CreateEvent<OneTimeOffer, undef
   return (
     <>
       <div style={{ margin: "10px", padding: "10px" }}>
-        {props.offers !== undefined && (
+        {props.offers?.length === 0 && <p>You have no pending requests at this time</p>}
+        {props.offers !== undefined && props.offers.length > 0 && (
           <table className="assets">
             <thead>
               <tr>
                 <th style={{width: "15%"}}>ID</th>
-                <th style={{width: "15%"}}>Offerered by</th>
+                <th style={{width: "15%"}}>Requested by</th>
                 <th style={{width: "auto"}}>Description</th>
               </tr>
             </thead>
