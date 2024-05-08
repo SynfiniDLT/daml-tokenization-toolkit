@@ -82,9 +82,6 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
               </div>
               <div style={{ margin: "10px", padding: "10px" }}>
                 <table className="assets">
-                  {/* <caption style={{textAlign: "left"}}>
-                    hello world
-                  </caption> */}
                   <thead>
                     <tr>
                       <th style={{width: "25%"}}>Asset</th>

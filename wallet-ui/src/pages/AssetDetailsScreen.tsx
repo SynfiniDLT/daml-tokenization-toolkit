@@ -19,6 +19,7 @@ import { Base } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/I
 import { Fungible } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
 import { Transferable } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Transferable";
 import { Set as DamlSet } from "@daml.js/da-set/lib/DA/Set/Types";
+import { pollDelay } from "../Configuration";
 
 export type AssetDetailsState = {
   instrument: InstrumentKey
@@ -27,8 +28,6 @@ export type AssetDetailsState = {
 const obsContext = "wallet.assetShare";
 
 type FirstRender = "FirstRender";
-
-const waitMs = 1500;
 
 function observersOnlyInContext(observers: damlTypes.Map<string, DamlSet<damlTypes.Party>>): DamlSet<damlTypes.Party> {
   const otherObservers = arrayToSet(flattenObservers(observers.delete(obsContext)));
@@ -70,7 +69,7 @@ const AssetDetailsScreen: React.FC = () => {
   useEffect(() => {
     const fetchInstrument = async () => {
       if (instrumentDirtyCid !== "FirstRender") {
-        await wait(waitMs);
+        await wait(pollDelay);
       }
       const instruments = await walletClient.getInstruments(state.instrument);
 
@@ -110,7 +109,7 @@ const AssetDetailsScreen: React.FC = () => {
   useEffect(() => {
     const fetchMetadata = async () => {
       if (metadataDirtyCid !== "FirstRender") {
-        await wait(waitMs);
+        await wait(pollDelay);
       }
       const metadatas = await ledger.query(Metadata, { instrument: state.instrument });
       if (metadatas.length === 1) {
