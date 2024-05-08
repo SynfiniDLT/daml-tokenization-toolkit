@@ -91,7 +91,7 @@ const AssetDetailsScreen: React.FC = () => {
     if (instrumentDirtyCid !== undefined) {
       fetchInstrument();
     }
-  }, [walletClient, ledger, refreshInstrument, instrumentDirtyCid, state.instrument]);
+  }, [walletClient, ledger, refreshInstrument, instrumentDirtyCid, state.instrument, instrumentSummary?.cid]);
 
   useEffect(() => {
     const fetchInstrumentDisclosure = async () => {
@@ -130,7 +130,7 @@ const AssetDetailsScreen: React.FC = () => {
     if (metadataDirtyCid !== undefined) {
       fetchMetadata();
     }
-  }, [ledger, refreshMetadata, metadataDirtyCid, state.instrument]);
+  }, [ledger, refreshMetadata, metadataDirtyCid, state.instrument, metadata?.contractId]);
 
   useEffect(() => {
     const fetchMetadataDisclosure = async () => {
