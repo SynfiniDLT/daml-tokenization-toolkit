@@ -8,7 +8,7 @@ import {
   InstrumentSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlTypes from "@daml/types";
-import { arrayToSet, flattenObservers, setToArray, toDateTimeString } from "../Util";
+import { arrayToSet, flattenObservers, setToArray, toDateTimeString, wait } from "../Util";
 import { useWalletUser, useWalletViews } from "../App";
 import { CreateEvent } from "@daml/ledger";
 import { Metadata } from "@daml.js/synfini-instrument-metadata-interface/lib/Synfini/Interface/Instrument/Metadata/Metadata";
@@ -19,12 +19,15 @@ import { Base } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/I
 import { Fungible } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
 import { Transferable } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Transferable";
 import { Set as DamlSet } from "@daml.js/da-set/lib/DA/Set/Types";
+import { pollDelay } from "../Configuration";
 
 export type AssetDetailsState = {
   instrument: InstrumentKey
 }
 
 const obsContext = "wallet.assetShare";
+
+type FirstRender = "FirstRender";
 
 function observersOnlyInContext(observers: damlTypes.Map<string, DamlSet<damlTypes.Party>>): DamlSet<damlTypes.Party> {
   const otherObservers = arrayToSet(flattenObservers(observers.delete(obsContext)));
@@ -43,10 +46,10 @@ const AssetDetailsScreen: React.FC = () => {
   const walletClient = useWalletViews();
 
   const [refreshInstrument, setRefreshInstrument] = useState(0);
-  const [isInstrumentDirty, setIsInstrumentDirty] = useState<boolean>();
+  const [instrumentDirtyCid, setInstrumentDirtyCid] = useState<damlTypes.ContractId<any> | FirstRender | undefined>("FirstRender");
 
   const [refreshMetadata, setRefreshMetadata] = useState(0);
-  const [isMetadataDirty, setIsMetadataDirty] = useState<boolean>();
+  const [metadataDirtyCid, setMetadataDirtyCid] = useState<damlTypes.ContractId<any> | FirstRender | undefined>("FirstRender");
 
   const [nonFungbileHolding, setNonFungibleHolding] = useState<CreateEvent<Base>>();
   const [holdingDisclosure, setHoldingDisclosure] = useState<DisclosureView>();
@@ -65,21 +68,30 @@ const AssetDetailsScreen: React.FC = () => {
 
   useEffect(() => {
     const fetchInstrument = async () => {
+      if (instrumentDirtyCid !== "FirstRender") {
+        await wait(pollDelay);
+      }
       const instruments = await walletClient.getInstruments(state.instrument);
 
       if (instruments.instruments.length === 1) {
         const ins = instruments.instruments[0];
+        if (instrumentDirtyCid === "FirstRender" || ins.cid !== instrumentDirtyCid) {
+          setInstrumentDirtyCid(undefined);
+        } else {
+          setRefreshInstrument(r => r + 1);
+        }
         if (ins.cid !== instrumentSummary?.cid) {
-          setIsInstrumentDirty(false);
           setInstrumentSummary(ins);
         }
+      } else {
+        setInstrumentDirtyCid(undefined);
       }
     };
 
-    if (isInstrumentDirty === true || isInstrumentDirty === undefined) {
+    if (instrumentDirtyCid !== undefined) {
       fetchInstrument();
     }
-  }, [walletClient, ledger, refreshInstrument, isInstrumentDirty, state.instrument]);
+  }, [walletClient, ledger, refreshInstrument, instrumentDirtyCid, state.instrument, instrumentSummary?.cid]);
 
   useEffect(() => {
     const fetchInstrumentDisclosure = async () => {
@@ -96,20 +108,29 @@ const AssetDetailsScreen: React.FC = () => {
 
   useEffect(() => {
     const fetchMetadata = async () => {
+      if (metadataDirtyCid !== "FirstRender") {
+        await wait(pollDelay);
+      }
       const metadatas = await ledger.query(Metadata, { instrument: state.instrument });
       if (metadatas.length === 1) {
         const meta = metadatas[0]
+        if (metadataDirtyCid === "FirstRender" || meta.contractId !== metadataDirtyCid) {
+          setMetadataDirtyCid(undefined);
+        } else {
+          setRefreshMetadata(r => r + 1);
+        }
         if (meta.contractId !== metadata?.contractId) {
-          setIsMetadataDirty(false);
           setMetadata(meta);
         }
+      } else {
+        setMetadataDirtyCid(undefined);
       }
     };
 
-    if (isMetadataDirty === true || isMetadataDirty === undefined) {
+    if (metadataDirtyCid !== undefined) {
       fetchMetadata();
     }
-  }, [ledger, refreshMetadata, isMetadataDirty, state.instrument]);
+  }, [ledger, refreshMetadata, metadataDirtyCid, state.instrument, metadata?.contractId]);
 
   useEffect(() => {
     const fetchMetadataDisclosure = async () => {
@@ -151,18 +172,6 @@ const AssetDetailsScreen: React.FC = () => {
     fetchHoldings();
   }, [ledger, state.instrument, instrumentSummary]);
 
-  useEffect(() => {
-    if (isInstrumentDirty === true) {
-      setRefreshInstrument(r => r + 1);
-    }
-  });
-
-  useEffect(() => {
-    if (isMetadataDirty === true) {
-      setRefreshMetadata(r => r + 1);
-    }
-  });
-
   if (isLoading) {
     return (
       <div>
@@ -191,8 +200,12 @@ const AssetDetailsScreen: React.FC = () => {
       return;
     }
 
-    setIsInstrumentDirty(true);
-    setIsMetadataDirty(true);
+    if (instrumentSummary !== undefined) {
+      setInstrumentDirtyCid(instrumentSummary.cid);
+    }
+    if (metadata !== undefined) {
+      setMetadataDirtyCid(metadata.contractId);
+    }
 
     const disclosers = arrayToSet([primaryParty]);
     const exerciseArgs = {
@@ -210,7 +223,7 @@ const AssetDetailsScreen: React.FC = () => {
         instrumentSummary.cid as damlTypes.ContractId<any>, exerciseArgs
       ).then(([cid, _]) => {
         if (cid === null) {
-          setIsInstrumentDirty(false);
+          setInstrumentDirtyCid(undefined);
         }
       });
     const removeMetadataObs = metadata === undefined ?
@@ -218,8 +231,8 @@ const AssetDetailsScreen: React.FC = () => {
       ledger.exercise(Disclosure.RemoveObservers, metadata.contractId as damlTypes.ContractId<any>, exerciseArgs)
         .then(([cid, _]) => {
           if (cid === null) {
-            setIsInstrumentDirty(false);
-            setIsMetadataDirty(false);
+            setInstrumentDirtyCid(undefined);
+            setMetadataDirtyCid(undefined);
           }
         });
     const removeHoldingsObs =
@@ -232,11 +245,10 @@ const AssetDetailsScreen: React.FC = () => {
         setMessage("Operation completed with success!");
         setError("");
         setIsModalOpen(true);
-        // setRefresh(refresh + 1);
       })
       .catch((err) => {
-        setIsInstrumentDirty(false);
-        setIsMetadataDirty(false);
+        setInstrumentDirtyCid(undefined);
+        setMetadataDirtyCid(undefined);
         setIsModalOpen(true);
         setMessage("");
         setError(
@@ -254,8 +266,12 @@ const AssetDetailsScreen: React.FC = () => {
       return;
     }
 
-    setIsInstrumentDirty(true);
-    setIsMetadataDirty(true);
+    if (instrumentSummary !== undefined) {
+      setInstrumentDirtyCid(instrumentSummary.cid);
+    }
+    if (metadata !== undefined) {
+      setMetadataDirtyCid(metadata.contractId);
+    }
 
     const disclosers = arrayToSet([primaryParty]);
     const exerciseArgs = {
@@ -288,8 +304,8 @@ const AssetDetailsScreen: React.FC = () => {
         setIsModalOpen(true);
       })
       .catch((err) => {
-        setIsInstrumentDirty(false);
-        setIsMetadataDirty(false);
+        setInstrumentDirtyCid(undefined);
+        setMetadataDirtyCid(undefined);
         setIsModalOpen(true);
         setMessage("");
         setError(
@@ -368,7 +384,7 @@ const AssetDetailsScreen: React.FC = () => {
           </caption>
           <tbody>
             <tr>
-              <th>Issuer</th>
+              <th style={{width: "15%"}}>Issuer</th>
               <td>{state.instrument.issuer}</td>
             </tr>
             <tr>
@@ -405,7 +421,7 @@ const AssetDetailsScreen: React.FC = () => {
           <tbody>
             {metadata.payload.attributes.entriesArray().map(([attributeName, attribute]) =>
               <tr key={attributeName}>
-                <th>{attributeName}</th>
+                <th style={{width: "15%"}}>{attributeName}</th>
                 <td>{attribute.attributeValue}</td>
               </tr>
             )}

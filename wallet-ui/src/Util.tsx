@@ -53,16 +53,6 @@ export const toDateTimeString = (inputDate: damlTypes.Time) => {
   });
 };
 
-export const formatPercentage = (percentageString: string) => {
-  const percentage = parseFloat(percentageString);
-  if (isNaN(percentage)) {
-    throw new Error("Invalid percentage string");
-  }
-  const formattedPercentage = (percentage * 100).toFixed(0) + "%";
-  return formattedPercentage;
-};
-
-
 export const wait = (n: number) => new Promise((resolve) => setTimeout(resolve, n));
 
 export function arrayToSet<T>(elements: T[]): DamlSet<T> {

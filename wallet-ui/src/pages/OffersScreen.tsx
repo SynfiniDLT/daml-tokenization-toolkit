@@ -32,7 +32,7 @@ const OffersScreen: React.FC = () => {
     <PageLayout>
       <>
         <div style={{ marginTop: "15px" }}>
-          <h4 className="profile__title">Offers</h4>
+          <h4 className="profile__title">Requests</h4>
         </div>
         <Offers offers={offers}/>
       </>

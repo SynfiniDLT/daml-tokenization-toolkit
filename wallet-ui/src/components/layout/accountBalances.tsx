@@ -84,10 +84,10 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
                 <table className="assets">
                   <thead>
                     <tr>
-                      <th>Asset</th>
-                      <th>Issuer</th>
-                      <th>Balance</th>
-                      <th>Available</th>
+                      <th style={{width: "25%"}}>Asset</th>
+                      <th style={{width: "30%"}}>Issuer</th>
+                      <th style={{width: "20%"}}>Balance</th>
+                      <th style={{width: "25%"}}>Available</th>
                     </tr>
                   </thead>
                   <tbody>{trs}</tbody>

@@ -149,7 +149,7 @@ data Instruments = Instruments
 
 data InstrumentsFilter = InstrumentsFilter
   with
-    depository : Party
+    depository : Optional Party
     issuer : Party
     id : Optional Id
     version : Optional Text

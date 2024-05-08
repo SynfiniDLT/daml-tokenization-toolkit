@@ -198,7 +198,7 @@ public class WalletRepository {
   }
 
   public List<InstrumentSummary> instruments(
-    String depository,
+    Optional<String> depository,
     String issuer,
     Optional<Id> id,
     Optional<String> version,
@@ -214,7 +214,7 @@ public class WalletRepository {
       "  t.valid_as_of valid_as_of";
     final var commonWhereOrder = "WHERE\n" +
       "  instrument_witnesses.party = ANY(?) AND\n" +
-      "  t.instrument_depository = ? AND\n" +
+      "  (? IS NULL OR t.instrument_depository = ?) AND\n" +
       "  t.instrument_issuer = ? AND\n" +
       "  (? IS NULL OR t.instrument_id = ?) AND\n" +
       "  (? IS NULL OR t.instrument_version = ?) AND\n" +
@@ -222,14 +222,15 @@ public class WalletRepository {
       "ORDER BY instrument_depository, instrument_issuer, instrument_id, instrument_version";
     final PreparedStatementSetter commonSetVars = ps -> {
       ps.setArray(1, asSqlArray(readAs));
-      ps.setString(2, depository);
-      ps.setString(3, issuer);
+      ps.setString(2, depository.orElse(null));
+      ps.setString(3, depository.orElse(null));
+      ps.setString(4, issuer);
       final var idStr = id.map(i -> i.unpack).orElse(null);
-      ps.setString(4, idStr);
       ps.setString(5, idStr);
+      ps.setString(6, idStr);
       final var versionStr = version.orElse(null);
-      ps.setString(6, versionStr);
       ps.setString(7, versionStr);
+      ps.setString(8, versionStr);
     };
     return jdbcTemplate.query(
     commonSelect + "\n" +

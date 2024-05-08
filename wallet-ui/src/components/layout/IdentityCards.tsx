@@ -34,6 +34,7 @@ export default function IdentityCards(props: { instruments?: InstrumentMetadataS
                     <HoverPopUp
                       triggerText={instrument.holding.view.account.owner}
                       popUpContent={instrument.holding.view.account.owner}
+                      customLeft="50%"
                     />
                   </td>
                 </tr>

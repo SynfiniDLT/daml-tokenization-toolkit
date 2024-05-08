@@ -563,8 +563,8 @@ Note: only active contracts are returned.
 
 ```js
 {
-  "depository": "Depository1::abc123...",
-  "issuer": "Issuer::abc123...",
+  "depository": "Depository1::abc123...", // Instrument depository - optional
+  "issuer": "Issuer::abc123...", // Instrument issuer
   "id": { // Instrument ID - optional
     "unpack": "Coin1"
   },

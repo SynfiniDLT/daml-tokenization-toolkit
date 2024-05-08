@@ -6,20 +6,20 @@ export default function Offers(props: { offers?: CreateEvent<OneTimeOffer, undef
   return (
     <>
       <div style={{ margin: "10px", padding: "10px" }}>
-        {props.offers !== undefined && (
-            <div id="assets-div">
-              <div className="row">
-                <div className="header-cell">Offer ID</div>
-                <div className="header-cell">Offeree</div>
-                <div className="header-cell">Offerers</div>
-                <div className="header-cell">Description</div>
-                <div className="header-cell">Quantity</div>
-                <div className="header-cell">Actions</div>
-              </div>
-              {props.offers.map((offer, index) => (
-                <OfferDetails offer={offer} key={index}/>
-              ))}
-            </div>
+        {props.offers?.length === 0 && <p>You have no pending requests at this time</p>}
+        {props.offers !== undefined && props.offers.length > 0 && (
+          <table className="assets">
+            <thead>
+              <tr>
+                <th style={{width: "15%"}}>ID</th>
+                <th style={{width: "15%"}}>Requested by</th>
+                <th style={{width: "auto"}}>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {props.offers.map(offer => <OfferDetails offer={offer} key={offer.contractId}/>)}
+            </tbody>
+          </table>
         )}
       </div>
     </>

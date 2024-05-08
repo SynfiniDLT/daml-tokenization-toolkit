@@ -1,6 +1,6 @@
 # Daml Tokenization Solution
 
-A solution that demostrates
+A solution that demonstrates
 1. Tokenization of assets using Daml/Canton.
 1. Asset settlement on Canton network.
 1. Wallet to support the asset tokenization.
@@ -11,7 +11,7 @@ This diagram shows the overall intended deployment structure of the wallet. Each
 own instance of the wallet API and wallet UI. The wallet API is read-only, therefore UI users must use the JSON API to
 issue any commands which update ledger state. In future this could be migrated to the Daml 3.0 application architecture
 in which the wallet application service provider would host the read-only wallet API on its participant, while users
-would submit commands through own participants.
+would submit commands through their own participants.
 
 ![alt text](./img/Diagram.JPG)
 
@@ -38,6 +38,7 @@ Install the following first:
 - sbt (https://www.scala-sbt.org/download.html)
 - npm (https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 - Docker (https://docs.docker.com/get-docker/)
+- jq (https://jqlang.github.io/jq/)
 
 Build has been tested with Java version 17, Maven 3.6.3 and npm 8.19.
 
@@ -67,6 +68,8 @@ issuer.
 1. The demo supports DvP settlements amongst asset issuer, investor and other parties.
 
 ### UI User profile
+
+There are two ways to run the run the UI based on the below user profiles.
 
 | UI user profile  | Description  |
 | ------------- | -------------  |
@@ -151,10 +154,9 @@ Replace your-api-identifier with the audience identifier you obtained from the A
 1. Ensure that the userId in each object corresponds to the sub (subject) field in the Auth0 user profile. You can find the userId in the Auth0 ID Token received during authentication.
 1. The primaryParty field is the default party used to issue commands to the ledger. If logged into the UI, the user will act as this party.
 1. Save and commit the users.json file to your version control system (e.g., Git) to keep it in sync with your codebase.
-1. Whenever a user logs in, retrieve their userId from the Auth0 user profile, and use it to look up the corresponding primaryParty from the users.json file for ledger identification.
 
-This step ensures that your ledger can correctly identify users based on their Auth0 userId and associate them with the appropriate primaryParty. Update your application logic to use this mapping whenever you need to interact with the ledger.
-
+Whenever a user logs in, the UI retrieves the user from the participant node which has a user ID matching the Auth0
+subject. This allows it to find the user's corresponding primaryParty.
 
 ### Start the demo on local sandbox
 
