@@ -71,7 +71,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
           id: { unpack: referenceIdUUID },
           taker: primaryParty,
           quantity: inputQtd.toString(),
-          description: "Investment request"
+          reference: null
         }
       );
       setReferenceId(referenceIdUUID);

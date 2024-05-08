@@ -824,11 +824,11 @@ Contract Set to find an `OpenOffer` with matching `offerId` and `offerers`.
 
 The second argument is a comma-delimited list of the labels of the parties which authorised offer. The third argument is
 the offer ID and the fourth argument is the batch ID of the settlement instructions that will be generated. The batch
-ID should be a unique, randomly generated value. The final two arguments are the unit quantity specified and batch
-description chosen by the taker.
+ID should be a unique, randomly generated value. The final two arguments are the unit quantity specified and transaction
+reference chosen by the taker.
 
 ```bash
-dops take-settlement-open-offer <path to JSON file> <offerer1>,<offerer2>...<offererN> <offer ID> <Batch ID> <quantity> <description>
+dops take-settlement-open-offer <path to JSON file> <offerer1>,<offerer2>...<offererN> <offer ID> <Batch ID> <quantity> <reference>
 ```
 
 For example, for an offer authorised by parties labeled "alice" and "bob", having ID "offer1":

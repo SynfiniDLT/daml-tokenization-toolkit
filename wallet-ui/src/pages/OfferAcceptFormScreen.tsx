@@ -22,7 +22,7 @@ export const OfferAcceptFormScreen: React.FC = () => {
 
   const ledger = userContext.useLedger();
   const { primaryParty } = useWalletUser();
-  const [transactionRefInput, setTransactionRefInput] = useState("");
+  const [transactionRefInput, setTransactionRefInput] = useState<string | null>(null);
   const defaultQuantity = state.offer.payload.minQuantity || "1";
   const [quantityInput, setQuantityInput] = useState(defaultQuantity);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -67,7 +67,7 @@ export const OfferAcceptFormScreen: React.FC = () => {
         state.offer.contractId,
         {
           quantity: quantityInput,
-          description: transactionRefInput,
+          reference: transactionRefInput,
         }
       );
       setAccepted(true);
@@ -139,59 +139,60 @@ export const OfferAcceptFormScreen: React.FC = () => {
       <DivBorderRoundContainer style={{ height: "auto" }}>
         <form onSubmit={handleSubmit}>
           <table className="request">
-            <tr>
-              <th>ID:</th>
-              <td>{state.offer.payload.offerId.unpack}</td>
-            </tr>
-            <tr>
-              <th>Description:</th>
-              <td>{state.offer.payload.offerDescription}</td>
-            </tr>
-            <tr>
-              <th>Requested by:</th>
-              <td>{setToArray(state.offer.payload.offerers).map(party => <>{party}<br/></>)}</td>
-            </tr>
-            <tr>
-              <th>Receivable:</th>
-              <td>{stepElements(false)}</td>
-            </tr>
-            <tr>
-              <th>Deliverable:</th>
-              <td>{stepElements(true)}</td>
-            </tr>
-            {
-              !fixedAmount && isOfferee &&
+            <tbody>
               <tr>
-                <th>Select amount:</th>
-                <td>
-                  <input
-                    type="number"
-                    name="quantity"
-                    style={{ width: "100px" }}
-                    onChange={handleQuantityInput}
-                    required
-                    min={state.offer.payload.minQuantity || "0"}
-                    max={state.offer.payload.maxQuantity || undefined}
-                    defaultValue={defaultQuantity}
-                  />
-                </td>
+                <th>ID:</th>
+                <td>{state.offer.payload.offerId.unpack}</td>
               </tr>
-            }
-            {
-              isOfferee &&
               <tr>
-                <th>Reference:</th>
-                <td>
-                  <input
-                    type="text"
-                    name="transactionRef"
-                    style={{ width: "300px" }}
-                    onChange={handleTransactionRef}
-                    required
-                  />
-                </td>
+                <th>Description:</th>
+                <td>{state.offer.payload.offerDescription}</td>
               </tr>
-            }
+              <tr>
+                <th>Requested by:</th>
+                <td>{setToArray(state.offer.payload.offerers).map(party => <div key={party}>{party}<br/></div>)}</td>
+              </tr>
+              <tr>
+                <th>Receivable:</th>
+                <td>{stepElements(false)}</td>
+              </tr>
+              <tr>
+                <th>Deliverable:</th>
+                <td>{stepElements(true)}</td>
+              </tr>
+              {
+                !fixedAmount && isOfferee &&
+                <tr>
+                  <th>Select amount:</th>
+                  <td>
+                    <input
+                      type="number"
+                      name="quantity"
+                      style={{ width: "100px" }}
+                      onChange={handleQuantityInput}
+                      required
+                      min={state.offer.payload.minQuantity || "0"}
+                      max={state.offer.payload.maxQuantity || undefined}
+                      defaultValue={defaultQuantity}
+                    />
+                  </td>
+                </tr>
+              }
+              {
+                isOfferee &&
+                <tr>
+                  <th>Reference:</th>
+                  <td>
+                    <input
+                      type="text"
+                      name="transactionRef"
+                      style={{ width: "300px" }}
+                      onChange={handleTransactionRef}
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
           </table>
           {
             isOfferee &&

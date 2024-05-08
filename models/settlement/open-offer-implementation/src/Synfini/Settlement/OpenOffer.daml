@@ -50,7 +50,7 @@ template OpenOffer
 
     interface instance OpenOffer.I for OpenOffer where
       view = OpenOffer.View with ..
-      take' OpenOffer.Take { id, taker, quantity, description } = do
+      take' OpenOffer.Take { id, taker, quantity, reference } = do
         assertMsg
           "Quantity must be greater than or equal to permitted minimum"
           (O.optional True (quantity >=) minQuantity)
@@ -81,7 +81,9 @@ template OpenOffer
           contextId = Some offerId
           instructors = Set.fromList (resolveParty <$> Set.toList settlementInstructors)
           settlers = Set.fromList (resolveParty <$> Set.toList settlers)
-          description
+          description = "Settlement generated from the following request:\n" <>
+            offerDescription <>
+            O.optional "" (\ref -> "\nReference: " <> ref) reference
           routedSteps
           settlementTime = actualSettlementTime
       revoke _ = pure ()
