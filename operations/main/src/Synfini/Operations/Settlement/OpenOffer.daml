@@ -114,7 +114,7 @@ data TakeOpenOfferSettings = TakeOpenOfferSettings
     taker : Text
     quantity : Decimal
     id : Text
-    description : Text
+    reference : Optional Text
 
 data TakeOpenOfferInput = TakeOpenOfferInput
   with
@@ -146,5 +146,5 @@ takeOpenOffer input = do
       taker
       quantity = settings.quantity
       id = Id settings.id
-      description = settings.description
+      reference = settings.reference
   pure ()

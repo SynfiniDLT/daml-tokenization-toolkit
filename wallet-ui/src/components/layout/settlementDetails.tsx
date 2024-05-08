@@ -110,7 +110,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
             <br />
           </div>
           <Field>Description:</Field>
-          {props.settlement.description}
+            <span style={{whiteSpace: "pre-wrap"}}>{props.settlement.description}</span>
           <br />
           <Field>Transaction Status:</Field>
           {props.settlement.execution === null ? (
@@ -131,9 +131,9 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
         </div>
 
         <hr></hr>
-        {props.settlement.steps.map((step: SettlementStep, index: number) => (
-          <div key={index}>
-            <h5 className="profile__title">Step {index + 1}</h5>
+        {props.settlement.steps.map((step: SettlementStep) => (
+          <div key={step.instructionId.unpack}>
+            <h5 className="profile__title">Instruction ID: {step.instructionId.unpack}</h5>
             <div style={{ margin: "15px" }}>
               <Field>Type: </Field>
               {
@@ -527,11 +527,11 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
           </div>
 
           <hr></hr>
-          {primaryParty === undefined || props.settlement.steps.map((step: SettlementStep, index: number) => {
+          {primaryParty === undefined || props.settlement.steps.map((step: SettlementStep) => {
             return (
               <>
-                <div key={index}>
-                  <h5 className="profile__title">Step {index + 1}</h5>
+                <div key={step.instructionId.unpack}>
+                  <h5 className="profile__title">Instruction ID: {step.instructionId.unpack}</h5>
                   <div style={{ margin: "15px" }}>
                     <div
                       style={{

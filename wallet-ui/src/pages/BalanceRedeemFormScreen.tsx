@@ -54,7 +54,7 @@ const BalanceRedeemFormScreen: React.FC = () => {
           offersByIssuer[0].contractId,
           {
             id: { unpack: referenceIdUUID },
-            description: "Redeem for fiat",
+            reference: null,
             taker: primaryParty,
             quantity: amountInput
           }
