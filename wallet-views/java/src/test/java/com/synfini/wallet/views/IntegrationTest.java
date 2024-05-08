@@ -1533,7 +1533,7 @@ public class IntegrationTest {
     mvc
       .perform(
         getInstrumentsBuilder(
-          token1.instrument.depository,
+          Optional.of(token1.instrument.depository),
           token1.instrument.issuer,
           Optional.of(token1.instrument.id),
           Optional.of(token1.instrument.version)
@@ -1546,7 +1546,7 @@ public class IntegrationTest {
     mvc
       .perform(
         getInstrumentsBuilder(
-          token1.instrument.depository,
+          Optional.of(token1.instrument.depository),
           token1.instrument.issuer,
           Optional.of(token1.instrument.id),
           Optional.empty()
@@ -1559,7 +1559,20 @@ public class IntegrationTest {
     mvc
       .perform(
         getInstrumentsBuilder(
-          token1.instrument.depository,
+          Optional.of(token1.instrument.depository),
+          token1.instrument.issuer,
+          Optional.empty(),
+          Optional.empty()
+        ).headers(userTokenHeader(investor1User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(toJson(new Instruments(List.of(instrument1Summary, instrument2Summary))))
+      );
+    mvc
+      .perform(
+        getInstrumentsBuilder(
+          Optional.empty(),
           token1.instrument.issuer,
           Optional.empty(),
           Optional.empty()
@@ -1865,7 +1878,7 @@ public class IntegrationTest {
   }
 
   private static MockHttpServletRequestBuilder getInstrumentsBuilder(
-    String dep,
+    Optional<String> dep,
     String iss,
     Optional<Id> id,
     Optional<String> version

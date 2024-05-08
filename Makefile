@@ -44,7 +44,7 @@ wallet_views_types_dar = $(build_dir)/synfini-wallet-views-types.dar
 # Codegen outputs
 wallet_views_main_codegen = $(wallet_views_dir)/java/src/generated-main/java
 wallet_views_test_codegen = $(wallet_views_dir)/java/src/generated-test/java
-wallet_views_client_codegen = $(wallet_views_dir)/typescript-client/daml.js
+wallet_views_ts_client_codegen = $(wallet_views_dir)/typescript-client/daml.js
 wallet_ui_codegen = $(wallet_ui_dir)/daml.js
 
 # npm outputs
@@ -233,13 +233,13 @@ test-wallet-views: $(wallet_views_main_codegen) $(wallet_views_test_codegen)
 	cd wallet-views/java && mvn test ${TEST_WALLET_VIEWS_ARGS}
 
 # Codegen - TypeScript
-$(wallet_views_client_codegen): $(wallet_views_ts_client_package_json) \
+$(wallet_views_ts_client_codegen): $(wallet_views_ts_client_package_json) \
   $(wallet_views_types_dar)
-	rm -rf $(wallet_views_client_codegen)
-	daml codegen js $(wallet_views_types_dar) -o $(wallet_views_client_codegen)
+	rm -rf $(wallet_views_ts_client_codegen)
+	daml codegen js $(wallet_views_types_dar) -o $(wallet_views_ts_client_codegen)
 
 # TypeScript client
-$(wallet_views_ts_client_node_modules): $(wallet_views_ts_client_package_json) $(wallet_views_client_codegen)
+$(wallet_views_ts_client_node_modules): $(wallet_views_ts_client_package_json) $(wallet_views_ts_client_codegen)
 	cd $(wallet_views_ts_client_dir) && npm install
 
 $(wallet_views_ts_client_build): $(wallet_views_ts_client_node_modules) \
@@ -279,7 +279,7 @@ $(wallet_ui_codegen): $(wallet_ui_package_json) \
 		$(daml_finance_dir)/daml-finance-interface-settlement.dar \
 		$(daml_finance_dir)/daml-finance-interface-instrument-token.dar -o $(wallet_ui_codegen)
 
-$(wallet_ui_node_modules): $(wallet_ui_codegen) $(wallet_ui_package_json)
+$(wallet_ui_node_modules): $(wallet_ui_codegen) $(wallet_ui_package_json) $(wallet_views_ts_client_codegen)
 	cd $(wallet_ui_dir) && npm install
 
 .PHONY: build-wallet-ui
@@ -296,7 +296,7 @@ clean:
 	./clean-daml-projects.sh
 	cd wallet-views/java && mvn clean
 	rm -rf $(wallet_views_main_codegen) $(wallet_views_test_codegen)
-	rm -rf $(wallet_views_client_codegen) $(wallet_views_ts_client_node_modules) $(wallet_views_ts_client_build)
+	rm -rf $(wallet_views_ts_client_codegen) $(wallet_views_ts_client_node_modules) $(wallet_views_ts_client_build)
 	rm -rf $(wallet_ui_codegen) $(wallet_ui_node_modules) $(wallet_ui_dir)/build
 	rm -rf $(build_dir)
 	rm -rf $(daml_finance_dir)
