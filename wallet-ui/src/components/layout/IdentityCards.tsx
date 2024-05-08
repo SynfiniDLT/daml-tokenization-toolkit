@@ -26,7 +26,7 @@ export default function IdentityCards(props: { instruments?: InstrumentMetadataS
               {props.instruments?.map(instrument => (
                 <tr key={instrument.instrument.cid}>
                   <td>
-                    <a onClick={() => handleNameClick(instrument.metadata.view.instrument)}>
+                    <a href="/#" onClick={() => handleNameClick(instrument.metadata.view.instrument)}>
                       {instrument.metadata.view.attributes.get(partyNameAttribute)?.attributeValue}
                     </a>
                   </td>
