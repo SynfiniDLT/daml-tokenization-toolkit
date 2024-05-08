@@ -16,9 +16,9 @@ export default function Offers(props: { offers?: CreateEvent<OneTimeOffer, undef
                 <th style={{width: "auto"}}>Description</th>
               </tr>
             </thead>
-            {props.offers.map(offer => (
-              <OfferDetails offer={offer} key={offer.contractId}/>
-            ))}
+            <tbody>
+              {props.offers.map(offer => <OfferDetails offer={offer} key={offer.contractId}/>)}
+            </tbody>
           </table>
         )}
       </div>
