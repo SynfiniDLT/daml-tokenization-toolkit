@@ -1,6 +1,11 @@
 package com.synfini.wallet.views;
 
+import com.daml.ledger.javaapi.data.Identifier;
 import com.daml.ledger.javaapi.data.Unit;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 import da.types.Tuple2;
 import daml.finance.interface$.account.account.Account;
 import daml.finance.interface$.account.account.Controllers;
@@ -53,55 +58,19 @@ public class WalletRepository {
   }
 
   public List<AccountSummary> accounts(Optional<String> custodian, String owner) {
-    final var queryAccounts =
-      "SELECT DISTINCT ON (custodian, owner, account_id) *\n" +
-      "FROM accounts\n" +
-      "ORDER BY custodian, owner, account_id, create_offset DESC\n";
-    final var queryCreates =
-      "SELECT DISTINCT ON (custodian, owner, account_id)\n" +
-      "  a.create_offset,\n" +
-      "  a.create_effective_time,\n" +
-      "  a.owner,\n" +
-      "  a.custodian,\n" +
-      "  a.account_id\n" +
-      "FROM accounts a INNER JOIN account_factory_events e ON e.is_create AND a.cid = e.account_cid\n" +
-      "ORDER BY custodian, owner, account_id, create_offset";
-    final var queryRemoves =
-      "SELECT DISTINCT ON (custodian, owner, account_id)\n" +
-      "  true is_removed,\n" +
-      "  a.owner AS owner,\n" +
-      "  a.custodian custodian,\n" +
-      "  a.account_id account_id\n" +
-      "FROM accounts a INNER JOIN account_factory_events e ON\n" +
-      "  NOT e.is_create AND a.owner = e.account_owner AND a.custodian = e.account_custodian AND a.account_id = e.account_id";
     return jdbcTemplate.query(
-    "SELECT\n" +
-      "  latest_accounts.cid,\n" +
-      "  latest_accounts.custodian,\n" +
-      "  latest_accounts.owner,\n" +
-      "  latest_accounts.account_id,\n" +
-      "  latest_accounts.controllers_incoming,\n" +
-      "  latest_accounts.controllers_outgoing,\n" +
-      "  latest_accounts.holding_factory_cid,\n" +
-      "  latest_accounts.description,\n" +
-      "  creates.create_offset,\n" +
-      "  creates.create_effective_time,\n" +
-      "  (CASE WHEN is_removed THEN latest_accounts.archive_offset ELSE NULL END) remove_offset,\n" +
-      "  (CASE WHEN is_removed THEN latest_accounts.archive_effective_time ELSE NULL END) remove_effective_time\n" +
-      "FROM (" + queryAccounts + ") latest_accounts\n" +
-      "LEFT OUTER JOIN  (" + queryCreates + ") creates ON\n" +
-      "  latest_accounts.owner = creates.owner AND\n" +
-      "  latest_accounts.custodian = creates.custodian AND\n" +
-      "  latest_accounts.account_id = creates.account_id\n" +
-      "LEFT OUTER JOIN (" + queryRemoves + ") removes ON\n" +
-      "  latest_accounts.owner = removes.owner AND\n" +
-      "  latest_accounts.custodian = removes.custodian AND\n" +
-      "  latest_accounts.account_id = removes.account_id\n" +
-      "WHERE (? IS NULL OR latest_accounts.custodian = ?) AND latest_accounts.owner = ?",
+      multiLineQuery(
+        "DO $$ BEGIN",
+        "PERFORM set_latest(NULL);",
+        "END $$;",
+        "SELECT * FROM active(?)",
+        "WHERE (? IS NULL OR payload->>'custodian' = ?) AND payload->>'owner' = ?"
+      ),
       ps -> {
-        ps.setString(1, custodian.orElse(null));
+        ps.setString(1, fullyQualified(Account.TEMPLATE_ID));
         ps.setString(2, custodian.orElse(null));
-        ps.setString(3, owner);
+        ps.setString(3, custodian.orElse(null));
+        ps.setString(4, owner);
       },
       new AccountRowMapper()
     );
@@ -359,21 +328,24 @@ public class WalletRepository {
 
     @Override
     public AccountSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
+      final var payload = new Gson().fromJson(rs.getString("payload"), JsonObject.class);
       return new AccountSummary(
-        new Account.ContractId(rs.getString("cid")),
+        new Account.ContractId(rs.getString("contract_id")),
         new daml.finance.interface$.account.account.View(
-          rs.getString("custodian"),
-          rs.getString("owner"),
-          new Id(rs.getString("account_id")),
-          rs.getString("description"),
-          new Factory.ContractId(rs.getString("holding_factory_cid")),
+          payload.get("custodian").getAsString(),
+          payload.get("owner").getAsString(),
+          new Id(payload.get("id").getAsJsonObject().get("unpack").getAsString()),
+          payload.get("description").getAsString(),
+          new Factory.ContractId(payload.get("holdingFactoryCid").getAsString()),
           new Controllers(
-            arrayToSet(rs.getArray("controllers_outgoing")),
-            arrayToSet(rs.getArray("controllers_incoming"))
+            asDamlSet(payload.get("controllers").getAsJsonObject().get("outgoing").getAsJsonObject()),
+            asDamlSet(payload.get("controllers").getAsJsonObject().get("incoming").getAsJsonObject())
           )
         ),
-        getTransactionDetail(rs, "create"),
-        getTransactionDetail(rs, "remove")
+        Optional.empty(),
+        Optional.empty()
+        // getTransactionDetail(rs, "create"),
+        //getTransactionDetail(rs, "remove")
       );
     }
   }
@@ -651,6 +623,17 @@ public class WalletRepository {
     );
   }
 
+  private static da.set.types.Set<String> asDamlSet(JsonObject jsonDamlSet) {
+    final var jsonArray = jsonDamlSet.get("map").getAsJsonArray();
+    final Map<String, Unit> map = new HashMap<>();
+
+    for (JsonElement jsonElement : jsonArray) {
+      map.put(jsonElement.getAsJsonArray().get(0).getAsString(), Unit.getInstance());
+    }
+
+    return new da.set.types.Set<>(map);
+  }
+
   private Array asSqlArray(List<String> list) throws SQLException {
     final Array arr;
     Connection conn = null;
@@ -663,5 +646,13 @@ public class WalletRepository {
       }
     }
     return arr;
+  }
+
+  private static String multiLineQuery(String... lines) {
+    return Arrays.asList(lines).stream().reduce((a, b) -> a + "\n" + b).orElse("");
+  }
+
+  private static String fullyQualified(Identifier identifier) {
+    return identifier.getPackageId() + ":" + identifier.getModuleName() + ":" + identifier.getEntityName();
   }
 }

@@ -91,6 +91,8 @@ public class IntegrationTest {
   private static final String clientSecret = "secret";
   private static Integer sandboxPort;
   private static Process sandboxProcess;
+  private static Integer postgresPort;
+  private static Process scribeProcess;
   private static String depository;
   private static String issuer;
   private static String custodian;
@@ -117,19 +119,43 @@ public class IntegrationTest {
   @BeforeAll
   public static void beforeAll() throws Exception {
     System.setProperty("projection.flyway.migrate-on-start", "true");
-    ServerSocket socket = new ServerSocket(0);
-    sandboxPort = socket.getLocalPort();
-    System.setProperty("walletviews.ledger-port", sandboxPort.toString());
-    ServerSocket adminApiSocket = new ServerSocket(0);
-    Integer adminApiPort = adminApiSocket.getLocalPort();
-    ServerSocket domainPublicSocket= new ServerSocket(0);
-    Integer domainPublicPort = domainPublicSocket.getLocalPort();
-    ServerSocket domainAdminSocket = new ServerSocket(0);
-    Integer domainAdminPort = domainAdminSocket.getLocalPort();
-    socket.close();
-    adminApiSocket.close();
-    domainPublicSocket.close();
-    domainAdminSocket.close();
+    Integer adminApiPort, domainPublicPort, domainAdminPort;
+    ServerSocket socket = null, adminApiSocket = null, domainPublicSocket = null, domainAdminSocket = null, postgresSocket = null;
+    try {
+      socket = new ServerSocket(0);
+      sandboxPort = socket.getLocalPort();
+      System.setProperty("walletviews.ledger-port", sandboxPort.toString());
+
+      adminApiSocket = new ServerSocket(0);
+      adminApiPort = adminApiSocket.getLocalPort();
+
+      domainPublicSocket= new ServerSocket(0);
+      domainPublicPort = domainPublicSocket.getLocalPort();
+
+      domainAdminSocket = new ServerSocket(0);
+      domainAdminPort = domainAdminSocket.getLocalPort();
+
+      postgresSocket = new ServerSocket(0);
+      postgresPort = postgresSocket.getLocalPort();
+    } finally {
+      if (socket != null) {
+        socket.close();
+      }
+      if (adminApiSocket != null) {
+        adminApiSocket.close();
+      }
+      if (domainPublicSocket != null) {
+        domainPublicSocket.close();
+      }
+      if (domainAdminSocket != null) {
+        domainAdminSocket.close();
+      }
+      if (postgresSocket != null) {
+        postgresSocket.close();
+      }
+    }
+
+    System.setProperty("spring.datasource.url", "jdbc:tc:postgresql:12.14://localhost:" + postgresPort.toString() + "/daml_finance_views");
 
     // Start sandbox on the available ports
     final var sandboxDir = IntegrationTest.class.getResource("/sandbox").getPath();
@@ -322,12 +348,15 @@ public class IntegrationTest {
   @AfterEach
   void afterEach() throws Exception {
     logger.info("Shutting down projection executors");
-    mvc
-      .perform(
-        MockMvcRequestBuilders
-          .post(walletViewsBasePath + "projection/clear")
-      )
-      .andExpect(status().isOk());
+    if (scribeProcess != null) {
+      logger.info("Shutting down scribe...");
+      scribeProcess.destroy();
+      scribeProcess.waitFor(15, TimeUnit.SECONDS);
+      if (scribeProcess.isAlive()) {
+        throw new IllegalStateException("Failed to shutdown scribe");
+      }
+      scribeProcess = null;
+    }
 
     if (allPartiesChannel != null) {
       shutdownChannel(allPartiesChannel);
@@ -725,8 +754,7 @@ public class IntegrationTest {
 
   @Test
   void returnsAccounts() throws Exception {
-    registerAuthMock(custodianUser, 60 * 60 * 24);
-    startProjectionDaemon(custodian, custodianUser);
+    startScribe(custodian, custodianUser);
     delayForProjectionToStart();
 
     mvc
@@ -1813,7 +1841,7 @@ public class IntegrationTest {
 
   // Delay to account for time taken for the projector to start
   private static void delayForProjectionToStart() throws InterruptedException {
-    Thread.sleep(12_000);
+    Thread.sleep(20_000);
     logger.info("Finished delay for projection");
   }
 
@@ -2052,6 +2080,43 @@ public class IntegrationTest {
           .contentType(MediaType.APPLICATION_JSON)
       )
       .andExpect(status().isOk());
+  }
+
+  private void startScribe(String readAs, String userId) throws IOException {
+    final Integer healthPort;
+    ServerSocket healthSocket = null;
+
+    try {
+      healthSocket = new ServerSocket(0);
+      healthPort = healthSocket.getLocalPort();
+    } finally {
+      if (healthSocket != null) {
+        healthSocket.close();
+      }
+    }
+
+    final var scribeLocation = System.getProperty("walletviews.scribe-location");
+    if (scribeLocation == null) {
+      throw new IllegalArgumentException("Please set required system variable: walletviews.scribe-location");
+    }
+
+    final var pb = new ProcessBuilder(
+      scribeLocation,
+      "pipeline",
+      "ledger",
+      "postgres-document",
+      "--source-ledger-port", sandboxPort.toString(),
+      "--pipeline-filter-parties", readAs,
+      "--target-postgres-database", "daml_finance_views",
+      "--target-postgres-host", "localhost",
+      "--target-postgres-port", postgresPort.toString(),
+      "--health-port", healthPort.toString(),
+      "--source-ledger-auth", "OAuth",
+      "--pipeline-oauth-accesstoken", generateToken(userId)
+    ).redirectOutput(new File("./scribe-output.log"))
+     .redirectError(new File("./scribe-error.log"));
+    final var startTime = System.currentTimeMillis() / 1000L;
+    scribeProcess = pb.start();
   }
 
   private static <T> String toJson(DefinedDataType<T> value) {
