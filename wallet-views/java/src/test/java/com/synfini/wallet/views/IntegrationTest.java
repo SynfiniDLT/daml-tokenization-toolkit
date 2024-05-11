@@ -55,6 +55,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.testcontainers.containers.PostgreSQLContainer;
+
 import synfini.wallet.api.types.*;
 
 import javax.crypto.Mac;
@@ -85,13 +87,12 @@ public class IntegrationTest {
   private static final String walletViewsBasePath = "/wallet-views/v1/";
   private static final Logger logger = LoggerFactory.getLogger(IntegrationTest.class);
   private static final String mockTokenUrl = "https://myauth.com/token";
-  private static MockClient mockTokenClient;
   private static final String tokenAudience =
     "https://daml.com/jwt/aud/participant/sandbox::1220facc0504d0689c876c616736695a92dbdd54a2aad49cc7a8b2f54935604c35ac";
   private static final String clientSecret = "secret";
+  private static MockClient mockTokenClient;
   private static Integer sandboxPort;
   private static Process sandboxProcess;
-  private static Integer postgresPort;
   private static Process scribeProcess;
   private static String depository;
   private static String issuer;
@@ -113,14 +114,24 @@ public class IntegrationTest {
   private static daml.finance.interface$.instrument.token.factory.Factory.ContractId tokenInstrumentFactoryCid;
   private static synfini.interface$.onboarding.issuer.instrument.token.factory.Factory.ContractId tokenInstrumentIssuerFactoryCid;
 
+  public static PostgreSQLContainer<?> postgresContainer;
+
   @Autowired
   private MockMvc mvc;
 
   @BeforeAll
   public static void beforeAll() throws Exception {
     System.setProperty("projection.flyway.migrate-on-start", "true");
+    postgresContainer = new PostgreSQLContainer<>("postgres:11");
+    postgresContainer.start();
+
+    System.setProperty("spring.datasource.url", postgresContainer.getJdbcUrl());
+    System.setProperty("spring.datasource.username", postgresContainer.getUsername());
+    System.setProperty("spring.datasource.password", postgresContainer.getPassword());
+    System.setProperty("spring.datasource.driver-class-name", postgresContainer.getDriverClassName());
+
     Integer adminApiPort, domainPublicPort, domainAdminPort;
-    ServerSocket socket = null, adminApiSocket = null, domainPublicSocket = null, domainAdminSocket = null, postgresSocket = null;
+    ServerSocket socket = null, adminApiSocket = null, domainPublicSocket = null, domainAdminSocket = null;
     try {
       socket = new ServerSocket(0);
       sandboxPort = socket.getLocalPort();
@@ -134,9 +145,6 @@ public class IntegrationTest {
 
       domainAdminSocket = new ServerSocket(0);
       domainAdminPort = domainAdminSocket.getLocalPort();
-
-      postgresSocket = new ServerSocket(0);
-      postgresPort = postgresSocket.getLocalPort();
     } finally {
       if (socket != null) {
         socket.close();
@@ -150,12 +158,7 @@ public class IntegrationTest {
       if (domainAdminSocket != null) {
         domainAdminSocket.close();
       }
-      if (postgresSocket != null) {
-        postgresSocket.close();
-      }
     }
-
-    System.setProperty("spring.datasource.url", "jdbc:tc:postgresql:12.14://localhost:" + postgresPort.toString() + "/daml_finance_views");
 
     // Start sandbox on the available ports
     final var sandboxDir = IntegrationTest.class.getResource("/sandbox").getPath();
@@ -232,6 +235,8 @@ public class IntegrationTest {
     if (adminChannel != null) {
       shutdownChannel(adminChannel);
     }
+
+    postgresContainer.stop();
 
     if (sandboxProcess != null) {
       logger.info("Shutting down sandbox...");
@@ -2107,9 +2112,11 @@ public class IntegrationTest {
       "postgres-document",
       "--source-ledger-port", sandboxPort.toString(),
       "--pipeline-filter-parties", readAs,
-      "--target-postgres-database", "daml_finance_views",
-      "--target-postgres-host", "localhost",
-      "--target-postgres-port", postgresPort.toString(),
+      "--target-postgres-username", postgresContainer.getUsername(),
+      "--target-postgres-password", postgresContainer.getPassword(),
+      "--target-postgres-database", postgresContainer.getDatabaseName(),
+      "--target-postgres-host", postgresContainer.getHost(),
+      "--target-postgres-port", postgresContainer.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT).toString(),
       "--health-port", healthPort.toString(),
       "--source-ledger-auth", "OAuth",
       "--pipeline-oauth-accesstoken", generateToken(userId)
