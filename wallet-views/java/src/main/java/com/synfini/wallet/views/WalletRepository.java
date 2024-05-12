@@ -60,9 +60,9 @@ public class WalletRepository {
   public List<AccountSummary> accounts(Optional<String> custodian, String owner) {
     return jdbcTemplate.query(
       multiLineQuery(
-        "DO $$ BEGIN",
-        "PERFORM set_latest(NULL);",
-        "END $$;",
+        // "DO $$ BEGIN",
+        // "PERFORM set_latest(NULL);",
+        // "END $$;",
         "SELECT * FROM active(?)",
         "WHERE (? IS NULL OR payload->>'custodian' = ?) AND payload->>'owner' = ?"
       ),
