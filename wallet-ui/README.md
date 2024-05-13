@@ -15,6 +15,7 @@ These environment variables in the .env file defines party name and IAM url for 
 1. REACT_APP_PARTY_ATTRIBUTES_INSTRUMENT_ID: Instrument ID of the SBT used to identify ecosystem members.
 1. REACT_APP_PARTY_ATTRIBUTES_NAME: Name of the attribute on the metadata contracts for the REACT_APP_PARTY_ATTRIBUTES_INSTRUMENT_ID. The value of this attribute is the display name of the party.
 1. REACT_APP_POLL_DELAY: Delay in milliseconds to wait before each polling request the UI makes to the wallet views API if data requires refresh.*
+1. REACT_APP_POLL_MAX: Max number of polling attempts.
 
 * The wallet views API does not have any streaming capability yet, so polling is the only option available in order to
 refresh the UI state when the user interacts with the ledger.

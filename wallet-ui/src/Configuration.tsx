@@ -27,4 +27,5 @@ export const sbtCustodian = getRequiredVariable("REACT_APP_PARTIES_SBT_CUSTODIAN
 export const sbtDepository = getRequiredVariable("REACT_APP_PARTIES_SBT_INSTRUMENT_DEPOSITORY");
 export const sbtIssuer = getRequiredVariable("REACT_APP_PARTIES_SBT_INSTRUMENT_ISSUER");
 
-export const pollDelay =  parseInt(getRequiredVariable("REACT_APP_POLL_DELAY"));
+export const pollDelay = parseInt(getRequiredVariable("REACT_APP_POLL_DELAY"));
+export const maxPolls = parseInt(getRequiredVariable("REACT_APP_POLL_MAX"));
