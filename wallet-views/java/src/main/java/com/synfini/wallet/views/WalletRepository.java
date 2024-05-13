@@ -341,11 +341,7 @@ public class WalletRepository {
             asDamlSet(payload.get("controllers").getAsJsonObject().get("outgoing").getAsJsonObject()),
             asDamlSet(payload.get("controllers").getAsJsonObject().get("incoming").getAsJsonObject())
           )
-        ),
-        Optional.empty(),
-        Optional.empty()
-        // getTransactionDetail(rs, "create"),
-        //getTransactionDetail(rs, "remove")
+        )
       );
     }
   }

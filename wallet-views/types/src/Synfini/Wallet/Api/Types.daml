@@ -29,8 +29,6 @@ data AccountSummary = AccountSummary
   with
     cid : ContractId Account.I
     view : Account.V
-    open : Optional TransactionDetail
-    close : Optional TransactionDetail
   deriving (Show, Eq)
 
 data Accounts = Accounts

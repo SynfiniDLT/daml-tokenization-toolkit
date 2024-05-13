@@ -133,19 +133,13 @@ The following endpoints are provided the API:
             ]
           }
         }
-      },
-      "create": { // When the account was created - optional
-        "offset": "...",
-        "effectiveTime": "2023-01-01T04:30:23.123456Z"
-      },
-      "remove": { // When the account was removed - optional
-        "offset": "...",
-        "effectiveTime": "2023-05-01T04:30:23.123456Z"
       }
     }
   ]
 }
 ```
+
+Note: currently the API only supports returning active `Account`s (no archived `Account`s will be returned).
 
 ### List Account OpenOffer Contracts
 This endpoint lists account `OpenOffer` contracts as defined in the `account-onboarding` folder at the base of this

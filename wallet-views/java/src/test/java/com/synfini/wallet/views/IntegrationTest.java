@@ -770,7 +770,6 @@ public class IntegrationTest {
     final var account = new AccountKey(custodian, investor1, new Id("1"));
 
     final var accountCid = createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
-    final var createOffset = getLedgerEnd();
     final var investor1Accounts = new Accounts(
       Collections.singletonList(
         new AccountSummary(
@@ -782,9 +781,7 @@ public class IntegrationTest {
             "Testing account",
             holdingFactoryCid,
             new Controllers(arrayToSet(investor1), arrayToSet())
-          ),
-          Optional.of(new TransactionDetail(createOffset, Instant.EPOCH)),
-          Optional.empty()
+          )
         )
       )
     );
@@ -844,9 +841,7 @@ public class IntegrationTest {
                     newDescription,
                     holdingFactoryCid,
                     newControllers
-                  ),
-                  Optional.of(new TransactionDetail(createOffset, Instant.EPOCH)),
-                  Optional.empty()
+                  )
                 )
               )
             )
@@ -855,7 +850,6 @@ public class IntegrationTest {
       );
 
     removeAccount(account);
-    final var removeOffset = getLedgerEnd();
     delayForProjectionIngestion();
 
     mvc
@@ -865,21 +859,7 @@ public class IntegrationTest {
         content().json(
           toJson(
             new Accounts(
-              Collections.singletonList(
-                new AccountSummary(
-                  newAccountCid,
-                  new daml.finance.interface$.account.account.View(
-                    account.custodian,
-                    account.owner,
-                    account.id,
-                    newDescription,
-                    holdingFactoryCid,
-                    newControllers
-                  ),
-                  Optional.of(new TransactionDetail(createOffset, Instant.EPOCH)),
-                  Optional.of(new TransactionDetail(removeOffset, Instant.EPOCH))
-                )
-              )
+              Collections.emptyList()
             )
           )
         )
