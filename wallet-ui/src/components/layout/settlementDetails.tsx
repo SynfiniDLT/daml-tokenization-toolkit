@@ -718,9 +718,9 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                       <Field>Register: </Field>
                       {nameFromParty(step.routedStep.custodian)}
                       <br />
-                      <Field>Sender allocation: </Field>
+                      <Field>{isMint(step.routedStep) ? "Issuer approval:" : "Sender response:"}</Field>
                       {step.allocation.tag === "Unallocated" ?
-                        <span style={{ color: "hsl(0, 90%, 80%)" }}>{step.allocation.tag}</span>
+                        <span style={{ color: "hsl(0, 90%, 80%)" }}>Pending</span>
                       : step.allocation.tag === "Pledge" ?
                         `Send from account ID ${settlementHoldings.get(step.allocation.value)?.account.id.unpack}`
                       : step.allocation.tag === "PassThroughFrom" ?
@@ -732,9 +732,9 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                       : "Allocated"
                       }
                       <br />
-                      <Field>Receiver approval: </Field>
+                      <Field>{isBurn(step.routedStep) ? "Issuer approval:" : "Receiver response:"}</Field>
                       {step.approval.tag === "Unapproved" ?
-                        <span style={{ color: "hsl(0, 90%, 80%)" }}>{step.approval.tag}</span>
+                        <span style={{ color: "hsl(0, 90%, 80%)" }}>Pending</span>
                       : step.approval.tag === "TakeDelivery" ?
                         `Take delivery to account ID ${step.approval.value.id.unpack}`
                       : step.approval.tag === "PassThroughTo" ?
