@@ -4,15 +4,32 @@ import com.daml.ledger.javaapi.data.ListUserRightsResponse;
 import com.daml.ledger.javaapi.data.User;
 import com.daml.ledger.javaapi.data.codegen.DefinedDataType;
 import com.daml.lf.codegen.json.JsonCodec;
+import com.google.gson.Gson;
 import com.synfini.wallet.views.config.LedgerApiConfig;
 import com.synfini.wallet.views.config.WalletViewsApiConfig;
+import com.synfini.wallet.views.schema.response.Accounts;
+
+import synfini.wallet.api.types.AccountFilter;
+import synfini.wallet.api.types.AccountOpenOffers;
+import synfini.wallet.api.types.AccountOpenOffersFilter;
+import synfini.wallet.api.types.BalanceFilter;
+import synfini.wallet.api.types.Balances;
+import synfini.wallet.api.types.HoldingFilter;
+import synfini.wallet.api.types.Holdings;
+import synfini.wallet.api.types.Instruments;
+import synfini.wallet.api.types.InstrumentsFilter;
+import synfini.wallet.api.types.Issuers;
+import synfini.wallet.api.types.IssuersFilter;
+import synfini.wallet.api.types.Settlements;
+import synfini.wallet.api.types.SettlementsFilter;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import synfini.wallet.api.types.*;
+// import synfini.wallet.api.types.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +73,7 @@ public class WalletViewsController {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     }
     final var accounts = new Accounts(walletRepository.accounts(filter.custodian, filter.owner));
-    return ResponseEntity.ok(asJson(accounts));
+    return ResponseEntity.ok(new Gson().toJson(accounts));
   }
 
   @PostMapping("/account-open-offers")

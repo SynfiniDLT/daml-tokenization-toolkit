@@ -6,6 +6,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import com.synfini.wallet.views.schema.response.AccountSummary;
+
 import da.types.Tuple2;
 import daml.finance.interface$.account.account.Account;
 import daml.finance.interface$.account.account.Controllers;
@@ -37,7 +39,16 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import synfini.interface$.onboarding.account.openoffer.openoffer.OpenOffer;
 import synfini.interface$.onboarding.issuer.instrument.token.issuer.Issuer;
-import synfini.wallet.api.types.*;
+// import synfini.wallet.api.types.*;
+import synfini.wallet.api.types.AccountOpenOfferSummary;
+import synfini.wallet.api.types.Balance;
+import synfini.wallet.api.types.HoldingSummary;
+import synfini.wallet.api.types.InstrumentSummary;
+import synfini.wallet.api.types.IssuerSummary;
+import synfini.wallet.api.types.SettlementStep;
+import synfini.wallet.api.types.SettlementSummary;
+import synfini.wallet.api.types.TokenIssuerSummary;
+import synfini.wallet.api.types.TransactionDetail;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
@@ -60,9 +71,6 @@ public class WalletRepository {
   public List<AccountSummary> accounts(Optional<String> custodian, String owner) {
     return jdbcTemplate.query(
       multiLineQuery(
-        // "DO $$ BEGIN",
-        // "PERFORM set_latest(NULL);",
-        // "END $$;",
         "SELECT * FROM active(?)",
         "WHERE (? IS NULL OR payload->>'custodian' = ?) AND payload->>'owner' = ?"
       ),
@@ -330,18 +338,8 @@ public class WalletRepository {
     public AccountSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
       final var payload = new Gson().fromJson(rs.getString("payload"), JsonObject.class);
       return new AccountSummary(
-        new Account.ContractId(rs.getString("contract_id")),
-        new daml.finance.interface$.account.account.View(
-          payload.get("custodian").getAsString(),
-          payload.get("owner").getAsString(),
-          new Id(payload.get("id").getAsJsonObject().get("unpack").getAsString()),
-          payload.get("description").getAsString(),
-          new Factory.ContractId(payload.get("holdingFactoryCid").getAsString()),
-          new Controllers(
-            asDamlSet(payload.get("controllers").getAsJsonObject().get("outgoing").getAsJsonObject()),
-            asDamlSet(payload.get("controllers").getAsJsonObject().get("incoming").getAsJsonObject())
-          )
-        )
+        rs.getString("contract_id"),
+        payload
       );
     }
   }
