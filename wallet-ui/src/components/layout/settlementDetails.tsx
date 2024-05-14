@@ -627,6 +627,9 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
               <FieldSettled>Settled</FieldSettled>
             )}
             <br />
+            <Field>Authorised Settlers:</Field>
+            {setToArray(settlement.settlers).map(p => nameFromParty(p)).join(", ")}
+            <br />
             <Field>Created Time:</Field>
             {toDateTimeString(settlement.witness.effectiveTime)}
             <br />
@@ -732,7 +735,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                       : "Allocated"
                       }
                       <br />
-                      <Field>{isBurn(step.routedStep) ? "Issuer approval:" : "Receiver response:"}</Field>
+                      <Field>{isBurn(step.routedStep) && step.routedStep.sender !== step.routedStep.custodian ? "Issuer approval:" : "Receiver response:"}</Field>
                       {step.approval.tag === "Unapproved" ?
                         <span style={{ color: "hsl(0, 90%, 80%)" }}>Pending</span>
                       : step.approval.tag === "TakeDelivery" ?
