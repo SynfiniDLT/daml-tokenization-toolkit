@@ -7,6 +7,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import com.synfini.wallet.views.schema.response.AccountSummary;
+import com.synfini.wallet.views.schema.response.AccountOpenOfferSummary;
 
 import da.types.Tuple2;
 import daml.finance.interface$.account.account.Account;
@@ -40,7 +41,6 @@ import org.springframework.stereotype.Component;
 import synfini.interface$.onboarding.account.openoffer.openoffer.OpenOffer;
 import synfini.interface$.onboarding.issuer.instrument.token.issuer.Issuer;
 // import synfini.wallet.api.types.*;
-import synfini.wallet.api.types.AccountOpenOfferSummary;
 import synfini.wallet.api.types.Balance;
 import synfini.wallet.api.types.HoldingSummary;
 import synfini.wallet.api.types.InstrumentSummary;
@@ -86,24 +86,40 @@ public class WalletRepository {
 
   public List<AccountOpenOfferSummary> accountOpenOffers(List<String> readAs) {
     return jdbcTemplate.query(
-      "SELECT\n" +
-        "  o.cid cid,\n" +
-        "  o.custodian custodian,\n" +
-        "  o.permitted_owners permitted_owners,\n" +
-        "  o.description description,\n" +
-        "  o.owner_incoming_controlled owner_incoming_controlled,\n" +
-        "  o.owner_outgoing_controlled owner_outgoing_controlled,\n" +
-        "  o.additional_controllers_incoming additional_controllers_incoming,\n" +
-        "  o.additional_controllers_outgoing additional_controllers_outgoing,\n" +
-        "  o.account_factory_cid account_factory_cid,\n" +
-        "  o.holding_factory_cid holding_factory_cid,\n" +
-        "  o.create_offset create_offset,\n" +
-        "  o.create_effective_time create_effective_time\n" +
-        "FROM account_open_offers o\n" +
-        "INNER JOIN account_open_offer_witnesses w ON o.cid = w.cid\n" +
-        "WHERE o.archive_offset IS NULL AND w.party = ANY(?)",
+      multiLineQuery(
+        "SELECT",
+        "  offers.contract_id AS contract_id,",
+        "  _transactions.offset AS create_offset,",
+        "  _transactions.effective_at AS create_effective_time,",
+        "  offers.payload AS payload",
+        "FROM active(?) AS offers",
+        "INNER JOIN _creates ON offers.contract_id = _creates.contract_id",
+        "INNER JOIN _transactions ON offers.offset = _transactions.offset",
+        "WHERE (text_set_values(offers.payload->'offerers') && ?) OR offers.payload->>'offeree' = ANY(?)"
+      ),
+        // "  o.cid cid,\n" +
+        // "  o.custodian custodian,\n" +
+        // "  o.permitted_owners permitted_owners,\n" +
+        // "  o.description description,\n" +
+        // "  o.owner_incoming_controlled owner_incoming_controlled,\n" +
+        // "  o.owner_outgoing_controlled owner_outgoing_controlled,\n" +
+        // "  o.additional_controllers_incoming additional_controllers_incoming,\n" +
+        // "  o.additional_controllers_outgoing additional_controllers_outgoing,\n" +
+        // "  o.account_factory_cid account_factory_cid,\n" +
+        // "  o.holding_factory_cid holding_factory_cid,\n" +
+        // "  o.create_offset create_offset,\n" +
+        // "  o.create_effective_time create_effective_time\n" +
+        // "FROM account_open_offers o\n" +
+        // "INNER JOIN account_open_offer_witnesses w ON o.cid = w.cid\n" +
+        // "WHERE o.archive_offset IS NULL AND w.party = ANY(?)",
       ps -> {
-        ps.setArray(1, asSqlArray(readAs));
+        int pos = 0;
+        ps.setString(
+          ++pos,
+          fullyQualified(synfini.interface$.onboarding.account.openoffer.openoffer.OpenOffer.TEMPLATE_ID)
+        );
+        ps.setArray(++pos, asSqlArray(readAs));
+        ps.setArray(++pos, asSqlArray(readAs));
       },
       new AccountOpenOfferRowMapper()
     );
@@ -347,26 +363,11 @@ public class WalletRepository {
   private static class AccountOpenOfferRowMapper implements RowMapper<AccountOpenOfferSummary> {
     @Override
     public AccountOpenOfferSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
-      final var permittedOwnersArray = rs.getArray("permitted_owners");
-      final Optional<da.set.types.Set<String>> permittedOwners = permittedOwnersArray == null ?
-        Optional.empty() :
-        Optional.of(arrayToSet(permittedOwnersArray));
+      final var payload = Util.gson.fromJson(rs.getString("payload"), JsonObject.class);
       return new AccountOpenOfferSummary(
-        new OpenOffer.ContractId(rs.getString("cid")),
-        new synfini.interface$.onboarding.account.openoffer.openoffer.View(
-          rs.getString("custodian"),
-          rs.getBoolean("owner_incoming_controlled"),
-          rs.getBoolean("owner_outgoing_controlled"),
-          new Controllers(
-            arrayToSet(rs.getArray("additional_controllers_outgoing")),
-            arrayToSet(rs.getArray("additional_controllers_incoming"))
-          ),
-          permittedOwners,
-          new daml.finance.interface$.account.factory.Factory.ContractId(rs.getString("account_factory_cid")),
-          new daml.finance.interface$.holding.factory.Factory.ContractId(rs.getString("holding_factory_cid")),
-          rs.getString("description")
-        ),
-        getTransactionDetail(rs, "create")
+        rs.getString("contract_id"),
+        payload,
+        getTransactionDetail_(rs, "create").get()
       );
     }
   }
@@ -587,6 +588,16 @@ public class WalletRepository {
     }
   }
 
+  private static Optional<com.synfini.wallet.views.schema.TransactionDetail> getTransactionDetail_(ResultSet rs, String prefix) throws SQLException {
+    String offset = rs.getString(prefix + "_offset");
+    Timestamp effectiveTime = rs.getTimestamp(prefix + "_effective_time");
+    if (offset != null && effectiveTime != null) {
+      return Optional.of(new com.synfini.wallet.views.schema.TransactionDetail(offset, effectiveTime.toInstant().toString()));
+    } else {
+      return Optional.empty();
+    }
+  }
+
   private static InstrumentKey getInstrumentKey(ResultSet rs) throws SQLException {
     return new InstrumentKey(
       rs.getString("instrument_depository"),
@@ -633,7 +644,7 @@ public class WalletRepository {
     Connection conn = null;
     try {
       conn = pgDataSource.getConnection();
-      arr = conn.createArrayOf("varchar", list.toArray());
+      arr = conn.createArrayOf("text", list.toArray());
     } finally {
       if (conn != null) {
         conn.close();

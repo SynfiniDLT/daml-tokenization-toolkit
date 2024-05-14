@@ -7,10 +7,10 @@ import com.daml.lf.codegen.json.JsonCodec;
 import com.google.gson.Gson;
 import com.synfini.wallet.views.config.LedgerApiConfig;
 import com.synfini.wallet.views.config.WalletViewsApiConfig;
+import com.synfini.wallet.views.schema.response.AccountOpenOffers;
 import com.synfini.wallet.views.schema.response.Accounts;
 
 import synfini.wallet.api.types.AccountFilter;
-import synfini.wallet.api.types.AccountOpenOffers;
 import synfini.wallet.api.types.AccountOpenOffersFilter;
 import synfini.wallet.api.types.BalanceFilter;
 import synfini.wallet.api.types.Balances;
@@ -73,7 +73,7 @@ public class WalletViewsController {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     }
     final var accounts = new Accounts(walletRepository.accounts(filter.custodian, filter.owner));
-    return ResponseEntity.ok(new Gson().toJson(accounts));
+    return ResponseEntity.ok(Util.gson.toJson(accounts));
   }
 
   @PostMapping("/account-open-offers")
@@ -84,7 +84,7 @@ public class WalletViewsController {
     final var userRights = WalletAuth.getUser(ledgerApiConfig, auth);
     final var parties = allParties(userRights);
     final var accounts = new AccountOpenOffers(walletRepository.accountOpenOffers(parties));
-    return ResponseEntity.ok(asJson(accounts));
+    return ResponseEntity.ok(Util.gson.toJson(accounts));
   }
 
   @PostMapping("/balance")

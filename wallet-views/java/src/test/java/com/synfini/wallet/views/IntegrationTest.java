@@ -44,6 +44,8 @@ import io.grpc.MethodDescriptor;
 import io.grpc.*;
 import io.grpc.netty.NettyChannelBuilder;
 import kong.unirest.*;
+
+import org.apache.ibatis.jdbc.ScriptRunner;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,8 +63,11 @@ import synfini.wallet.api.types.*;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -70,6 +75,7 @@ import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.sql.DriverManager;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -250,6 +256,20 @@ public class IntegrationTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
+    // DB setup
+    final var dbConn = DriverManager.getConnection(
+      postgresContainer.getJdbcUrl(),
+      postgresContainer.getUsername(),
+      postgresContainer.getPassword()
+    );
+    // final var statement = dbConn.createStatement();
+    // final var 
+    final var sr = new ScriptRunner(dbConn);
+    sr.setSendFullScript(true);
+    final var reader = new BufferedReader(new FileReader(this.getClass().getResource("/db/functions.sql").getFile()));
+    sr.runScript(reader);
+    dbConn.createStatement();
+
     mockTokenClient = MockClient.register();
     mockTokenClient.defaultResponse().thenReturn("Did not match any expected responses").withStatus(400);
     final var entropy = UUID.randomUUID().toString().substring(0, 6);
@@ -868,8 +888,7 @@ public class IntegrationTest {
 
   @Test
   void returnsAccountOpenOffers() throws Exception {
-    registerAuthMock(custodianUser, 60 * 60 * 24);
-    startProjectionDaemon(custodian, custodianUser);
+    startScribe(custodian, custodianUser);
     delayForProjectionToStart();
 
     final var ownerIncomingControlled = false;
