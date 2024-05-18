@@ -7,6 +7,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import com.synfini.wallet.views.schema.response.AccountSummary;
+import com.synfini.wallet.views.schema.response.HoldingSummary;
 import com.synfini.wallet.views.schema.response.AccountOpenOfferSummary;
 
 import da.types.Tuple2;
@@ -42,7 +43,6 @@ import synfini.interface$.onboarding.account.openoffer.openoffer.OpenOffer;
 import synfini.interface$.onboarding.issuer.instrument.token.issuer.Issuer;
 // import synfini.wallet.api.types.*;
 import synfini.wallet.api.types.Balance;
-import synfini.wallet.api.types.HoldingSummary;
 import synfini.wallet.api.types.InstrumentSummary;
 import synfini.wallet.api.types.IssuerSummary;
 import synfini.wallet.api.types.SettlementStep;
@@ -159,35 +159,75 @@ public class WalletRepository {
 
   public List<HoldingSummary> holdings(AccountKey account, InstrumentKey instrument, List<String> readAs) {
     return jdbcTemplate.query(
-  "SELECT DISTINCT ON (cid)\n" +
-      "  h.cid cid,\n" +
-      "  h.amount amount,\n" +
-      "  h.lockers lockers,\n" +
-      "  h.lock_context lock_context,\n" +
-      "  h.lock_type lock_type,\n" +
-      "  h.create_offset create_offset,\n" +
-      "  h.create_effective_time create_effective_time\n" +
-      "FROM holdings h INNER JOIN holding_witnesses ON h.cid = holding_witnesses.cid\n" +
-      "WHERE\n" +
-      "  holding_witnesses.party = ANY(?) AND\n" +
-      "  h.account_custodian = ? AND\n" +
-      "  h.account_owner = ? AND\n" +
-      "  h.account_id = ? AND\n" +
-      "  h.instrument_depository = ? AND\n" +
-      "  h.instrument_issuer = ? AND\n" +
-      "  h.instrument_id = ? AND\n" +
-      "  h.instrument_version = ? AND\n" +
-      "  h.archive_offset IS NULL\n" +
-      "ORDER BY cid",
+      multiLineQuery(
+        "SELECT",
+        "  holding.contract_id AS contract_id,",
+        "  holding.payload AS payload,",
+        "  holding.created_at_offset AS created_at_offset,",
+        "  holding.created_effective_at AS created_effective_at",
+        "FROM active(?) AS holding",
+        "INNER JOIN active(?) AS disclosure ON holding.contract_id = disclosure.contract_id",
+        "WHERE",
+        "  holding.payload->'account'->>'custodian' = ? AND",
+        "  holding.payload->'account'->>'owner' = ? AND",
+        "  holding.payload->'account'->'id'->>'unpack' = ? AND",
+        "  holding.payload->'instrument'->>'depository' = ? AND",
+        "  holding.payload->'instrument'->>'issuer' = ? AND",
+        "  holding.payload->'instrument'->'id'->>'unpack' = ? AND",
+        "  holding.payload->'instrument'->>'version' = ? AND",
+        "  (",
+        "    holding.payload->'account'->>'custodian' = ANY(?) OR",
+        "    holding.payload->'account'->>'owner' = ANY(?) OR",
+        "    flatten_observers(disclosure.payload->'observers') && ? OR",
+        "    daml_set_text_values(holding.payload->'lock'->'lockers') && ?",
+        "  )"
+      ),
+  // "SELECT DISTINCT ON (cid)\n" +
+  //     "  h.cid cid,\n" +
+  //     "  h.amount amount,\n" +
+  //     "  h.lockers lockers,\n" +
+  //     "  h.lock_context lock_context,\n" +
+  //     "  h.lock_type lock_type,\n" +
+  //     "  h.create_offset create_offset,\n" +
+  //     "  h.create_effective_time create_effective_time\n" +
+  //     "FROM holdings h INNER JOIN holding_witnesses ON h.cid = holding_witnesses.cid\n" +
+  //     "WHERE\n" +
+  //     "  holding_witnesses.party = ANY(?) AND\n" +
+  //     "  h.account_custodian = ? AND\n" +
+  //     "  h.account_owner = ? AND\n" +
+  //     "  h.account_id = ? AND\n" +
+  //     "  h.instrument_depository = ? AND\n" +
+  //     "  h.instrument_issuer = ? AND\n" +
+  //     "  h.instrument_id = ? AND\n" +
+  //     "  h.instrument_version = ? AND\n" +
+  //     "  h.archive_offset IS NULL\n" +
+  //     "ORDER BY cid",
       ps -> {
-        ps.setArray(1, asSqlArray(readAs));
-        ps.setString(2, account.custodian);
-        ps.setString(3, account.owner);
-        ps.setString(4, account.id.unpack);
-        ps.setString(5, instrument.depository);
-        ps.setString(6, instrument.issuer);
-        ps.setString(7, instrument.id.unpack);
-        ps.setString(8, instrument.version);
+        int pos = 0;
+        ps.setString(
+          ++pos,
+          fullyQualified(daml.finance.interface$.holding.base.Base.TEMPLATE_ID)
+        );
+        ps.setString(
+          ++pos,
+          fullyQualified(daml.finance.interface$.util.disclosure.Disclosure.TEMPLATE_ID)
+        );
+
+        ps.setString(++pos, account.custodian);
+        ps.setString(++pos, account.owner);
+        ps.setString(++pos, account.id.unpack);
+  
+        ps.setString(++pos, instrument.depository);
+        ps.setString(++pos, instrument.issuer);
+        ps.setString(++pos, instrument.id.unpack);
+        ps.setString(++pos, instrument.version);
+
+        final var readAsArray = asSqlArray(readAs);
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+
       },
       new HoldingsRowMapper(account, instrument)
     );
@@ -366,7 +406,6 @@ public class WalletRepository {
   private static class AccountOpenOfferRowMapper implements RowMapper<AccountOpenOfferSummary> {
     @Override
     public AccountOpenOfferSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
-      // Util.logger.info("RS === ", rs.get);
       final var payload = new Gson().fromJson(rs.getString("payload"), JsonObject.class);
       return new AccountOpenOfferSummary(
         rs.getString("contract_id"),
@@ -404,15 +443,11 @@ public class WalletRepository {
 
     @Override
     public HoldingSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
+      Util.logger.info("payload: " + rs.getString("payload"));
       return new HoldingSummary(
-        new Base.ContractId(rs.getString("cid")),
-        new View(
-          instrument,
-          account,
-          rs.getBigDecimal("amount"),
-          getLock(rs)
-        ),
-        getTransactionDetail(rs, "create")
+        rs.getString("contract_id"),
+        new Gson().fromJson(rs.getString("payload"), JsonObject.class),
+        getTransactionDetail_(rs, "created")
       );
     }
   }

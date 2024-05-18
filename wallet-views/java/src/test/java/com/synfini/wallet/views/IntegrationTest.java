@@ -733,13 +733,11 @@ public class IntegrationTest {
 
   @Test
   void returnsHoldings() throws Exception {
-    registerAuthMock(custodianUser, 60 * 60 * 24);
-    startProjectionDaemon(custodian, custodianUser);
-    delayForProjectionToStart();
+    startScribe(custodian, custodianUser);
     final var account = new AccountKey(custodian, investor1, new Id("1"));
 
     final var accountCid = createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
-    final var creditAmount = new BigDecimal("99.0");
+    final var creditAmount = new BigDecimal("99.0000000001");
     final var holdingCid = creditAccount(accountCid, instrument1(), creditAmount);
     final var ledgerOffset = getLedgerEnd();
     delayForProjectionIngestion();

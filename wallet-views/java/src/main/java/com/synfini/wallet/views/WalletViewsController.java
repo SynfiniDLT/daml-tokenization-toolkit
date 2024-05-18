@@ -9,13 +9,13 @@ import com.synfini.wallet.views.config.LedgerApiConfig;
 import com.synfini.wallet.views.config.WalletViewsApiConfig;
 import com.synfini.wallet.views.schema.response.AccountOpenOffers;
 import com.synfini.wallet.views.schema.response.Accounts;
+import com.synfini.wallet.views.schema.response.Holdings;
 
 import synfini.wallet.api.types.AccountFilter;
 import synfini.wallet.api.types.AccountOpenOffersFilter;
 import synfini.wallet.api.types.BalanceFilter;
 import synfini.wallet.api.types.Balances;
 import synfini.wallet.api.types.HoldingFilter;
-import synfini.wallet.api.types.Holdings;
 import synfini.wallet.api.types.Instruments;
 import synfini.wallet.api.types.InstrumentsFilter;
 import synfini.wallet.api.types.Issuers;
@@ -111,7 +111,7 @@ public class WalletViewsController {
     final var userRights = WalletAuth.getUser(ledgerApiConfig, auth);
     final var parties = allParties(userRights);
     final var holdings = new Holdings(walletRepository.holdings(filter.account, filter.instrument, parties));
-    return ResponseEntity.ok(asJson(holdings));
+    return ResponseEntity.ok(Util.gson.toJson(holdings));
   }
 
   @PostMapping("/settlements")
