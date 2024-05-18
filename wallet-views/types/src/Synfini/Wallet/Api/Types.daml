@@ -24,6 +24,12 @@ data TransactionDetail = TransactionDetail
     effectiveTime : Time
   deriving (Show, Eq)
 
+data TransactionDetail_ = TransactionDetail_
+  with
+    offset : Text
+    effectiveTime : Time
+  deriving (Show, Eq)
+
 -- Accounts
 data AccountSummary = AccountSummary
   with
@@ -47,7 +53,7 @@ data AccountOpenOfferSummary = AccountOpenOfferSummary
   with
     cid : ContractId AccountOpenOffer.I
     view : AccountOpenOffer.V
-    create : Optional TransactionDetail
+    create : TransactionDetail_
   deriving (Show, Eq)
 
 data AccountOpenOffers = AccountOpenOffers

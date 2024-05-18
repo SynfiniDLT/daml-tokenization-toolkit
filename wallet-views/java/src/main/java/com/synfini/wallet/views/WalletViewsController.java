@@ -84,6 +84,10 @@ public class WalletViewsController {
     final var userRights = WalletAuth.getUser(ledgerApiConfig, auth);
     final var parties = allParties(userRights);
     final var accounts = new AccountOpenOffers(walletRepository.accountOpenOffers(parties));
+    // for (final var account : accounts.accountOpenOffers) {
+    //   account.view = null;
+    //   Util.logger.info("Returned account: " + account.view.toString());
+    // }
     return ResponseEntity.ok(Util.gson.toJson(accounts));
   }
 

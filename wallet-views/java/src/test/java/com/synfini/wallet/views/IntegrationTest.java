@@ -70,12 +70,24 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ProcessBuilder.Redirect;
 import java.math.BigDecimal;
 import java.net.ServerSocket;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse.BodyHandler;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpResponse.BodySubscriber;
+import java.net.http.HttpResponse.ResponseInfo;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -128,7 +140,7 @@ public class IntegrationTest {
   @BeforeAll
   public static void beforeAll() throws Exception {
     System.setProperty("projection.flyway.migrate-on-start", "true");
-    postgresContainer = new PostgreSQLContainer<>("postgres:11");
+    postgresContainer = new PostgreSQLContainer<>("postgres:16");
     postgresContainer.start();
 
     System.setProperty("spring.datasource.url", postgresContainer.getJdbcUrl());
@@ -257,18 +269,21 @@ public class IntegrationTest {
   @BeforeEach
   void beforeEach() throws Exception {
     // DB setup
-    final var dbConn = DriverManager.getConnection(
-      postgresContainer.getJdbcUrl(),
+    final var defaultJdbcUrl = postgresContainer.getJdbcUrl();
+    final var managementJdbcUrl = defaultJdbcUrl.substring(0, defaultJdbcUrl.lastIndexOf("/")) + "/postgres";
+    logger.info("Setting up database using jdbc url: " + managementJdbcUrl);
+    final var managementDbConn = DriverManager.getConnection(
+      managementJdbcUrl,
       postgresContainer.getUsername(),
       postgresContainer.getPassword()
     );
-    // final var statement = dbConn.createStatement();
-    // final var 
-    final var sr = new ScriptRunner(dbConn);
-    sr.setSendFullScript(true);
-    final var reader = new BufferedReader(new FileReader(this.getClass().getResource("/db/functions.sql").getFile()));
-    sr.runScript(reader);
-    dbConn.createStatement();
+    try {
+      final var statement = managementDbConn.createStatement();
+      statement.executeUpdate("DROP DATABASE " + postgresContainer.getDatabaseName());
+      statement.executeUpdate("CREATE DATABASE " + postgresContainer.getDatabaseName());  
+    } finally {
+      managementDbConn.close();
+    }
 
     mockTokenClient = MockClient.register();
     mockTokenClient.defaultResponse().thenReturn("Did not match any expected responses").withStatus(400);
@@ -372,7 +387,6 @@ public class IntegrationTest {
 
   @AfterEach
   void afterEach() throws Exception {
-    logger.info("Shutting down projection executors");
     if (scribeProcess != null) {
       logger.info("Shutting down scribe...");
       scribeProcess.destroy();
@@ -380,6 +394,7 @@ public class IntegrationTest {
       if (scribeProcess.isAlive()) {
         throw new IllegalStateException("Failed to shutdown scribe");
       }
+      logger.info("Successfully shutdown scribe");
       scribeProcess = null;
     }
 
@@ -419,8 +434,7 @@ public class IntegrationTest {
 
   @Test
   void testUpdatesBalanceAfterCreditsAndDebits() throws Exception {
-    registerAuthMock(custodianUser, 60 * 60 * 24);
-    startProjectionDaemon(custodian, custodianUser);
+    startScribe(custodian, custodianUser);
     delayForProjectionToStart();
 
     final var account = new AccountKey(custodian, investor1, new Id("1"));
@@ -780,7 +794,6 @@ public class IntegrationTest {
   @Test
   void returnsAccounts() throws Exception {
     startScribe(custodian, custodianUser);
-    delayForProjectionToStart();
 
     mvc
       .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
@@ -889,7 +902,6 @@ public class IntegrationTest {
   @Test
   void returnsAccountOpenOffers() throws Exception {
     startScribe(custodian, custodianUser);
-    delayForProjectionToStart();
 
     final var ownerIncomingControlled = false;
     final var ownerOutgoingControlled = true;
@@ -959,7 +971,7 @@ public class IntegrationTest {
                     holdingFactoryCid,
                     description
                   ),
-                  Optional.of(new TransactionDetail(offset1, Instant.EPOCH))
+                  new TransactionDetail_(offset1, Instant.EPOCH)
                 )
               )
             )
@@ -987,7 +999,7 @@ public class IntegrationTest {
                     holdingFactoryCid,
                     description
                   ),
-                  Optional.of(new TransactionDetail(offset1, Instant.EPOCH))
+                  new TransactionDetail_(offset1, Instant.EPOCH)
                 ),
                 new AccountOpenOfferSummary(
                   cid2,
@@ -1001,7 +1013,7 @@ public class IntegrationTest {
                     holdingFactoryCid,
                     description
                   ),
-                  Optional.of(new TransactionDetail(offset2, Instant.EPOCH))
+                  new TransactionDetail_(offset2, Instant.EPOCH)
                 )
               )
             )
@@ -2086,7 +2098,7 @@ public class IntegrationTest {
       .andExpect(status().isOk());
   }
 
-  private void startScribe(String readAs, String userId) throws IOException {
+  private void startScribe(String readAs, String userId) throws Exception {
     final Integer healthPort;
     ServerSocket healthSocket = null;
 
@@ -2119,10 +2131,100 @@ public class IntegrationTest {
       "--health-port", healthPort.toString(),
       "--source-ledger-auth", "OAuth",
       "--pipeline-oauth-accesstoken", generateToken(userId)
-    ).redirectOutput(new File("./scribe-output.log"))
-     .redirectError(new File("./scribe-error.log"));
-    final var startTime = System.currentTimeMillis() / 1000L;
+    ).redirectOutput(Redirect.appendTo(new File("./scribe-output.log")))
+     .redirectError(Redirect.appendTo(new File("./scribe-error.log")));
+    final var startTimeMillis = System.currentTimeMillis();
     scribeProcess = pb.start();
+    final var scribeTimeoutSeconds = Long.valueOf(
+      Optional.ofNullable(System.getProperty("walletviews.test.scribe-start-timeout-seconds")).orElse("20")
+    );
+    logger.info("Waiting for sandbox to start with timeout set to " + scribeTimeoutSeconds + " seconds");
+    final var ledgerEnd = getLedgerEnd();
+    logger.info("Ledger end: " + ledgerEnd);
+    while (true) {
+      java.net.http.HttpResponse<String> healthResponse = null;
+      String checkPoint = null;
+      Throwable error = null;
+      final var client = HttpClient.newHttpClient();
+      final var request = HttpRequest.newBuilder()
+        .uri(URI.create("http://127.0.0.1:" + healthPort.toString() + "/livez"))
+        .build();
+
+      try {
+        healthResponse = client.send(request, BodyHandlers.ofString());
+        if (healthResponse.statusCode() == 200) {
+          checkPoint = pqsCheckPoint();
+          if (checkPoint != null) {
+            logger.info("PQS checkpoint: " + checkPoint);
+          }
+        }
+      } catch (Throwable t) {
+        error = t;
+      }
+
+      if (
+        healthResponse == null ||
+        healthResponse.statusCode() != 200 ||
+        checkPoint == null ||
+        !ledgerEnd.equals(checkPoint)
+      ) {
+        if (((System.currentTimeMillis() - startTimeMillis) / 1000L) > scribeTimeoutSeconds || !scribeProcess.isAlive()) {
+          if (error != null) {
+            logger.error("Error starting scribe", error);
+          }
+          if (healthResponse != null) {
+            logger.error("Error starting scribe (non-OK response):", healthResponse.toString());
+          }
+          throw new Exception("Failed to start scribe");
+        } else {
+          logger.info("Waiting for scribe to start...");
+          Thread.sleep(1000L);
+        }
+      } else {
+        logger.info("Scribe started successfully");
+        break;
+      }
+    }
+
+    final var dbConn = DriverManager.getConnection(
+      postgresContainer.getJdbcUrl(),
+      postgresContainer.getUsername(),
+      postgresContainer.getPassword()
+    );
+    try {
+      final var sr = new ScriptRunner(dbConn);
+      sr.setSendFullScript(true);
+      sr.setStopOnError(true);
+      sr.setThrowWarning(true);
+      final var reader = new BufferedReader(new FileReader(this.getClass().getResource("/db/functions.sql").getFile()));
+      sr.runScript(reader);
+    } finally {
+      dbConn.close();
+    }
+  }
+
+  private static String pqsCheckPoint() throws SQLException {
+    String offset = null;
+    Connection conn = DriverManager.getConnection(
+      postgresContainer.getJdbcUrl(),
+      postgresContainer.getUsername(),
+      postgresContainer.getPassword()
+    );
+
+    try {
+      PreparedStatement pstmt = conn.prepareStatement("SELECT \"offset\" FROM latest_checkpoint()");
+      ResultSet rs = pstmt.executeQuery();
+
+      if (rs.next()) {
+        offset = rs.getString("offset");
+      }
+    } catch (SQLException e) {
+      logger.warn("Error getting latest offset from PQS", e);
+    } finally {
+      conn.close();
+    }
+
+    return offset;
   }
 
   private static <T> String toJson(DefinedDataType<T> value) {

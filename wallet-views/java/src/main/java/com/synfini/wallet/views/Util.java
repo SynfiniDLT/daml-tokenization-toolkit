@@ -4,6 +4,7 @@ import com.daml.ledger.javaapi.data.CreatedEvent;
 import com.daml.ledger.javaapi.data.Identifier;
 import com.daml.ledger.javaapi.data.codegen.ValueDecoder;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import da.set.types.Set;
 import org.slf4j.Logger;
@@ -16,9 +17,9 @@ import java.util.Collections;
 import java.util.Optional;
 
 public class Util {
-  public static final Gson gson = new Gson();
+  public static final Gson gson = new GsonBuilder().serializeNulls().create();
 
-  private static final Logger logger = LoggerFactory.getLogger(Util.class);
+  public static final Logger logger = LoggerFactory.getLogger(Util.class);
 
   public static java.sql.Array setToArray(Optional<Set<String>> set, Connection conn) {
     try {

@@ -75,10 +75,11 @@ public class WalletRepository {
         "WHERE (? IS NULL OR payload->>'custodian' = ?) AND payload->>'owner' = ?"
       ),
       ps -> {
-        ps.setString(1, fullyQualified(Account.TEMPLATE_ID));
-        ps.setString(2, custodian.orElse(null));
-        ps.setString(3, custodian.orElse(null));
-        ps.setString(4, owner);
+        int pos = 0;
+        ps.setString(++pos, fullyQualified(Account.TEMPLATE_ID));
+        ps.setString(++pos, custodian.orElse(null));
+        ps.setString(++pos, custodian.orElse(null));
+        ps.setString(++pos, owner);
       },
       new AccountRowMapper()
     );
@@ -88,38 +89,34 @@ public class WalletRepository {
     return jdbcTemplate.query(
       multiLineQuery(
         "SELECT",
-        "  offers.contract_id AS contract_id,",
-        "  _transactions.offset AS create_offset,",
-        "  _transactions.effective_at AS create_effective_time,",
-        "  offers.payload AS payload",
-        "FROM active(?) AS offers",
-        "INNER JOIN _creates ON offers.contract_id = _creates.contract_id",
-        "INNER JOIN _transactions ON offers.offset = _transactions.offset",
-        "WHERE (text_set_values(offers.payload->'offerers') && ?) OR offers.payload->>'offeree' = ANY(?)"
+        "  offer.contract_id AS contract_id,",
+        "  offer.created_at_offset AS created_at_offset,",
+        "  offer.created_effective_at AS created_effective_at,",
+        "  offer.payload AS payload",
+        "FROM active(?) AS offer",
+        "INNER JOIN active(?) AS disclosure ON offer.contract_id = disclosure.contract_id",
+        "WHERE",
+        "  offer.payload->>'custodian' = ANY(?) OR",
+        "  (flatten_observers(disclosure.payload->'observers') && ?) OR",
+        "  (",
+        "    offer.payload->'permittedOwners' IS NOT NULL AND",
+        "    (daml_set_text_values(offer.payload->'permittedOwners') && ?)",
+        "  )"
       ),
-        // "  o.cid cid,\n" +
-        // "  o.custodian custodian,\n" +
-        // "  o.permitted_owners permitted_owners,\n" +
-        // "  o.description description,\n" +
-        // "  o.owner_incoming_controlled owner_incoming_controlled,\n" +
-        // "  o.owner_outgoing_controlled owner_outgoing_controlled,\n" +
-        // "  o.additional_controllers_incoming additional_controllers_incoming,\n" +
-        // "  o.additional_controllers_outgoing additional_controllers_outgoing,\n" +
-        // "  o.account_factory_cid account_factory_cid,\n" +
-        // "  o.holding_factory_cid holding_factory_cid,\n" +
-        // "  o.create_offset create_offset,\n" +
-        // "  o.create_effective_time create_effective_time\n" +
-        // "FROM account_open_offers o\n" +
-        // "INNER JOIN account_open_offer_witnesses w ON o.cid = w.cid\n" +
-        // "WHERE o.archive_offset IS NULL AND w.party = ANY(?)",
       ps -> {
         int pos = 0;
         ps.setString(
           ++pos,
           fullyQualified(synfini.interface$.onboarding.account.openoffer.openoffer.OpenOffer.TEMPLATE_ID)
         );
-        ps.setArray(++pos, asSqlArray(readAs));
-        ps.setArray(++pos, asSqlArray(readAs));
+        ps.setString(
+          ++pos,
+          fullyQualified(daml.finance.interface$.util.disclosure.Disclosure.TEMPLATE_ID)
+        );
+        final var readAsArray = asSqlArray(readAs);
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
       },
       new AccountOpenOfferRowMapper()
     );
@@ -127,28 +124,34 @@ public class WalletRepository {
 
   public List<Balance> balanceByAccount(AccountKey account) {
     return jdbcTemplate.query(
-    "SELECT\n" +
-      "  instrument_depository,\n" +
-      "  instrument_id,\n" +
-      "  instrument_issuer,\n" +
-      "  instrument_version,\n" +
-      "  sum(CASE WHEN lock_type IS NULL THEN amount ELSE 0 END) unlocked_balance,\n" +
-      "  sum(CASE WHEN lock_type IS NOT NULL THEN amount ELSE 0 END) locked_balance\n" +
-      "FROM holdings\n" +
-      "WHERE\n" +
-      "  archive_offset IS NULL AND\n" +
-      "  account_custodian = ? AND\n" +
-      "  account_owner = ? AND\n" +
-      "  account_id = ?\n" +
-      "GROUP BY\n" +
-      "  instrument_depository,\n" +
-      "  instrument_issuer,\n" +
-      "  instrument_id,\n" +
-      "  instrument_version",
+      multiLineQuery(
+        "SELECT",
+        "  holding.payload->'instrument'->>'depository' AS instrument_depository,",
+        "  holding.payload->'instrument'->>'issuer' AS instrument_issuer,",
+        "  holding.payload->'instrument'->'id'->>'unpack' AS instrument_id,",
+        "  holding.payload->'instrument'->>'version' AS instrument_version,",
+        "  sum(CASE WHEN jsonb_typeof(holding.payload->'lock') = 'null' THEN (holding.payload->>'amount') :: DECIMAL ELSE 0 END) unlocked_balance,",
+        "  sum(CASE WHEN jsonb_typeof(holding.payload->'lock') <> 'null' THEN (holding.payload->>'amount') :: DECIMAL ELSE 0 END) locked_balance",
+        "FROM active(?) AS holding",
+        "WHERE",
+        "  holding.payload->'account'->>'custodian' = ? AND",
+        "  holding.payload->'account'->>'owner' = ? AND",
+        "  holding.payload->'account'->'id'->>'unpack' = ?",
+        "GROUP BY",
+        "  holding.payload->'instrument'->>'depository',",
+        "  holding.payload->'instrument'->>'issuer',",
+        "  holding.payload->'instrument'->'id'->>'unpack',",
+        "  holding.payload->'instrument'->>'version'"
+      ),
       ps -> {
-        ps.setString(1, account.custodian);
-        ps.setString(2, account.owner);
-        ps.setString(3, account.id.unpack);
+        int pos = 0;
+        ps.setString(
+          ++pos,
+          fullyQualified(daml.finance.interface$.holding.base.Base.TEMPLATE_ID)
+        );
+        ps.setString(++pos, account.custodian);
+        ps.setString(++pos, account.owner);
+        ps.setString(++pos, account.id.unpack);
       },
       new BalanceRowMapperWithAccount(account)
     );
@@ -363,11 +366,12 @@ public class WalletRepository {
   private static class AccountOpenOfferRowMapper implements RowMapper<AccountOpenOfferSummary> {
     @Override
     public AccountOpenOfferSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
-      final var payload = Util.gson.fromJson(rs.getString("payload"), JsonObject.class);
+      // Util.logger.info("RS === ", rs.get);
+      final var payload = new Gson().fromJson(rs.getString("payload"), JsonObject.class);
       return new AccountOpenOfferSummary(
         rs.getString("contract_id"),
         payload,
-        getTransactionDetail_(rs, "create").get()
+        getTransactionDetail_(rs, "created")
       );
     }
   }
@@ -588,14 +592,11 @@ public class WalletRepository {
     }
   }
 
-  private static Optional<com.synfini.wallet.views.schema.TransactionDetail> getTransactionDetail_(ResultSet rs, String prefix) throws SQLException {
-    String offset = rs.getString(prefix + "_offset");
-    Timestamp effectiveTime = rs.getTimestamp(prefix + "_effective_time");
-    if (offset != null && effectiveTime != null) {
-      return Optional.of(new com.synfini.wallet.views.schema.TransactionDetail(offset, effectiveTime.toInstant().toString()));
-    } else {
-      return Optional.empty();
-    }
+  private static com.synfini.wallet.views.schema.TransactionDetail getTransactionDetail_(ResultSet rs, String prefix) throws SQLException {
+    return new com.synfini.wallet.views.schema.TransactionDetail(
+      rs.getString(prefix + "_at_offset"),
+      rs.getTimestamp(prefix + "_effective_at")
+    );
   }
 
   private static InstrumentKey getInstrumentKey(ResultSet rs) throws SQLException {
