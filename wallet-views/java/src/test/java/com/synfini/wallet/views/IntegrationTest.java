@@ -1033,9 +1033,7 @@ public class IntegrationTest {
 
   @Test
   void returnsIssuers() throws Exception {
-    registerAuthMock(issuerUser, 60 * 60 * 24);
-    startProjectionDaemon(issuer, issuerUser);
-    delayForProjectionToStart();
+    startScribe(issuer, issuerUser);
 
     final var tokenIssuerCid = allPartiesLedgerClient
       .getCommandClient()

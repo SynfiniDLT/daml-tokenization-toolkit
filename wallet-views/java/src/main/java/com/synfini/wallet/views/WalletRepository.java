@@ -9,6 +9,8 @@ import com.google.gson.JsonObject;
 import com.synfini.wallet.views.schema.response.AccountSummary;
 import com.synfini.wallet.views.schema.response.HoldingSummary;
 import com.synfini.wallet.views.schema.response.InstrumentSummary;
+import com.synfini.wallet.views.schema.response.IssuerSummary;
+import com.synfini.wallet.views.schema.response.TokenIssuerSummary;
 import com.synfini.wallet.views.schema.response.AccountOpenOfferSummary;
 
 import da.types.Tuple2;
@@ -44,10 +46,8 @@ import synfini.interface$.onboarding.account.openoffer.openoffer.OpenOffer;
 import synfini.interface$.onboarding.issuer.instrument.token.issuer.Issuer;
 // import synfini.wallet.api.types.*;
 import synfini.wallet.api.types.Balance;
-import synfini.wallet.api.types.IssuerSummary;
 import synfini.wallet.api.types.SettlementStep;
 import synfini.wallet.api.types.SettlementSummary;
-import synfini.wallet.api.types.TokenIssuerSummary;
 import synfini.wallet.api.types.TransactionDetail;
 
 import javax.sql.DataSource;
@@ -182,26 +182,6 @@ public class WalletRepository {
         "    daml_set_text_values(holding.payload->'lock'->'lockers') && ?",
         "  )"
       ),
-  // "SELECT DISTINCT ON (cid)\n" +
-  //     "  h.cid cid,\n" +
-  //     "  h.amount amount,\n" +
-  //     "  h.lockers lockers,\n" +
-  //     "  h.lock_context lock_context,\n" +
-  //     "  h.lock_type lock_type,\n" +
-  //     "  h.create_offset create_offset,\n" +
-  //     "  h.create_effective_time create_effective_time\n" +
-  //     "FROM holdings h INNER JOIN holding_witnesses ON h.cid = holding_witnesses.cid\n" +
-  //     "WHERE\n" +
-  //     "  holding_witnesses.party = ANY(?) AND\n" +
-  //     "  h.account_custodian = ? AND\n" +
-  //     "  h.account_owner = ? AND\n" +
-  //     "  h.account_id = ? AND\n" +
-  //     "  h.instrument_depository = ? AND\n" +
-  //     "  h.instrument_issuer = ? AND\n" +
-  //     "  h.instrument_id = ? AND\n" +
-  //     "  h.instrument_version = ? AND\n" +
-  //     "  h.archive_offset IS NULL\n" +
-  //     "ORDER BY cid",
       ps -> {
         int pos = 0;
         ps.setString(
@@ -229,7 +209,7 @@ public class WalletRepository {
         ps.setArray(++pos, readAsArray);
 
       },
-      new HoldingsRowMapper(account, instrument)
+      new HoldingsRowMapper()
     );
   }
 
@@ -254,8 +234,8 @@ public class WalletRepository {
         "  (? IS NULL OR base_instrument.payload->'id'->>'unpack' = ?) AND",
         "  (? IS NULL OR base_instrument.payload->>'version' = ?) AND",
         "  (",
-        "    (? IS NOT NULL AND ? = ANY(?)) OR",
-        "    ? = ANY(?) OR",
+        "    base_instrument.payload->>'depository' = ANY(?) OR",
+        "    base_instrument.payload->>'issuer' = ANY(?) OR",
         "    flatten_observers(disclosure.payload->'observers') && ?",
         "  )"
       ),
@@ -281,14 +261,8 @@ public class WalletRepository {
 
         final var readAsArray = asSqlArray(readAs);
 
-        // Check for depository/issuer matches on readAs
-        ps.setString(++pos, depository_);
-        ps.setString(++pos, depository_);
         ps.setArray(++pos, readAsArray);
-        ps.setString(++pos, issuer);
         ps.setArray(++pos, readAsArray);
-
-        // Check readAs match on Dislosure observers
         ps.setArray(++pos, readAsArray);
       },
       new TokenInstrumentRowMapper()
@@ -297,21 +271,43 @@ public class WalletRepository {
 
   public List<IssuerSummary> issuers(Optional<String> depository, Optional<String> issuer, List<String> readAs) {
     return jdbcTemplate.query(
-      "SELECT\n" +
-      "  i.cid cid,\n" +
-      "  i.depository depository,\n" +
-      "  i.issuer issuer,\n" +
-      "  i.instrument_factory_cid instrument_factory_cid\n" +
-      "FROM token_instrument_issuers i INNER JOIN token_instrument_issuer_witnesses w ON i.cid = w.cid\n" +
-      "WHERE (? IS NULL OR i.depository = ?) AND (? IS NULL OR i.issuer = ?) AND w.party = ANY(?)",
+      multiLineQuery(
+        "SELECT",
+        "  token_issuer.contract_id AS contract_id,",
+        "  token_issuer.payload AS token_issuer_payload",
+        "FROM active(?) AS token_issuer",
+        "INNER JOIN active(?) AS disclosure ON token_issuer.contract_id = disclosure.contract_id",
+        "WHERE",
+        "  (? IS NULL OR token_issuer.payload->>'depository' = ?) AND",
+        "  (? IS NULL OR token_issuer.payload->>'issuer' = ?) AND",
+        "  (",
+        "    token_issuer.payload->>'depository' = ANY(?) OR",
+        "    token_issuer.payload->>'issuer' = ANY(?) OR",
+        "    flatten_observers(disclosure.payload->'observers') && ?",
+        "  )"
+      ),
       ps -> {
-        ps.setString(1, depository.orElse(null));
-        ps.setString(2, depository.orElse(null));
+        int pos = 0;
 
-        ps.setString(3, issuer.orElse(null));
-        ps.setString(4, issuer.orElse(null));
+        ps.setString(
+          ++pos,
+          fullyQualified(synfini.interface$.onboarding.issuer.instrument.token.issuer.Issuer.TEMPLATE_ID)
+        );
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.util.disclosure.Disclosure.TEMPLATE_ID));
 
-        ps.setArray(5, asSqlArray(readAs));
+        final var depository_ = depository.orElse(null);
+        ps.setString(++pos, depository_);
+        ps.setString(++pos, depository_);
+
+        final var issuer_ = issuer.orElse(null);
+        ps.setString(++pos, issuer_);
+        ps.setString(++pos, issuer_);
+
+        final var readAsArray = asSqlArray(readAs);
+
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
       },
       new IssuersRowMapper()
     );
@@ -451,14 +447,6 @@ public class WalletRepository {
   }
 
   private static class HoldingsRowMapper implements RowMapper<HoldingSummary> {
-    private final AccountKey account;
-    private final InstrumentKey instrument;
-
-    public HoldingsRowMapper(AccountKey account, InstrumentKey instrument) {
-      this.account = account;
-      this.instrument = instrument;
-    }
-
     @Override
     public HoldingSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
       return new HoldingSummary(
@@ -473,17 +461,9 @@ public class WalletRepository {
     @Override
     public IssuerSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
       return new IssuerSummary(
-        Optional.of(
-          new TokenIssuerSummary(
-            new Issuer.ContractId(rs.getString("cid")),
-            new synfini.interface$.onboarding.issuer.instrument.token.issuer.View(
-              rs.getString("depository"),
-              rs.getString("issuer"),
-              new daml.finance.interface$.instrument.token.factory.Factory.ContractId(
-                rs.getString("instrument_factory_cid")
-              )
-            )
-          )
+        new TokenIssuerSummary(
+          rs.getString("contract_id"),
+          new Gson().fromJson(rs.getString("token_issuer_payload"), JsonObject.class)
         )
       );
     }

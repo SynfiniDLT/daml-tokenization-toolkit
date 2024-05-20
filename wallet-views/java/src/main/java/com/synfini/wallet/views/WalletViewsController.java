@@ -11,6 +11,7 @@ import com.synfini.wallet.views.schema.response.AccountOpenOffers;
 import com.synfini.wallet.views.schema.response.Accounts;
 import com.synfini.wallet.views.schema.response.Holdings;
 import com.synfini.wallet.views.schema.response.Instruments;
+import com.synfini.wallet.views.schema.response.Issuers;
 
 import synfini.wallet.api.types.AccountFilter;
 import synfini.wallet.api.types.AccountOpenOffersFilter;
@@ -18,7 +19,6 @@ import synfini.wallet.api.types.BalanceFilter;
 import synfini.wallet.api.types.Balances;
 import synfini.wallet.api.types.HoldingFilter;
 import synfini.wallet.api.types.InstrumentsFilter;
-import synfini.wallet.api.types.Issuers;
 import synfini.wallet.api.types.IssuersFilter;
 import synfini.wallet.api.types.Settlements;
 import synfini.wallet.api.types.SettlementsFilter;
@@ -152,7 +152,7 @@ public class WalletViewsController {
     final var userRights = WalletAuth.getUser(ledgerApiConfig, auth);
     final var parties = allParties(userRights);
     final var instruments = new Issuers(walletRepository.issuers(filter.depository, filter.issuer, parties));
-    return ResponseEntity.ok(asJson(instruments));
+    return ResponseEntity.ok(Util.gson.toJson(instruments));
   }
 
   private static List<String> allParties(ListUserRightsResponse userRights) {
