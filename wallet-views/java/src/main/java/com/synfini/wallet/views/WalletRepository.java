@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 
 import com.synfini.wallet.views.schema.response.AccountSummary;
 import com.synfini.wallet.views.schema.response.HoldingSummary;
+import com.synfini.wallet.views.schema.response.InstrumentSummary;
 import com.synfini.wallet.views.schema.response.AccountOpenOfferSummary;
 
 import da.types.Tuple2;
@@ -43,7 +44,6 @@ import synfini.interface$.onboarding.account.openoffer.openoffer.OpenOffer;
 import synfini.interface$.onboarding.issuer.instrument.token.issuer.Issuer;
 // import synfini.wallet.api.types.*;
 import synfini.wallet.api.types.Balance;
-import synfini.wallet.api.types.InstrumentSummary;
 import synfini.wallet.api.types.IssuerSummary;
 import synfini.wallet.api.types.SettlementStep;
 import synfini.wallet.api.types.SettlementSummary;
@@ -240,39 +240,57 @@ public class WalletRepository {
     Optional<String> version,
     List<String> readAs
   ) {
-    final var commonSelect = "SELECT DISTINCT ON (instrument_depository, instrument_issuer, instrument_id, instrument_version)\n" +
-      "  t.cid cid,\n" +
-      "  t.instrument_depository instrument_depository,\n" +
-      "  t.instrument_issuer instrument_issuer,\n" +
-      "  t.instrument_id instrument_id,\n" +
-      "  t.instrument_version instrument_version,\n" +
-      "  t.description description,\n" +
-      "  t.valid_as_of valid_as_of";
-    final var commonWhereOrder = "WHERE\n" +
-      "  instrument_witnesses.party = ANY(?) AND\n" +
-      "  (? IS NULL OR t.instrument_depository = ?) AND\n" +
-      "  t.instrument_issuer = ? AND\n" +
-      "  (? IS NULL OR t.instrument_id = ?) AND\n" +
-      "  (? IS NULL OR t.instrument_version = ?) AND\n" +
-      "  t.archive_offset IS NULL\n" +
-      "ORDER BY instrument_depository, instrument_issuer, instrument_id, instrument_version";
-    final PreparedStatementSetter commonSetVars = ps -> {
-      ps.setArray(1, asSqlArray(readAs));
-      ps.setString(2, depository.orElse(null));
-      ps.setString(3, depository.orElse(null));
-      ps.setString(4, issuer);
-      final var idStr = id.map(i -> i.unpack).orElse(null);
-      ps.setString(5, idStr);
-      ps.setString(6, idStr);
-      final var versionStr = version.orElse(null);
-      ps.setString(7, versionStr);
-      ps.setString(8, versionStr);
-    };
     return jdbcTemplate.query(
-    commonSelect + "\n" +
-      "FROM token_instruments t INNER JOIN instrument_witnesses ON t.cid = instrument_witnesses.cid\n" +
-      commonWhereOrder,
-      commonSetVars,
+      multiLineQuery(
+        "SELECT",
+        "  base_instrument.contract_id AS contract_id,",
+        "  token_instrument.payload AS token_instrument_payload",
+        "FROM active(?) AS base_instrument",
+        "INNER JOIN active(?) AS token_instrument ON base_instrument.contract_id = token_instrument.contract_id",
+        "INNER JOIN active(?) AS disclosure ON token_instrument.contract_id = disclosure.contract_id",
+        "WHERE",
+        "  (? IS NULL OR base_instrument.payload->>'depository' = ?) AND",
+        "  base_instrument.payload->>'issuer' = ? AND",
+        "  (? IS NULL OR base_instrument.payload->'id'->>'unpack' = ?) AND",
+        "  (? IS NULL OR base_instrument.payload->>'version' = ?) AND",
+        "  (",
+        "    (? IS NOT NULL AND ? = ANY(?)) OR",
+        "    ? = ANY(?) OR",
+        "    flatten_observers(disclosure.payload->'observers') && ?",
+        "  )"
+      ),
+      ps -> {
+        int pos = 0;
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.instrument.base.instrument.Instrument.TEMPLATE_ID));
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.instrument.token.instrument.Instrument.TEMPLATE_ID));
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.util.disclosure.Disclosure.TEMPLATE_ID));
+
+        final var depository_ = depository.orElse(null);
+        ps.setString(++pos, depository_);
+        ps.setString(++pos, depository_);
+
+        ps.setString(++pos, issuer);
+
+        final var id_ = id.map(i -> i.unpack).orElse(null);
+        ps.setString(++pos, id_);
+        ps.setString(++pos, id_);
+
+        final var version_ = version.orElse(null);
+        ps.setString(++pos, version_);
+        ps.setString(++pos, version_);
+
+        final var readAsArray = asSqlArray(readAs);
+
+        // Check for depository/issuer matches on readAs
+        ps.setString(++pos, depository_);
+        ps.setString(++pos, depository_);
+        ps.setArray(++pos, readAsArray);
+        ps.setString(++pos, issuer);
+        ps.setArray(++pos, readAsArray);
+
+        // Check readAs match on Dislosure observers
+        ps.setArray(++pos, readAsArray);
+      },
       new TokenInstrumentRowMapper()
     );
   }
@@ -443,7 +461,6 @@ public class WalletRepository {
 
     @Override
     public HoldingSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
-      Util.logger.info("payload: " + rs.getString("payload"));
       return new HoldingSummary(
         rs.getString("contract_id"),
         new Gson().fromJson(rs.getString("payload"), JsonObject.class),
@@ -603,16 +620,8 @@ public class WalletRepository {
     @Override
     public InstrumentSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
       return new InstrumentSummary(
-        new Instrument.ContractId(rs.getString("cid")),
-        Optional.of(
-          new daml.finance.interface$.instrument.token.instrument.View(
-            new Token(
-              getInstrumentKey(rs),
-              rs.getString("description"),
-              rs.getTimestamp("valid_as_of").toInstant()
-            )
-          )
-        )
+        rs.getString("contract_id"),
+        new Gson().fromJson(rs.getString("token_instrument_payload"), JsonObject.class)
       );
     }
   }

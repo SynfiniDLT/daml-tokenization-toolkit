@@ -1545,9 +1545,7 @@ public class IntegrationTest {
 
   @Test
   void returnsTokenInstruments() throws Exception {
-    registerAuthMock(investor1User, 60 * 60 * 24);
-    startProjectionDaemon(investor1, investor1User);
-    delayForProjectionToStart();
+    startScribe(investor1, investor1User);
 
     final var token1 = new Token(instrument1(), "my desc", Instant.EPOCH);
     final var token2 = new Token(instrument2(), "my desc 2", Instant.EPOCH);

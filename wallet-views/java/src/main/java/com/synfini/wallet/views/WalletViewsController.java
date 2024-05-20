@@ -10,13 +10,13 @@ import com.synfini.wallet.views.config.WalletViewsApiConfig;
 import com.synfini.wallet.views.schema.response.AccountOpenOffers;
 import com.synfini.wallet.views.schema.response.Accounts;
 import com.synfini.wallet.views.schema.response.Holdings;
+import com.synfini.wallet.views.schema.response.Instruments;
 
 import synfini.wallet.api.types.AccountFilter;
 import synfini.wallet.api.types.AccountOpenOffersFilter;
 import synfini.wallet.api.types.BalanceFilter;
 import synfini.wallet.api.types.Balances;
 import synfini.wallet.api.types.HoldingFilter;
-import synfini.wallet.api.types.Instruments;
 import synfini.wallet.api.types.InstrumentsFilter;
 import synfini.wallet.api.types.Issuers;
 import synfini.wallet.api.types.IssuersFilter;
@@ -141,7 +141,7 @@ public class WalletViewsController {
     final var instruments = new Instruments(
       walletRepository.instruments(filter.depository, filter.issuer, filter.id, filter.version, parties)
     );
-    return ResponseEntity.ok(asJson(instruments));
+    return ResponseEntity.ok(Util.gson.toJson(instruments));
   }
 
   @PostMapping("/issuers")
