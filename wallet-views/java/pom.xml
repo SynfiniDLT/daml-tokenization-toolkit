@@ -66,6 +66,11 @@
             <version>2.9.0</version>
         </dependency>
         <dependency>
+            <groupId>com.fatboyindustrial.gson-javatime-serialisers</groupId>
+            <artifactId>gson-javatime-serialisers</artifactId>
+            <version>1.1.2</version>
+            </dependency>
+        <dependency>
             <groupId>com.daml</groupId>
             <artifactId>custom-views_2.13</artifactId>
             <version>${customViewsVersion}</version>

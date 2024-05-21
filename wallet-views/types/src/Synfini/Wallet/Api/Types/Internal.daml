@@ -19,7 +19,9 @@ template UsedTypes
       AccountOpenOffersFilter :+:
       Balances :+:
       BalanceFilter :+:
+      -- SettlementStepRaw :+:
       Settlements :+:
+      SettlementsRaw () :+:
       SettlementsFilter :+:
       Holdings :+:
       HoldingFilter :+:

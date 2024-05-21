@@ -5,7 +5,7 @@ import com.daml.ledger.javaapi.data.Unit;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-
+import com.google.gson.JsonPrimitive;
 import com.synfini.wallet.views.schema.response.AccountSummary;
 import com.synfini.wallet.views.schema.response.HoldingSummary;
 import com.synfini.wallet.views.schema.response.InstrumentSummary;
@@ -48,6 +48,8 @@ import synfini.interface$.onboarding.issuer.instrument.token.issuer.Issuer;
 import synfini.wallet.api.types.Balance;
 import synfini.wallet.api.types.SettlementStep;
 import synfini.wallet.api.types.SettlementSummary;
+import synfini.wallet.api.types.Settlements;
+import synfini.wallet.api.types.SettlementsRaw;
 import synfini.wallet.api.types.TransactionDetail;
 
 import javax.sql.DataSource;
@@ -313,93 +315,118 @@ public class WalletRepository {
     );
   }
 
-  public List<SettlementSummary> settlements(
+  public SettlementsRaw<JsonObject> settlements(
     List<String> readAs,
     Optional<String> before,
     long limit
-  ) {
-    final var selectInstructionsWithMinOffsets =
-      "SELECT\n" +
-      "  batch_id,\n" +
-      "  requestors_hash,\n" +
-      "  min(create_offset) min_create_offset,\n" +
-      "  min(create_effective_time) min_create_effective_time\n" +
-      "FROM instructions JOIN instruction_witnesses ON instructions.cid = instruction_witnesses.cid\n" +
-      "WHERE instructions.create_offset IS NOT NULL AND instruction_witnesses.party = ANY(?)\n" +
-      "GROUP BY (batch_id, requestors_hash)\n" +
-      "HAVING ? IS NULL OR min(create_offset) < ?\n" +  // Must occur prior to "before"
-      "ORDER BY min_create_offset DESC\n" +
-      "LIMIT ?";
-    final var selectBatches =
-      "SELECT\n" +
-      "  batches.cid,\n" +
-      "  batches.batch_id,\n" +
-      "  batches.requestors_hash,\n" +
-      "  batches.description,\n" +
-      "  batches.context_id\n" +
-      "FROM batches JOIN batch_witnesses ON batches.cid = batch_witnesses.cid\n" +
-      "WHERE batch_witnesses.party = ANY(?)";
-    final var selectSettlements =
-      "SELECT DISTINCT ON (witness_offset, batch_id, requestors_hash, instruction_id)\n" +
-      "  instructions.batch_id,\n" +
-      "  instructions.requestors,\n" +
-      "  instructions.requestors_hash,\n" +
-      "  instructions.settlers,\n" +
-      "  bs.cid batch_cid,\n" +
-      "  bs.context_id,\n" +
-      "  bs.description,\n" +
-      "  instructions_min_offsets.min_create_offset witness_offset,\n" +
-      "  instructions_min_offsets.min_create_effective_time witness_effective_time,\n" +
-      "  instructions.instruction_id,\n" +
-      "  instructions.cid instruction_cid,\n" +
-      "  instructions.sender,\n" +
-      "  instructions.receiver,\n" +
-      "  instructions.custodian,\n" +
-      "  instructions.amount,\n" +
-      "  instructions.instrument_issuer,\n" +
-      "  instructions.instrument_depository,\n" +
-      "  instructions.instrument_id,\n" +
-      "  instructions.instrument_version,\n" +
-      "  instructions.allocation_pledge_cid,\n" +
-      "  instructions.allocation_credit_receiver,\n" +
-      "  instructions.allocation_pass_through_from,\n" +
-      "  instructions.allocation_pass_through_from_account_id,\n" +
-      "  instructions.allocation_settle_off_ledger,\n" +
-      "  instructions.approval_account_id,\n" +
-      "  instructions.approval_pass_through_to,\n" +
-      "  instructions.approval_debit_sender,\n" +
-      "  instructions.approval_settle_off_ledger,\n" +
-      "  instructions.create_offset instruction_create_offset,\n" +
-      "  instructions.archive_offset instruction_archive_offset,\n" +
-      "  instructions.archive_effective_time instruction_archive_effective_time,\n" +
-      "  instruction_executions.instruction_cid IS NOT NULL instruction_executed\n" +
-      "FROM (" + selectInstructionsWithMinOffsets + ") instructions_min_offsets JOIN instructions ON\n" +
-      "  instructions.batch_id = instructions_min_offsets.batch_id AND\n" +
-      "  instructions.requestors_hash = instructions_min_offsets.requestors_hash\n" +
-      "LEFT JOIN (" + selectBatches + ") bs ON\n" +
-      "  bs.batch_id = instructions.batch_id AND bs.requestors_hash = instructions.requestors_hash\n" +
-      "JOIN instruction_witnesses ON instructions.cid = instruction_witnesses.cid\n" +
-      "LEFT JOIN instruction_executions ON instructions.cid = instruction_executions.instruction_cid\n" +
-      "WHERE instruction_witnesses.party = ANY(?)\n" +
-      "ORDER BY\n" +
-      "  witness_offset DESC,\n" +
-      "  batch_id,\n" +
-      "  requestors_hash,\n" +
-      "  instruction_id,\n" +
-      "  instruction_create_offset DESC";
+  ) throws SQLException {
+    final var readAsArray = asSqlArray(readAs);
+    final var instructionsMinOffsets = multiLineQuery(
+      "  SELECT",
+      "    instruction.payload->'batchId'->>'unpack' AS batch_id,",
+      "    daml_set_text_values(instruction.payload->'requestors') AS requestors,",
+      "    min(instruction.created_at_offset) AS min_create_offset,",
+      "    min(instruction.created_effective_at) AS min_create_effective_time",
+      "  FROM creates(?) AS instruction",
+      "  INNER JOIN creates(?) AS disclosure ON instruction.contract_id = disclosure.contract_id",
+      "  WHERE",
+      "    daml_set_text_values(instruction.payload->'requestors') && ? OR",
+      "    daml_set_text_values(instruction.payload->'settlers') && ? OR",
+      "    instruction.payload->'routedStep'->>'sender' = ANY(?) OR",
+      "    instruction.payload->'routedStep'->>'receiver' = ANY(?) OR",
+      "    flatten_observers(disclosure.payload->'observers') && ?",
+      "  GROUP BY (instruction.payload->'batchId'->>'unpack', daml_set_text_values(instruction.payload->'requestors'))",
+      "  HAVING ? IS NULL OR min(instruction.created_at_offset) < ?",
+      "  ORDER BY min_create_offset DESC",
+      "  LIMIT ?"
+    );
+    final java.util.function.BiFunction<Integer, PreparedStatement, Integer> instructionMinOffsetsSetter = (pos, ps) -> {
+      try {
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID));
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.util.disclosure.Disclosure.TEMPLATE_ID));
+
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+
+        final var b = before.orElse(null);
+        ps.setString(++pos, b);
+        ps.setString(++pos, b);
+        ps.setLong(++pos, limit);
+        return pos;
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
+      }
+    };
+
+    final var selectBatches = multiLineQuery(
+      "  SELECT",
+      "    contract_id,",
+      "    payload",
+      "  FROM creates(?) AS batch",
+      "  WHERE",
+      "    daml_set_text_values(batch.payload->'requestors') && ? OR",
+      "    daml_set_text_values(batch.payload->'settlers') && ?"
+    );
+    final java.util.function.BiFunction<Integer, PreparedStatement, Integer> batchesSetter = (pos, ps) -> {
+      try {
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.settlement.batch.Batch.TEMPLATE_ID));
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+        return pos;
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
+      }
+    };
+
+    final var selectSettlements = multiLineQuery(
+      "SELECT DISTINCT ON (witness_at_offset, batch_id, requestors, instruction_id)",
+      "  instructions.contract_id AS instruction_cid,",
+      "  instructions.payload->'batchId'->>'unpack' AS batch_id,",
+      "  daml_set_text_values(instructions.payload->'requestors') AS requestors,",
+      "  bs.contract_id AS batch_cid,",
+      "  instructions_min_offsets.min_create_offset AS witness_at_offset,",
+      "  instructions_min_offsets.min_create_effective_time AS witness_effective_at,",
+      "  instructions.payload->'id'->>'unpack' AS instruction_id,",
+      "  instructions.created_at_offset AS instruction_create_offset,",
+      "  instruction_archive.archived_at_offset AS instruction_archive_at_offset,",
+      "  instruction_archive.archived_effective_at AS instruction_archive_effective_at,",
+      "  executions.contract_id IS NOT NULL AS instruction_executed,",
+      "  bs.payload AS batch_payload,",
+      "  instructions.payload AS instruction_payload",
+      "FROM (\n" + instructionsMinOffsets + "\n) AS instructions_min_offsets",
+      "INNER JOIN creates(?) AS instructions ON",
+      "  instructions.payload->'batchId'->>'unpack' = instructions_min_offsets.batch_id AND",
+      "  daml_set_text_values(instructions.payload->'requestors') = instructions_min_offsets.requestors",
+      "LEFT JOIN archives(?) AS instruction_archive ON",
+      "  instructions.contract_id = instruction_archive.contract_id",
+      "LEFT JOIN (\n" + selectBatches + "\n) AS bs ON",
+      "  bs.payload->'batchId'->>'unpack' = instructions.payload->'batchId'->>'unpack' AND",
+      "  daml_set_text_values(bs.payload->'requestors') = daml_set_text_values(instructions.payload->'requestors')",
+      "LEFT JOIN exercises(?) AS executions ON instructions.contract_id = executions.contract_id",
+      "ORDER BY",
+      "  witness_at_offset DESC,",
+      "  batch_id,",
+      "  requestors,",
+      "  instruction_id,",
+      "  instruction_create_offset DESC"
+    );
     return jdbcTemplate.query(
       selectSettlements,
       ps -> {
-        final var r = asSqlArray(readAs);
-        ps.setArray(1, r);
-
-        final var b = before.orElse(null);
-        ps.setString(2, b);
-        ps.setString(3, b);
-        ps.setLong(4, limit);
-
-        ps.setArray(5, r);
-        ps.setArray(6, r);
+        int pos = 0;
+        pos = instructionMinOffsetsSetter.apply(pos, ps);
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID));
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID));
+        pos = batchesSetter.apply(pos, ps);
+        ps.setString(
+          ++pos,
+          daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID.getPackageId() + ":" +
+          daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID.getModuleName() + ":" +
+          "Execute"
+        );
       },
       new SettlementsResultSetExtractor()
     );
@@ -469,98 +496,53 @@ public class WalletRepository {
     }
   }
 
-  private static class SettlementsResultSetExtractor implements ResultSetExtractor<List<SettlementSummary>> {
+  private static class SettlementsResultSetExtractor implements ResultSetExtractor<SettlementsRaw<JsonObject>> {
     @Override
-    public List<SettlementSummary> extractData(ResultSet rs) throws SQLException, DataAccessException {
-      final var settlements =  new ArrayList<SettlementSummary>();
-      SettlementSummary current = null;
-      int currentRequestorsHash = 0;
+    public SettlementsRaw<JsonObject> extractData(ResultSet rs) throws SQLException, DataAccessException {
+      final var settlements = new SettlementsRaw<JsonObject>(new ArrayList<>());
+      SettlementSummary<JsonObject, JsonObject, String, JsonObject, String, JsonObject, JsonObject> current = null;
+      da.set.types.Set<String> currentRequestors = null;
 
       while (rs.next()) {
-        // Batch
-        final var batchId = new Id(rs.getString("batch_id"));
-        final var requestorsHash = rs.getInt("requestors_hash");
-        final var requestors = arrayToSet(rs.getArray("requestors"));
-        final var settlers = arrayToSet(rs.getArray("settlers"));
-        final var batchCid = Optional.ofNullable(rs.getString("batch_cid")).map(Batch.ContractId::new);
-        final var contextId = Optional.ofNullable(rs.getString("context_id")).map(Id::new);
-        final var description = Optional.ofNullable(rs.getString("description"));
-        final var batchCreate = getTransactionDetail(rs, "witness")
-          .orElseThrow(() -> new InternalError("Witness event detail not present"));
+        final var instructionPayload = new Gson().fromJson(
+          rs.getString("instruction_payload"),
+          JsonObject.class
+        );
 
-        // Instruction
-        final var instrumentKey = new InstrumentKey(
-          rs.getString("instrument_depository"),
-          rs.getString("instrument_issuer"),
-          new Id(rs.getString("instrument_id")),
-          rs.getString("instrument_version")
-        );
-        final var routedStep = new RoutedStep(
-          rs.getString("sender"),
-          rs.getString("receiver"),
-          rs.getString("custodian"),
-          new Quantity<>(instrumentKey, rs.getBigDecimal("amount"))
-        );
-        final var instructionCid = new Instruction.ContractId(rs.getString("instruction_cid"));
-        final var deliveryAccountId = rs.getString("approval_account_id");
-        final var approvalPassThroughTo = rs.getString("approval_pass_through_to");
-        final var approvalDebitSender = rs.getBoolean("approval_debit_sender");
-        final var approvalSettleOffLedger = rs.getBoolean("approval_settle_off_ledger");
-        final Approval approval;
-        if (deliveryAccountId != null) {
-          final var deliveryAccount = new AccountKey(routedStep.custodian, routedStep.receiver, new Id(deliveryAccountId));
-          if (approvalPassThroughTo != null) {
-            approval = new PassThroughTo(
-              new Tuple2<>(deliveryAccount, new InstructionKey(requestors, batchId, new Id(approvalPassThroughTo)))
-            );
-          } else {
-            approval = new TakeDelivery(deliveryAccount);
-          }
-        } else if (approvalDebitSender) {
-          approval = new DebitSender(Unit.getInstance());
-        } else if (approvalSettleOffLedger) {
-          approval = new SettleOffledgerAcknowledge(Unit.getInstance());
-        } else {
-          approval = new Unapproved(Unit.getInstance());
-        }
-        final var allocationPledgeCid = rs.getString("allocation_pledge_cid");
-        final var allocationCreditReceiver = rs.getBoolean("allocation_credit_receiver");
-        final var allocationPassThroughFrom = rs.getString("allocation_pass_through_from");
-        final var allocationPassThroughFromAccountId = rs.getString("allocation_pass_through_from_account_id");
-        final var allocationSettleOffLedger = rs.getBoolean("allocation_settle_off_ledger");
-        final Allocation allocation;
-        if (allocationPledgeCid != null) {
-          allocation = new Pledge(new Base.ContractId(allocationPledgeCid));
-        } else if (allocationCreditReceiver) {
-          allocation = new CreditReceiver(Unit.getInstance());
-        } else if (allocationPassThroughFrom != null && allocationPassThroughFromAccountId != null) {
-          final var account = new AccountKey(routedStep.custodian, routedStep.sender, new Id(allocationPassThroughFromAccountId));
-          allocation = new PassThroughFrom(
-            new Tuple2<>(account, new InstructionKey(requestors, batchId, new Id(allocationPassThroughFrom)))
-          );
-        } else if (allocationSettleOffLedger) {
-          allocation = new SettleOffledger(Unit.getInstance());
-        } else {
-          allocation = new Unallocated(Unit.getInstance());
-        }
-        final var step = new SettlementStep(
-          routedStep,
-          new Id(rs.getString("instruction_id")),
-          instructionCid,
-          allocation,
-          approval
+        final var batchPayload = new Gson().fromJson(rs.getString("batch_payload"), JsonObject.class);
+
+        // Batch
+        final var batchId = instructionPayload.getAsJsonObject("batchId");
+        final var requestors = instructionPayload.getAsJsonObject("requestors");
+        final var requestorsSet = asDamlSet(requestors);
+        final var settlers = instructionPayload.getAsJsonObject("settlers");
+        final var batchCid = Optional.ofNullable(rs.getString("batch_cid"));
+        final Optional<JsonObject> contextId = batchPayload == null ?
+          Optional.empty() :
+          Optional.ofNullable(batchPayload.getAsJsonObject("contextId"));
+        final Optional<String> description = batchPayload == null ?
+          Optional.empty() :
+          Optional.ofNullable(batchPayload.getAsJsonPrimitive("description")).map(JsonPrimitive::getAsString);
+        final var batchCreate = getTransactionDetailProper(rs, "witness");
+
+        final var step = new SettlementStep<>(
+          instructionPayload.getAsJsonObject("routedStep"),
+          instructionPayload.getAsJsonObject("id"),
+          rs.getString("instruction_cid"),
+          instructionPayload.getAsJsonObject("allocation"),
+          instructionPayload.getAsJsonObject("approval")
         );
         final Optional<TransactionDetail> execution = rs.getBoolean("instruction_executed") ?
-          getTransactionDetail(rs, "instruction_archive") :
+          Optional.of(getTransactionDetailProper(rs, "instruction_archive")) :
           Optional.empty();
 
-        if (current == null || !current.batchId.equals(batchId) || requestorsHash != currentRequestorsHash) {
+        if (current == null || !current.batchId.equals(batchId) || !requestorsSet.equals(currentRequestors)) {
           if (current != null) {
-            settlements.add(current);
+            settlements.settlements.add(current);
           }
-          final List<SettlementStep> steps = new LinkedList<>();
+          final List<SettlementStep<JsonObject, JsonObject, String, JsonObject, JsonObject>> steps = new LinkedList<>();
           steps.add(step);
-          current = new SettlementSummary(
+          current = new SettlementSummary<>(
             batchId,
             requestors,
             settlers,
@@ -571,10 +553,10 @@ public class WalletRepository {
             batchCreate,
             execution
           );
-          currentRequestorsHash = requestorsHash;
+          currentRequestors = requestorsSet;
         } else {
           current.steps.add(step);
-          current = new SettlementSummary(
+          current = new SettlementSummary<>(
             current.batchId,
             current.requestors,
             current.settlers,
@@ -589,7 +571,7 @@ public class WalletRepository {
       }
 
       if (current != null) {
-        settlements.add(current);
+        settlements.settlements.add(current);
       }
 
       return settlements;
@@ -620,6 +602,13 @@ public class WalletRepository {
     return new com.synfini.wallet.views.schema.TransactionDetail(
       rs.getString(prefix + "_at_offset"),
       rs.getTimestamp(prefix + "_effective_at")
+    );
+  }
+
+  private static synfini.wallet.api.types.TransactionDetail getTransactionDetailProper(ResultSet rs, String prefix) throws SQLException {
+    return new synfini.wallet.api.types.TransactionDetail(
+      rs.getString(prefix + "_at_offset"),
+      rs.getTimestamp(prefix + "_effective_at").toInstant()
     );
   }
 

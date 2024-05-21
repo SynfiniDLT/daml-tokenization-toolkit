@@ -5,6 +5,7 @@ import com.daml.ledger.javaapi.data.User;
 import com.daml.ledger.javaapi.data.codegen.DefinedDataType;
 import com.daml.lf.codegen.json.JsonCodec;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.synfini.wallet.views.config.LedgerApiConfig;
 import com.synfini.wallet.views.config.WalletViewsApiConfig;
 import com.synfini.wallet.views.schema.response.AccountOpenOffers;
@@ -22,6 +23,7 @@ import synfini.wallet.api.types.InstrumentsFilter;
 import synfini.wallet.api.types.IssuersFilter;
 import synfini.wallet.api.types.Settlements;
 import synfini.wallet.api.types.SettlementsFilter;
+import synfini.wallet.api.types.SettlementsRaw;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -31,6 +33,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 // import synfini.wallet.api.types.*;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -115,7 +118,7 @@ public class WalletViewsController {
   }
 
   @PostMapping("/settlements")
-  public ResponseEntity<String> transactions(
+  public ResponseEntity<Object> transactions(
     @RequestBody SettlementsFilter filter,
     @RequestHeader(value = HttpHeaders.AUTHORIZATION, defaultValue = "") String auth
   ) {
@@ -127,8 +130,13 @@ public class WalletViewsController {
         .badRequest()
         .body("Transactions limit cannot exceed " + walletViewsApiConfig.maxTransactionsResponseSize);
     }
-    final var settlements = new Settlements(walletRepository.settlements(parties, filter.before, limit));
-    return ResponseEntity.ok(asJson(settlements));
+    try {
+      final var settlements = walletRepository.settlements(parties, filter.before, limit);
+      return ResponseEntity.ok(settlements);
+    } catch (SQLException e) {
+      Util.logger.error("Error reading settlements", e);
+      return ResponseEntity.internalServerError().body("Internal server error");
+    }
   }
 
   @PostMapping("/instruments")

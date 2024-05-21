@@ -1,6 +1,6 @@
 package com.synfini.wallet.views.config;
 
-import com.google.gson.Gson;
+import com.fatboyindustrial.gsonjavatime.Converters;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
@@ -34,6 +34,8 @@ public class WalletViewsApiConfig implements WebMvcConfigurer {
     // Enable the spring.gson.* configuration in the configuration file
     customizers.forEach((c) -> c.customize(builder));
     builder.registerTypeAdapterFactory(GsonOptionalTypeAdapter.FACTORY);
+    Converters.registerInstant(builder);
+    builder.serializeNulls();
     return builder;
   }
 
@@ -60,10 +62,12 @@ public class WalletViewsApiConfig implements WebMvcConfigurer {
     }
 
     @Override
-    public void write(JsonWriter out, Optional<E> value) {
-      throw new UnsupportedOperationException(
-        "Cannot write Optional types as JSON using gson: use com.daml.lf.codegen.json.JsonCodec instead"
-      );
+    public void write(JsonWriter out, Optional<E> value) throws IOException {
+      if (value.isPresent()){
+        adapter.write(out, value.get());
+      } else {
+        out.nullValue();
+      }
     }
 
     @Override
