@@ -13,12 +13,23 @@
 --   select t."offset" as "offset", t."ix" as ix from __transactions t order by ix limit 1;
 -- $$ language sql;
 
+CREATE OR REPLACE FUNCTION
+  sort_array(text_array text[])
+RETURNS text[] LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT AS
+$$
+  SELECT
+    array_agg(x)
+  FROM (SELECT unnest(text_array) AS x order by x) AS _;
+$$ ;
+
 -- Return the values of a Daml Set of Text elements as an array
 CREATE OR REPLACE FUNCTION
   daml_set_text_values(body jsonb)
 RETURNS text[] LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT AS
 $$
-  SELECT ARRAY(SELECT jsonb_array_elements_text(jsonb_path_query_array( body, 'strict $.map[*][0]'))) ;
+  SELECT sort_array(
+    ARRAY(SELECT jsonb_array_elements_text(jsonb_path_query_array( body, 'strict $.map[*][0]')))
+  ) ;
 $$ ;
 
 -- Function to flatten a collection of observer parties (from the Daml Finance Disclosure interface). Given an input:
@@ -39,5 +50,7 @@ CREATE OR REPLACE FUNCTION
   flatten_observers(body jsonb)
 RETURNS text[] LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT AS
 $$
-  SELECT ARRAY(SELECT jsonb_array_elements_text(jsonb_path_query_array( body, 'strict $[*][1].map[*][0]'))) ;
+  SELECT sort_array(
+    ARRAY(SELECT jsonb_array_elements_text(jsonb_path_query_array( body, 'strict $[*][1].map[*][0]')))
+  ) ;
 $$ ;

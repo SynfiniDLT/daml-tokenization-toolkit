@@ -1380,12 +1380,9 @@ public class IntegrationTest {
       );
   }
 
-  /*
   @Test
   void returnsMultipleSettlements() throws Exception {
-    registerAuthMock(investor1User, 60 * 60 * 24);
-    startProjectionDaemon(investor1, investor1User);
-    delayForProjectionToStart();
+    startScribe(investor1, investor1User);
 
     final var investor1Account = new AccountKey(custodian, investor1, new Id("1"));
     final var investor1AccountCid = createAccount(investor1Account, List.of(investor1), List.of(), List.of());
@@ -1448,7 +1445,7 @@ public class IntegrationTest {
 
     delayForProjectionIngestion();
 
-    final var settlement1 = new SettlementSummary(
+    final var settlement1 = new SettlementSummary<>(
       batch1Id,
       requestors1,
       settlers1,
@@ -1456,19 +1453,19 @@ public class IntegrationTest {
       contextId1,
       Optional.of(description1),
       List.of(
-        new SettlementStep(
+        new SettlementStep<>(
           routedStep1,
           createBatchResult1.instructionIds.get(0),
           approvedInstructionCid1,
-          new Pledge(allocationResult1.allocatedHoldingCid.get()),
-          approval1
+          (Allocation) new Pledge(allocationResult1.allocatedHoldingCid.get()),
+          (Approval) approval1
         )
       ),
       new TransactionDetail(createBatchResult1.offset, Instant.EPOCH),
       Optional.of(new TransactionDetail(settleOffset1, Instant.EPOCH))
     );
 
-    final var settlement2 = new SettlementSummary(
+    final var settlement2 = new SettlementSummary<>(
       batch2Id,
       requestors2,
       settlers2,
@@ -1476,24 +1473,24 @@ public class IntegrationTest {
       contextId2,
       Optional.of(description2),
       List.of(
-        new SettlementStep(
+        new SettlementStep<>(
           routedStep2,
           createBatchResult2.instructionIds.get(0),
           approvedInstruction2Cid,
-          new Unallocated(Unit.getInstance()),
-          approval2
+          (Allocation) new Unallocated(Unit.getInstance()),
+          (Approval) approval2
         )
       ),
       new TransactionDetail(createBatchResult2.offset, Instant.EPOCH),
       Optional.empty()
     );
-    final var settlement2VisibleToCustodian = new SettlementSummary(
+    final var settlement2VisibleToCustodian = new SettlementSummary<>(
       settlement2.batchId,
       settlement2.requestors,
       settlement2.settlers,
-      Optional.empty(),
-      Optional.empty(),
-      Optional.empty(),
+      Optional.<daml.finance.interface$.settlement.batch.Batch.ContractId>empty(),
+      Optional.<Id>empty(),
+      Optional.<String>empty(),
       settlement2.steps,
       new TransactionDetail(approval2LedgerOffset, Instant.EPOCH),
       Optional.empty()
@@ -1546,7 +1543,7 @@ public class IntegrationTest {
           toJson(new Settlements(List.of(settlement2VisibleToCustodian)))
         )
       );
-  }*/
+  }
 
   @Test
   void returnsTokenInstruments() throws Exception {
@@ -2100,6 +2097,9 @@ public class IntegrationTest {
   }
 
   private void startScribe(String readAs, String userId) throws Exception {
+    if (scribeProcess != null) {
+      throw new Exception("Scribe process should be null (cannot start multiple scribe instances concurrently)");
+    }
     final Integer healthPort;
     ServerSocket healthSocket = null;
 
@@ -2123,6 +2123,7 @@ public class IntegrationTest {
       "ledger",
       "postgres-document",
       "--source-ledger-port", sandboxPort.toString(),
+      "--pipeline-datasource", "TransactionStream",
       "--pipeline-filter-parties", readAs,
       "--target-postgres-username", postgresContainer.getUsername(),
       "--target-postgres-password", postgresContainer.getPassword(),

@@ -357,7 +357,7 @@ public class WalletRepository {
         ps.setLong(++pos, limit);
         return pos;
       } catch (SQLException e) {
-        throw new RuntimeException(e);
+        throw new RuntimeException(e); // TODO remove?
       }
     };
 
@@ -393,19 +393,20 @@ public class WalletRepository {
       "  instructions.created_at_offset AS instruction_create_offset,",
       "  instruction_archive.archived_at_offset AS instruction_archive_at_offset,",
       "  instruction_archive.archived_effective_at AS instruction_archive_effective_at,",
-      "  executions.contract_id IS NOT NULL AS instruction_executed,",
+      //"  executions.contract_id IS NOT NULL AS instruction_executed,",
+      "  false AS instruction_executed,",
       "  bs.payload AS batch_payload,",
       "  instructions.payload AS instruction_payload",
       "FROM (\n" + instructionsMinOffsets + "\n) AS instructions_min_offsets",
       "INNER JOIN creates(?) AS instructions ON",
-      "  instructions.payload->'batchId'->>'unpack' = instructions_min_offsets.batch_id AND",
-      "  daml_set_text_values(instructions.payload->'requestors') = instructions_min_offsets.requestors",
+      "  instructions.payload->'batchId'->>'unpack' = instructions_min_offsets.batch_id", // AND",
+      // "  daml_set_text_values(instructions.payload->'requestors') = instructions_min_offsets.requestors",
       "LEFT JOIN archives(?) AS instruction_archive ON",
       "  instructions.contract_id = instruction_archive.contract_id",
       "LEFT JOIN (\n" + selectBatches + "\n) AS bs ON",
       "  bs.payload->'batchId'->>'unpack' = instructions.payload->'batchId'->>'unpack' AND",
       "  daml_set_text_values(bs.payload->'requestors') = daml_set_text_values(instructions.payload->'requestors')",
-      "LEFT JOIN exercises(?) AS executions ON instructions.contract_id = executions.contract_id",
+      // "LEFT JOIN exercises(?) AS executions ON instruction_archive.contract_id = executions.contract_id",
       "ORDER BY",
       "  witness_at_offset DESC,",
       "  batch_id,",
@@ -421,12 +422,12 @@ public class WalletRepository {
         ps.setString(++pos, fullyQualified(daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID));
         ps.setString(++pos, fullyQualified(daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID));
         pos = batchesSetter.apply(pos, ps);
-        ps.setString(
-          ++pos,
-          daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID.getPackageId() + ":" +
-          daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID.getModuleName() + ":" +
-          "Execute"
-        );
+        // ps.setString(
+        //   ++pos,
+        //   daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID.getPackageId() + ":" +
+        //   daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID.getModuleName() + ":" +
+        //   daml.finance.interface$.settlement.instruction.Instruction.CHOICE_Execute.name
+        // );
       },
       new SettlementsResultSetExtractor()
     );
@@ -568,6 +569,7 @@ public class WalletRepository {
             current.execution.or(() -> execution)
           );
         }
+        Util.logger.info("Current === " + current);
       }
 
       if (current != null) {
