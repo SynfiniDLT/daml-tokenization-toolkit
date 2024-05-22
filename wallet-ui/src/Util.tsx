@@ -103,3 +103,6 @@ export type InstrumentMetadataSummary = {
     view: HoldingView
   }
 };
+
+// Type used to indicate that the page is on its first render and therefore data must be fetched from the backend
+export type FirstRender = "FirstRender";

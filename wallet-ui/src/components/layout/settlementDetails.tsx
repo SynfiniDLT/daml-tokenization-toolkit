@@ -28,13 +28,16 @@ import { useWalletUser, useWalletViews } from "../../App";
 import { maxPolls, pollDelay, stableCoinInstrumentId } from "../../Configuration";
 import { RoutedStep } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Types";
 import { Set as DamlSet } from "@daml.js/da-set/lib/DA/Set/Types";
+import { FirstRender } from "../../Util";
 
 function isMint(step: RoutedStep): boolean {
-  return step.custodian === step.sender || step.quantity.unit.issuer === step.sender;
+  return step.custodian === step.sender ||
+    (step.quantity.unit.issuer === step.sender && step.quantity.unit.issuer != step.receiver);
 }
 
 function isBurn(step: RoutedStep): boolean {
-  return step.custodian === step.receiver || step.quantity.unit.issuer === step.receiver;
+  return step.custodian === step.receiver ||
+    (step.quantity.unit.issuer === step.receiver && step.quantity.unit.issuer != step.sender);
 }
 
 function requiresIssuerAction(primaryParty: damlTypes.Party, step: SettlementStep): boolean {
@@ -181,8 +184,6 @@ export type SettlementDetailsActionProps = {
   batchId: Id
 };
 
-type FirstRender = "FirstRender";
-
 export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
   repairMap(props.requestors.map);
   const nav = useNavigate();
@@ -202,6 +203,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
   const [settlementHoldings, setSettlementHoldings] =
     useState<damlTypes.Map<damlTypes.ContractId<Base>, BaseView>>(damlTypes.emptyMap());
 
+  // Map from the instruction ID to the contract ID of the instruction prior to exercising a choice on it
   const [dirtyInstructions, setDirtyInstructions] = useState<
     damlTypes.Map<Id, damlTypes.ContractId<Instruction>> | undefined | FirstRender
   >("FirstRender");
@@ -511,17 +513,6 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
       });
   };
 
-  const handleReject: React.MouseEventHandler<HTMLButtonElement> = async () => {
-    if (settlement === undefined) {
-      setError("Failed to load page data");
-      setIsModalOpen(!isModalOpen);
-      return;
-    }
-    // const instructionsToUnallocate = settlement
-    //   .steps
-    //   .filter(step => step.routedStep.sender === primaryParty || (step.routedStep.sender === step.routedStep.custodian && step.routedStep.quantity.unit.issuer === primaryParty))
-  };
-
   useEffect(() => {
     const { hash } = location;
     if (hash) {
@@ -759,9 +750,6 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
           <br></br>
           <button type="submit" className="button__login" style={{ width: "180px" }}>
             Apply preferences
-          </button>
-          <button type="button" className="button__login" style={{ width: "150px" }} onClick={handleReject}>
-            Decline
           </button>
           {showExecute && (
             <button type="button" className="button__login" style={{ width: "150px" }} onClick={() => handleExecute()}>
