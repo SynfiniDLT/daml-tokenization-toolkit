@@ -29,8 +29,9 @@ export const SettlementActionScreen: React.FC = () => {
           <div>
             {state.settlement !== undefined && (
               <SettlementDetailsAction
-                settlement={state.settlement}
-                key={state.settlement?.batchCid}
+                requestors={state.settlement.requestors}
+                batchId={state.settlement.batchId}
+                key={state.settlement.batchCid}
               ></SettlementDetailsAction>
             )}
           </div>

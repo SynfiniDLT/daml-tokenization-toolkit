@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AccountSummary, SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { arrayToMap, formatCurrency, nameFromParty, repairMap, toDateTimeString } from "../../Util";
-import { PlusCircleFill, DashCircleFill } from "react-bootstrap-icons";
+import { arrayToMap, formatCurrency, nameFromParty, repairMap, setToArray, toDateTimeString, wait } from "../../Util";
 import styled from "styled-components";
 import { Field, FieldPending, FieldSettled } from "./general.styled";
 import CopyToClipboard from "./copyToClipboard";
@@ -20,21 +19,25 @@ import {
   Quantity,
 } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 import { userContext } from "../../App";
-import { Base } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Base";
+import { Base, View as BaseView } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Base";
 import { Instruction } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Instruction";
 import { Batch } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Batch";
 import Modal from "react-modal";
 import AccountsSelect from "./accountsSelect";
 import { useWalletUser, useWalletViews } from "../../App";
-import { stableCoinInstrumentId } from "../../Configuration";
+import { maxPolls, pollDelay, stableCoinInstrumentId } from "../../Configuration";
 import { RoutedStep } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Types";
+import { Set as DamlSet } from "@daml.js/da-set/lib/DA/Set/Types";
+import { FirstRender } from "../../Util";
 
 function isMint(step: RoutedStep): boolean {
-  return step.custodian === step.sender || step.quantity.unit.issuer === step.sender;
+  return step.custodian === step.sender ||
+    (step.quantity.unit.issuer === step.sender && step.quantity.unit.issuer != step.receiver);
 }
 
 function isBurn(step: RoutedStep): boolean {
-  return step.custodian === step.receiver || step.quantity.unit.issuer === step.receiver;
+  return step.custodian === step.receiver ||
+    (step.quantity.unit.issuer === step.receiver && step.quantity.unit.issuer != step.sender);
 }
 
 function requiresIssuerAction(primaryParty: damlTypes.Party, step: SettlementStep): boolean {
@@ -52,19 +55,12 @@ interface SettlementDetailsProps {
 export default function SettlementDetails(props: SettlementDetailsProps) {
   const nav = useNavigate();
   const location = useLocation();
-  const [toggleSteps, setToggleSteps] = useState(false);
   const [isActionRequired, setIsActionRequired] = useState<boolean>(false);
 
   // TODO this should be refactored into a common utility
   const handleInstrumentModal = (instrument: InstrumentKey) => {
     nav("/asset", { state: { instrument } });
   }
-
-  const setToggleCol = () => {
-    setToggleSteps((prev) => {
-      return !prev;
-    });
-  };
 
   const handleSeeDetails = (settlement: SettlementSummary) => {
     nav("/settlement/action", { state: { settlement: settlement } });
@@ -147,19 +143,12 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
                 <>{Number(step.routedStep.quantity.amount)}</>
               )}
               <br />
-              <div onClick={setToggleCol} id={step.routedStep.quantity.unit.id.unpack} key={step.instructionCid}>
+              <div id={step.routedStep.quantity.unit.id.unpack} key={step.instructionCid}>
                 <Field>Asset:</Field>
                   <a onClick={() => handleInstrumentModal(step.routedStep.quantity.unit)}>
                     {`${step.routedStep.quantity.unit.id.unpack} ${step.routedStep.quantity.unit.version}`}
                   </a>
                 <br />
-                <div
-                  className="settlement-content"
-                  style={{ height: toggleSteps ? "60px" : "0px" }}
-                  key={step.routedStep.quantity.unit.id.unpack}
-                >
-                  Issuer: {nameFromParty(step.routedStep.quantity.unit.issuer)}
-                </div>
                 {!isMint(step.routedStep) &&
                   <>
                     <Field>Sender: </Field>
@@ -179,7 +168,6 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
                 <Field>Register: </Field>
                 {nameFromParty(step.routedStep.custodian)}
                 <br />
-                {toggleSteps ? <DashCircleFill /> : <PlusCircleFill />}
               </div>
               <hr></hr>
             </div>
@@ -191,14 +179,17 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
   );
 }
 
-export function SettlementDetailsAction(props: SettlementDetailsProps) {
-  repairMap(props.settlement.requestors.map);
-  repairMap(props.settlement.settlers.map);
+export type SettlementDetailsActionProps = {
+  requestors: DamlSet<damlTypes.Party>;
+  batchId: Id
+};
+
+export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
+  repairMap(props.requestors.map);
   const nav = useNavigate();
   const location = useLocation();
   const walletClient = useWalletViews();
   const { primaryParty } = useWalletUser();
-  const [toggleSteps, setToggleSteps] = useState(false);
   const ledger = userContext.useLedger();
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
@@ -206,20 +197,95 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
   const [accounts, setAccounts] = useState<AccountSummary[]>();
   const [selectAccountInput, setSelectAccountInput] = useState("");
   const [showExecute, setShowExecute] = useState<boolean>(false);
+  const [hasExecuted, setHasExecuted] = useState<boolean>(false);
+
+  const [settlement, setSettlement] = useState<SettlementSummary>();
+  const [settlementHoldings, setSettlementHoldings] =
+    useState<damlTypes.Map<damlTypes.ContractId<Base>, BaseView>>(damlTypes.emptyMap());
+
+  // Map from the instruction ID to the contract ID of the instruction prior to exercising a choice on it
+  const [dirtyInstructions, setDirtyInstructions] = useState<
+    damlTypes.Map<Id, damlTypes.ContractId<Instruction>> | undefined | FirstRender
+  >("FirstRender");
+  const [refresh, setRefresh] = useState(0);
+
+  useEffect(() => {
+    const fetchSettlement = async () => {
+      if (dirtyInstructions === undefined) {
+        return;
+      }
+
+      if (refresh >= maxPolls) {
+        console.log("Max polls limit reached");
+        setDirtyInstructions(undefined);
+        return;
+      }
+
+      if (dirtyInstructions !== "FirstRender") {
+        await wait(pollDelay);
+      }
+
+      const settlements = await walletClient.getSettlements({before: null, limit: null}); // TODO should fetch by contract ID
+      const filteredSettlements = settlements
+        .settlements
+        .filter(s =>
+          s.batchId.unpack === props.batchId.unpack &&
+          s.requestors.map.entriesArray().length === props.requestors.map.entriesArray().length &&
+          setToArray(s.requestors).every(r => props.requestors.map.has(r))
+        );
+
+      if (filteredSettlements.length !== 1) {
+        console.log("Warning: settlement not found!");
+        setRefresh(0);
+        setDirtyInstructions(undefined);
+        return;
+      }
+
+      const foundSettlement = filteredSettlements[0];
+
+      for (const step of foundSettlement.steps) {
+        if (step.allocation.tag === "Pledge" && !settlementHoldings.has(step.allocation.value)) {
+          const holding = await ledger.fetch(Base, step.allocation.value);
+          if (holding !== null) {
+            setSettlementHoldings(
+              holds => holds.set(step.allocation.value as damlTypes.ContractId<Base>, holding.payload)
+            );
+          }
+        }
+      }
+
+      if (dirtyInstructions === "FirstRender") {
+        setRefresh(0);
+        setDirtyInstructions(undefined);
+        setSettlement(foundSettlement);
+        return;
+      }
+
+      for (const step of foundSettlement.steps) {
+        const dirtyCid = dirtyInstructions.get(step.instructionId);
+        if (dirtyCid !== undefined && step.instructionCid === dirtyCid) {
+          setRefresh(r => r + 1);
+          return;
+        }
+      }
+
+      setRefresh(0);
+      setDirtyInstructions(undefined);
+      setSettlement(foundSettlement);
+    }
+
+    fetchSettlement();
+  }, [walletClient, ledger, props.requestors, props.batchId.unpack, dirtyInstructions, settlementHoldings, refresh]);
 
   const handleInstrumentModal = (instrument: InstrumentKey) => {
     nav("/asset", { state: { instrument } });
   }
 
-  const setToggleCol = () => {
-    setToggleSteps((prev) => {
-      return !prev;
-    });
-  };
-
   const handleCloseModal = (path: string) => {
     setIsModalOpen(!isModalOpen);
-    if (path !== "") nav("/" + path);
+    if (hasExecuted) {
+      nav("/" + path);
+    }
   };
 
   const handleAccountChange: React.ChangeEventHandler<HTMLSelectElement> = (event) => {
@@ -327,14 +393,41 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
       setIsModalOpen(!isModalOpen);
       return;
     }
+    if (settlement === undefined) {
+      setError("Error loading page data");
+      setIsModalOpen(!isModalOpen);
+      return;
+    }
 
     const splitAccountInput = selectAccountInput.split("@");
     const custodianToAccount: damlTypes.Map<damlTypes.Party, Id> = arrayToMap(
       [[splitAccountInput[0], { unpack: splitAccountInput[1] }]]
     );
 
-    const settlement: SettlementSummary = props.settlement;
     const { allocations, approvals, pledgeDescriptors } = acceptanceActions(custodianToAccount, settlement);
+    const instructionIdsToModify = allocations
+      .entriesArray()
+      .map(kv => kv[0])
+      .concat(approvals.entriesArray().map(kv => kv[0]));
+    const dirties = arrayToMap(
+      instructionIdsToModify
+        .flatMap(
+          instructionId => {
+            const instructionCid = settlement
+              .steps
+              .find(s => s.instructionId.unpack === instructionId.unpack)
+              ?.instructionCid;
+            let kv: [Id, damlTypes.ContractId<Instruction>][] = []
+            if (instructionCid !== undefined) {
+              kv = [[instructionId, instructionCid]];
+            } else {
+              console.log(`Unable to locate instruction ID: ${instructionId.unpack}`);
+            }
+            return kv;
+          }
+        )
+    );
+    setDirtyInstructions(dirties);
     let holdings: damlTypes.Map<HoldingDescriptor, damlTypes.ContractId<Base>[]> = damlTypes.emptyMap();
 
     for (const holdingDescriptor of pledgeDescriptors) {
@@ -371,18 +464,25 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
         },
         {}
       )
-      .then((res) => {
+      .then(() => {
         setMessage("Transaction accepted with success!");
         setIsModalOpen(!isModalOpen);
       })
       .catch((err) => {
         setError("Error accepting transaction!" + err.errors[0]);
         setIsModalOpen(!isModalOpen);
+        setDirtyInstructions(undefined);
       });
   };
 
   const handleExecute = async () => {
-    if (props.settlement.batchCid === null) {
+    if (settlement === undefined) {
+      setError("Failed to load page data");
+      setIsModalOpen(!isModalOpen);
+      return;
+    }
+
+    if (settlement.batchCid === null) {
       setError("Internal error");
       setIsModalOpen(!isModalOpen);
       return;
@@ -397,14 +497,15 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
     await ledger
       .exercise(
         Batch.Settle,
-        props.settlement.batchCid,
+        settlement.batchCid,
         {
           actors: arrayToSet([primaryParty]),
         }
       )
-      .then((res) => {
+      .then(() => {
         setMessage("Settlement submitted with success!");
         setIsModalOpen(!isModalOpen);
+        setHasExecuted(true);
       })
       .catch((err) => {
         setError("error when executing!" + err.errors[0]);
@@ -428,7 +529,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
   }, [location]);
 
   useEffect(() => {
-    if (primaryParty === undefined) {
+    if (primaryParty === undefined || settlement === undefined) {
       return
     }
 
@@ -441,7 +542,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
   
     // STEPS LOOP THROUGH
     let stepNotReady = false;
-    props.settlement.steps.forEach((step: SettlementStep) => {
+    settlement.steps.forEach((step: SettlementStep) => {
       let inputSelected = "";
 
       // CHECK STEPS APPROVAL / ALLOCATION
@@ -479,10 +580,14 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
       }
     });
 
-    if (!stepNotReady && props.settlement.settlers.map.has(primaryParty)) {
+    if (!stepNotReady && settlement.settlers.map.has(primaryParty)) {
       setShowExecute(true);
     }
-  }, [primaryParty, ledger, walletClient, selectAccountInput, props.settlement]);
+  }, [primaryParty, ledger, walletClient, selectAccountInput, settlement]);
+
+  if (settlement === undefined) {
+    return <></>;
+  }
 
   return (
     <SettlementDetailsContainer>
@@ -493,41 +598,44 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
             <AccountsSelect accounts={accounts} onChange={handleAccountChange} selectedAccount={selectAccountInput} />
           </div>
         </div>
-        <div key={props.settlement.batchId.unpack} id={props.settlement.batchId.unpack}>
+        <div key={settlement.batchId.unpack} id={settlement.batchId.unpack}>
           <div>
             <div>
               <Field>Transaction ID:</Field>
               <CopyToClipboard
-                paramToCopy={props.settlement.batchId.unpack}
-                paramToShow={props.settlement.batchId.unpack}
+                paramToCopy={settlement.batchId.unpack}
+                paramToShow={settlement.batchId.unpack}
               />
               <br />
             </div>
             <Field>Description:</Field>
-            {props.settlement.description}
+            {settlement.description}
             <br />
             <Field>Transaction Status:</Field>
-            {props.settlement.execution === null ? (
+            {settlement.execution === null ? (
               <FieldPending>Pending</FieldPending>
             ) : (
               <FieldSettled>Settled</FieldSettled>
             )}
             <br />
-            <Field>Created Time:</Field>
-            {toDateTimeString(props.settlement.witness.effectiveTime)}
+            <Field>Authorised Settlers:</Field>
+            {setToArray(settlement.settlers).map(p => nameFromParty(p)).join(", ")}
             <br />
-            {props.settlement.execution !== null && (
+            <Field>Created Time:</Field>
+            {toDateTimeString(settlement.witness.effectiveTime)}
+            <br />
+            {settlement.execution !== null && (
               <>
                 <Field>Settled Time:</Field>
               </>
             )}
-            {props.settlement.execution !== null && toDateTimeString(props.settlement.execution.effectiveTime)}
-            {props.settlement.execution !== null && <> | Offset: </>}
-            {props.settlement.execution !== null && props.settlement.execution.offset}
+            {settlement.execution !== null && toDateTimeString(settlement.execution.effectiveTime)}
+            {settlement.execution !== null && <> | Offset: </>}
+            {settlement.execution !== null && settlement.execution.offset}
           </div>
 
           <hr></hr>
-          {primaryParty === undefined || props.settlement.steps.map((step: SettlementStep) => {
+          {primaryParty === undefined || settlement.steps.map((step: SettlementStep) => {
             return (
               <>
                 <div key={step.instructionId.unpack}>
@@ -553,19 +661,11 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
                       <>{Number(step.routedStep.quantity.amount)}</>
                     )}
                     <br />
-                    <div onClick={setToggleCol} id={step.routedStep.quantity.unit.id.unpack} key={step.instructionCid}>
+                    <div id={step.routedStep.quantity.unit.id.unpack} key={step.instructionCid}>
                       <Field>Asset:</Field>
                       <a onClick={() => handleInstrumentModal(step.routedStep.quantity.unit)}>
                         {`${step.routedStep.quantity.unit.id.unpack} ${step.routedStep.quantity.unit.version}`}
                       </a>
-                      <br />
-                      <div
-                        className="settlement-content"
-                        style={{ height: toggleSteps ? "60px" : "0px" }}
-                        key={step.routedStep.quantity.unit.id.unpack}
-                      >
-                        Issuer: {nameFromParty(step.routedStep.quantity.unit.issuer)}
-                      </div>
                       <br />
                       {!isMint(step.routedStep) &&
                         <div
@@ -612,30 +712,34 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
                       <Field>Register: </Field>
                       {nameFromParty(step.routedStep.custodian)}
                       <br />
-                      <Field>Allocation: </Field>
-                      {step.allocation.tag === "Unallocated" ? (
-                        <span style={{ color: "hsl(0, 90%, 80%)" }}>{step.allocation.tag}</span>
-                      ) : (
-                        <>{step.allocation.tag}</>
-                      )}
+                      <Field>{isMint(step.routedStep) ? "Issuer approval:" : "Sender response:"}</Field>
+                      {step.allocation.tag === "Unallocated" ?
+                        <span style={{ color: "hsl(0, 90%, 80%)" }}>Pending</span>
+                      : step.allocation.tag === "Pledge" ?
+                        `Send from account ID ${settlementHoldings.get(step.allocation.value)?.account.id.unpack}`
+                      : step.allocation.tag === "PassThroughFrom" ?
+                        `Pass through from instruction ID ${step.allocation.value._2.id.unpack}`
+                      : step.allocation.tag === "CreditReceiver" ?
+                        "Mint"
+                      : step.allocation.tag === "SettleOffledger" ?
+                        "Settle off-ledger"
+                      : "Allocated"
+                      }
                       <br />
-                      <Field>Approval: </Field>
-                      {step.approval.tag === "Unapproved" ? (
-                        <span style={{ color: "hsl(0, 90%, 80%)" }}>{step.approval.tag}</span>
-                      ) : (
-                        <>{step.approval.tag}</>
-                      )}
+                      <Field>{isBurn(step.routedStep) && step.routedStep.sender !== step.routedStep.custodian ? "Issuer approval:" : "Receiver response:"}</Field>
+                      {step.approval.tag === "Unapproved" ?
+                        <span style={{ color: "hsl(0, 90%, 80%)" }}>Pending</span>
+                      : step.approval.tag === "TakeDelivery" ?
+                        `Take delivery to account ID ${step.approval.value.id.unpack}`
+                      : step.approval.tag === "PassThroughTo" ?
+                        `Pass through to instruction ID ${step.approval.value._2.id.unpack} via account ID ${step.approval.value._1.id.unpack}`
+                      : step.approval.tag === "DebitSender" ?
+                        "Burn"
+                      : step.approval.tag === "SettleOffledgerAcknowledge" ?
+                        "Settle off-ledger"
+                      : "Approved"
+                      }
                       <br />
-                      {toggleSteps ? <DashCircleFill /> : <PlusCircleFill />}
-                    </div>
-                    <div
-                      className="settlement-content"
-                      style={{ height: toggleSteps ? "60px" : "0px" }}
-                      key={step.routedStep.quantity.unit.id.unpack}
-                    >
-                      Depository: {nameFromParty(step.routedStep.quantity.unit.depository)}
-                      <br />
-                      Issuer: {nameFromParty(step.routedStep.quantity.unit.issuer)}
                     </div>
                     <hr></hr>
                   </div>
@@ -644,8 +748,8 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
             );
           })}
           <br></br>
-          <button type="submit" className="button__login" style={{ width: "150px" }}>
-            Accept
+          <button type="submit" className="button__login" style={{ width: "180px" }}>
+            Apply preferences
           </button>
           {showExecute && (
             <button type="button" className="button__login" style={{ width: "150px" }} onClick={() => handleExecute()}>
@@ -676,7 +780,7 @@ export function SettlementDetailsAction(props: SettlementDetailsProps) {
                 type="button"
                 className="button__login"
                 style={{ width: "150px" }}
-                onClick={() => handleCloseModal(`settlements#${props.settlement.batchId.unpack}`)}
+                onClick={() => handleCloseModal(`settlements#${settlement.batchId.unpack}`)}
               >
                 OK
               </button>

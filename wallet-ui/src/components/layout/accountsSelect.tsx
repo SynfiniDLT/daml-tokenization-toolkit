@@ -13,7 +13,7 @@ export default function AccountsSelect(props: AccountsSelectProps) {
           <select name="accountSelect" onChange={props.onChange} value={props.selectedAccount}>
               <option value="" defaultValue="">Select one account</option>
             {props.accounts.map(account =>
-              <option value={`${account.view.custodian}@${account.view.id.unpack}`} key={account.cid}>{account.view.description}</option>
+              <option value={`${account.view.custodian}@${account.view.id.unpack}`} key={account.cid}>{account.view.description} ({account.view.id.unpack})</option>
             )}
           </select>
         )}

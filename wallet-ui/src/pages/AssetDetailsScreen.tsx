@@ -8,7 +8,7 @@ import {
   InstrumentSummary,
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlTypes from "@daml/types";
-import { arrayToSet, flattenObservers, setToArray, toDateTimeString, wait } from "../Util";
+import { arrayToSet, flattenObservers, setToArray, toDateTimeString, wait, FirstRender } from "../Util";
 import { useWalletUser, useWalletViews } from "../App";
 import { CreateEvent } from "@daml/ledger";
 import { Metadata } from "@daml.js/synfini-instrument-metadata-interface/lib/Synfini/Interface/Instrument/Metadata/Metadata";
@@ -27,8 +27,6 @@ export type AssetDetailsState = {
 
 const obsContext = "wallet.assetShare";
 
-type FirstRender = "FirstRender";
-
 function observersOnlyInContext(observers: damlTypes.Map<string, DamlSet<damlTypes.Party>>): DamlSet<damlTypes.Party> {
   const otherObservers = arrayToSet(flattenObservers(observers.delete(obsContext)));
   const observersArray = setToArray(
@@ -45,10 +43,14 @@ const AssetDetailsScreen: React.FC = () => {
   const { primaryParty } = useWalletUser();
   const walletClient = useWalletViews();
 
+  // State variable used to force the app to fetch contract payloads from the backend
   const [refreshInstrument, setRefreshInstrument] = useState(0);
+  // Contract ID of the instrument prior to exercising a choice in it
   const [instrumentDirtyCid, setInstrumentDirtyCid] = useState<damlTypes.ContractId<any> | FirstRender | undefined>("FirstRender");
 
+  // State variable used to force the app to fetch contract payloads from the backend
   const [refreshMetadata, setRefreshMetadata] = useState(0);
+  // Contract ID of the metadata prior to exercising a choice in it
   const [metadataDirtyCid, setMetadataDirtyCid] = useState<damlTypes.ContractId<any> | FirstRender | undefined>("FirstRender");
 
   const [nonFungbileHolding, setNonFungibleHolding] = useState<CreateEvent<Base>>();
