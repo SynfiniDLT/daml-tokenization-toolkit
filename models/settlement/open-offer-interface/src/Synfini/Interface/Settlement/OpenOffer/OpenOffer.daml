@@ -44,8 +44,10 @@ data View = View
       -- taken.
     minQuantity : Optional Decimal -- ^ Minimum quantity that can be specified by the taker. 'None' indicates no lower
       -- bound.
-    maxQuantity :  Optional Decimal -- ^ Maximum quantity that can be specified by the taker. 'None' indicates no uppper
+    maxQuantity : Optional Decimal -- ^ Maximum quantity that can be specified by the taker. 'None' indicates no upper
       -- bound.
+    increment : Optional Decimal -- ^ If provided then the quantity specified by the taker must be a multiple of the
+      -- increment value.
     routeProviderCid : ContractId RouteProvider.I -- ^ Route provider used to determine the custodian(s) used for
       -- settlement.
     settlementFactoryCid : ContractId SettlementFactory.I -- ^ Settlement factory used to instruct settlement.

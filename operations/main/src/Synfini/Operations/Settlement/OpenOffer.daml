@@ -61,6 +61,7 @@ data OpenOfferSettings = OpenOfferSettings
     steps : [StepSettings]
     minQuantity : Optional Decimal
     maxQuantity : Optional Decimal
+    increment : Optional Decimal
     settlementOpenOfferFactory : Text
     routeProvider : Text
     settlementFactory : Text
@@ -102,6 +103,7 @@ createSettlementOpenOffers input = do
         steps
         minQuantity = settings.minQuantity
         maxQuantity = settings.maxQuantity
+        increment = settings.increment
         settlementTime = None
         routeProviderCid
         settlementFactoryCid

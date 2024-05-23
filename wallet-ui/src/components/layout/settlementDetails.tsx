@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AccountSummary, SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { arrayToMap, formatCurrency, nameFromParty, repairMap, setToArray, toDateTimeString, wait } from "../../Util";
+import { arrayToMap, formatCurrency, repairMap, setToArray, toDateTimeString, truncateParty, wait } from "../../Util";
 import styled from "styled-components";
 import { Field, FieldPending, FieldSettled } from "./general.styled";
 import CopyToClipboard from "./copyToClipboard";
@@ -129,7 +129,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
         <hr></hr>
         {props.settlement.steps.map((step: SettlementStep) => (
           <div key={step.instructionId.unpack}>
-            <h5 className="profile__title">Instruction ID: {step.instructionId.unpack}</h5>
+            <h5 className="profile__title">Instruction: {step.instructionId.unpack}</h5>
             <div style={{ margin: "15px" }}>
               <Field>Type: </Field>
               {
@@ -152,7 +152,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
                 {!isMint(step.routedStep) &&
                   <>
                     <Field>Sender: </Field>
-                    {nameFromParty(step.routedStep.sender)}
+                    {truncateParty(step.routedStep.sender)}
                     <br />
                   </>
                 }
@@ -160,13 +160,13 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
                 {!isBurn(step.routedStep) &&
                   <>
                     <Field>Receiver: </Field>
-                    {nameFromParty(step.routedStep.receiver)}
+                    {truncateParty(step.routedStep.receiver)}
                     <br />
                   </>
                 }
 
                 <Field>Register: </Field>
-                {nameFromParty(step.routedStep.custodian)}
+                {truncateParty(step.routedStep.custodian)}
                 <br />
               </div>
               <hr></hr>
@@ -277,7 +277,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
     fetchSettlement();
   }, [walletClient, ledger, props.requestors, props.batchId.unpack, dirtyInstructions, settlementHoldings, refresh]);
 
-  const handleInstrumentModal = (instrument: InstrumentKey) => {
+  const handleInstrumentClick = (instrument: InstrumentKey) => {
     nav("/asset", { state: { instrument } });
   }
 
@@ -619,7 +619,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
             )}
             <br />
             <Field>Authorised Settlers:</Field>
-            {setToArray(settlement.settlers).map(p => nameFromParty(p)).join(", ")}
+            {setToArray(settlement.settlers).map(p => truncateParty(p)).join(", ")}
             <br />
             <Field>Created Time:</Field>
             {toDateTimeString(settlement.witness.effectiveTime)}
@@ -639,12 +639,12 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
             return (
               <>
                 <div key={step.instructionId.unpack}>
-                  <h5 className="profile__title">Instruction ID: {step.instructionId.unpack}</h5>
+                  <h5 className="profile__title">Instruction: {step.instructionId.unpack}</h5>
                   <div style={{ margin: "15px" }}>
                     <div
                       style={{
                         ...(requiresIssuerAction(primaryParty, step)
-                          ? { border: "1px solid", width: "300px" }
+                          ? { border: "1px solid", width: "fit-content" }
                           : {}),
                       }}
                     >
@@ -655,45 +655,41 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                       }
                     </div>
                     <Field>Amount: </Field>
-                    {step.routedStep.quantity.unit.id.unpack === stableCoinInstrumentId.unpack ? (
-                      <>{formatCurrency(step.routedStep.quantity.amount, "en-US")}</>
-                    ) : (
-                      <>{Number(step.routedStep.quantity.amount)}</>
-                    )}
+                    {formatCurrency(step.routedStep.quantity.amount, "en-US")}
                     <br />
                     <div id={step.routedStep.quantity.unit.id.unpack} key={step.instructionCid}>
                       <Field>Asset:</Field>
-                      <a onClick={() => handleInstrumentModal(step.routedStep.quantity.unit)}>
+                      <a onClick={() => handleInstrumentClick(step.routedStep.quantity.unit)}>
                         {`${step.routedStep.quantity.unit.id.unpack} ${step.routedStep.quantity.unit.version}`}
                       </a>
                       <br />
                       {!isMint(step.routedStep) &&
                         <div
                           style={{
-                            ...(nameFromParty(step.routedStep.sender) === nameFromParty(primaryParty) && // TODO why is this using `nameFromParty`?
-                            step.allocation.tag === "Unallocated"
-                              ? { border: "1px solid", width: "300px" }
+                            ...(step.routedStep.sender === primaryParty && step.allocation.tag === "Unallocated"
+                              ? { border: "1px solid", width: "fit-content" }
                               : {}),
                           }}
                         >
                           <Field>Sender: </Field>
                           <span
                             style={{
+
                               fontWeight:
-                                nameFromParty(step.routedStep.sender) === nameFromParty(primaryParty)
+                               step.routedStep.sender === primaryParty
                                   ? "bold"
                                   : "normal",
                             }}
                           >
-                            {nameFromParty(step.routedStep.sender)}
+                            {truncateParty(step.routedStep.sender)}
                           </span>
                         </div>
                       }
                       <div
                         style={{
-                          ...(nameFromParty(step.routedStep.receiver) === nameFromParty(primaryParty) &&
+                          ...(step.routedStep.receiver === primaryParty &&
                           step.approval.tag === "Unapproved"
-                            ? { border: "1px solid", width: "300px" }
+                            ? { border: "1px solid", width: "fit-content" }
                             : {}),
                         }}
                       >
@@ -701,16 +697,16 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                         <span
                           style={{
                             fontWeight:
-                              nameFromParty(step.routedStep.receiver) === nameFromParty(primaryParty)
+                              step.routedStep.receiver === primaryParty
                                 ? "bold"
                                 : "normal",
                           }}
                         >
-                          {nameFromParty(step.routedStep.receiver)}
+                          {truncateParty(step.routedStep.receiver)}
                         </span>
                       </div>
                       <Field>Register: </Field>
-                      {nameFromParty(step.routedStep.custodian)}
+                      {truncateParty(step.routedStep.custodian)}
                       <br />
                       <Field>{isMint(step.routedStep) ? "Issuer approval:" : "Sender response:"}</Field>
                       {step.allocation.tag === "Unallocated" ?
@@ -749,7 +745,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
           })}
           <br></br>
           <button type="submit" className="button__login" style={{ width: "180px" }}>
-            Apply preferences
+            Apply
           </button>
           {showExecute && (
             <button type="button" className="button__login" style={{ width: "150px" }} onClick={() => handleExecute()}>

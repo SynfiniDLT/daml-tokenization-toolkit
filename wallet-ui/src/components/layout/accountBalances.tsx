@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { AccountSummary, Balance } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { formatCurrency, nameFromParty } from "../../Util";
+import { formatCurrency, nameFromParty, truncateParty } from "../../Util";
 import { Coin } from "react-bootstrap-icons";
 import HoverPopUp from "./hoverPopUp";
 import { useState } from "react";
@@ -55,7 +55,7 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
               {`${balance.instrument.id.unpack} ${balance.instrument.version}`}
             </a>
           </td>
-          <td><HoverPopUp triggerText={nameFromParty(balance.instrument.issuer)} popUpContent={balance.instrument.issuer} /></td>
+          <td><HoverPopUp triggerText={truncateParty(balance.instrument.issuer)} popUpContent={balance.instrument.issuer} /></td>
           <td>
             {formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")}
           </td>
@@ -77,7 +77,7 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
             <div key={accountKey}>
               <div style={{ marginTop: "15px" }}>
                 <h4 className="profile__title">{account.view.description}</h4>
-                <h5 className="profile__title">Register: {account.view.custodian}</h5>
+                <h5 className="profile__title">Register: {truncateParty(account.view.custodian)}</h5>
                 <h5 className="profile__title">Account ID: {account.view.id.unpack}</h5>
               </div>
               <div style={{ margin: "10px", padding: "10px" }}>

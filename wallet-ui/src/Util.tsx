@@ -22,7 +22,7 @@ export function formatCurrency(amountString: string, locale: string): string {
 }
 
 export function formatOptionalCurrency(amount: damlTypes.Optional<string>, locale: string): string {
-  if (amount == null) {
+  if (amount === null) {
     return "N/A";
   } else {
     return formatCurrency(amount, locale);
@@ -40,6 +40,18 @@ export function nameFromParty(party: string) {
   }
 
   return name;
+}
+
+export function truncateParty(party: damlTypes.Party) {
+  const splitted = party.split("::");
+
+  if (splitted.length == 2) {
+    if (splitted[1].length > 15) {
+      return `${splitted[0]}::${splitted[1].substring(0, 10)}...${splitted[1].substring(splitted[1].length - 5)}`
+    }
+  }
+  console.warn(`Malformed party ID: "${party}"`);
+  return party;
 }
 
 export const toDateTimeString = (inputDate: damlTypes.Time) => {

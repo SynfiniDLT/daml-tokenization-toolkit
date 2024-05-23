@@ -782,6 +782,7 @@ We refer to the above format as a "settlement party" in the documentation below.
       ],
       "minQuantity": 99.99999, // Minimum quantity that can be specified by the taker - optional
       "maxQuantity": 99.99999, // Maximum quantity that can be specified by the taker - optional
+      "increment": 0.000001, // Quantity specified by the taker must be a multiple of this value if provided - optional 
       "settlementOpenOfferFactory": "label1", // Label of the settlement OpenOffer factory
       "routeProvider": "label1", // Label of the RouteProvider used to route the steps through custodian(s)
       "settlementFactory": "label1", // Label of the settlement factory

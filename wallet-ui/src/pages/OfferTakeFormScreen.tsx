@@ -2,7 +2,7 @@ import { useState, ChangeEventHandler } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
 import { PageLayout } from "../components/PageLayout";
-import { formatCurrency, formatOptionalCurrency, nameFromParty } from "../Util";
+import { formatCurrency, formatOptionalCurrency, truncateParty } from "../Util";
 import * as damlTypes from "@daml/types";
 import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
 import { v4 as uuid } from "uuid";
@@ -13,46 +13,47 @@ import {
   DivBorderRoundContainer,
   ContainerColumnValue,
 } from "../components/layout/general.styled";
-import { Coin, BoxArrowUpRight } from "react-bootstrap-icons";
+import { BoxArrowUpRight } from "react-bootstrap-icons";
 import { CreateEvent } from "@daml/ledger";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 import { repairMap } from "../Util";
 import { useWalletUser } from "../App";
 
-type FundSubscribeFormScreenState = {
-  fund: CreateEvent<SettlementOpenOffer, undefined, string>
+type OfferAcceptFormScreenState = {
+  offer: CreateEvent<SettlementOpenOffer, undefined, string>
 }
 
-export const FundSubscribeFormScreen: React.FC = () => {
+export const OfferAcceptFormScreen: React.FC = () => {
   const nav = useNavigate();
-  const { state } = useLocation() as { state: FundSubscribeFormScreenState };
-  repairMap(state.fund.payload.offerers.map);
+  const { state } = useLocation() as { state: OfferAcceptFormScreenState };
+  repairMap(state.offer.payload.offerers.map);
   const ledger = userContext.useLedger();
   const { primaryParty } = useWalletUser();
-  const [inputQtd, setInputQtd] = useState(0);
+  const [inputQtd, setInputQtd] = useState(parseFloat(state.offer.payload.minQuantity || "0"));
   const [referenceId, setReferenceId] = useState<string>("");
-  const [total, setTotal] = useState(damlTypes.emptyMap<InstrumentKey, number>());
   const [error, setError] = useState("");
 
-  const handleChangeInputQtd: ChangeEventHandler<HTMLInputElement> = (event) => {
-    const q = parseInt(event.target.value);
-    setInputQtd(q);
-    setTotal(costForQuantity(q));
+  const handleInstrumentClick = (instrument: InstrumentKey) => {
+    nav("/asset", { state: { instrument } });
   };
 
-  function costForQuantity(q: number): damlTypes.Map<InstrumentKey, number> {
-    let costsMap = damlTypes.emptyMap<InstrumentKey, number>();
+  const handleChangeInputQtd: ChangeEventHandler<HTMLInputElement> = (event) => {
+    setInputQtd(parseFloat(event.target.value));
+  };
 
-    for (const step of state.fund.payload.steps) {
-      if (step.sender.tag === "TakerEntity") {
-        const existingCost = costsMap.get(step.quantity.unit) || 0;
-        costsMap = costsMap.set(
+  function forQuantity(q: number, costs: boolean): damlTypes.Map<InstrumentKey, number> {
+    let quantities = damlTypes.emptyMap<InstrumentKey, number>();
+
+    for (const step of state.offer.payload.steps) {
+      if (costs ? step.sender.tag === "TakerEntity" : step.receiver.tag === "TakerEntity") {
+        const existingCost = quantities.get(step.quantity.unit) || 0;
+        quantities = quantities.set(
           step.quantity.unit, existingCost + parseFloat(step.quantity.amount) * q
         );
       }
     }
 
-    return costsMap;
+    return quantities;
   }
 
   const handleSubmit:  React.FormEventHandler<HTMLFormElement> = async (e) => {
@@ -62,11 +63,11 @@ export const FundSubscribeFormScreen: React.FC = () => {
       return;
     }
 
-    let referenceIdUUID = uuid();
+    const referenceIdUUID = uuid();
     try {
       await ledger.exercise(
         SettlementOpenOffer.Take,
-        state.fund.contractId,
+        state.offer.contractId,
         {
           id: { unpack: referenceIdUUID },
           taker: primaryParty,
@@ -80,10 +81,26 @@ export const FundSubscribeFormScreen: React.FC = () => {
     }
   };
 
+  const displayQuantites = (quantities: [InstrumentKey, number][]) =>
+    quantities.map(([instrumentKey, amount], index) =>
+      <p key={index}>
+        {index > 0 ? ', ' : ''}{formatCurrency(amount.toString(), "en-US") + " "}
+        <a onClick={_ => handleInstrumentClick(instrumentKey)}>
+          {`${instrumentKey.id.unpack} ${instrumentKey.version}`}
+        </a>
+      </p>
+    );
+
+  const costPerUnit = forQuantity(1, true).entriesArray();
+  const receivable = forQuantity(inputQtd, false).entriesArray();
+  const totalCost = forQuantity(inputQtd, true).entriesArray();
+
+  console.log("offer === ", state.offer.payload);
+
   return (
     <PageLayout>
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
-        Subscribe to fund
+        {state.offer.payload.offerDescription}
       </h3>
       {error !== "" && 
         <>
@@ -97,7 +114,7 @@ export const FundSubscribeFormScreen: React.FC = () => {
             {error}
           </span>
           <p></p>
-          <button className="button__login" style={{ width: "200px" }} onClick={() => nav("/fund")}>
+          <button className="button__login" style={{ width: "200px" }} onClick={() => nav("/offer")}>
             Back
           </button>
         </>
@@ -108,55 +125,45 @@ export const FundSubscribeFormScreen: React.FC = () => {
             <ContainerDiv>
               <ContainerColumn style={{width: "600px"}}>
                 <ContainerColumnKey>Offered by:</ContainerColumnKey>
-                <ContainerColumnKey>Cost Per Unit:</ContainerColumnKey>
-                <ContainerColumnKey>Receivable assets:</ContainerColumnKey>
-                <ContainerColumnKey>Minimum Purchase quantity:</ContainerColumnKey>
-                <ContainerColumnKey>Maximum Purchase quantity:</ContainerColumnKey>
-                <ContainerColumnKey>Units to buy:</ContainerColumnKey>
+                <ContainerColumnKey>Payment per unit:</ContainerColumnKey>
+                <ContainerColumnKey>Minimum units:</ContainerColumnKey>
+                <ContainerColumnKey>Maximum units:</ContainerColumnKey>
+                <ContainerColumnKey>Units:</ContainerColumnKey>
                 <p><br/></p>
-                <ContainerColumnKey>Total cost:</ContainerColumnKey>
+                <ContainerColumnKey>Amount you will receive:</ContainerColumnKey>
+                <ContainerColumnKey>Total payment:</ContainerColumnKey>
               </ContainerColumn>
               <ContainerColumn>
                 <ContainerColumnValue>
-                  {(state.fund.payload.offerers.map).entriesArray().map(entry => nameFromParty(entry[0])).join(", ")}
+                  {(state.offer.payload.offerers.map).entriesArray().map(entry => truncateParty(entry[0])).join(", ")}
                 </ContainerColumnValue>
                 <ContainerColumnValue>
-                  {costForQuantity(1).entriesArray().map(entry => <>{formatCurrency(entry[1].toString(), "en-US") + " " + entry[0].id.unpack + " "}<Coin/></>)}
+                  {costPerUnit.length > 0 ? displayQuantites(costPerUnit) : "N/A"}
                 </ContainerColumnValue>
-                <ContainerColumnValue>
-                  {
-                    state.fund.payload.steps
-                      .filter(step => step.receiver.tag === "TakerEntity")
-                      .map(step =>
-                        <p>{formatCurrency((parseFloat(step.quantity.amount) * inputQtd).toString(), "en-US") + " " + step.quantity.unit.id.unpack}</p>)
-                  }
-                </ContainerColumnValue>
-                <ContainerColumnValue>{formatOptionalCurrency(state.fund.payload.minQuantity, "en-US")} </ContainerColumnValue>
-                <ContainerColumnValue>{formatOptionalCurrency(state.fund.payload.maxQuantity, "en-US")} </ContainerColumnValue>
+                <ContainerColumnValue>{formatOptionalCurrency(state.offer.payload.minQuantity, "en-US")} </ContainerColumnValue>
+                <ContainerColumnValue>{formatOptionalCurrency(state.offer.payload.maxQuantity, "en-US")} </ContainerColumnValue>
                 <ContainerColumnValue>
                   <input
                     type="number"
                     id="qtd"
                     name="qtd"
-                    step={1}
-                    min={state.fund.payload.minQuantity || "0"}
-                    max={state.fund.payload.maxQuantity || undefined}
+                    step={state.offer.payload.increment || undefined}
+                    min={state.offer.payload.minQuantity || "0"}
+                    max={state.offer.payload.maxQuantity || undefined}
                     value={inputQtd}
                     onChange={handleChangeInputQtd}
                     style={{ width: "50px", height: "25px" }}
                   />
                 </ContainerColumnValue>
                 <p><br/></p>
+                <ContainerColumnValue>
+                  {receivable.length > 0 ? displayQuantites(receivable) : "N/A"}
+                </ContainerColumnValue>
                 <ContainerColumnValue style={{verticalAlign:"-10px"}}>
-                  {
-                    total
-                      .entriesArray()
-                      .map(entry => <>{formatCurrency(entry[1].toString(), "en-US") + " " + entry[0].id.unpack + " "}<Coin/></>)
-                  }
+                  {totalCost.length > 0 ? displayQuantites(totalCost) : "N/A"}
                 </ContainerColumnValue>
               </ContainerColumn>
             </ContainerDiv>
-            
             <button type="submit" className={"button__login"} style={{ width: "200px" }}>
               Submit
             </button>

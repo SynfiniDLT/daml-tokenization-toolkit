@@ -31,6 +31,7 @@ template OpenOffer
     settlementTime : Optional (Either Time RelTime)
     minQuantity : Optional Decimal
     maxQuantity :  Optional Decimal
+    increment : Optional Decimal
     routeProviderCid : ContractId RouteProvider.I
     settlementFactoryCid : ContractId SettlementFactory.I
     observers : PartiesMap
@@ -40,7 +41,14 @@ template OpenOffer
     key (offerers, offerId) : (Set Party, Id)
     maintainer key._1
 
+    let isMultipleOfIncrement value = O.optional
+          True
+          (\incr -> let ratio = value / incr in roundBankers 0 ratio == ratio)
+          increment
+
     observer O.fromOptional Set.empty permittedTakers, Disclosure.flattenObservers observers
+
+    ensure O.optional True isMultipleOfIncrement minQuantity && O.optional True isMultipleOfIncrement maxQuantity
 
     interface instance Disclosure.I for OpenOffer where
       view = Disclosure.View with disclosureControllers = offerers, observers
@@ -57,6 +65,8 @@ template OpenOffer
         assertMsg
           "Quantity must be less than or equal to permitted maximum"
           (O.optional True (quantity <=) maxQuantity)
+        assertMsg "Quantity must be a multiple of the increment" (isMultipleOfIncrement quantity)
+
         assertMsg "Must be a permitted offer taker" (O.optional True (taker `Set.member`) permittedTakers)
         let resolveParty entity = case entity of
               OpenOffer.PartyEntity p -> p
@@ -116,6 +126,7 @@ template Factory
         settlementTime,
         minQuantity,
         maxQuantity,
+        increment,
         routeProviderCid,
         settlementFactoryCid,
         observers

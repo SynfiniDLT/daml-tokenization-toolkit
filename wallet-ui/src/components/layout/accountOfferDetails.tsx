@@ -11,7 +11,7 @@ import { AccountOpenOfferSummary } from "@daml.js/synfini-wallet-views-types/lib
 import { OpenOffer } from "@daml.js/synfini-account-onboarding-open-offer-interface/lib/Synfini/Interface/Onboarding/Account/OpenOffer/OpenOffer";
 import { userContext } from "../../App";
 import { v4 as uuid } from "uuid";
-import { nameFromParty, arrayToSet, arrayToMap } from "../../Util";
+import { arrayToSet, arrayToMap, truncateParty, setToArray } from "../../Util";
 import HoverPopUp from "./hoverPopUp";
 import { useWalletUser } from "../../App";
 import { walletOperator } from "../../Configuration";
@@ -66,7 +66,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
         )
         .then((res) => {
           if (res[1]?.length > 0) {
-            setMessage("Operation completed with success! ).");
+            setMessage("Account created");
             setError("");
           } else {
             setMessage("");
@@ -83,6 +83,10 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
     setIsModalOpen(!isModalOpen);
   };
 
+  const incomingControllers = (props.accountOffer.view.ownerIncomingControlled ? ["Account owner"] : [])
+    .concat(setToArray(props.accountOffer.view.additionalControllers.incoming).map(truncateParty));
+  const outgoingControllers = (props.accountOffer.view.ownerOutgoingControlled ? ["Account owner"] : [])
+  .concat(setToArray(props.accountOffer.view.additionalControllers.outgoing).map(truncateParty));
 
   return (
     <>
@@ -115,10 +119,12 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
       </div>
       <p></p>
       <CardContainer>
+        <h4 className="profile__title">{props.accountOffer.view.description}</h4>
         <ContainerDiv>
           <ContainerColumn>
-            <ContainerColumnKey>Offer Description:</ContainerColumnKey>
-            <ContainerColumnKey>Provider:</ContainerColumnKey>
+            <ContainerColumnKey>Register:</ContainerColumnKey>
+            <ContainerColumnKey>Incoming transaction controllers:</ContainerColumnKey>
+            <ContainerColumnKey>Outgoing transaction controllers:</ContainerColumnKey>
             <p></p>
             <button
               type="button"
@@ -130,8 +136,9 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
             </button>
           </ContainerColumn>
           <ContainerColumn>
-            <ContainerColumnValue>{props.accountOffer.view.description}</ContainerColumnValue>
-            <ContainerColumnValue><HoverPopUp triggerText={nameFromParty(props.accountOffer.view.custodian)} popUpContent={props.accountOffer.view.custodian} /></ContainerColumnValue>
+            <ContainerColumnValue><HoverPopUp triggerText={truncateParty(props.accountOffer.view.custodian)} popUpContent={props.accountOffer.view.custodian} /></ContainerColumnValue>
+            <ContainerColumnValue>{incomingControllers.length > 0 ? incomingControllers.join(", ") : "N/A"}</ContainerColumnValue>
+            <ContainerColumnValue>{outgoingControllers.join(", ")}</ContainerColumnValue>
           </ContainerColumn>
         </ContainerDiv>
       </CardContainer>
@@ -145,20 +152,18 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
         <form id="modalForm">
           <div style={{ fontSize: "1.5rem" }}>
             <table style={{ width: "300px" }}>
+              <caption>{accountOffer?.view.description}</caption>
               <tbody>
                 {accountOffer!== undefined && 
-              <tr>
-                  <td style={{width: "95px"}}>Custodian:</td><td>{nameFromParty(accountOffer?.view.custodian)}</td>
-                </tr>
-              }
+                  <tr>
+                    <td style={{width: "95px"}}>Register:</td><td>{truncateParty(accountOffer?.view.custodian)}</td>
+                  </tr>
+                }
                 <tr>
-                  <td style={{width: "95px"}}>Offer Name:</td><td>{accountOffer?.view.description}</td>
-                </tr>
-                <tr>
-                  <td style={{width: "95px"}}>Description:
-                    </td>
-                    <td>
-
+                  <td style={{width: "95px"}}>
+                    Nickname:
+                  </td>
+                  <td>
                     <input
                       type="text"
                       id="accountName"
@@ -167,7 +172,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
                       value={accountName}
                       onChange={handleAccountName}
                     />
-                    </td>
+                  </td>
                 </tr>
               </tbody>
             </table>

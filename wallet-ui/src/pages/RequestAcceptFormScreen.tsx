@@ -11,13 +11,13 @@ import { CreateEvent } from "@daml/ledger";
 import { repairMap, setToArray } from "../Util";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 
-type OfferAcceptFormScreenState = {
+type RequestAcceptFormScreenState = {
   offer: CreateEvent<OneTimeOffer, undefined, string>
 }
 
-export const OfferAcceptFormScreen: React.FC = () => {
+export const RequestAcceptFormScreen: React.FC = () => {
   const nav = useNavigate();
-  const { state } = useLocation() as { state: OfferAcceptFormScreenState };
+  const { state } = useLocation() as { state: RequestAcceptFormScreenState };
   repairMap(state.offer.payload.offerers.map);
 
   const ledger = userContext.useLedger();
@@ -51,10 +51,10 @@ export const OfferAcceptFormScreen: React.FC = () => {
       if (accepted) {
         nav("/settlements", { state: { transactionId: state.offer.payload.offerId.unpack } });
       } else {
-        nav("/offers");
+        nav("/requests");
       }
     } else {
-      nav("/offer/accept", { state: { offer: state.offer } });
+      nav("/request/accept", { state: { offer: state.offer } });
     }
   };
 
