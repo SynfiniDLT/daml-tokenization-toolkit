@@ -708,29 +708,29 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                       <Field>Register: </Field>
                       {truncateParty(step.routedStep.custodian)}
                       <br />
-                      <Field>{isMint(step.routedStep) ? "Issuer approval:" : "Sender response:"}</Field>
+                      <Field>{isMint(step.routedStep) ? "Issuer response:" : "Sender response:"}</Field>
                       {step.allocation.tag === "Unallocated" ?
                         <span style={{ color: "hsl(0, 90%, 80%)" }}>Pending</span>
                       : step.allocation.tag === "Pledge" ?
-                        `Send from account ID ${settlementHoldings.get(step.allocation.value)?.account.id.unpack}`
+                        `Send from account ${settlementHoldings.get(step.allocation.value)?.account.id.unpack}`
                       : step.allocation.tag === "PassThroughFrom" ?
-                        `Pass through from instruction ID ${step.allocation.value._2.id.unpack}`
+                        `Pass through from instruction ${step.allocation.value._2.id.unpack}`
                       : step.allocation.tag === "CreditReceiver" ?
-                        "Mint"
+                        "Credit approved"
                       : step.allocation.tag === "SettleOffledger" ?
                         "Settle off-ledger"
                       : "Allocated"
                       }
                       <br />
-                      <Field>{isBurn(step.routedStep) && step.routedStep.sender !== step.routedStep.custodian ? "Issuer approval:" : "Receiver response:"}</Field>
+                      <Field>{isBurn(step.routedStep) && step.routedStep.sender !== step.routedStep.custodian ? "Issuer response:" : "Receiver response:"}</Field>
                       {step.approval.tag === "Unapproved" ?
                         <span style={{ color: "hsl(0, 90%, 80%)" }}>Pending</span>
                       : step.approval.tag === "TakeDelivery" ?
-                        `Take delivery to account ID ${step.approval.value.id.unpack}`
+                        `Take delivery to account ${step.approval.value.id.unpack}`
                       : step.approval.tag === "PassThroughTo" ?
-                        `Pass through to instruction ID ${step.approval.value._2.id.unpack} via account ID ${step.approval.value._1.id.unpack}`
+                        `Pass through to instruction ${step.approval.value._2.id.unpack} via account ${step.approval.value._1.id.unpack}`
                       : step.approval.tag === "DebitSender" ?
-                        "Burn"
+                        "Debit approved"
                       : step.approval.tag === "SettleOffledgerAcknowledge" ?
                         "Settle off-ledger"
                       : "Approved"

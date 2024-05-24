@@ -181,7 +181,7 @@ export const RequestAcceptFormScreen: React.FC = () => {
               {
                 isOfferee &&
                 <tr>
-                  <th>Reference:</th>
+                  <th>Reference (optional):</th>
                   <td>
                     <input
                       type="text"
