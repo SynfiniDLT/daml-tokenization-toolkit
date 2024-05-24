@@ -3,7 +3,7 @@
 sdk-version: 2.6.3
 name: synfini-settlement-open-offer
 source: src
-version: 0.0.2
+version: 0.1.0
 dependencies:
   - daml-prim
   - daml-stdlib
