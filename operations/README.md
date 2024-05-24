@@ -767,6 +767,8 @@ We refer to the above format as a "settlement party" in the documentation below.
         {"taker": {}}
       ],
       "settlers": [{"party": "alice"}], // One or more settlement parties who will have authorisation to settle
+      "permittedTakers": ["bob"] // Labels of one or more parties that are permitted to the take the offer
+        // (if not provided any contract stakeholder can take the offer) - optional
       "steps": [
         // One or more settlement steps, each of which define a movement of a quantity of an asset between two parties
         {
@@ -837,7 +839,99 @@ For example, for an offer authorised by parties labeled "alice" and "bob", havin
 dops take-settlement-open-offer take-offer.json alice,bob offer1 abc123 10 lorem
 ```
 
-Note: the description value cannot contain whitespace characters due to a bug in the implementation.
+Note: the reference value cannot contain whitespace characters due to a bug in the implementation.
+
+---
+#### Create OneTimeOffers for Settlement
+
+Create settlement `OneTimeOffer`s. Please refer to the interfaces and templates which are defined
+[here](/models/settlement).
+
+##### Input File Format
+
+```js
+{
+  "readAs": ["public"], // Labels of zero or more parties to use to read contracts (can be useful for fetching the
+    // factory contracts)
+  "settlementOneTimeOfferSettings": [
+    {
+      "offerId": "abc123...", // Offer ID (this must be a unique value)
+      "offerers": ["alice"], // Labels of one or more parties which authorise the offer creation
+      "offerDescription": "abc123...",
+      "settlementInstructors": [ // Labels of one or more parties who will authorise the settlement instruction
+        "alice",
+        "bob"
+      ],
+      "settlers": ["alice"], // Labels of one or more parties who will have authorisation to settle
+      "steps": [
+        // One or more settlement steps, each of which define a movement of a quantity of an asset between two parties
+        {
+          "sender": "bob", // Label of the sender party
+          "receiver": "alice", // Label of the receiving party
+          "instrumentDepository": "charlie", // Label of the depository party of the asset
+          "instrumentIssuer": "david", // Label of the issuer party of the asset
+          "instrumentId": "abc123...",
+          "instrumentVersion": "abc123..",
+          "amount": 1
+        }
+      ],
+      "minQuantity": 99.99999, // Minimum quantity that can be specified by the taker - optional
+      "maxQuantity": 99.99999, // Maximum quantity that can be specified by the taker - optional
+      "increment": 0.000001, // Quantity specified by the taker must be a multiple of this value if provided - optional 
+      "settlementOneTimeOfferFactory": "label1", // Label of the settlement OneTimeOffer factory
+      "routeProvider": "label1", // Label of the RouteProvider used to route the steps through custodian(s)
+      "settlementFactory": "label1", // Label of the settlement factory
+      "observers" : [ // Zero or more sets of observers of the OpenOffer
+        {
+          "context": "context1", // Context for this set of parties (part of the Daml Finance Disclosure interface)
+          "parties": ["charlie"] // One or more labels of the observer parties
+        }
+      ]
+    }
+  ]
+}
+```
+
+##### Command
+
+```bash
+dops create-settlement-one-time-offers <path to JSON file>
+```
+
+---
+#### Accept a OneTimeOffer for Settlement
+
+Accept a settlement `OneTimeOffer` and generate the settlement instructions. This command will do a scan of the Active
+Contract Set to find a `OneTimeOffer` with matching `offerId` and `offerers`.
+
+##### Input File Format
+
+```js
+{
+  "readAs": ["public"], // Labels of zero or more parties to use to read contracts (can be useful for fetching the
+    // factory contracts)
+  "acceptOneTimeOfferSettings": {
+    "acceptor": "bob", // Label of the party which will accept the offer
+  }
+}
+```
+
+##### Command
+
+The second argument is a comma-delimited list of the labels of the parties which authorised offer. The third argument is
+the offer ID. The final two arguments are the unit quantity specified and transaction reference chosen by the taker.
+
+```bash
+dops accept-settlement-one-time-offer <path to JSON file> <offerer1>,<offerer2>...<offererN> <offer ID> <quantity> <reference>
+```
+
+For example, for an offer authorised by parties labeled "alice" and "bob", having ID "offer1":
+
+```bash
+dops accept-settlement-one-time-offer accept-offer.json alice,bob offer1 10 lorem
+```
+
+Note: the reference value cannot contain whitespace characters due to a bug in the implementation.
 
 ---
 #### Accept Settlement Instructions

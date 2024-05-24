@@ -3,6 +3,9 @@
   "takeOpenOfferSettings": {
     "taker": "InvestorB"
   },
+  "acceptOneTimeOfferSettings": {
+    "acceptor": "InvestorB"
+  },
   "acceptSettlementSettings": {
     "acceptor": "InvestorB",
     "settlementPreferences": [

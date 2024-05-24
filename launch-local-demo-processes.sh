@@ -23,24 +23,22 @@ function create_identity_token() {
     --owner "$owner" \
     --name "$name" \
     --observers WalletOperator \
-    --settlement-open-offer-factory V1 \
+    --settlement-one-time-offer-factory V1 \
     --settlement-factory V1 \
     --route-provider validatorCustodianV1 \
     --read-as SynfiniPublic
-  sbt_batch_id=$(uuidgen)
-  dops \
-    take-settlement-open-offer \
-    "${config_dir}/settlement/${owner}-settings.json" \
-    SbtIssuer \
-    $sbt_offer_id \
-    $sbt_batch_id \
-    1 \
-    SBT
 
   if [ "$settle" = "settle" ]; then
-    dops accept-settlement "${config_dir}/settlement/${owner}-settings.json" "SbtIssuer,$owner" $sbt_batch_id
-    dops accept-settlement ${config_dir}/settlement/SbtIssuer-settings.json "SbtIssuer,$owner" $sbt_batch_id
-    dops execute-settlement ${config_dir}/settlement/SbtIssuer-settings.json "SbtIssuer,$owner" $sbt_batch_id
+    dops \
+      accept-settlement-one-time-offer \
+      "${config_dir}/settlement/${owner}-settings.json" \
+      SbtIssuer \
+      $sbt_offer_id \
+      1 \
+      SBT
+    dops accept-settlement "${config_dir}/settlement/${owner}-settings.json" "SbtIssuer,$owner" $sbt_offer_id
+    dops accept-settlement ${config_dir}/settlement/SbtIssuer-settings.json "SbtIssuer,$owner" $sbt_offer_id
+    dops execute-settlement ${config_dir}/settlement/SbtIssuer-settings.json "SbtIssuer,$owner" $sbt_offer_id
   fi
 }
 

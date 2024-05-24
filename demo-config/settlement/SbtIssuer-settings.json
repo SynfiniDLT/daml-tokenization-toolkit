@@ -1,5 +1,8 @@
 {
   "readAs": ["SynfiniPublic"],
+  "acceptOneTimeOfferSettings": {
+    "acceptor": "SbtIssuer"
+  },
   "acceptSettlementSettings": {
     "acceptor": "SbtIssuer",
     "settlementPreferences": [
