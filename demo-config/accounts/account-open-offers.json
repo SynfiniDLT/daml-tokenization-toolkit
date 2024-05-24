@@ -27,7 +27,7 @@
       "ownerOutgoingControlled": true,
       "accountFactory": "v1",
       "holdingFactory": "NonTransferableV1",
-      "description": "Synfini Account non-transferable assets account",
+      "description": "Synfini non-transferable assets account",
       "observers": [
         {
           "context": "setup",

@@ -36,6 +36,7 @@
           "amount": 0.42
         }
       ],
+      "increment": 1.0,
       "settlementOpenOfferFactory": "V1",
       "routeProvider": "validatorCustodianV1",
       "settlementFactory": "V1",

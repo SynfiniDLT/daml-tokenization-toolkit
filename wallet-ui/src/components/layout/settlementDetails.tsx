@@ -32,12 +32,12 @@ import { FirstRender } from "../../Util";
 
 function isMint(step: RoutedStep): boolean {
   return step.custodian === step.sender ||
-    (step.quantity.unit.issuer === step.sender && step.quantity.unit.issuer != step.receiver);
+    (step.quantity.unit.issuer === step.sender && step.quantity.unit.issuer !== step.receiver);
 }
 
 function isBurn(step: RoutedStep): boolean {
   return step.custodian === step.receiver ||
-    (step.quantity.unit.issuer === step.receiver && step.quantity.unit.issuer != step.sender);
+    (step.quantity.unit.issuer === step.receiver && step.quantity.unit.issuer !== step.sender);
 }
 
 function requiresIssuerAction(primaryParty: damlTypes.Party, step: SettlementStep): boolean {

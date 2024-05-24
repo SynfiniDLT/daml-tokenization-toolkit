@@ -10,7 +10,6 @@ import DirectoryScreen from "./pages/DirectoryScreen";
 import AssetDetailsScreen from "./pages/AssetDetailsScreen";
 import WalletScreen from "./pages/WalletScreen";
 import { OfferAcceptFormScreen } from "./pages/OfferTakeFormScreen";
-import BalanceRedeemFormScreen from "./pages/BalanceRedeemFormScreen";
 import AccountOfferScreen from "./pages/AccountOfferScreen";
 import IssuersScreen from "./pages/IssuersScreen";
 import RequestsScreen from "./pages/RequestsScreen";
@@ -63,7 +62,6 @@ const App: React.FC = () => {
   const commonRoutes = [
     (<Route path="/" key="wallet" element={<AuthenticationGuard component={WalletScreen} />} />),
     (<Route path="/asset" key="asset" element={<AuthenticationGuard component={AssetDetailsScreen} />} />),
-    (<Route path="/wallet/account/balance/redeem" key="redeem" element={<AuthenticationGuard component={BalanceRedeemFormScreen} />} />),
     (<Route path="/settlements" key="settlements" element={<AuthenticationGuard component={SettlementScreen} />} />),
     (<Route path="/directory" key="directory" element={<AuthenticationGuard component={DirectoryScreen} />} />),
     (<Route path="/offer" key="offer" element={<AuthenticationGuard component={OfferScreen} />} />),

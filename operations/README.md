@@ -331,8 +331,7 @@ Create factory contracts for creating `Holding`s.
       ],
       "holdingTrackers": ["WalletOperator"] // Optional labels of one or more tracking parties of Holdings created using
       // this factory. If provided, then the implementation used is from the `trackable-holding` folder in this
-      // repository. Otherwise, the default implementation from Daml Finance is used. Currently this field is only
-      // supported for the Fungible holding type.
+      // repository. Otherwise, the default implementation from Daml Finance is used.
     }
   ]
 }

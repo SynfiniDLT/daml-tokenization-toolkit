@@ -1,11 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { AccountSummary, Balance } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer";
 import { formatCurrency, nameFromParty, truncateParty } from "../../Util";
 import { Coin } from "react-bootstrap-icons";
 import HoverPopUp from "./hoverPopUp";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 import { stableCoinInstrumentId } from "../../Configuration";
+import { userContext } from "../../App";
+import { CreateEvent } from "@daml/ledger";
 
 export type AccountBalanceSummary = {
   account: AccountSummary,
@@ -15,9 +18,15 @@ export type AccountBalanceSummary = {
 export default function AccountBalances(props: { accountBalances: AccountBalanceSummary[] }) {
   const nav = useNavigate();
   const [isOpen, setIsOpen] = useState<boolean>(false); // TODO remove?
+  const ledger = userContext.useLedger();
+  const [offRampOffer, setOffRampOffer] = useState<CreateEvent<SettlementOpenOffer, undefined, string>>();
 
-  const handleRedeem = (balance: Balance, account: AccountSummary) => {
-    nav("/wallet/account/balance/redeem", { state: { balance, account } });
+  const handleRedeem = () => {
+    if (offRampOffer !== undefined) {
+      nav("/offer/accept", { state: { offer: offRampOffer } });
+    } else {
+      console.warn("Off-ramp offer is not defined");
+    }
   };
 
   const handleInstrumentClick = (instrument: InstrumentKey) => {
@@ -25,11 +34,35 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
     nav("/asset", { state: { instrument } });
   };
 
+  useEffect(() => {
+    const stableCoinBalances = props
+      .accountBalances
+      .flatMap(summary => summary.balances.filter(b => b.instrument.id.unpack === stableCoinInstrumentId.unpack));
+    if (stableCoinBalances.length > 0) {
+      const fetchOffRampOffer = async () => {
+        const offers = await ledger.query(
+          SettlementOpenOffer,
+          {
+            offerId: {
+              unpack: `${stableCoinInstrumentId.unpack}@${stableCoinBalances[0].instrument.version}.OffRamp`
+            }
+          }
+        );
+
+        if (offers.length > 0 && offers[0].payload.offerers.map.has(stableCoinBalances[0].instrument.issuer)) {
+          setOffRampOffer(offers[0]);
+        }
+      }
+
+      fetchOffRampOffer();
+    }
+  }, [stableCoinInstrumentId, props.accountBalances]);
+
   const tableRows: [AccountSummary, JSX.Element[]][] = props.accountBalances.map(accountBalance => {
     const trs = accountBalance.balances.map(balance => {
       const actionButton =
-        (balance.instrument.id.unpack === stableCoinInstrumentId.unpack) ?
-          (<>&nbsp;<button onClick={() => handleRedeem(balance, accountBalance.account)}>Redeem</button></>) :
+        (balance.instrument.id.unpack === stableCoinInstrumentId.unpack) && offRampOffer !== undefined ?
+          (<>&nbsp;<button onClick={handleRedeem}>Redeem</button></>) :
           (<></>);
 
       const trKey = JSON.stringify(

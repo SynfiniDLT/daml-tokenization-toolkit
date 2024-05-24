@@ -36,6 +36,7 @@
     "@daml/types": "2.6.3",
     "@synfini/wallet-views": "file:../wallet-views/typescript-client/lib",
     "@types/styled-components": "^5.1.26",
+    "decimal.js": "^10.4.3",
     "react": "^17.0.0",
     "react-bootstrap": "^2.8.0",
     "react-bootstrap-icons": "^1.10.3",

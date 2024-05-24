@@ -2,7 +2,7 @@ import { useState, ChangeEventHandler } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
 import { PageLayout } from "../components/PageLayout";
-import { formatCurrency, formatOptionalCurrency, truncateParty } from "../Util";
+import { formatCurrency, formatOptionalCurrency, setToArray, truncateParty } from "../Util";
 import * as damlTypes from "@daml/types";
 import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
 import { v4 as uuid } from "uuid";
@@ -15,9 +15,10 @@ import {
 } from "../components/layout/general.styled";
 import { BoxArrowUpRight } from "react-bootstrap-icons";
 import { CreateEvent } from "@daml/ledger";
-import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
+import { InstrumentKey, Quantity } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 import { repairMap } from "../Util";
 import { useWalletUser } from "../App";
+import Decimal from 'decimal.js';
 
 type OfferAcceptFormScreenState = {
   offer: CreateEvent<SettlementOpenOffer, undefined, string>
@@ -27,33 +28,62 @@ export const OfferAcceptFormScreen: React.FC = () => {
   const nav = useNavigate();
   const { state } = useLocation() as { state: OfferAcceptFormScreenState };
   repairMap(state.offer.payload.offerers.map);
+  repairMap(state.offer.payload.settlers.map);
   const ledger = userContext.useLedger();
   const { primaryParty } = useWalletUser();
-  const [inputQtd, setInputQtd] = useState(parseFloat(state.offer.payload.minQuantity || "0"));
+  const [inputQtd, setInputQtd] = useState(state.offer.payload.minQuantity || "0");
   const [referenceId, setReferenceId] = useState<string>("");
   const [error, setError] = useState("");
+  const [invalidInput, setInvalidInput] = useState(false);
 
   const handleInstrumentClick = (instrument: InstrumentKey) => {
     nav("/asset", { state: { instrument } });
   };
 
   const handleChangeInputQtd: ChangeEventHandler<HTMLInputElement> = (event) => {
-    setInputQtd(parseFloat(event.target.value));
-  };
+    event.preventDefault();
+    setInputQtd(event.target.value);
 
-  function forQuantity(q: number, costs: boolean): damlTypes.Map<InstrumentKey, number> {
-    let quantities = damlTypes.emptyMap<InstrumentKey, number>();
-
-    for (const step of state.offer.payload.steps) {
-      if (costs ? step.sender.tag === "TakerEntity" : step.receiver.tag === "TakerEntity") {
-        const existingCost = quantities.get(step.quantity.unit) || 0;
-        quantities = quantities.set(
-          step.quantity.unit, existingCost + parseFloat(step.quantity.amount) * q
-        );
-      }
+    let value: Decimal;
+    try {
+      value = new Decimal(event.target.value);
+    } catch (e: any) {
+      console.warn("Invalid decimal amount: " + event.target.value);
+      setInvalidInput(false);
+      return;
     }
 
-    return quantities;
+    if (
+      state.offer.payload.increment !== null &&
+      !value.modulo(new Decimal(state.offer.payload.increment)).equals("0")
+    ) {
+      console.error("Invalid amount: " + value.toString());
+      setError(`Units must be in increments of ${state.offer.payload.increment}`);
+      setInvalidInput(true);
+    } else {
+      setError("");
+      setInvalidInput(false);
+    }
+  };
+
+  function forQuantity(q: Decimal, costs: boolean): [damlTypes.Party, Quantity<InstrumentKey, Decimal>][] {
+    return state
+      .offer
+      .payload
+      .steps
+      .filter(step => costs ? step.sender.tag === "TakerEntity" : step.receiver.tag === "TakerEntity")
+      .flatMap(step => {
+        const counterParty = costs ? step.receiver : step.sender;
+        const stepQuantity = {
+          unit: step.quantity.unit,
+          amount: new Decimal(step.quantity.amount).mul(q)
+        };
+        if (counterParty.tag === "PartyEntity") {
+          return [[counterParty.value, stepQuantity]]
+        } else {
+          return []
+        }
+      })
   }
 
   const handleSubmit:  React.FormEventHandler<HTMLFormElement> = async (e) => {
@@ -71,7 +101,7 @@ export const OfferAcceptFormScreen: React.FC = () => {
         {
           id: { unpack: referenceIdUUID },
           taker: primaryParty,
-          quantity: inputQtd.toString(),
+          quantity: inputQtd,
           reference: null
         }
       );
@@ -81,50 +111,39 @@ export const OfferAcceptFormScreen: React.FC = () => {
     }
   };
 
-  const displayQuantites = (quantities: [InstrumentKey, number][]) =>
-    quantities.map(([instrumentKey, amount], index) =>
-      <p key={index}>
-        {index > 0 ? ', ' : ''}{formatCurrency(amount.toString(), "en-US") + " "}
-        <a onClick={_ => handleInstrumentClick(instrumentKey)}>
-          {`${instrumentKey.id.unpack} ${instrumentKey.version}`}
+  const displayQuantites = (quantities: [damlTypes.Party, Quantity<InstrumentKey, Decimal>][], costs: boolean) =>
+    quantities.map(([party, quantity], index) =>
+      <span key={index}>
+        {index > 0 ? ', ' : ''}{formatCurrency(quantity.amount.toString(), "en-US") + " "}
+        <a onClick={_ => handleInstrumentClick(quantity.unit)}>
+          {`${quantity.unit.id.unpack} ${quantity.unit.version}`}
         </a>
-      </p>
+        {costs ? " to " : " from "}{truncateParty(party)}
+      </span>
     );
 
-  const costPerUnit = forQuantity(1, true).entriesArray();
-  const receivable = forQuantity(inputQtd, false).entriesArray();
-  const totalCost = forQuantity(inputQtd, true).entriesArray();
-
-  console.log("offer === ", state.offer.payload);
+  const costPerUnit = forQuantity(new Decimal("1"), true);
+  let inputQtdDecimal = new Decimal("0");
+  try {
+    inputQtdDecimal = new Decimal(inputQtd);
+  } catch (e: any) {
+    console.warn("Invalid decimal input: " + inputQtdDecimal);
+  }
+  const receivable = forQuantity(inputQtdDecimal, false);
+  const totalCost = forQuantity(inputQtdDecimal, true);
 
   return (
     <PageLayout>
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
         {state.offer.payload.offerDescription}
       </h3>
-      {error !== "" && 
-        <>
-          <span
-            style={{
-              color: "#FF6699",
-              fontSize: "1.5rem",
-              whiteSpace: "pre-line",
-            }}
-            >
-            {error}
-          </span>
-          <p></p>
-          <button className="button__login" style={{ width: "200px" }} onClick={() => nav("/offer")}>
-            Back
-          </button>
-        </>
-      }
-      {referenceId === "" && error === "" && (
+      {referenceId === "" && (
         <DivBorderRoundContainer>
           <form onSubmit={handleSubmit}>
             <ContainerDiv>
               <ContainerColumn style={{width: "600px"}}>
                 <ContainerColumnKey>Offered by:</ContainerColumnKey>
+                <ContainerColumnKey>Settled by:</ContainerColumnKey>
                 <ContainerColumnKey>Payment per unit:</ContainerColumnKey>
                 <ContainerColumnKey>Minimum units:</ContainerColumnKey>
                 <ContainerColumnKey>Maximum units:</ContainerColumnKey>
@@ -135,10 +154,13 @@ export const OfferAcceptFormScreen: React.FC = () => {
               </ContainerColumn>
               <ContainerColumn>
                 <ContainerColumnValue>
-                  {(state.offer.payload.offerers.map).entriesArray().map(entry => truncateParty(entry[0])).join(", ")}
+                  {setToArray(state.offer.payload.offerers).map(truncateParty).join(", ")}
                 </ContainerColumnValue>
                 <ContainerColumnValue>
-                  {costPerUnit.length > 0 ? displayQuantites(costPerUnit) : "N/A"}
+                  {setToArray(state.offer.payload.settlers).map(e => e.tag === "PartyEntity" ? truncateParty(e.value) : "Offer taker").join(", ")}
+                </ContainerColumnValue>
+                <ContainerColumnValue>
+                  {costPerUnit.length > 0 ? displayQuantites(costPerUnit, true) : "N/A"}
                 </ContainerColumnValue>
                 <ContainerColumnValue>{formatOptionalCurrency(state.offer.payload.minQuantity, "en-US")} </ContainerColumnValue>
                 <ContainerColumnValue>{formatOptionalCurrency(state.offer.payload.maxQuantity, "en-US")} </ContainerColumnValue>
@@ -152,22 +174,39 @@ export const OfferAcceptFormScreen: React.FC = () => {
                     max={state.offer.payload.maxQuantity || undefined}
                     value={inputQtd}
                     onChange={handleChangeInputQtd}
-                    style={{ width: "50px", height: "25px" }}
+                    style={{ width: "100px", height: "25px" }}
                   />
                 </ContainerColumnValue>
                 <p><br/></p>
                 <ContainerColumnValue>
-                  {receivable.length > 0 ? displayQuantites(receivable) : "N/A"}
+                  {receivable.length > 0 && !invalidInput ? displayQuantites(receivable, false) : "N/A"}
                 </ContainerColumnValue>
                 <ContainerColumnValue style={{verticalAlign:"-10px"}}>
-                  {totalCost.length > 0 ? displayQuantites(totalCost) : "N/A"}
+                  {totalCost.length > 0 && !invalidInput ? displayQuantites(totalCost, true) : "N/A"}
                 </ContainerColumnValue>
               </ContainerColumn>
             </ContainerDiv>
-            <button type="submit" className={"button__login"} style={{ width: "200px" }}>
+            <button type="submit" className={"button__login"} style={{ width: "200px" }} disabled={invalidInput}>
               Submit
             </button>
           </form>
+          {error !== "" &&
+            <ContainerColumn style={{minWidth: "400px"}}>
+              <ContainerColumnValue>
+              <span
+                style={{
+                  color: "#FF6699",
+                  fontSize: "1.5rem",
+                  whiteSpace: "pre-line",
+                }}
+                >
+                {error}
+              </span>
+              </ContainerColumnValue>
+              <ContainerColumnValue>
+              </ContainerColumnValue>
+            </ContainerColumn>
+          }
         </DivBorderRoundContainer>
       )}
       <div>
