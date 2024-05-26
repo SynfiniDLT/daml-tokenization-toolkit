@@ -138,7 +138,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
               }
               <Field>Amount: </Field>
               {step.routedStep.quantity.unit.id.unpack === stableCoinInstrumentId.unpack ? (
-                <>{formatCurrency(step.routedStep.quantity.amount, "en-US")}</>
+                <>{formatCurrency(step.routedStep.quantity.amount)}</>
               ) : (
                 <>{Number(step.routedStep.quantity.amount)}</>
               )}
@@ -655,7 +655,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                       }
                     </div>
                     <Field>Amount: </Field>
-                    {formatCurrency(step.routedStep.quantity.amount, "en-US")}
+                    {formatCurrency(step.routedStep.quantity.amount)}
                     <br />
                     <div id={step.routedStep.quantity.unit.id.unpack} key={step.instructionCid}>
                       <Field>Asset:</Field>

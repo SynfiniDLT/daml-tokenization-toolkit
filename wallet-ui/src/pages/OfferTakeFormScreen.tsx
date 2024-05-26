@@ -114,7 +114,7 @@ export const OfferAcceptFormScreen: React.FC = () => {
   const displayQuantites = (quantities: [damlTypes.Party, Quantity<InstrumentKey, Decimal>][], costs: boolean) =>
     quantities.map(([party, quantity], index) =>
       <span key={index}>
-        {index > 0 ? ', ' : ''}{formatCurrency(quantity.amount.toString(), "en-US") + " "}
+        {index > 0 ? ', ' : ''}{formatCurrency(quantity.amount) + " "}
         <a onClick={_ => handleInstrumentClick(quantity.unit)}>
           {`${quantity.unit.id.unpack} ${quantity.unit.version}`}
         </a>
@@ -162,8 +162,8 @@ export const OfferAcceptFormScreen: React.FC = () => {
                 <ContainerColumnValue>
                   {costPerUnit.length > 0 ? displayQuantites(costPerUnit, true) : "N/A"}
                 </ContainerColumnValue>
-                <ContainerColumnValue>{formatOptionalCurrency(state.offer.payload.minQuantity, "en-US")} </ContainerColumnValue>
-                <ContainerColumnValue>{formatOptionalCurrency(state.offer.payload.maxQuantity, "en-US")} </ContainerColumnValue>
+                <ContainerColumnValue>{formatOptionalCurrency(state.offer.payload.minQuantity)} </ContainerColumnValue>
+                <ContainerColumnValue>{formatOptionalCurrency(state.offer.payload.maxQuantity)} </ContainerColumnValue>
                 <ContainerColumnValue>
                   <input
                     type="number"

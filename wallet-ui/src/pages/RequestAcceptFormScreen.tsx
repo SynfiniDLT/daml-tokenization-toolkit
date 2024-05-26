@@ -10,6 +10,7 @@ import Modal from "react-modal";
 import { CreateEvent } from "@daml/ledger";
 import { repairMap, setToArray } from "../Util";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
+import Decimal from "decimal.js";
 
 type RequestAcceptFormScreenState = {
   offer: CreateEvent<OneTimeOffer, undefined, string>
@@ -121,7 +122,10 @@ export const RequestAcceptFormScreen: React.FC = () => {
       .map((step, index) =>
         <div key={index}>
           <a onClick={_ => handleInstrumentClick(step.quantity.unit)}>
-            {(fixedAmount || isOfferee) && parseFloat(quantityInput) * parseFloat(step.quantity.amount)} {step.quantity.unit.id.unpack} {step.quantity.unit.version}
+            {
+              (fixedAmount || isOfferee) &&
+              new Decimal(quantityInput).mul(new Decimal(step.quantity.amount))
+            } {step.quantity.unit.id.unpack} {step.quantity.unit.version}
           </a>
           {delivery ? ` to ${step.receiver}` : ` from ${step.sender}`}
         </div>

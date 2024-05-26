@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { AccountSummary, Balance } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer";
-import { formatCurrency, nameFromParty, truncateParty } from "../../Util";
+import { formatCurrency, truncateParty } from "../../Util";
 import { Coin } from "react-bootstrap-icons";
 import HoverPopUp from "./hoverPopUp";
 import { useEffect, useState } from "react";
@@ -9,6 +9,7 @@ import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/
 import { stableCoinInstrumentId } from "../../Configuration";
 import { userContext } from "../../App";
 import { CreateEvent } from "@daml/ledger";
+import Decimal from "decimal.js";
 
 export type AccountBalanceSummary = {
   account: AccountSummary,
@@ -90,9 +91,9 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
           </td>
           <td><HoverPopUp triggerText={truncateParty(balance.instrument.issuer)} popUpContent={balance.instrument.issuer} /></td>
           <td>
-            {formatCurrency((parseFloat(balance.unlocked) + parseFloat(balance.locked)).toString(), "en-US")}
+            {formatCurrency(new Decimal(balance.unlocked).add(new Decimal(balance.locked)))}
           </td>
-          <td>{formatCurrency(balance.unlocked, "en-US")}{actionButton}</td>
+          <td>{formatCurrency(balance.unlocked)}{actionButton}</td>
         </tr>
       );
     });

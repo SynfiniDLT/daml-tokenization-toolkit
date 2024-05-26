@@ -4,48 +4,35 @@ import { View as DisclosureView } from "@daml.js/daml-finance-interface-util/lib
 import { View as MetadataView } from "@daml.js/synfini-instrument-metadata-interface/lib/Synfini/Interface/Instrument/Metadata/Metadata";
 import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlTypes from "@daml/types";
+import Decimal from "decimal.js";
 
-export function formatCurrency(amountString: string, locale: string): string {
-  const amount = parseFloat(amountString);
-
-  if (isNaN(amount)) {
-    return "Invalid amount";
+export function formatCurrency(amount: damlTypes.Decimal | Decimal): string {
+  let amountDecimal: Decimal;
+  if (typeof amount === "string") {
+    try {
+      amountDecimal = new Decimal(amount);
+    } catch (e: any) {
+      return "Invalid amount"
+    }
+  } else {
+    amountDecimal = amount;
   }
 
-  const formatter = new Intl.NumberFormat(locale, {
-    style: "decimal",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-
-  return formatter.format(amount);
+  return amountDecimal.toFixed(amountDecimal.decimalPlaces());
 }
 
-export function formatOptionalCurrency(amount: damlTypes.Optional<string>, locale: string): string {
+export function formatOptionalCurrency(amount: damlTypes.Optional<damlTypes.Decimal | Decimal>): string {
   if (amount === null) {
     return "N/A";
   } else {
-    return formatCurrency(amount, locale);
+    return formatCurrency(amount);
   }
-}
-
-// TODO clean this function up
-export function nameFromParty(party: string) {
-  let name = "";
-
-  if (party === "" || party === undefined) {
-    return "";
-  } else {
-    name = party.split("::")[0];
-  }
-
-  return name;
 }
 
 export function truncateParty(party: damlTypes.Party) {
   const splitted = party.split("::");
 
-  if (splitted.length == 2) {
+  if (splitted.length === 2) {
     if (splitted[1].length > 15) {
       return `${splitted[0]}::${splitted[1].substring(0, 10)}...${splitted[1].substring(splitted[1].length - 5)}`
     }

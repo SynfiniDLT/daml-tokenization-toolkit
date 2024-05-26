@@ -1,5 +1,5 @@
 import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
-import { nameFromParty, toDateTimeString } from "../../Util";
+import { toDateTimeString, truncateParty } from "../../Util";
 import { useNavigate } from "react-router-dom";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 
@@ -35,8 +35,8 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
                   {props.instruments.map(instrumentSummary => 
                     instrumentSummary.tokenView !== null && (
                       <tr key={instrumentSummary.cid}>
-                        <td>{nameFromParty(instrumentSummary.tokenView.token.instrument.issuer)}</td>
-                        <td>{nameFromParty(instrumentSummary.tokenView.token.instrument.depository)}</td>
+                        <td>{truncateParty(instrumentSummary.tokenView.token.instrument.issuer)}</td>
+                        <td>{truncateParty(instrumentSummary.tokenView.token.instrument.depository)}</td>
                         <td>
                           <a onClick={() => instrumentSummary.tokenView !== null && handleInstrumentClick(instrumentSummary.tokenView.token.instrument)}>
                             {instrumentSummary.tokenView.token.instrument.id.unpack} {instrumentSummary.tokenView.token.instrument.version}
