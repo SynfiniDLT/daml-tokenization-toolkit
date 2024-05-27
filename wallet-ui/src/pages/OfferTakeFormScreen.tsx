@@ -2,10 +2,9 @@ import { useState, ChangeEventHandler } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
 import { PageLayout } from "../components/PageLayout";
-import { formatCurrency, formatOptionalCurrency, setToArray, truncateParty } from "../Util";
+import { formatCurrency, formatOptionalCurrency, randomIdentifierLong, randomIdentifierShort, setToArray, truncateParty } from "../Util";
 import * as damlTypes from "@daml/types";
 import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
-import { v4 as uuid } from "uuid";
 import {
   ContainerColumn,
   ContainerDiv,
@@ -93,7 +92,7 @@ export const OfferAcceptFormScreen: React.FC = () => {
       return;
     }
 
-    const referenceIdUUID = uuid();
+    const referenceIdUUID = randomIdentifierLong();
     try {
       await ledger.exercise(
         SettlementOpenOffer.Take,

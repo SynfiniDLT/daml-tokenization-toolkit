@@ -5,6 +5,7 @@ import { View as MetadataView } from "@daml.js/synfini-instrument-metadata-inter
 import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlTypes from "@daml/types";
 import Decimal from "decimal.js";
+import { customAlphabet } from "nanoid";
 
 export function formatCurrency(amount: damlTypes.Decimal | Decimal): string {
   let amountDecimal: Decimal;
@@ -87,6 +88,20 @@ export function repairMap<K, V>(map: damlTypes.Map<K, V>) {
   if (Object.getPrototypeOf(map) !== mapProtoType) {
     Object.setPrototypeOf(map, mapProtoType);
   }
+}
+
+const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+function randomIdentifier(length: number): string {
+  return customAlphabet(alphabet, length)();
+}
+
+export function randomIdentifierShort() {
+  return randomIdentifier(12);
+}
+
+export function randomIdentifierLong() {
+  return randomIdentifier(18);
 }
 
 export type MetadataSummary = {

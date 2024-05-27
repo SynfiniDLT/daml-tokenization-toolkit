@@ -10,14 +10,10 @@ import {
 import { AccountOpenOfferSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { OpenOffer } from "@daml.js/synfini-account-onboarding-open-offer-interface/lib/Synfini/Interface/Onboarding/Account/OpenOffer/OpenOffer";
 import { userContext } from "../../App";
-import { customAlphabet } from "nanoid"
-import { arrayToSet, arrayToMap, truncateParty, setToArray } from "../../Util";
+import { arrayToSet, arrayToMap, truncateParty, setToArray, randomIdentifierShort } from "../../Util";
 import HoverPopUp from "./hoverPopUp";
 import { useWalletUser } from "../../App";
 import { walletOperator } from "../../Configuration";
-
-const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-const nanoid = customAlphabet(alphabet, 12);
 
 interface AccountOpenOfferSummaryProps {
   accountOffer: AccountOpenOfferSummary;
@@ -63,7 +59,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
             accountDescription: accountName,
             accountObservers: arrayToMap([["initialObservers", arrayToSet([walletOperator])]]),
             owner: primaryParty,
-            id: { unpack: nanoid() }
+            id: { unpack: randomIdentifierShort() }
           }
         )
         .then((res) => {
