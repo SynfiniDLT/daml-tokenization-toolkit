@@ -129,8 +129,11 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
         <hr></hr>
         {props.settlement.steps.map((step: SettlementStep) => (
           <div key={step.instructionId.unpack}>
-            <h5 className="profile__title">Instruction: {step.instructionId.unpack}</h5>
+            <h5 className="profile__title">Instruction</h5>
             <div style={{ margin: "15px" }}>
+              <Field>ID:</Field>
+              {step.instructionId.unpack}
+              <br />
               <Field>Type: </Field>
               {
                 isMint(step.routedStep) ? <> Issuance<br/></> :
@@ -641,8 +644,11 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
             return (
               <>
                 <div key={step.instructionId.unpack}>
-                  <h5 className="profile__title">Instruction: {step.instructionId.unpack}</h5>
+                  <h5 className="profile__title">Instruction</h5>
                   <div style={{ margin: "15px" }}>
+                    <Field>ID:</Field>
+                    {step.instructionId.unpack}
+                    <br />
                     <div
                       style={{
                         ...(requiresIssuerAction(primaryParty, step)
