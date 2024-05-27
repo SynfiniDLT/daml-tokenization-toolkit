@@ -106,7 +106,8 @@ export const OfferAcceptFormScreen: React.FC = () => {
       );
       setReferenceId(referenceIdUUID);
     } catch (e: any) {
-      setError("{" + e.errors[0] + "}");
+      setError("Sorry that didn't work");
+      console.error("Unable to take settlement open offer", e);
     }
   };
 

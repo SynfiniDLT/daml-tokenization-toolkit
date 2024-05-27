@@ -23,15 +23,13 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
   const ledger = userContext.useLedger();
   const { primaryParty } = useWalletUser();
 
-  const [accountOffer, setAccountOffer] = useState<AccountOpenOfferSummary>();
   const [accountName, setAccountName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
 
-  const handleClick = (accountOffer: AccountOpenOfferSummary) => {
-    setIsModalOpen(!isModalOpen);
-    setAccountOffer(accountOffer);
+  const handleClick = () => {
+    setIsModalOpen(true);
   };
 
   const handleAccountName: React.ChangeEventHandler<HTMLInputElement> = (event) => {
@@ -39,7 +37,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
   };
 
   const handleCloseMessageModal = () => {
-    setIsModalOpen(!isModalOpen);
+    setIsModalOpen(false);
   };
 
   const handleConfirm = () => {
@@ -50,41 +48,35 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
       return;
     }
 
-    if (accountOffer?.cid !== undefined) {
-      ledger
-        .exercise(
-          OpenOffer.Take,
-          accountOffer?.cid,
-          {
-            accountDescription: accountName,
-            accountObservers: arrayToMap([["initialObservers", arrayToSet([walletOperator])]]),
-            owner: primaryParty,
-            id: { unpack: randomIdentifierShort() }
-          }
-        )
-        .then((res) => {
-          if (res[1]?.length > 0) {
-            setMessage("Account created");
-            setError("");
-          } else {
-            setMessage("");
-            setError("Operation error!");
-          }
-          setIsModalOpen(false);
-        })
-        .catch((err) => {
-          setIsModalOpen(false);
-          setMessage("");
-          setError("Operation error! \n \n Error:" + JSON.stringify(err.errors[0]));
-        });
-    }
+    ledger
+      .exercise(
+        OpenOffer.Take,
+        props.accountOffer.cid,
+        {
+          accountDescription: accountName,
+          accountObservers: arrayToMap([["initialObservers", arrayToSet([walletOperator])]]),
+          owner: primaryParty,
+          id: { unpack: randomIdentifierShort() }
+        }
+      )
+      .then(() => {
+        setMessage("Account created");
+        setError("");
+        setIsModalOpen(false);
+      })
+      .catch((err) => {
+        setIsModalOpen(false);
+        setMessage("");
+        setError("Sorry that didn't work");
+        console.error("Unable to create account", err);
+      });
     setIsModalOpen(!isModalOpen);
   };
 
   const incomingControllers = (props.accountOffer.view.ownerIncomingControlled ? ["Account owner"] : [])
     .concat(setToArray(props.accountOffer.view.additionalControllers.incoming).map(truncateParty));
   const outgoingControllers = (props.accountOffer.view.ownerOutgoingControlled ? ["Account owner"] : [])
-  .concat(setToArray(props.accountOffer.view.additionalControllers.outgoing).map(truncateParty));
+    .concat(setToArray(props.accountOffer.view.additionalControllers.outgoing).map(truncateParty));
 
   return (
     <>
@@ -128,14 +120,21 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
               type="button"
               className="button__login"
               style={{ width: "150px" }}
-              onClick={() => handleClick(props.accountOffer)}
+              onClick={handleClick}
             >
               Open Account
             </button>
           </ContainerColumn>
           <ContainerColumn>
-            <ContainerColumnValue><HoverPopUp triggerText={truncateParty(props.accountOffer.view.custodian)} popUpContent={props.accountOffer.view.custodian} /></ContainerColumnValue>
-            <ContainerColumnValue>{incomingControllers.length > 0 ? incomingControllers.join(", ") : "N/A"}</ContainerColumnValue>
+            <ContainerColumnValue>
+              <HoverPopUp
+                triggerText={truncateParty(props.accountOffer.view.custodian)}
+                popUpContent={props.accountOffer.view.custodian}
+              />
+            </ContainerColumnValue>
+            <ContainerColumnValue>
+              {incomingControllers.length > 0 ? incomingControllers.join(", ") : "N/A"}
+            </ContainerColumnValue>
             <ContainerColumnValue>{outgoingControllers.join(", ")}</ContainerColumnValue>
           </ContainerColumn>
         </ContainerDiv>
@@ -150,13 +149,11 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
         <form id="modalForm">
           <div style={{ fontSize: "1.5rem" }}>
             <table style={{ width: "300px" }}>
-              <caption>{accountOffer?.view.description}</caption>
+              <caption>{props.accountOffer.view.description}</caption>
               <tbody>
-                {accountOffer!== undefined && 
-                  <tr>
-                    <td style={{width: "95px"}}>Register:</td><td>{truncateParty(accountOffer?.view.custodian)}</td>
-                  </tr>
-                }
+                <tr>
+                  <td style={{width: "95px"}}>Register:</td><td>{truncateParty(props.accountOffer.view.custodian)}</td>
+                </tr>
                 <tr>
                   <td style={{width: "95px"}}>
                     Nickname:

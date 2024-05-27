@@ -407,8 +407,8 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
     const { allocations, approvals, pledgeDescriptors } = acceptanceActions(custodianToAccount, settlement);
     const instructionIdsToModify = allocations
       .entriesArray()
-      .map(kv => kv[0])
-      .concat(approvals.entriesArray().map(kv => kv[0]));
+      .map(([instructionId, _]) => instructionId)
+      .concat(approvals.entriesArray().map(([instructionId, _]) => instructionId));
     const dirties = arrayToMap(
       instructionIdsToModify
         .flatMap(
@@ -421,7 +421,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
             if (instructionCid !== undefined) {
               kv = [[instructionId, instructionCid]];
             } else {
-              console.log(`Unable to locate instruction ID: ${instructionId.unpack}`);
+              console.warn(`Unable to locate instruction ID: ${instructionId.unpack}`);
             }
             return kv;
           }
@@ -469,7 +469,8 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
         setIsModalOpen(!isModalOpen);
       })
       .catch((err) => {
-        setError("Error accepting transaction!" + err.errors[0]);
+        setError("Sorry, there was an error applying your preferences");
+        console.error("Unable to allocate and approve settlement", err)
         setIsModalOpen(!isModalOpen);
         setDirtyInstructions(undefined);
       });
@@ -503,12 +504,13 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
         }
       )
       .then(() => {
-        setMessage("Settlement submitted with success!");
+        setMessage("Settlement executed successfully");
         setIsModalOpen(!isModalOpen);
         setHasExecuted(true);
       })
       .catch((err) => {
-        setError("error when executing!" + err.errors[0]);
+        setError("Sorry that didn't work");
+        console.error("Error executing settlement", err);
         setIsModalOpen(!isModalOpen);
       });
   };

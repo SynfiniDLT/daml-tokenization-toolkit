@@ -243,7 +243,7 @@ const AssetDetailsScreen: React.FC = () => {
       Promise.resolve();
 
     await Promise.all([removeInstrumentObs, removeMetadataObs, removeHoldingsObs])
-      .then((res) => {
+      .then(() => {
         setMessage("Operation completed with success!");
         setError("");
         setIsModalOpen(true);
@@ -253,10 +253,8 @@ const AssetDetailsScreen: React.FC = () => {
         setMetadataDirtyCid(undefined);
         setIsModalOpen(true);
         setMessage("");
-        setError(
-          "Operation error! \nError while removing the party. \n Error:" +
-            JSON.stringify(err.errors[0])
-        );
+        setError("Sorry, there was an error removing those parties");
+        console.error("Unable to remove observers", err);
       });
   }
 
@@ -300,7 +298,7 @@ const AssetDetailsScreen: React.FC = () => {
       Promise.resolve();
 
     await Promise.all([addInstrumentObs, addMetadataObs, addHoldingsObs])
-      .then((res) => {
+      .then(() => {
         setMessage("Operation completed with success!");
         setError("");
         setIsModalOpen(true);
@@ -310,10 +308,8 @@ const AssetDetailsScreen: React.FC = () => {
         setMetadataDirtyCid(undefined);
         setIsModalOpen(true);
         setMessage("");
-        setError(
-          "Operation error! \nError while adding the party. \n Error:" +
-            JSON.stringify(err.errors[0])
-        );
+        setError("Sorry, there was an error sharing with those parties");
+        console.error("Error adding observers", err);
       });
   }
 

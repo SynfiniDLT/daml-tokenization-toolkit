@@ -2,7 +2,7 @@ import { OneTimeOffer } from "@daml.js/synfini-settlement-one-time-offer-interfa
 import RequestDetails from "./requestDetails";
 import { CreateEvent } from "@daml/ledger";
 
-export default function Offers(props: { offers?: CreateEvent<OneTimeOffer, undefined, string>[] }) {
+export default function Requests(props: { offers?: CreateEvent<OneTimeOffer, undefined, string>[] }) {
   return (
     <>
       <div style={{ margin: "10px", padding: "10px" }}>
