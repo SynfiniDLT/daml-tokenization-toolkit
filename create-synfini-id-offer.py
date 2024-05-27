@@ -21,7 +21,7 @@ parser.add_argument('--offer-id', dest='offer_id', help='Identifier of the settl
 parser.add_argument('--owner', dest='owner', help='Label of the party which will be offered the identity token')
 parser.add_argument('--name', dest='name', help='Name assigned to the party by the token')
 parser.add_argument('--observers', dest='observers', default='', help='Comma-delimited labels of the observers of the token Instrument and Metadata contracts')
-parser.add_argument('--settlement-open-offer-factory', dest='settlement_open_offer_factory', help='Label of the settlement open offer factory contract')
+parser.add_argument('--settlement-one-time-offer-factory', dest='settlement_one_time_offer_factory', help='Label of the settlement open offer factory contract')
 parser.add_argument('--settlement-factory', dest='settlement_factory', help='Label of the settlement factory contract used on the offer')
 parser.add_argument('--route-provider', dest='route_provider', help='Label of the route provider contract')
 parser.add_argument('--read-as', dest='read_as', default='', help='Comma-delimited labels of the parties used to read contracts from the ledger')
@@ -116,20 +116,20 @@ create_instrument_json = {
 
 dops('create-instruments', create_instrument_json)
 
-# TODO: this should be implemented as a one-time offer, not an open offer
 settlement_offer = {
   'readAs': read_as,
-  'settlementOpenOfferSettings': [
+  'settlementOneTimeOfferSettings': [
     {
       'offerId': args.offer_id,
+      'offeree': args.owner,
       'offerers': [args.issuer],
       'offerDescription': 'Receive Synfini ID token',
-      'settlementInstructors': [{'party': args.issuer}, {'taker': {}}],
-      'settlers': [{'party': args.issuer}],
+      'settlementInstructors': [args.issuer, args.owner],
+      'settlers': [args.issuer],
       'steps': [
         {
-          'sender': {'party': args.custodian},
-          'receiver': {'taker': {}},
+          'sender': args.custodian,
+          'receiver': args.owner,
           'instrumentDepository': args.depository,
           'instrumentIssuer': args.issuer,
           'instrumentId': instrument['id'],
@@ -139,16 +139,17 @@ settlement_offer = {
       ],
       'minQuantity': 1,
       'maxQuantity': 1,
-      'settlementOpenOfferFactory': args.settlement_open_offer_factory,
+      'settlementOneTimeOfferFactory': args.settlement_one_time_offer_factory,
       'routeProvider': args.route_provider,
       'settlementFactory': args.settlement_factory,
-      'permittedTakers': [args.owner],
-      'observers' : [{
-        'context': 'setup',
-        'parties': [args.owner]
-      }]
+      'observers' : [
+        {
+          'context': 'setup',
+          'parties': observers
+        }
+      ]
     }
   ]
 }
 
-dops('create-settlement-open-offers', settlement_offer)
+dops('create-settlement-one-time-offers', settlement_offer)

@@ -2,6 +2,7 @@ module Synfini.Settlement.OneTimeOffer.Test where
 
 import DA.Map qualified as Map
 import DA.Set qualified as Set
+import DA.Text qualified as TX
 
 import Daml.Script
 
@@ -107,23 +108,23 @@ test_accept_workflow = withSetup $
   submitMustFail charlie do
     exerciseCmd oneTimeOfferCid OneTimeOffer.Accept with
       quantity = 1.5
-      description = acceptDescription
+      reference = Some acceptDescription
   submitMustFail bob do
     exerciseCmd oneTimeOfferCid OneTimeOffer.Accept with
       quantity = 0.99
-      description = acceptDescription
+      reference = Some  acceptDescription
   submitMustFail bob do
     exerciseCmd oneTimeOfferCid OneTimeOffer.Accept with
       quantity = 2.01
-      description = acceptDescription
+      reference = Some acceptDescription
   (batchCid, [instructionCid]) <- submit bob do
     exerciseCmd oneTimeOfferCid OneTimeOffer.Accept with
       quantity = 2.0
-      description = acceptDescription
+      reference = Some acceptDescription
   [(activeBatchCid, Some batch)] <- queryInterface @Batch.I alice
   assertEqMsg "Must have expected batch contract ID" activeBatchCid batchCid
   assertEqMsg "Must have expected batch ID" batch.id offerId
-  assertEqMsg "Must have expected batch description" batch.description acceptDescription
+  assertMsg "Batch description must contain the reference" (acceptDescription `TX.isInfixOf` batch.description)
   assertEqMsg "Must have expected settlers" batch.settlers settlers
   assertEqMsg "Must have expected instructors" batch.requestors settlementInstructors
   [(activeInstructionCid, Some instruction)] <- queryInterface @Instruction.I alice

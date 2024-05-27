@@ -1,0 +1,138 @@
+module Synfini.Operations.Settlement.OneTimeOffer where
+
+import DA.Foldable (forA_)
+
+import DA.Optional qualified as O
+import DA.Set qualified as Set
+
+import Daml.Script
+
+import Daml.Finance.Interface.Settlement.Types (Step(..))
+import Daml.Finance.Interface.Types.Common.Types
+
+import Synfini.Operations.Types
+
+import Synfini.Operations.Factory.Settlement (OneTimeOfferFactory, SettlementFactory)
+import Synfini.Operations.RouteProvider (RouteProvider)
+
+import Synfini.Interface.Settlement.OneTimeOffer.Factory qualified as OneTimeOfferFactory
+import Synfini.Interface.Settlement.OneTimeOffer.OneTimeOffer qualified as OneTimeOffer
+
+data StepSettings = StepSettings
+  with
+    sender : Text
+    receiver : Text
+    instrumentDepository : Text
+    instrumentIssuer : Text
+    instrumentId : Text
+    instrumentVersion : Text
+    amount : Decimal
+
+asStep : (Text -> Party) -> StepSettings -> Step
+asStep p settings = Step with
+  sender = p settings.sender
+  receiver = p settings.receiver
+  quantity = Quantity with
+    unit = InstrumentKey with
+      depository = p settings.instrumentDepository
+      issuer = p settings.instrumentIssuer
+      id = Id settings.instrumentId
+      version =  settings.instrumentVersion
+    amount = settings.amount
+
+data OneTimeOfferSettings = OneTimeOfferSettings
+  with
+    offerId : Text
+    offerers : [Text]
+    offeree : Text
+    offerDescription : Text
+    settlementInstructors : [Text]
+    settlers : [Text]
+    steps : [StepSettings]
+    minQuantity : Optional Decimal
+    maxQuantity : Optional Decimal
+    settlementTime : Optional Time
+    settlementOneTimeOfferFactory : Text
+    routeProvider : Text
+    settlementFactory : Text
+    observers : [Observer]
+
+data CreateSettlementOneTimeOffersInput = CreateSettlementOneTimeOffersInput
+  with
+    readAs : [Text]
+    parties : [PartyInfo]
+    settlementOneTimeOfferFactories : [OneTimeOfferFactory]
+    routeProviders : [RouteProvider]
+    settlementFactories : [SettlementFactory]
+    settlementOneTimeOfferSettings : [OneTimeOfferSettings]
+
+createSettlementOneTimeOffers : CreateSettlementOneTimeOffersInput -> Script ()
+createSettlementOneTimeOffers input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+  let readAs = p <$> input.readAs
+  forA_ input.settlementOneTimeOfferSettings $ \settings -> do
+    let offerId = Id settings.offerId
+        offerers = Set.fromList (p <$> settings.offerers)
+        offeree = p settings.offeree
+        settlementInstructors = Set.fromList (p <$> settings.settlementInstructors)
+        settlers = Set.fromList (p <$> settings.settlers)
+        steps = asStep p <$> settings.steps
+        oneTimeOfferFactoryCid = findCidByLabel settings.settlementOneTimeOfferFactory input.settlementOneTimeOfferFactories
+        routeProviderCid = findCidByLabel settings.routeProvider input.routeProviders
+        settlementFactoryCid = findCidByLabel settings.settlementFactory input.settlementFactories
+        observers = asPartiesMap p settings.observers
+    submitMulti (Set.toList offerers) readAs do
+      exerciseCmd oneTimeOfferFactoryCid OneTimeOfferFactory.Create with
+        offerId
+        offerDescription = settings.offerDescription
+        offeree
+        offerers
+        settlementInstructors
+        settlers
+        steps
+        minQuantity = settings.minQuantity
+        maxQuantity = settings.maxQuantity
+        settlementTime = settings.settlementTime
+        routeProviderCid
+        settlementFactoryCid
+        observers
+
+data AcceptOneTimeOfferSettings = AcceptOneTimeOfferSettings
+  with
+    offerId : Text
+    offerers : [Text]
+    acceptor : Text
+    quantity : Decimal
+    reference : Optional Text
+
+data AcceptOneTimeOfferInput = AcceptOneTimeOfferInput
+  with
+    readAs : [Text]
+    parties : [PartyInfo]
+    acceptOneTimeOfferSettings : AcceptOneTimeOfferSettings
+
+acceptOneTimeOffer : AcceptOneTimeOfferInput -> Script ()
+acceptOneTimeOffer input = do
+  let pm = partyTable input.parties
+  let p = getPartyId pm
+      settings = input.acceptOneTimeOfferSettings
+  let readAs = p <$> input.readAs
+      offerers = Set.fromList (p <$> settings.offerers)
+      acceptor = p settings.acceptor
+  let filterOffer (cid, offer) = do
+        o <- offer
+        if o.offerers == offerers && o.offerId == Id settings.offerId then
+          Some (cid, o)
+        else
+          None
+  oneTimeOffers <- O.mapOptional filterOffer <$> queryInterface @OneTimeOffer.I (acceptor :: readAs)
+  let (offerCid, offer) = case oneTimeOffers of
+        [o] -> o
+        [] -> error "No matching offer found"
+        _ -> error ("Multiple matching offers found: " <> show oneTimeOffers)
+  submitMulti [acceptor] readAs do
+    exerciseCmd offerCid OneTimeOffer.Accept with
+      quantity = settings.quantity
+      reference = settings.reference
+  pure ()

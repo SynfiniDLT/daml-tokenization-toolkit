@@ -3,6 +3,9 @@
   "takeOpenOfferSettings": {
     "taker": "StableCoinIssuer"
   },
+  "acceptOneTimeOfferSettings": {
+    "acceptor": "StableCoinIssuer"
+  },
   "acceptSettlementSettings": {
     "acceptor": "StableCoinIssuer",
     "settlementPreferences": [

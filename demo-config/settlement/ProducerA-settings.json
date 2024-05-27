@@ -3,6 +3,9 @@
   "takeOpenOfferSettings": {
     "taker": "ProducerA"
   },
+  "acceptOneTimeOfferSettings": {
+    "acceptor": "ProducerA"
+  },
   "acceptSettlementSettings": {
     "acceptor": "ProducerA",
     "settlementPreferences": [

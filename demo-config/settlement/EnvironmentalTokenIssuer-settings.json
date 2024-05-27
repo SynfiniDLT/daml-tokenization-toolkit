@@ -3,6 +3,9 @@
   "takeOpenOfferSettings": {
     "taker": "EnvironmentalTokenIssuer"
   },
+  "acceptOneTimeOfferSettings": {
+    "acceptor": "EnvironmentalTokenIssuer"
+  },
   "acceptSettlementSettings": {
     "acceptor": "EnvironmentalTokenIssuer",
     "settlementPreferences": [

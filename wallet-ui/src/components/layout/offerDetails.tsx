@@ -1,39 +1,74 @@
-import { useNavigate } from "react-router-dom";
-import HoverPopUp from "./hoverPopUp";
+import { useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { CardContainer, ContainerColumn, ContainerColumnKey, ContainerDiv, ContainerColumnValue } from "./general.styled";
 import { CreateEvent } from "@daml/ledger";
-import { OneTimeOffer } from "@daml.js/synfini-settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer";
-import { setToArray } from "../../Util";
+import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
+import { setToArray, truncateParty } from "../../Util";
 
 interface OfferDetailsProps {
-  offer: CreateEvent<OneTimeOffer, undefined, string>;
+  offer: CreateEvent<SettlementOpenOffer, undefined, string>;
 }
 
 export default function OfferDetails(props: OfferDetailsProps) {
   const nav = useNavigate();
+  const location = useLocation();
 
-  const handleClickOfferID = () => {
-    nav("/offer/accept", { state: { offer: props.offer } });
+  const handleClick = (offer: CreateEvent<SettlementOpenOffer, undefined, string>) => {
+    nav("/offer/accept", { state: { offer: offer } });
   };
 
+  useEffect(() => {
+    const { hash } = location;
+    if (hash) {
+      const targetElement = document.getElementById(hash.slice(1));
+      if (targetElement) {
+        const offset = -100;
+        const topPosition = targetElement.offsetTop + offset;
+        window.scrollTo({
+          top: topPosition,
+          behavior: "smooth",
+        });
+      }
+    }
+  }, [location]);
+
+  const settlersArray = setToArray(props.offer.payload.settlers);
+  const settlers = settlersArray
+    .map((e, index) =>
+      (index > 0 ? ", " : "") +
+      (settlersArray.length > 1 && index >= settlersArray.length - 1 ? "or " : "")  +
+      (e.tag === "TakerEntity" ? "Offer taker" : truncateParty(e.value))
+    )
+    .join(", ");
+
   return (
-    <>
-      {props.offer !== undefined && (
-        <tr>
-          <td>
-            <a onClick={_ => handleClickOfferID()}>
-              {props.offer.payload.offerId.unpack}
-            </a>
-          </td>
-          <td>
-            {setToArray(props.offer.payload.offerers).map(offerer => (
-              <div key={offerer}>
-                <HoverPopUp triggerText={offerer.substring(0, 40) + "..."} popUpContent={offerer} /> <br />
-              </div>
-            ))}
-          </td>
-          <td>{props.offer.payload.offerDescription}</td>
-        </tr>
-      )}
-    </>
+    <CardContainer pointer>
+      <h4 className="profile__title">{props.offer.payload.offerDescription}</h4>
+      <ContainerDiv id={props.offer.contractId}>
+        <ContainerColumn>
+          <ContainerColumnKey>Offered by:</ContainerColumnKey>
+          <ContainerColumnKey>Settled by:</ContainerColumnKey>
+          <p>
+            <br />
+          </p>
+          <button
+            type="button"
+            className="button__login"
+            style={{ width: "100px" }}
+            onClick={() => handleClick(props.offer)}
+          >
+            Details
+          </button>
+        </ContainerColumn>
+        <ContainerColumn>
+          <ContainerColumnValue>
+            {setToArray(props.offer.payload.offerers).map(truncateParty).join(", ")}
+          </ContainerColumnValue>
+          <ContainerColumnValue>
+            {settlers}
+          </ContainerColumnValue>
+        </ContainerColumn>
+      </ContainerDiv>
+    </CardContainer>
   );
 }
