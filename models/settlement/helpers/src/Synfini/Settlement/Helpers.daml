@@ -15,6 +15,9 @@ import Daml.Finance.Interface.Types.Common.Types
 
 import Daml.Finance.Interface.Holding.Base qualified as Holding
 import Daml.Finance.Interface.Holding.Fungible qualified as Fungible
+import Daml.Finance.Interface.Settlement.Batch qualified as Batch
+import Daml.Finance.Interface.Settlement.Factory qualified as SettlementFactory
+import Daml.Finance.Interface.Settlement.RouteProvider qualified as RouteProvider
 import Daml.Finance.Interface.Settlement.Instruction qualified as Instruction
 
 import Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner qualified as MinterBurner
@@ -183,6 +186,53 @@ allocateAndApproveHelper actors (instructionsMap, holdingsMap) (instrId, instruc
         actors
         approval = PassThroughTo (passThroughToAccount, passThroughInstructionKey)
   pure (Map.insert instrId instructionCid instructionsMap, holdingsMap)
+
+template InstructTransferFromFungiblesHelper
+  with
+    id : Id
+    contextId : Optional Id
+    description : Text
+    sender : Party
+    receiver : Party
+    quantity : InstrumentQuantity
+    holdingCids : [ContractId Fungible.I]
+    settlementFactoryCid : ContractId SettlementFactory.F
+    routeProviderCid : ContractId RouteProvider.I
+  where
+    signatory sender
+
+    choice InstructTransfer : (ContractId Batch.I, [ContractId Instruction.I])
+      controller sender
+      do
+        let step = Step with sender, receiver, quantity
+        routedSteps <- exercise routeProviderCid RouteProvider.Discover with
+          discoverors = Set.fromList [sender]
+          contextId
+          steps = [step]
+        (batchCid, instructionCids) <- exercise settlementFactoryCid SettlementFactory.Instruct with
+          instructors = Set.fromList [sender]
+          settlers = Set.fromList [sender, receiver]
+          id
+          contextId
+          description
+          routedSteps
+          settlementTime = None
+        let baseHoldingCids : [ContractId Holding.I] = toInterfaceContractId <$> holdingCids
+        holding <- exercise (L.head baseHoldingCids) Holding.GetView with viewer = sender
+        instructions <- mapA (`exercise` Instruction.GetView with viewer = sender) instructionCids
+        let [(_, sendInstructionCid)] = filter
+              (\(instruction, _) ->
+                instruction.routedStep.sender == sender && instruction.routedStep.custodian == holding.account.custodian)
+              (zip instructions instructionCids)
+        (allocatableCid, _) <- mergeAndSplitHelper holdingCids quantity.amount
+        (sendInstructionCid', _) <- exercise sendInstructionCid Instruction.Allocate with
+          allocation = Pledge (toInterfaceContractId allocatableCid)
+          actors = Set.fromList [sender]
+        let instructionCids' = map
+              (\instructionCid ->
+                if instructionCid == sendInstructionCid then sendInstructionCid' else instructionCid)
+              instructionCids
+        pure (batchCid, instructionCids')
 
 -- | HIDE
 minterBurnerKey : Instruction.V -> MinterBurner.V
