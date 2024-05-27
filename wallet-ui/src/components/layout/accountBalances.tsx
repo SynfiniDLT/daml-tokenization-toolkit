@@ -57,13 +57,13 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
 
       fetchOffRampOffer();
     }
-  }, [stableCoinInstrumentId, props.accountBalances]);
+  }, [ledger, props.accountBalances]);
 
   const tableRows: [AccountSummary, JSX.Element[]][] = props.accountBalances.map(accountBalance => {
     const trs = accountBalance.balances.map(balance => {
       const actionButton =
         (balance.instrument.id.unpack === stableCoinInstrumentId.unpack) && offRampOffer !== undefined ?
-          (<>&nbsp;<button onClick={handleRedeem}>Redeem</button></>) :
+          (<>&nbsp;&nbsp;<button onClick={handleRedeem}>Redeem</button></>) :
           (<></>);
 
       const trKey = JSON.stringify(

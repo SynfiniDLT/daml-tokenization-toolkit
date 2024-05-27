@@ -48,6 +48,8 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
       return;
     }
 
+    const accountId = randomIdentifierShort();
+
     ledger
       .exercise(
         OpenOffer.Take,
@@ -56,11 +58,11 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
           accountDescription: accountName,
           accountObservers: arrayToMap([["initialObservers", arrayToSet([walletOperator])]]),
           owner: primaryParty,
-          id: { unpack: randomIdentifierShort() }
+          id: { unpack: accountId }
         }
       )
       .then(() => {
-        setMessage("Account created");
+        setMessage(`Account created (ID: ${accountId})`);
         setError("");
         setIsModalOpen(false);
       })
@@ -113,8 +115,9 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
         <ContainerDiv>
           <ContainerColumn>
             <ContainerColumnKey>Register:</ContainerColumnKey>
-            <ContainerColumnKey>Incoming transaction controllers:</ContainerColumnKey>
-            <ContainerColumnKey>Outgoing transaction controllers:</ContainerColumnKey>
+            <ContainerColumnKey>Transaction authorisers:</ContainerColumnKey>
+            <ContainerColumnKey> - Incoming:</ContainerColumnKey>
+            <ContainerColumnKey> - Outgoing:</ContainerColumnKey>
             <p></p>
             <button
               type="button"
@@ -132,6 +135,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
                 popUpContent={props.accountOffer.view.custodian}
               />
             </ContainerColumnValue>
+            <ContainerColumnValue>&nbsp;</ContainerColumnValue>
             <ContainerColumnValue>
               {incomingControllers.length > 0 ? incomingControllers.join(", ") : "N/A"}
             </ContainerColumnValue>
@@ -140,7 +144,6 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
         </ContainerDiv>
       </CardContainer>
       <Modal
-        id="shareSbtModal"
         className="simpleModal"
         isOpen={isModalOpen}
         onRequestClose={handleCloseMessageModal}

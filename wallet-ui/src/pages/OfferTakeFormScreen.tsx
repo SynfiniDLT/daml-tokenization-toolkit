@@ -2,7 +2,7 @@ import { useState, ChangeEventHandler } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";
 import { PageLayout } from "../components/PageLayout";
-import { formatCurrency, formatOptionalCurrency, randomIdentifierLong, randomIdentifierShort, setToArray, truncateParty } from "../Util";
+import { formatCurrency, formatOptionalCurrency, randomIdentifierLong, setToArray, truncateParty } from "../Util";
 import * as damlTypes from "@daml/types";
 import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer"
 import {
