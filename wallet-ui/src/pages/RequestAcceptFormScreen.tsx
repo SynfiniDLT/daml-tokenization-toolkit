@@ -8,7 +8,7 @@ import {
 import { OneTimeOffer } from "@daml.js/synfini-settlement-one-time-offer-interface/lib/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer";
 import Modal from "react-modal";
 import { CreateEvent } from "@daml/ledger";
-import { repairMap, setToArray } from "../Util";
+import { formatCurrency, repairMap, setToArray } from "../Util";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 import Decimal from "decimal.js";
 
@@ -124,7 +124,7 @@ export const RequestAcceptFormScreen: React.FC = () => {
           <a onClick={_ => handleInstrumentClick(step.quantity.unit)}>
             {
               (fixedAmount || isOfferee) &&
-              new Decimal(quantityInput).mul(new Decimal(step.quantity.amount))
+              formatCurrency(new Decimal(quantityInput).mul(new Decimal(step.quantity.amount)))
             } {step.quantity.unit.id.unpack} {step.quantity.unit.version}
           </a>
           {delivery ? ` to ${step.receiver}` : ` from ${step.sender}`}

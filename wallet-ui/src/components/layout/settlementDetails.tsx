@@ -140,11 +140,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
                 isBurn(step.routedStep) ? <> Redemption<br/></> : <> Transfer<br/></>
               }
               <Field>Amount: </Field>
-              {step.routedStep.quantity.unit.id.unpack === stableCoinInstrumentId.unpack ? (
-                <>{formatCurrency(step.routedStep.quantity.amount)}</>
-              ) : (
-                <>{Number(step.routedStep.quantity.amount)}</>
-              )}
+                {formatCurrency(step.routedStep.quantity.amount)}
               <br />
               <div id={step.routedStep.quantity.unit.id.unpack} key={step.instructionCid}>
                 <Field>Asset:</Field>
@@ -468,7 +464,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
         {}
       )
       .then(() => {
-        setMessage("Transaction accepted with success!");
+        setMessage("Settlement preferences applied successfully");
         setIsModalOpen(!isModalOpen);
       })
       .catch((err) => {

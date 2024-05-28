@@ -2,11 +2,11 @@ import { useNavigate } from "react-router-dom";
 import Modal from "react-modal";
 import { AccountSummary, Balance } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer";
-import { formatCurrency, randomIdentifierLong, truncateParty } from "../../Util";
-import { Coin } from "react-bootstrap-icons";
+import { arrayToSet, formatCurrency, insertIntoSet, randomIdentifierLong, truncateParty } from "../../Util";
+import { ArrowUpRight, BoxArrowUpRight, Coin } from "react-bootstrap-icons";
 import HoverPopUp from "./hoverPopUp";
 import { useEffect, useState } from "react";
-import { AccountKey, Id, InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
+import { Id, InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 import { routeProviderCid, settlementFactoryCid, stableCoinInstrumentId } from "../../Configuration";
 import { useWalletUser, useWalletViews, userContext } from "../../App";
 import { CreateEvent } from "@daml/ledger";
@@ -14,6 +14,9 @@ import Decimal from "decimal.js";
 import * as damlTypes from "@daml/types";
 import { InstructTransferFromFungiblesHelper } from "@daml.js/synfini-settlement-helpers/lib/Synfini/Settlement/Helpers";
 import { Fungible } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
+import { ContainerColumn, ContainerColumnKey, ContainerColumnValue, ContainerDiv } from "./general.styled";
+
+Modal.setAppElement("#root");
 
 export type AccountBalanceSummary = {
   account: AccountSummary,
@@ -28,11 +31,33 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
   const ledger = userContext.useLedger();
   const { primaryParty } = useWalletUser();
   const [offRampOffer, setOffRampOffer] = useState<CreateEvent<SettlementOpenOffer, undefined, string>>();
-  const [amountToTransfer, setAmountToTransfer] = useState<damlTypes.Decimal>("0");
+  const [amountToTransfer, setAmountToTransfer] = useState<damlTypes.Decimal>("");
   const [balanceToTransferFrom, setBalanceToTransferFrom] = useState<Balance>();
-  const [receiver, setReceiver] = useState<damlTypes.Party>();
+  const [receiver, setReceiver] = useState<damlTypes.Party>("");
   const [transferBatchId, setTransferBatchId] = useState<Id>();
   const [error, setError] = useState("");
+  const [formValidationError, setFormValidationError] = useState("");
+  const [fungibleAssets, setFungibleAssets] = useState(arrayToSet<InstrumentKey>([]));
+
+  // Once upgraded to later Daml Finance version we will not need this, instead the InstrumentKey will provide this
+  useEffect(() => {
+    const fetchHoldings = async () => {
+      const bals = props
+        .accountBalances
+        .flatMap(summary => summary.balances);
+      for (const balance of bals) {
+        const holdings = await walletViews.getHoldings({account: balance.account, instrument: balance.instrument});
+        if (holdings.holdings.length > 0) {
+          const holding = await ledger.fetch(Fungible, holdings.holdings[0].cid as damlTypes.ContractId<any>);
+          if (holding !== null) {
+            setFungibleAssets(assets => insertIntoSet(assets, balance.instrument));
+          }
+        }
+      }
+    };
+
+    fetchHoldings();
+  }, [walletViews, ledger, props.accountBalances]);
 
   const handleRedeem = () => {
     if (offRampOffer !== undefined) {
@@ -51,24 +76,52 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
     event.preventDefault();
 
     setReceiver(event.target.value);
+    setFormValidationError("");
   }
 
   const handleChangeTransferAmount: React.ChangeEventHandler<HTMLInputElement> = event => {
     event.preventDefault();
 
     setAmountToTransfer(event.target.value);
+    setFormValidationError("");
   }
 
   const handleSubmitTransfer: React.MouseEventHandler<HTMLButtonElement> = async (event) => {
     event.preventDefault();
 
-    if (
-      primaryParty === undefined ||
-      receiver === undefined ||
-      balanceToTransferFrom === undefined
-    ) {
+    if (primaryParty === undefined || balanceToTransferFrom === undefined) {
       console.warn("Unset parameters when submitting transfer");
       setError("Sorry there was a problem with the page data");
+      return;
+    }
+
+    if (receiver === "") {
+      setFormValidationError("Receiver not provided");
+      return;
+    }
+
+    if (amountToTransfer === "") {
+      setFormValidationError("Amount not provided");
+      return;
+    }
+
+    let amountToTransferDecimal: Decimal;
+
+    try {
+      amountToTransferDecimal = new Decimal(amountToTransfer);
+    } catch (e: any) {
+      console.warn("Unable to parse decimal value");
+      setFormValidationError("Sorry something was wrong with the amount you entered");
+      return;
+    }
+
+    if (amountToTransferDecimal.lessThanOrEqualTo(0)) {
+      setFormValidationError("Amount must be positive");
+      return;
+    }
+
+    if (amountToTransferDecimal.greaterThan(balanceToTransferFrom.unlocked)) {
+      setFormValidationError("Insufficient balance");
       return;
     }
 
@@ -111,17 +164,22 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
     setIsTransferModalOpen(false);
   }
 
-  const handleCloseMessageModal = () => {
+  const resetTransferState = () => {
+    setError("");
+    setFormValidationError("");
     setTransferBatchId(undefined);
     setBalanceToTransferFrom(undefined);
-    setAmountToTransfer("0");
-    setReceiver(undefined);
+    setAmountToTransfer("");
+    setReceiver("");
+  }
+
+  const handleCloseMessageModal = () => {
+    resetTransferState();
   };
 
   const handleCloseTransferModal = () => {
+    resetTransferState();
     setIsTransferModalOpen(false);
-    setBalanceToTransferFrom(undefined);
-    setReceiver(undefined);
   }
 
   const handleInstrumentClick = (instrument: InstrumentKey) => {
@@ -160,34 +218,64 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
       onRequestClose={handleCloseTransferModal}
       contentLabel="Transfer"
     >
-      <form id="modalForm">
+      <form
+        id="modalForm"
+        style={{
+          margin: "0px",
+          padding: "10px"
+        }}
+      >
         <h4>Transfer</h4>
-        <label>Receiver</label>
-        <input
-          type="text"
-          // id="accountName"
-          // name="accountName"
-          style={{ width: "200px" }}
-          value={receiver}
-          onChange={handleChangeReceiver}
-        />
-        <label>Amount</label>
-        <input
-          type="number"
-          // id="accountName"
-          // name="accountName"
-          style={{ width: "200px" }}
-          value={amountToTransfer}
-          onChange={handleChangeTransferAmount}
-        />
+        <ContainerDiv>
+          <ContainerColumn>
+            <ContainerColumnKey>Asset:</ContainerColumnKey>
+            <ContainerColumnKey>From Account:</ContainerColumnKey>
+            <ContainerColumnKey>Receiver:</ContainerColumnKey>
+            <ContainerColumnKey>Amount:</ContainerColumnKey>
+          </ContainerColumn>
+          <ContainerColumn>
+            <ContainerColumnValue>
+              {balanceToTransferFrom?.instrument.id.unpack} {balanceToTransferFrom?.instrument.version}
+            </ContainerColumnValue>
+            <ContainerColumnValue>{balanceToTransferFrom?.account.id.unpack}</ContainerColumnValue>
+            <ContainerColumnValue>
+              <input
+                type="text"
+                style={{ width: "200px" }}
+                value={receiver}
+                onChange={handleChangeReceiver}
+                required
+              />
+            </ContainerColumnValue>
+            <ContainerColumnValue>
+              <input
+                type="number"
+                min={0}
+                max={balanceToTransferFrom?.unlocked}
+                style={{ width: "200px" }}
+                value={amountToTransfer}
+                onChange={handleChangeTransferAmount}
+                required
+              />
+            </ContainerColumnValue>
+          </ContainerColumn>
+        </ContainerDiv>
         <div className="container-inline">
-          <button type="submit" className="button__login" onClick={handleSubmitTransfer}>
+          <button
+            type="submit"
+            className="button__login"
+            onClick={handleSubmitTransfer}
+            disabled={formValidationError !== ""}>
             Submit
           </button>
           <button type="button" className="button__login" onClick={handleCloseTransferModal}>
             Cancel
           </button>
         </div>
+        {
+          formValidationError !== "" &&
+          <span style={{ color: "#FF6699", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{formValidationError}</span>
+        }
       </form>
     </Modal>;
 
@@ -196,7 +284,11 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
       const redeemButton =
         (balance.instrument.id.unpack === stableCoinInstrumentId.unpack) && offRampOffer !== undefined &&
           <>&nbsp;&nbsp;<button onClick={handleRedeem}>Redeem</button></>;
-      const transferButton = <button onClick={() => handleClickTransfer(balance)}>Transfer</button>
+      const transferButton =
+        fungibleAssets.map.has(balance.instrument) &&
+        <button style={{float: "right"}} onClick={() => handleClickTransfer(balance)}>
+          <ArrowUpRight/>
+        </button>
 
       const trKey = JSON.stringify(
         [
@@ -270,26 +362,31 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
       <Modal
         id="handleCloseMessageModal"
         className="MessageModal"
-        isOpen={transferBatchId !== undefined}
+        isOpen={transferBatchId !== undefined || error !== ""}
         onRequestClose={handleCloseMessageModal}
-        // contentLabel="Settlement Modal"
       >
         <>
           <div>
-            {error === "" ? (
-              <>
-                <p style={{ color: "#66FF99", fontSize: "1.5rem", whiteSpace: "pre-line" }}>
-                  Transfer instructed successfully. Transaction ID: 
-                  <a href={`http://${window.location.host}/settlements#${transferBatchId?.unpack}`}>
-                    {transferBatchId?.unpack}
-                    {/* {"    "}<BoxArrowUpRight /> */}
-                  </a>
-                </p>
-                
-              </>
-            ) : (
-              <span style={{ color: "#FF6699", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{error}</span>
-            )}
+            {
+              error === "" ?
+                <>
+                  <p>
+                    Transfer instructed (pending receiver approval)
+                    <br/>
+                    Transaction ID:
+                    <a
+                      href={`http://${window.location.host}/settlements#${transferBatchId?.unpack}`}
+                      style={{ color: "#66FF99" }}
+                    >
+                      {` ${transferBatchId?.unpack}`}
+                      {" "}<BoxArrowUpRight />
+                    </a>
+                  </p>
+                  
+                </>
+              :
+                <span style={{ color: "#FF6699", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{error}</span>
+            }
           </div>
           <p></p>
           <div className="containerButton">
