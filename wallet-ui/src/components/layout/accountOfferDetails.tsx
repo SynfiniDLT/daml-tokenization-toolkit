@@ -10,8 +10,7 @@ import {
 import { AccountOpenOfferSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { OpenOffer } from "@daml.js/synfini-account-onboarding-open-offer-interface/lib/Synfini/Interface/Onboarding/Account/OpenOffer/OpenOffer";
 import { userContext } from "../../App";
-import { v4 as uuid } from "uuid";
-import { nameFromParty, arrayToSet, arrayToMap } from "../../Util";
+import { arrayToSet, arrayToMap, truncateParty, setToArray, randomIdentifierShort } from "../../Util";
 import HoverPopUp from "./hoverPopUp";
 import { useWalletUser } from "../../App";
 import { walletOperator } from "../../Configuration";
@@ -24,15 +23,13 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
   const ledger = userContext.useLedger();
   const { primaryParty } = useWalletUser();
 
-  const [accountOffer, setAccountOffer] = useState<AccountOpenOfferSummary>();
   const [accountName, setAccountName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
 
-  const handleClick = (accountOffer: AccountOpenOfferSummary) => {
-    setIsModalOpen(!isModalOpen);
-    setAccountOffer(accountOffer);
+  const handleClick = () => {
+    setIsModalOpen(true);
   };
 
   const handleAccountName: React.ChangeEventHandler<HTMLInputElement> = (event) => {
@@ -40,7 +37,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
   };
 
   const handleCloseMessageModal = () => {
-    setIsModalOpen(!isModalOpen);
+    setIsModalOpen(false);
   };
 
   const handleConfirm = () => {
@@ -51,44 +48,43 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
       return;
     }
 
-    if (accountOffer?.cid !== undefined) {
-      const idUUID = uuid();
-      ledger
-        .exercise(
-          OpenOffer.Take,
-          accountOffer?.cid,
-          {
-            accountDescription: accountName,
-            accountObservers: arrayToMap([["initialObservers", arrayToSet([walletOperator])]]),
-            owner: primaryParty,
-            id: { unpack: idUUID }
-          }
-        )
-        .then((res) => {
-          if (res[1]?.length > 0) {
-            setMessage("Operation completed with success! ).");
-            setError("");
-          } else {
-            setMessage("");
-            setError("Operation error!");
-          }
-          setIsModalOpen(false);
-        })
-        .catch((err) => {
-          setIsModalOpen(false);
-          setMessage("");
-          setError("Operation error! \n \n Error:" + JSON.stringify(err.errors[0]));
-        });
-    }
+    const accountId = randomIdentifierShort();
+
+    ledger
+      .exercise(
+        OpenOffer.Take,
+        props.accountOffer.cid,
+        {
+          accountDescription: accountName,
+          accountObservers: arrayToMap([["initialObservers", arrayToSet([walletOperator])]]),
+          owner: primaryParty,
+          id: { unpack: accountId }
+        }
+      )
+      .then(() => {
+        setMessage(`Account created (ID: ${accountId})`);
+        setError("");
+        setIsModalOpen(false);
+      })
+      .catch((err) => {
+        setIsModalOpen(false);
+        setMessage("");
+        setError("Sorry that didn't work");
+        console.error("Unable to create account", err);
+      });
     setIsModalOpen(!isModalOpen);
   };
 
+  const incomingControllers = (props.accountOffer.view.ownerIncomingControlled ? ["Account owner"] : [])
+    .concat(setToArray(props.accountOffer.view.additionalControllers.incoming).map(truncateParty));
+  const outgoingControllers = (props.accountOffer.view.ownerOutgoingControlled ? ["Account owner"] : [])
+    .concat(setToArray(props.accountOffer.view.additionalControllers.outgoing).map(truncateParty));
 
   return (
     <>
       <div>
-        {message !== "" ? (
-          <>
+        {
+          message !== "" ? 
             <span
               style={{
                 color: "#66FF99",
@@ -98,9 +94,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
             >
               {message}
             </span>
-          </>
-        ) : (
-          <>
+           :
             <span
               style={{
                 color: "#FF6699",
@@ -110,33 +104,43 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
             >
               {error}
             </span>
-          </>
-        )}
+        }
       </div>
       <p></p>
       <CardContainer>
+        <h4 className="profile__title">{props.accountOffer.view.description}</h4>
         <ContainerDiv>
           <ContainerColumn>
-            <ContainerColumnKey>Offer Description:</ContainerColumnKey>
-            <ContainerColumnKey>Provider:</ContainerColumnKey>
+            <ContainerColumnKey>Register:</ContainerColumnKey>
+            <ContainerColumnKey>Transaction authorisers:</ContainerColumnKey>
+            <ContainerColumnKey> - Incoming:</ContainerColumnKey>
+            <ContainerColumnKey> - Outgoing:</ContainerColumnKey>
             <p></p>
             <button
               type="button"
               className="button__login"
               style={{ width: "150px" }}
-              onClick={() => handleClick(props.accountOffer)}
+              onClick={handleClick}
             >
               Open Account
             </button>
           </ContainerColumn>
           <ContainerColumn>
-            <ContainerColumnValue>{props.accountOffer.view.description}</ContainerColumnValue>
-            <ContainerColumnValue><HoverPopUp triggerText={nameFromParty(props.accountOffer.view.custodian)} popUpContent={props.accountOffer.view.custodian} /></ContainerColumnValue>
+            <ContainerColumnValue>
+              <HoverPopUp
+                triggerText={truncateParty(props.accountOffer.view.custodian)}
+                popUpContent={props.accountOffer.view.custodian}
+              />
+            </ContainerColumnValue>
+            <ContainerColumnValue>&nbsp;</ContainerColumnValue>
+            <ContainerColumnValue>
+              {incomingControllers.length > 0 ? incomingControllers.join(", ") : "N/A"}
+            </ContainerColumnValue>
+            <ContainerColumnValue>{outgoingControllers.join(", ")}</ContainerColumnValue>
           </ContainerColumn>
         </ContainerDiv>
       </CardContainer>
       <Modal
-        id="shareSbtModal"
         className="simpleModal"
         isOpen={isModalOpen}
         onRequestClose={handleCloseMessageModal}
@@ -145,20 +149,16 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
         <form id="modalForm">
           <div style={{ fontSize: "1.5rem" }}>
             <table style={{ width: "300px" }}>
+              <caption>{props.accountOffer.view.description}</caption>
               <tbody>
-                {accountOffer!== undefined && 
-              <tr>
-                  <td style={{width: "95px"}}>Custodian:</td><td>{nameFromParty(accountOffer?.view.custodian)}</td>
-                </tr>
-              }
                 <tr>
-                  <td style={{width: "95px"}}>Offer Name:</td><td>{accountOffer?.view.description}</td>
+                  <td style={{width: "95px"}}>Register:</td><td>{truncateParty(props.accountOffer.view.custodian)}</td>
                 </tr>
                 <tr>
-                  <td style={{width: "95px"}}>Description:
-                    </td>
-                    <td>
-
+                  <td style={{width: "95px"}}>
+                    Nickname:
+                  </td>
+                  <td>
                     <input
                       type="text"
                       id="accountName"
@@ -167,7 +167,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
                       value={accountName}
                       onChange={handleAccountName}
                     />
-                    </td>
+                  </td>
                 </tr>
               </tbody>
             </table>

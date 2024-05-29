@@ -8,13 +8,13 @@ export const NavBarTabs = () => {
   const commonsTabs = [
     (<NavBarTab path="/" key="home" label="Home" />),
     (<NavBarTab path="/account/create" key="account-create" label="Open Account" />),
-    (<NavBarTab path="/offers" key="requests" label="Requests" />),
+    (<NavBarTab path="/requests" key="requests" label="Requests" />),
     (<NavBarTab path="/settlements" key="settlements" label="Transactions" />),
-    (<NavBarTab path="/directory" key="directory" label="Directory" />)
+    (<NavBarTab path="/directory" key="directory" label="Directory" />),
+    (<NavBarTab path="/offer" key="offers" label="Offers" />)
   ];
-  const investorTabs = [(<NavBarTab path="/fund" key="fund" label="Invest" />)]
   const issuerTabs = [(<NavBarTab path="/issuers" key="issuers" label="Issuance" />)];
-  const tabs = walletMode === "investor" ? commonsTabs.concat(investorTabs) : commonsTabs.concat(issuerTabs);
+  const tabs = walletMode === "investor" ? commonsTabs : commonsTabs.concat(issuerTabs);
   const loginTab = (
     <NavBarTab path="/" label="Home" />
   );

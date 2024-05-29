@@ -4,6 +4,7 @@ import { LogoutButton } from "../../buttons/logout-button";
 import HoverPopUp from "../../layout/hoverPopUp";
 import { useWalletUser } from "../../../App";
 import { walletMode } from "../../../Configuration";
+import { truncateParty } from "../../../Util";
 
 export const NavBarButtons = () => {
   const { isAuthenticated, user } = useAuth0();
@@ -20,7 +21,7 @@ export const NavBarButtons = () => {
         <>
           <div style={{ position: "relative", right: "20%", bottom: "15%" }}>
             {user !== undefined && user.email} <br />
-            <HoverPopUp popUpContent={primaryParty} triggerText={primaryParty === undefined ? "" : (primaryParty.substring(0,30) + "...")}></HoverPopUp>
+            <HoverPopUp popUpContent={primaryParty} triggerText={primaryParty === undefined ? "" : truncateParty(primaryParty)}></HoverPopUp>
             <br />
             {walletMode[0].toUpperCase() + walletMode.substring(1)} Wallet 
             <br/>

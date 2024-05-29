@@ -5,11 +5,11 @@
       "custodian": "SynfiniValidator",
       "additionalIncomingControllers": [],
       "additionalOutgoingControllers": [],
-      "ownerIncomingControlled": false,
+      "ownerIncomingControlled": true,
       "ownerOutgoingControlled": true,
       "accountFactory": "v1",
       "holdingFactory": "FungibleV1",
-      "description": "Account Offer 01",
+      "description": "Synfini investments account",
       "observers": [
         {
           "context": "setup",
@@ -23,11 +23,11 @@
       "custodian": "SynfiniValidator",
       "additionalIncomingControllers": [],
       "additionalOutgoingControllers": [],
-      "ownerIncomingControlled": false,
+      "ownerIncomingControlled": true,
       "ownerOutgoingControlled": true,
       "accountFactory": "v1",
-      "holdingFactory": "FungibleV1",
-      "description": "Account Offer 02",
+      "holdingFactory": "NonTransferableV1",
+      "description": "Synfini non-transferable assets account",
       "observers": [
         {
           "context": "setup",

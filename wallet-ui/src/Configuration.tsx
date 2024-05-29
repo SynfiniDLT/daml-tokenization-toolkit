@@ -1,4 +1,7 @@
 import { Id } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
+import { Factory as SettlementFactory } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Factory";
+import * as damlTypes from "@daml/types";
+import { RouteProvider } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/RouteProvider";
 
 function getRequiredVariable(variable: string): string {
   const value = process.env[variable];
@@ -27,4 +30,8 @@ export const sbtCustodian = getRequiredVariable("REACT_APP_PARTIES_SBT_CUSTODIAN
 export const sbtDepository = getRequiredVariable("REACT_APP_PARTIES_SBT_INSTRUMENT_DEPOSITORY");
 export const sbtIssuer = getRequiredVariable("REACT_APP_PARTIES_SBT_INSTRUMENT_ISSUER");
 
-export const pollDelay =  parseInt(getRequiredVariable("REACT_APP_POLL_DELAY"));
+export const pollDelay = parseInt(getRequiredVariable("REACT_APP_POLL_DELAY"));
+export const maxPolls = parseInt(getRequiredVariable("REACT_APP_POLL_MAX"));
+
+export const settlementFactoryCid = getRequiredVariable("REACT_APP_SETTLEMENT_FACTORY_CID") as damlTypes.ContractId<SettlementFactory>;
+export const routeProviderCid = getRequiredVariable("REACT_APP_ROUTE_PROVIDER_CID") as damlTypes.ContractId<RouteProvider>;

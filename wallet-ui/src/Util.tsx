@@ -4,42 +4,42 @@ import { View as DisclosureView } from "@daml.js/daml-finance-interface-util/lib
 import { View as MetadataView } from "@daml.js/synfini-instrument-metadata-interface/lib/Synfini/Interface/Instrument/Metadata/Metadata";
 import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlTypes from "@daml/types";
+import Decimal from "decimal.js";
+import { customAlphabet } from "nanoid";
 
-export function formatCurrency(amountString: string, locale: string): string {
-  const amount = parseFloat(amountString);
-
-  if (isNaN(amount)) {
-    return "Invalid amount";
+export function formatCurrency(amount: damlTypes.Decimal | Decimal): string {
+  let amountDecimal: Decimal;
+  if (typeof amount === "string") {
+    try {
+      amountDecimal = new Decimal(amount);
+    } catch (e: any) {
+      return "Invalid amount"
+    }
+  } else {
+    amountDecimal = amount;
   }
 
-  const formatter = new Intl.NumberFormat(locale, {
-    style: "decimal",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-
-  return formatter.format(amount);
+  return amountDecimal.toFixed(amountDecimal.decimalPlaces());
 }
 
-export function formatOptionalCurrency(amount: damlTypes.Optional<string>, locale: string): string {
-  if (amount == null) {
+export function formatOptionalCurrency(amount: damlTypes.Optional<damlTypes.Decimal | Decimal>): string {
+  if (amount === null) {
     return "N/A";
   } else {
-    return formatCurrency(amount, locale);
+    return formatCurrency(amount);
   }
 }
 
-// TODO clean this function up
-export function nameFromParty(party: string) {
-  let name = "";
+export function truncateParty(party: damlTypes.Party) {
+  const splitted = party.split("::");
 
-  if (party === "" || party === undefined) {
-    return "";
-  } else {
-    name = party.split("::")[0];
+  if (splitted.length === 2) {
+    if (splitted[1].length > 15) {
+      return `${splitted[0]}::${splitted[1].substring(0, 10)}...${splitted[1].substring(splitted[1].length - 5)}`
+    }
   }
-
-  return name;
+  console.warn(`Malformed party ID: "${party}"`);
+  return party;
 }
 
 export const toDateTimeString = (inputDate: damlTypes.Time) => {
@@ -81,6 +81,12 @@ export function setToArray<T>(set: DamlSet<T>): T[] {
   return set.map.entriesArray().map(([x, _]) => x);
 }
 
+export function insertIntoSet<T>(set: DamlSet<T>, element: T): DamlSet<T> {
+  return {
+    map: set.map.set(element, {})
+  };
+}
+
 // React does not copy down the functions available on state variables, so we use this workaround to add these methods
 // back onto the `Map` instance
 export function repairMap<K, V>(map: damlTypes.Map<K, V>) {
@@ -88,6 +94,20 @@ export function repairMap<K, V>(map: damlTypes.Map<K, V>) {
   if (Object.getPrototypeOf(map) !== mapProtoType) {
     Object.setPrototypeOf(map, mapProtoType);
   }
+}
+
+const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+function randomIdentifier(length: number): string {
+  return customAlphabet(alphabet, length)();
+}
+
+export function randomIdentifierShort() {
+  return randomIdentifier(12);
+}
+
+export function randomIdentifierLong() {
+  return randomIdentifier(18);
 }
 
 export type MetadataSummary = {
@@ -103,3 +123,6 @@ export type InstrumentMetadataSummary = {
     view: HoldingView
   }
 };
+
+// Type used to indicate that the page is on its first render and therefore data must be fetched from the backend
+export type FirstRender = "FirstRender";

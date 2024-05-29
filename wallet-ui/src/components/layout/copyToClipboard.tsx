@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Clipboard, ClipboardCheck } from "react-bootstrap-icons";
 
 export default function CopyToClipboard(props: { paramToCopy: any; paramToShow: any }) {
@@ -12,14 +12,15 @@ export default function CopyToClipboard(props: { paramToCopy: any; paramToShow: 
   return (
     <span onClick={() => copyContentClipboard(props.paramToCopy)}>
       {props.paramToShow}{" "}
-      {!toggleClipboard ? (
-        <Clipboard />
-      ) : (
-        <>
-          <ClipboardCheck />
-          <span> copied!</span>
-        </>
-      )}
+      {
+        !toggleClipboard ?
+          <Clipboard />
+        :
+          <>
+            <ClipboardCheck />
+            <span> copied!</span>
+          </>
+      }
     </span>
   );
 }
@@ -35,14 +36,15 @@ export function CopyToClipboardFromPopUp(props: { paramToCopy: any }) {
   return (
     <span onClick={() => copyContentClipboard(props.paramToCopy)}>
       {props.paramToCopy}{" "}
-      {!toggleClipboard ? (
-        <Clipboard />
-      ) : (
-        <>
-          <ClipboardCheck />
-          <span> copied!</span>
-        </>
-      )}
+      {
+        !toggleClipboard ?
+          <Clipboard />
+        :
+          <>
+            <ClipboardCheck />
+            <span> copied!</span>
+          </>
+      }
     </span>
   );
 }

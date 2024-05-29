@@ -146,6 +146,10 @@ elif [ "$command" = "create-settlement-open-offers" ]; then
   ${dops_commands}/create-settlement-open-offers.sh $@
 elif [ "$command" = "take-settlement-open-offer" ]; then
   ${dops_commands}/take-settlement-open-offer.sh $@
+elif [ "$command" = "create-settlement-one-time-offers" ]; then
+  ${dops_commands}/create-settlement-one-time-offers.sh $@
+elif [ "$command" = "accept-settlement-one-time-offer" ]; then
+  ${dops_commands}/accept-settlement-one-time-offer.sh $@
 elif [ "$command" = "accept-settlement" ]; then
   ${dops_commands}/accept-settlement.sh $@
 elif [ "$command" = "execute-settlement" ]; then

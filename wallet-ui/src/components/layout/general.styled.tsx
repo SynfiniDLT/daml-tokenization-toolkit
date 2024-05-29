@@ -26,7 +26,7 @@ export const CardContainer = styled.div<CardContainerProps>`
   border-radius: 12px;
   margin: 15px;
   padding: 10px;
-  cursor: ${(props) => (props.pointer ? "pointer" : "default")};
+  cursor: ${props => props.pointer ? "pointer" : "default"};
   background-color: #2a2b2f;
   box-shadow: inset 0 0 0.5px 1px hsla(0, 0%, 100%, 0.075),
     0 0 0 1px hsla(0, 0%, 0%, 0.05), 0 0.3px 0.4px hsla(0, 0%, 0%, 0.02),
@@ -38,17 +38,21 @@ export const ContainerDiv = styled.div`
   flex-direction: row;
   justify-content: space-between;
   width: 300px; /* Adjust the width as needed */
+  padding: 0px;
 `;
 
 export const ContainerColumn = styled.div`
   display: flex;
   flex-direction: column;
   min-width: 250px;
+  padding: 0px;
 `;
 
 export const ContainerColumnKey = styled.p`
   margin-bottom: 5px;
   padding: 5px;
+  text-align: left;
+  padding: 0px;
 `;
 
 export const ContainerColumnField = styled.div`
@@ -71,6 +75,8 @@ export const ContainerColumnValue = styled.p`
   justify-content: space-between;
   margin-left: 10px;
   white-space: nowrap;
+  text-align: left;
+  padding: 0px;
 `;
 
 export const KeyValuePair = styled.div`

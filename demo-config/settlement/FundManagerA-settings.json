@@ -3,6 +3,9 @@
   "takeOpenOfferSettings": {
     "taker": "FundManagerA"
   },
+  "acceptOneTimeOfferSettings": {
+    "acceptor": "FundManagerA"
+  },
   "acceptSettlementSettings": {
     "acceptor": "FundManagerA",
     "settlementPreferences": [

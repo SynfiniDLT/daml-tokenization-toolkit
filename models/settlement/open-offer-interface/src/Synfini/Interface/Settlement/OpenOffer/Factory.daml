@@ -51,6 +51,7 @@ interface Factory requires Disclosure.I where
         -- accepted.
       minQuantity : Optional Decimal -- ^ Minimum quantity that can be specified by the taker.
       maxQuantity :  Optional Decimal  -- ^ Maximum quantity that can be specified by the taker.
+      increment : Optional Decimal -- ^ Required increment of quantity that can be specified by the taker.
       routeProviderCid : ContractId RouteProvider.I -- ^ Route provider used to determine the custodian(s) used for
         -- settlement.
       settlementFactoryCid : ContractId SettlementFactory.I -- ^ Settlement factory used to instruct settlement.
