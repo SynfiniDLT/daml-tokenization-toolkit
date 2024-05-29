@@ -25,7 +25,7 @@ import { Batch } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finan
 import Modal from "react-modal";
 import AccountsSelect from "./accountsSelect";
 import { useWalletUser, useWalletViews } from "../../App";
-import { maxPolls, pollDelay, stableCoinInstrumentId } from "../../Configuration";
+import { maxPolls, pollDelay } from "../../Configuration";
 import { RoutedStep } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Types";
 import { Set as DamlSet } from "@daml.js/da-set/lib/DA/Set/Types";
 import { FirstRender } from "../../Util";
@@ -109,20 +109,19 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
             <span style={{whiteSpace: "pre-wrap"}}>{props.settlement.description}</span>
           <br />
           <Field>Transaction Status:</Field>
-          {props.settlement.execution === null ? (
-            <FieldPending>Pending</FieldPending>
-          ) : (
-            <FieldSettled>Settled</FieldSettled>
-          )}
+          {
+            props.settlement.execution === null ? 
+              <FieldPending>Pending</FieldPending>
+           :
+              <FieldSettled>Settled</FieldSettled>
+          }
           <br />
           <Field>Created Time:</Field>
           {toDateTimeString(props.settlement.witness.effectiveTime)}
           <br />
-          {props.settlement.execution !== null && (
-            <>
-              <Field>Settled Time:</Field>
-            </>
-          )}
+          {
+            props.settlement.execution !== null && <Field>Settled Time:</Field>
+          }
           {props.settlement.execution !== null && toDateTimeString(props.settlement.execution.effectiveTime)}
         </div>
 
@@ -148,7 +147,8 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
                     {`${step.routedStep.quantity.unit.id.unpack} ${step.routedStep.quantity.unit.version}`}
                   </a>
                 <br />
-                {!isMint(step.routedStep) &&
+                {
+                  !isMint(step.routedStep) &&
                   <>
                     <Field>Sender: </Field>
                     {truncateParty(step.routedStep.sender)}
@@ -156,7 +156,8 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
                   </>
                 }
 
-                {!isBurn(step.routedStep) &&
+                {
+                  !isBurn(step.routedStep) &&
                   <>
                     <Field>Receiver: </Field>
                     {truncateParty(step.routedStep.receiver)}
@@ -234,7 +235,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
         );
 
       if (filteredSettlements.length !== 1) {
-        console.log("Warning: settlement not found!");
+        console.warn("Settlement not found");
         setRefresh(0);
         setDirtyInstructions(undefined);
         return;
@@ -613,23 +614,20 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
             {settlement.description}
             <br />
             <Field>Transaction Status:</Field>
-            {settlement.execution === null ? (
-              <FieldPending>Pending</FieldPending>
-            ) : (
-              <FieldSettled>Settled</FieldSettled>
-            )}
+            {
+              settlement.execution === null ?
+                <FieldPending>Pending</FieldPending>
+             :
+                <FieldSettled>Settled</FieldSettled>
+            }
             <br />
             <Field>Authorised Settlers:</Field>
-            {setToArray(settlement.settlers).map(p => truncateParty(p)).join(", ")}
+            {setToArray(settlement.settlers).map(truncateParty).join(", ")}
             <br />
             <Field>Created Time:</Field>
             {toDateTimeString(settlement.witness.effectiveTime)}
             <br />
-            {settlement.execution !== null && (
-              <>
-                <Field>Settled Time:</Field>
-              </>
-            )}
+            {settlement.execution !== null && <Field>Settled Time:</Field>}
             {settlement.execution !== null && toDateTimeString(settlement.execution.effectiveTime)}
             {settlement.execution !== null && <> | Offset: </>}
             {settlement.execution !== null && settlement.execution.offset}
@@ -667,43 +665,35 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                         {`${step.routedStep.quantity.unit.id.unpack} ${step.routedStep.quantity.unit.version}`}
                       </a>
                       <br />
-                      {!isMint(step.routedStep) &&
-                        <div
-                          style={{
-                            ...(step.routedStep.sender === primaryParty && step.allocation.tag === "Unallocated"
-                              ? { border: "1px solid", width: "fit-content" }
-                              : {}),
-                          }}
-                        >
-                          <Field>Sender: </Field>
-                          <span
+                      {
+                        !isMint(step.routedStep) &&
+                          <div
                             style={{
-
-                              fontWeight:
-                               step.routedStep.sender === primaryParty
-                                  ? "bold"
-                                  : "normal",
+                              ...(step.routedStep.sender === primaryParty && step.allocation.tag === "Unallocated"
+                                ? { border: "1px solid", width: "fit-content" }
+                                : {}),
                             }}
                           >
-                            {truncateParty(step.routedStep.sender)}
-                          </span>
-                        </div>
+                            <Field>Sender: </Field>
+                            <span
+                              style={{
+                                fontWeight: step.routedStep.sender === primaryParty ? "bold" : "normal",
+                              }}
+                            >
+                              {truncateParty(step.routedStep.sender)}
+                            </span>
+                          </div>
                       }
                       <div
                         style={{
-                          ...(step.routedStep.receiver === primaryParty &&
-                          step.approval.tag === "Unapproved"
-                            ? { border: "1px solid", width: "fit-content" }
-                            : {}),
+                          ...(step.routedStep.receiver === primaryParty && step.approval.tag === "Unapproved" ?
+                            { border: "1px solid", width: "fit-content" } : {}),
                         }}
                       >
                         <Field>Receiver: </Field>
                         <span
                           style={{
-                            fontWeight:
-                              step.routedStep.receiver === primaryParty
-                                ? "bold"
-                                : "normal",
+                            fontWeight: step.routedStep.receiver === primaryParty ? "bold" : "normal",
                           }}
                         >
                           {truncateParty(step.routedStep.receiver)}
@@ -713,31 +703,33 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                       {truncateParty(step.routedStep.custodian)}
                       <br />
                       <Field>{isMint(step.routedStep) ? "Issuer response:" : "Sender response:"}</Field>
-                      {step.allocation.tag === "Unallocated" ?
-                        <span style={{ color: "hsl(0, 90%, 80%)" }}>Pending</span>
-                      : step.allocation.tag === "Pledge" ?
-                        `Send from account ${settlementHoldings.get(step.allocation.value)?.account.id.unpack}`
-                      : step.allocation.tag === "PassThroughFrom" ?
-                        `Pass through from instruction ${step.allocation.value._2.id.unpack}`
-                      : step.allocation.tag === "CreditReceiver" ?
-                        "Credit approved"
-                      : step.allocation.tag === "SettleOffledger" ?
-                        "Settle off-ledger"
-                      : "Allocated"
+                      {
+                        step.allocation.tag === "Unallocated" ?
+                          <span style={{ color: "hsl(0, 90%, 80%)" }}>Pending</span>
+                        : step.allocation.tag === "Pledge" ?
+                          `Send from account ${settlementHoldings.get(step.allocation.value)?.account.id.unpack}`
+                        : step.allocation.tag === "PassThroughFrom" ?
+                          `Pass through from instruction ${step.allocation.value._2.id.unpack}`
+                        : step.allocation.tag === "CreditReceiver" ?
+                          "Credit approved"
+                        : step.allocation.tag === "SettleOffledger" ?
+                          "Settle off-ledger"
+                        : "Allocated"
                       }
                       <br />
                       <Field>{isBurn(step.routedStep) && step.routedStep.sender !== step.routedStep.custodian ? "Issuer response:" : "Receiver response:"}</Field>
-                      {step.approval.tag === "Unapproved" ?
-                        <span style={{ color: "hsl(0, 90%, 80%)" }}>Pending</span>
-                      : step.approval.tag === "TakeDelivery" ?
-                        `Take delivery to account ${step.approval.value.id.unpack}`
-                      : step.approval.tag === "PassThroughTo" ?
-                        `Pass through to instruction ${step.approval.value._2.id.unpack} via account ${step.approval.value._1.id.unpack}`
-                      : step.approval.tag === "DebitSender" ?
-                        "Debit approved"
-                      : step.approval.tag === "SettleOffledgerAcknowledge" ?
-                        "Settle off-ledger"
-                      : "Approved"
+                      {
+                        step.approval.tag === "Unapproved" ?
+                          <span style={{ color: "hsl(0, 90%, 80%)" }}>Pending</span>
+                        : step.approval.tag === "TakeDelivery" ?
+                          `Take delivery to account ${step.approval.value.id.unpack}`
+                        : step.approval.tag === "PassThroughTo" ?
+                          `Pass through to instruction ${step.approval.value._2.id.unpack} via account ${step.approval.value._1.id.unpack}`
+                        : step.approval.tag === "DebitSender" ?
+                          "Debit approved"
+                        : step.approval.tag === "SettleOffledgerAcknowledge" ?
+                          "Settle off-ledger"
+                        : "Approved"
                       }
                       <br />
                     </div>
@@ -751,11 +743,12 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
           <button type="submit" className="button__login" style={{ width: "180px" }}>
             Apply
           </button>
-          {showExecute && (
+          {
+            showExecute &&
             <button type="button" className="button__login" style={{ width: "150px" }} onClick={() => handleExecute()}>
               Execute
             </button>
-          )}
+          }
         </div>
       </form>
       <Modal
@@ -767,11 +760,12 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
       >
         <>
           <div>
-            {message !== "" ? (
-              <span style={{ color: "#66FF99", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{message}</span>
-            ) : (
-              <span style={{ color: "#FF6699", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{error}</span>
-            )}
+            {
+              message !== "" ?
+                <span style={{ color: "#66FF99", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{message}</span>
+             :
+                <span style={{ color: "#FF6699", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{error}</span>
+            }
           </div>
           <p></p>
           <div className="containerButton">

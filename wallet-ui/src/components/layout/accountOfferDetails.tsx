@@ -83,8 +83,8 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
   return (
     <>
       <div>
-        {message !== "" ? (
-          <>
+        {
+          message !== "" ? 
             <span
               style={{
                 color: "#66FF99",
@@ -94,9 +94,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
             >
               {message}
             </span>
-          </>
-        ) : (
-          <>
+           :
             <span
               style={{
                 color: "#FF6699",
@@ -106,8 +104,7 @@ export default function AccountOfferDetails(props: AccountOpenOfferSummaryProps)
             >
               {error}
             </span>
-          </>
-        )}
+        }
       </div>
       <p></p>
       <CardContainer>

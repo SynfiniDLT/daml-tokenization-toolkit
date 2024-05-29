@@ -11,16 +11,17 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
   };
 
   return (
-    <>
-      <div style={{ margin: "10px", padding: "10px" }}>
-        {props.instruments !== undefined && (
-          <>
-            <div style={{ marginTop: "15px" }}>
-              <h4 className="profile__title">Tokens issued</h4>
-            </div>
-            {props.instruments.length === 0 ? (
+    <div style={{ margin: "10px", padding: "10px" }}>
+      {
+        props.instruments !== undefined &&
+        <>
+          <div style={{ marginTop: "15px" }}>
+            <h4 className="profile__title">Tokens issued</h4>
+          </div>
+          {
+            props.instruments.length === 0 ?
               <span style={{ color: "white" }}>You have not created any tokens.</span>
-            ) : (
+            :
               <table className="assets">
                 <thead>
                   <tr>
@@ -32,8 +33,9 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
                 </thead>
 
                 <tbody>
-                  {props.instruments.map(instrumentSummary => 
-                    instrumentSummary.tokenView !== null && (
+                  {
+                    props.instruments.map(instrumentSummary => 
+                      instrumentSummary.tokenView !== null &&
                       <tr key={instrumentSummary.cid}>
                         <td>{truncateParty(instrumentSummary.tokenView.token.instrument.issuer)}</td>
                         <td>{truncateParty(instrumentSummary.tokenView.token.instrument.depository)}</td>
@@ -45,13 +47,12 @@ export default function InstrumentsToken(props: { instruments?: InstrumentSummar
                         <td>{toDateTimeString(instrumentSummary.tokenView.token.validAsOf)}</td>
                       </tr>
                     )
-                  )}
+                  }
                 </tbody>
               </table>
-            )}
-          </>
-        )}
-      </div>
-    </>
+          }
+        </>
+      }
+    </div>
   );
 }

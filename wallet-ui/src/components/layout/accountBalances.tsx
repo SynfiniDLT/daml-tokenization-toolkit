@@ -369,21 +369,18 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
           <div>
             {
               error === "" ?
-                <>
-                  <p>
-                    Transfer instructed (pending receiver approval)
-                    <br/>
-                    Transaction ID:
-                    <a
-                      href={`http://${window.location.host}/settlements#${transferBatchId?.unpack}`}
-                      style={{ color: "#66FF99" }}
-                    >
-                      {` ${transferBatchId?.unpack}`}
-                      {" "}<BoxArrowUpRight />
-                    </a>
-                  </p>
-                  
-                </>
+                <p>
+                  Transfer instructed (pending receiver approval)
+                  <br/>
+                  Transaction ID:
+                  <a
+                    href={`http://${window.location.host}/settlements#${transferBatchId?.unpack}`}
+                    style={{ color: "#66FF99" }}
+                  >
+                    {` ${transferBatchId?.unpack}`}
+                    {" "}<BoxArrowUpRight />
+                  </a>
+                </p>
               :
                 <span style={{ color: "#FF6699", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{error}</span>
             }
