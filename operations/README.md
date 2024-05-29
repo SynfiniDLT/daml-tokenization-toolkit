@@ -206,7 +206,7 @@ Allocate parties on the participant node.
 {
   "partySettings": [ // One or more parties to allocate
     {
-      "label": "alice", // Label of the party which can referenced in other input files
+      "label": "alice", // Label of the party which can be referenced in other input files
       "displayName": "Alice", // Party display name
       "partyIdHint": "alice" // Hint to determine party ID - optional - uses randomly generated party ID if not provided
     }
@@ -857,6 +857,7 @@ Create settlement `OneTimeOffer`s. Please refer to the interfaces and templates 
     {
       "offerId": "abc123...", // Offer ID (this must be a unique value)
       "offerers": ["alice"], // Labels of one or more parties which authorise the offer creation
+      "offeree": "bob", // Label of the party who has the choice to accept or reject the offer
       "offerDescription": "abc123...",
       "settlementInstructors": [ // Labels of one or more parties who will authorise the settlement instruction
         "alice",

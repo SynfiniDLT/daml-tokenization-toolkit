@@ -7,7 +7,8 @@ export default function Requests(props: { offers?: CreateEvent<OneTimeOffer, und
     <>
       <div style={{ margin: "10px", padding: "10px" }}>
         {props.offers?.length === 0 && <p>You have no pending requests at this time</p>}
-        {props.offers !== undefined && props.offers.length > 0 && (
+        {
+          props.offers !== undefined && props.offers.length > 0 &&
           <table className="assets">
             <thead>
               <tr>
@@ -20,7 +21,7 @@ export default function Requests(props: { offers?: CreateEvent<OneTimeOffer, und
               {props.offers.map(offer => <RequestDetails offer={offer} key={offer.contractId}/>)}
             </tbody>
           </table>
-        )}
+        }
       </div>
     </>
   );

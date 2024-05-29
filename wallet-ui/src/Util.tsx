@@ -81,6 +81,12 @@ export function setToArray<T>(set: DamlSet<T>): T[] {
   return set.map.entriesArray().map(([x, _]) => x);
 }
 
+export function insertIntoSet<T>(set: DamlSet<T>, element: T): DamlSet<T> {
+  return {
+    map: set.map.set(element, {})
+  };
+}
+
 // React does not copy down the functions available on state variables, so we use this workaround to add these methods
 // back onto the `Map` instance
 export function repairMap<K, V>(map: damlTypes.Map<K, V>) {

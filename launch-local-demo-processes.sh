@@ -28,14 +28,15 @@ function create_identity_token() {
     --route-provider validatorCustodianV1 \
     --read-as SynfiniPublic
 
+  dops \
+    accept-settlement-one-time-offer \
+    "${config_dir}/settlement/${owner}-settings.json" \
+    SbtIssuer \
+    $sbt_offer_id \
+    1 \
+    SBT
+
   if [ "$settle" = "settle" ]; then
-    dops \
-      accept-settlement-one-time-offer \
-      "${config_dir}/settlement/${owner}-settings.json" \
-      SbtIssuer \
-      $sbt_offer_id \
-      1 \
-      SBT
     dops accept-settlement "${config_dir}/settlement/${owner}-settings.json" "SbtIssuer,$owner" $sbt_offer_id
     dops accept-settlement ${config_dir}/settlement/SbtIssuer-settings.json "SbtIssuer,$owner" $sbt_offer_id
     dops execute-settlement ${config_dir}/settlement/SbtIssuer-settings.json "SbtIssuer,$owner" $sbt_offer_id
