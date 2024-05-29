@@ -667,22 +667,22 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                       <br />
                       {
                         !isMint(step.routedStep) &&
-                          <div
+                        <div
+                          style={{
+                            ...(step.routedStep.sender === primaryParty && step.allocation.tag === "Unallocated"
+                              ? { border: "1px solid", width: "fit-content" }
+                              : {}),
+                          }}
+                        >
+                          <Field>Sender: </Field>
+                          <span
                             style={{
-                              ...(step.routedStep.sender === primaryParty && step.allocation.tag === "Unallocated"
-                                ? { border: "1px solid", width: "fit-content" }
-                                : {}),
+                              fontWeight: step.routedStep.sender === primaryParty ? "bold" : "normal",
                             }}
                           >
-                            <Field>Sender: </Field>
-                            <span
-                              style={{
-                                fontWeight: step.routedStep.sender === primaryParty ? "bold" : "normal",
-                              }}
-                            >
-                              {truncateParty(step.routedStep.sender)}
-                            </span>
-                          </div>
+                            {truncateParty(step.routedStep.sender)}
+                          </span>
+                        </div>
                       }
                       <div
                         style={{
