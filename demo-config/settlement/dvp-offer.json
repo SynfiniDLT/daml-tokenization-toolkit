@@ -1,0 +1,47 @@
+{
+  "readAs": ["SynfiniPublic"],
+  "settlementOneTimeOfferSettings": [
+    {
+      "offerId": "DVP_123456",
+      "offerers": ["InvestorA"],
+      "offeree": "InvestorB",
+      "offerDescription": "Trade: FundA units for StableCoin",
+      "settlementInstructors": [
+        "InvestorA",
+        "InvestorB"
+      ],
+      "settlers": ["InvestorA",  "InvestorB"],
+      "steps": [
+        {
+          "sender": "InvestorA",
+          "receiver": "InvestorB",
+          "instrumentDepository": "FundDepository",
+          "instrumentIssuer": "FundA",
+          "instrumentId": "FundA",
+          "instrumentVersion": "v1",
+          "amount": 1
+        },
+        {
+          "sender": "InvestorB",
+          "receiver": "InvestorA",
+          "instrumentDepository": "StableCoinDepository",
+          "instrumentIssuer": "StableCoinIssuer",
+          "instrumentId": "StableCoin",
+          "instrumentVersion": "v1",
+          "amount": 99.9
+        }
+      ],
+      "minQuantity": 10,
+      "maxQuantity": 10,
+      "settlementOneTimeOfferFactory": "V1",
+      "routeProvider": "validatorCustodianV1",
+      "settlementFactory": "V1",
+      "observers" : [
+        {
+        "context": "WalletOperator",
+        "parties": ["WalletOperator"]
+        }
+      ]
+    }
+  ]
+}
