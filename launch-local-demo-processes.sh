@@ -179,3 +179,6 @@ dops execute-settlement ${config_dir}/settlement/FundA-settings.json FundA,Inves
 
 # Environmental token
 dops create-minter-burners ${config_dir}/environmental-token/minter-burner.json
+
+# DvP
+dops create-settlement-one-time-offers ${config_dir}/settlement/dvp-offer.json
