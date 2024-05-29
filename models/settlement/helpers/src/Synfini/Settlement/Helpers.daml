@@ -187,20 +187,26 @@ allocateAndApproveHelper actors (instructionsMap, holdingsMap) (instrId, instruc
         approval = PassThroughTo (passThroughToAccount, passThroughInstructionKey)
   pure (Map.insert instrId instructionCid instructionsMap, holdingsMap)
 
+-- | Template for the creation of settlement 'Batch' and 'Instruction's to faciliate transfer of a single asset, and
+-- for the sender to pledge their fungible holdings. It is inteded to be created and exercised on in the same
+-- transaction (i.e. a CreateAndExerciseCommand on the ledger API).
 template InstructTransferFromFungiblesHelper
   with
-    id : Id
-    contextId : Optional Id
-    description : Text
-    sender : Party
-    receiver : Party
-    quantity : InstrumentQuantity
-    holdingCids : [ContractId Fungible.I]
-    settlementFactoryCid : ContractId SettlementFactory.F
-    routeProviderCid : ContractId RouteProvider.I
+    id : Id -- ^ Batch ID.
+    contextId : Optional Id -- ^ Batch context ID.
+    description : Text -- ^ Batch description.
+    sender : Party -- ^ Sender of the holding.
+    receiver : Party -- ^ Receiver of the holding.
+    quantity : InstrumentQuantity -- ^ Quantity to transfer.
+    holdingCids : [ContractId Fungible.I] -- ^ Contract IDs of holdings which will be split/merged as required to fit
+      -- the desired amount before pledging.
+    settlementFactoryCid : ContractId SettlementFactory.F -- ^ Factory used to generate 'Batch' and 'Instruction's.
+    routeProviderCid : ContractId RouteProvider.I -- ^ Route provider used to determine custodian(s) to use for
+      -- settlement.
   where
     signatory sender
 
+    -- | Generate the settlement instructions for transfer and pledge the 'Fungbile' holding to send.
     choice InstructTransfer : (ContractId Batch.I, [ContractId Instruction.I])
       controller sender
       do
