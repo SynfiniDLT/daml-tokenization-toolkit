@@ -27,7 +27,7 @@
     "@daml.js/synfini-instrument-metadata-interface": "file:daml.js/synfini-instrument-metadata-interface-0.0.1",
     "@daml.js/synfini-issuer-onboarding-instrument-token-interface": "file:daml.js/synfini-issuer-onboarding-instrument-token-interface-0.0.1",
     "@daml.js/synfini-issuer-onboarding-minter-burner-interface": "file:daml.js/synfini-issuer-onboarding-minter-burner-interface-0.0.1",
-    "@daml.js/synfini-settlement-helpers": "file:daml.js/synfini-settlement-helpers-0.0.1",
+    "@daml.js/synfini-settlement-helpers": "file:daml.js/synfini-settlement-helpers-0.0.2",
     "@daml.js/synfini-settlement-one-time-offer-interface": "file:daml.js/synfini-settlement-one-time-offer-interface-0.0.2",
     "@daml.js/synfini-settlement-open-offer-interface": "file:daml.js/synfini-settlement-open-offer-interface-0.1.0",
     "@daml.js/synfini-wallet-views-types": "file:../wallet-views/typescript-client/daml.js/synfini-wallet-views-types-0.0.3",
