@@ -137,7 +137,8 @@ export const OfferAcceptFormScreen: React.FC = () => {
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
         {state.offer.payload.offerDescription}
       </h3>
-      {referenceId === "" && (
+      {
+        referenceId === "" &&
         <DivBorderRoundContainer>
           <form onSubmit={handleSubmit}>
             <ContainerDiv>
@@ -190,7 +191,8 @@ export const OfferAcceptFormScreen: React.FC = () => {
               Submit
             </button>
           </form>
-          {error !== "" &&
+          {
+            error !== "" &&
             <ContainerColumn style={{minWidth: "400px"}}>
               <ContainerColumnValue>
               <span
@@ -208,11 +210,11 @@ export const OfferAcceptFormScreen: React.FC = () => {
             </ContainerColumn>
           }
         </DivBorderRoundContainer>
-      )}
-      <div>
-        {referenceId !== "" && (
-          <>
-            <p><br/></p>
+      }
+      {
+        referenceId !== "" &&
+        <>
+          <p><br/></p>
           <ContainerDiv>
             <ContainerColumn>
               <ContainerColumnKey>Transaction Id:</ContainerColumnKey>
@@ -228,7 +230,9 @@ export const OfferAcceptFormScreen: React.FC = () => {
 
             <ContainerColumn style={{minWidth: "400px"}}>
               <ContainerColumnValue>
-                <a href={`http://${window.location.host}/settlements#${referenceId}`} style={{color: "#66FF99", textDecoration: "underline"}}>
+                <a
+                  href={`http://${window.location.host}/settlements#${referenceId}`}
+                  style={{color: "#66FF99", textDecoration: "underline"}}>
                   {referenceId} {"    "}<BoxArrowUpRight />
                 </a>
               </ContainerColumnValue>
@@ -236,9 +240,8 @@ export const OfferAcceptFormScreen: React.FC = () => {
               </ContainerColumnValue>
             </ContainerColumn>
           </ContainerDiv>
-          </>
-        )}
-      </div>
+        </>
+      }
     </PageLayout>
   );
 };
