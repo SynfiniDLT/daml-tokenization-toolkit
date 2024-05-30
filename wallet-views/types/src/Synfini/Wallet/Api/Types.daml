@@ -114,24 +114,24 @@ data SettlementSummary
     execution : Optional TransactionDetail
   deriving (Show, Eq)
 
-data Settlements
-  id
-  parties
-  batchCid
-  routedStep
-  instructionCid
-  allocation
-  approval = Settlements
-  with
-    settlements : [SettlementSummary id parties batchCid routedStep instructionCid allocation approval]
-  deriving (Show, Eq)
+-- data Settlements
+--   id
+--   parties
+--   batchCid
+--   routedStep
+--   instructionCid
+--   allocation
+--   approval = Settlements
+--   with
+--     settlements : [SettlementSummary id parties batchCid routedStep instructionCid allocation approval]
+--   deriving (Show, Eq)
 
 newtype SettlementsRaw jsonObject = SettlementsRaw (
-    Settlements jsonObject jsonObject Text jsonObject Text jsonObject jsonObject
+    [SettlementSummary jsonObject jsonObject Text jsonObject Text jsonObject jsonObject]
   ) deriving (Show, Eq)
 
 newtype SettlementsTyped = SettlementsTyped (
-    Settlements Id Parties (ContractId Batch.I) RoutedStep (ContractId Instruction.I) Allocation Approval
+    [SettlementSummary Id Parties (ContractId Batch.I) RoutedStep (ContractId Instruction.I) Allocation Approval]
   ) deriving (Show, Eq)
 
 data SettlementsFilter = SettlementsFilter

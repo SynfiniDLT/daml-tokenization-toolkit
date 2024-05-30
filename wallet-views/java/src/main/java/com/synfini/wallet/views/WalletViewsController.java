@@ -2,11 +2,8 @@ package com.synfini.wallet.views;
 
 import com.daml.ledger.javaapi.data.ListUserRightsResponse;
 import com.daml.ledger.javaapi.data.User;
-import com.daml.ledger.javaapi.data.codegen.DefinedDataType;
 import com.daml.ledger.rxjava.DamlLedgerClient;
 import com.daml.ledger.rxjava.LedgerClient;
-import com.daml.lf.codegen.json.JsonCodec;
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.synfini.wallet.views.config.LedgerApiConfig;
 import com.synfini.wallet.views.config.WalletViewsApiConfig;
@@ -24,7 +21,6 @@ import synfini.wallet.api.types.Balances;
 import synfini.wallet.api.types.HoldingFilter;
 import synfini.wallet.api.types.InstrumentsFilter;
 import synfini.wallet.api.types.IssuersFilter;
-import synfini.wallet.api.types.Settlements;
 import synfini.wallet.api.types.SettlementsFilter;
 import synfini.wallet.api.types.SettlementsRaw;
 
@@ -48,7 +44,6 @@ public class WalletViewsController {
   private final WalletRepository walletRepository;
   private final WalletViewsApiConfig walletViewsApiConfig;
   private final LedgerApiConfig ledgerApiConfig;
-  private static final JsonCodec jsonCodec = JsonCodec.apply(true, true);
 
   @Autowired
   public WalletViewsController(
@@ -141,7 +136,7 @@ public class WalletViewsController {
       try {
         final var settlements = walletRepository.settlements(ledgerClient, parties, filter.before, limit);
         return ResponseEntity.ok(
-          new SettlementsRaw<JsonObject>(new Settlements<>(settlements)).unpack
+          new SettlementsRaw<JsonObject>(settlements)
         );
       } catch (SQLException e) {
         Util.logger.error("Error reading settlements", e);

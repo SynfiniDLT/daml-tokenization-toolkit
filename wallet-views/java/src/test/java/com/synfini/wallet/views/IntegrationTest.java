@@ -76,10 +76,7 @@ import java.net.ServerSocket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.net.http.HttpResponse.BodySubscriber;
-import java.net.http.HttpResponse.ResponseInfo;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -108,6 +105,8 @@ public class IntegrationTest {
   private static final String tokenAudience =
     "https://daml.com/jwt/aud/participant/sandbox::1220facc0504d0689c876c616736695a92dbdd54a2aad49cc7a8b2f54935604c35ac";
   private static final String clientSecret = "secret";
+  private static final JsonCodec jsonCodec = JsonCodec.apply(true, true);
+
   private static MockClient mockTokenClient;
   private static Integer sandboxPort;
   private static Process sandboxProcess;
@@ -131,8 +130,6 @@ public class IntegrationTest {
   private static daml.finance.interface$.settlement.factory.Factory.ContractId settlementFactoryCid;
   private static daml.finance.interface$.instrument.token.factory.Factory.ContractId tokenInstrumentFactoryCid;
   private static synfini.interface$.onboarding.issuer.instrument.token.factory.Factory.ContractId tokenInstrumentIssuerFactoryCid;
-
-  private static final JsonCodec jsonCodec = JsonCodec.apply(true, true);
 
   public static PostgreSQLContainer<?> postgresContainer;
 
@@ -1214,19 +1211,17 @@ public class IntegrationTest {
     // Return expected settlements given the optional settlement transaction detail
     final Function<Optional<TransactionDetail>, SettlementsTyped> expectedSettlements = (settle) ->
       new SettlementsTyped(
-        new Settlements<>(
-          List.of(
-            new SettlementSummary<>(
-              batchId,
-              requestors,
-              settlers,
-              Optional.<daml.finance.interface$.settlement.batch.Batch.ContractId>empty(),
-              Optional.<Id>empty(),
-              Optional.<String>empty(),
-              expectedSteps,
-              new TransactionDetail(createBatchResult.offset, Instant.EPOCH),
-              settle
-            )
+        List.of(
+          new SettlementSummary<>(
+            batchId,
+            requestors,
+            settlers,
+            Optional.<daml.finance.interface$.settlement.batch.Batch.ContractId>empty(),
+            Optional.<Id>empty(),
+            Optional.<String>empty(),
+            expectedSteps,
+            new TransactionDetail(createBatchResult.offset, Instant.EPOCH),
+            settle
           )
         )
       );
@@ -1381,7 +1376,7 @@ public class IntegrationTest {
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(new SettlementsTyped(new Settlements<>(List.of()))))
+        content().json(toJson(new SettlementsTyped(List.of())))
       );
   }
 
@@ -1509,7 +1504,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(new SettlementsTyped(new Settlements<>(List.of(settlement1, settlement2))))
+          toJson(new SettlementsTyped(List.of(settlement1, settlement2)))
         )
       );
 
@@ -1521,7 +1516,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(new SettlementsTyped(new Settlements<>(List.of(settlement1))))
+          toJson(new SettlementsTyped(List.of(settlement1)))
         )
       );
 
@@ -1533,7 +1528,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(new SettlementsTyped(new Settlements<>(List.of(settlement2))))
+          toJson(new SettlementsTyped(List.of(settlement2)))
         )
       );
 
@@ -1545,7 +1540,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(new SettlementsTyped(new Settlements<>(List.of(settlement2VisibleToCustodian))))
+          toJson(new SettlementsTyped(List.of(settlement2VisibleToCustodian)))
         )
       );
   }
@@ -2236,20 +2231,6 @@ public class IntegrationTest {
 
   private static <T> String toJson(DefinedDataType<T> value) {
     return jsonCodec.toJsValue(value.toValue()).compactPrint();
-  }
-
-  private static String toJson(SettlementsTyped settlementsTyped) {
-    return jsonCodec.toJsValue(
-      settlementsTyped.unpack.toValue(
-        Id::toValue,
-        parties -> parties.toValue(party -> new Text(party)),
-        batchCid -> batchCid.toValue(),
-        RoutedStep::toValue,
-        instructionCid -> instructionCid.toValue(),
-        Allocation::toValue,
-        Approval::toValue
-      )
-    ).compactPrint();
   }
 
   private static Base.ContractId unlockHolding(Base.ContractId holdingCid, String context) {
