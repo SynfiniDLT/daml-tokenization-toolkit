@@ -1,63 +1,61 @@
 package com.synfini.wallet.views;
 
+import java.math.BigDecimal;
+import java.sql.Array;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ResultSetExtractor;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Component;
+
+import com.daml.ledger.javaapi.data.ExercisedEvent;
 import com.daml.ledger.javaapi.data.Identifier;
 import com.daml.ledger.javaapi.data.Unit;
+import com.daml.ledger.rxjava.LedgerClient;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.synfini.wallet.views.schema.response.AccountOpenOfferSummary;
 import com.synfini.wallet.views.schema.response.AccountSummary;
 import com.synfini.wallet.views.schema.response.HoldingSummary;
 import com.synfini.wallet.views.schema.response.InstrumentSummary;
 import com.synfini.wallet.views.schema.response.IssuerSummary;
 import com.synfini.wallet.views.schema.response.TokenIssuerSummary;
-import com.synfini.wallet.views.schema.response.AccountOpenOfferSummary;
 
-import da.types.Tuple2;
 import daml.finance.interface$.account.account.Account;
-import daml.finance.interface$.account.account.Controllers;
-import daml.finance.interface$.holding.base.Base;
 import daml.finance.interface$.holding.base.Lock;
 import daml.finance.interface$.holding.base.LockType;
-import daml.finance.interface$.holding.base.View;
-import daml.finance.interface$.holding.factory.Factory;
-import daml.finance.interface$.instrument.base.instrument.Instrument;
-import daml.finance.interface$.instrument.token.types.Token;
-import daml.finance.interface$.settlement.batch.Batch;
-import daml.finance.interface$.settlement.instruction.Instruction;
-import daml.finance.interface$.settlement.types.Allocation;
-import daml.finance.interface$.settlement.types.Approval;
-import daml.finance.interface$.settlement.types.InstructionKey;
-import daml.finance.interface$.settlement.types.RoutedStep;
-import daml.finance.interface$.settlement.types.allocation.*;
-import daml.finance.interface$.settlement.types.approval.*;
 import daml.finance.interface$.types.common.types.AccountKey;
 import daml.finance.interface$.types.common.types.Id;
 import daml.finance.interface$.types.common.types.InstrumentKey;
-import daml.finance.interface$.types.common.types.Quantity;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementSetter;
-import org.springframework.jdbc.core.ResultSetExtractor;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Component;
-import synfini.interface$.onboarding.account.openoffer.openoffer.OpenOffer;
-import synfini.interface$.onboarding.issuer.instrument.token.issuer.Issuer;
+import io.reactivex.Flowable;
+import io.reactivex.Single;
 // import synfini.wallet.api.types.*;
 import synfini.wallet.api.types.Balance;
 import synfini.wallet.api.types.SettlementStep;
 import synfini.wallet.api.types.SettlementSummary;
-import synfini.wallet.api.types.Settlements;
 import synfini.wallet.api.types.SettlementsRaw;
 import synfini.wallet.api.types.TransactionDetail;
-
-import javax.sql.DataSource;
-import java.math.BigDecimal;
-import java.sql.*;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Component
 public class WalletRepository {
@@ -316,6 +314,7 @@ public class WalletRepository {
   }
 
   public SettlementsRaw<JsonObject> settlements(
+    LedgerClient ledgerClient,
     List<String> readAs,
     Optional<String> before,
     long limit
@@ -332,6 +331,8 @@ public class WalletRepository {
       "  WHERE",
       "    daml_set_text_values(instruction.payload->'requestors') && ? OR",
       "    daml_set_text_values(instruction.payload->'settlers') && ? OR",
+      "    daml_set_text_values(instruction.payload->'signedSenders') && ? OR",
+      "    daml_set_text_values(instruction.payload->'signedReceivers') && ? OR",
       "    instruction.payload->'routedStep'->>'sender' = ANY(?) OR",
       "    instruction.payload->'routedStep'->>'receiver' = ANY(?) OR",
       "    flatten_observers(disclosure.payload->'observers') && ?",
@@ -345,11 +346,10 @@ public class WalletRepository {
         ps.setString(++pos, fullyQualified(daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID));
         ps.setString(++pos, fullyQualified(daml.finance.interface$.util.disclosure.Disclosure.TEMPLATE_ID));
 
-        ps.setArray(++pos, readAsArray);
-        ps.setArray(++pos, readAsArray);
-        ps.setArray(++pos, readAsArray);
-        ps.setArray(++pos, readAsArray);
-        ps.setArray(++pos, readAsArray);
+        final var readAsEnd = pos + 7;
+        while (pos < readAsEnd) {
+          ps.setArray(++pos, readAsArray);
+        }
 
         final var b = before.orElse(null);
         ps.setString(++pos, b);
@@ -391,20 +391,21 @@ public class WalletRepository {
       "  instructions_min_offsets.min_create_effective_time AS witness_effective_at,",
       "  instructions.payload->'id'->>'unpack' AS instruction_id,",
       "  instructions.created_at_offset AS instruction_create_offset,",
+      "  instruction_archive.archive_event_id AS instruction_archive_event_id,",
       "  instruction_archive.archived_at_offset AS instruction_archive_at_offset,",
       "  instruction_archive.archived_effective_at AS instruction_archive_effective_at,",
       //"  executions.contract_id IS NOT NULL AS instruction_executed,",
-      "  false AS instruction_executed,",
+      // "  false AS instruction_executed,",
       "  bs.payload AS batch_payload,",
       "  instructions.payload AS instruction_payload",
       "FROM (\n" + instructionsMinOffsets + "\n) AS instructions_min_offsets",
       "INNER JOIN creates(?) AS instructions ON",
-      "  instructions.payload->'batchId'->>'unpack' = instructions_min_offsets.batch_id", // AND",
-      // "  daml_set_text_values(instructions.payload->'requestors') = instructions_min_offsets.requestors",
+      "  instructions.payload->'batchId'->>'unpack' = instructions_min_offsets.batch_id AND",
+      "  daml_set_text_values(instructions.payload->'requestors') = instructions_min_offsets.requestors",
       "LEFT JOIN archives(?) AS instruction_archive ON",
       "  instructions.contract_id = instruction_archive.contract_id",
       "LEFT JOIN (\n" + selectBatches + "\n) AS bs ON",
-      "  bs.payload->'batchId'->>'unpack' = instructions.payload->'batchId'->>'unpack' AND",
+      "  bs.payload->'id'->>'unpack' = instructions.payload->'batchId'->>'unpack' AND",
       "  daml_set_text_values(bs.payload->'requestors') = daml_set_text_values(instructions.payload->'requestors')",
       // "LEFT JOIN exercises(?) AS executions ON instruction_archive.contract_id = executions.contract_id",
       "ORDER BY",
@@ -414,7 +415,7 @@ public class WalletRepository {
       "  instruction_id,",
       "  instruction_create_offset DESC"
     );
-    return jdbcTemplate.query(
+    final var settlementSingles = jdbcTemplate.query(
       selectSettlements,
       ps -> {
         int pos = 0;
@@ -429,7 +430,14 @@ public class WalletRepository {
         //   daml.finance.interface$.settlement.instruction.Instruction.CHOICE_Execute.name
         // );
       },
-      new SettlementsResultSetExtractor()
+      new SettlementsResultSetExtractor(ledgerClient, readAs)
+    );
+    return new SettlementsRaw<>(
+      Flowable
+        .fromIterable(settlementSingles)
+        .flatMapSingle(s -> s)
+        .toList()
+        .blockingGet()
     );
   }
 
@@ -497,11 +505,76 @@ public class WalletRepository {
     }
   }
 
-  private static class SettlementsResultSetExtractor implements ResultSetExtractor<SettlementsRaw<JsonObject>> {
+  private static class SettlementsResultSetExtractor implements ResultSetExtractor<
+    List<
+      Single<
+        SettlementSummary<JsonObject, JsonObject, String, JsonObject, String, JsonObject, JsonObject>
+      >
+    >
+  > {
+    private final LedgerClient ledgerClient;
+    private final java.util.Set<String> readAs;
+
+    public SettlementsResultSetExtractor(LedgerClient ledgerClient, List<String> readAs) {
+      this.ledgerClient = ledgerClient;
+      this.readAs = Set.copyOf(readAs);
+    }
+
+    private void processCurrent(
+      List<
+        Single<
+          SettlementSummary<JsonObject, JsonObject, String, JsonObject, String, JsonObject, JsonObject>
+        >
+      > settlements,
+      SettlementSummary<JsonObject, JsonObject, String, JsonObject, String, JsonObject, JsonObject> current,
+      Optional<TransactionDetail> currentArchive,
+      Optional<String> currentArchiveEventId
+    ) {
+      if (current != null) {
+        if (currentArchiveEventId.isPresent()) {
+          settlements.add(
+            getExecution(
+              ledgerClient,
+              currentArchiveEventId.get(),
+              readAs
+            ).map(e -> {
+              if (e.isPresent()) {
+                return new SettlementSummary<>(
+                  current.batchId,
+                  current.requestors,
+                  current.settlers,
+                  current.batchCid,
+                  current.contextId,
+                  current.description,
+                  current.steps,
+                  current.witness,
+                  currentArchive
+                );
+              } else {
+                return current;
+              }
+            })
+          );
+        } else {
+          settlements.add(Single.just(current));
+        }
+      }
+    }
+
     @Override
-    public SettlementsRaw<JsonObject> extractData(ResultSet rs) throws SQLException, DataAccessException {
-      final var settlements = new SettlementsRaw<JsonObject>(new ArrayList<>());
+    public List<
+      Single<
+        SettlementSummary<JsonObject, JsonObject, String, JsonObject, String, JsonObject, JsonObject>
+      >
+    > extractData(ResultSet rs) throws SQLException, DataAccessException {
+      final var settlements = new ArrayList<
+        Single<
+         SettlementSummary<JsonObject, JsonObject, String, JsonObject, String, JsonObject, JsonObject>
+        >
+      >();
       SettlementSummary<JsonObject, JsonObject, String, JsonObject, String, JsonObject, JsonObject> current = null;
+      Optional<TransactionDetail> currentArchive = Optional.empty();
+      Optional<String> currentArchiveEventId = Optional.empty();
       da.set.types.Set<String> currentRequestors = null;
 
       while (rs.next()) {
@@ -518,13 +591,14 @@ public class WalletRepository {
         final var requestorsSet = asDamlSet(requestors);
         final var settlers = instructionPayload.getAsJsonObject("settlers");
         final var batchCid = Optional.ofNullable(rs.getString("batch_cid"));
-        final Optional<JsonObject> contextId = batchPayload == null ?
-          Optional.empty() :
-          Optional.ofNullable(batchPayload.getAsJsonObject("contextId"));
+        final Optional<JsonObject> contextId = batchPayload != null &&
+          !batchPayload.get("contextId").isJsonNull() ?
+          Optional.ofNullable(batchPayload.getAsJsonObject("contextId")) :
+          Optional.empty() ;
         final Optional<String> description = batchPayload == null ?
           Optional.empty() :
           Optional.ofNullable(batchPayload.getAsJsonPrimitive("description")).map(JsonPrimitive::getAsString);
-        final var batchCreate = getTransactionDetailProper(rs, "witness");
+        final var batchCreate = getTransactionDetailProper(rs, "witness").get();
 
         final var step = new SettlementStep<>(
           instructionPayload.getAsJsonObject("routedStep"),
@@ -533,14 +607,12 @@ public class WalletRepository {
           instructionPayload.getAsJsonObject("allocation"),
           instructionPayload.getAsJsonObject("approval")
         );
-        final Optional<TransactionDetail> execution = rs.getBoolean("instruction_executed") ?
-          Optional.of(getTransactionDetailProper(rs, "instruction_archive")) :
-          Optional.empty();
+        final Optional<TransactionDetail> archive = getTransactionDetailProper(rs, "instruction_archive");
+        final Optional<String> instructionArchiveEventId = Optional.ofNullable(rs.getString("instruction_archive_event_id"));
 
         if (current == null || !current.batchId.equals(batchId) || !requestorsSet.equals(currentRequestors)) {
-          if (current != null) {
-            settlements.settlements.add(current);
-          }
+          // We have reached a new Batch so we must add the current one into the resulting List
+          processCurrent(settlements, current, currentArchive, currentArchiveEventId);
           final List<SettlementStep<JsonObject, JsonObject, String, JsonObject, JsonObject>> steps = new LinkedList<>();
           steps.add(step);
           current = new SettlementSummary<>(
@@ -552,7 +624,7 @@ public class WalletRepository {
             description,
             steps,
             batchCreate,
-            execution
+            Optional.empty()
           );
           currentRequestors = requestorsSet;
         } else {
@@ -566,15 +638,15 @@ public class WalletRepository {
             current.description.or(() -> description),
             current.steps,
             current.witness,
-            current.execution.or(() -> execution)
+            Optional.empty()
           );
         }
+        currentArchive = archive;
+        currentArchiveEventId = instructionArchiveEventId;
         Util.logger.info("Current === " + current);
       }
 
-      if (current != null) {
-        settlements.settlements.add(current);
-      }
+      processCurrent(settlements, current, currentArchive, currentArchiveEventId);
 
       return settlements;
     }
@@ -588,6 +660,45 @@ public class WalletRepository {
         new Gson().fromJson(rs.getString("token_instrument_payload"), JsonObject.class)
       );
     }
+  }
+
+  private static Single<Optional<daml.finance.interface$.settlement.instruction.Execute>> getExecution(
+    LedgerClient ledgerClient,
+    String instructionArchivedEventId,
+    java.util.Set<String> readAs
+  ) {
+    return ledgerClient
+      .getTransactionsClient()
+      .getTransactionByEventId(instructionArchivedEventId, readAs)
+      .map(transactionTree -> {
+        final var event = transactionTree.getEventsById().get(instructionArchivedEventId);
+
+        if (event == null) {
+          Util.logger.error("Oops the event is NULL!");
+          return Optional.empty();
+        }
+
+        if (event instanceof ExercisedEvent) {
+          final var exercisedEvent = (ExercisedEvent) event;
+          if (
+            exercisedEvent
+              .getChoice()
+              .equals(daml.finance.interface$.settlement.instruction.Instruction.CHOICE_Execute.name)
+          ) {
+            return Optional.of(
+              daml.finance.interface$.settlement.instruction.Execute
+                .valueDecoder()
+                .decode(exercisedEvent.getChoiceArgument())
+            );
+          } else {
+            Util.logger.info("the choice is not the execute choice");
+          }
+        } else {
+          Util.logger.info("oops the event is not an exercised event");
+        }
+
+        return Optional.empty();
+      });
   }
 
   private static Optional<TransactionDetail> getTransactionDetail(ResultSet rs, String prefix) throws SQLException {
@@ -607,11 +718,17 @@ public class WalletRepository {
     );
   }
 
-  private static synfini.wallet.api.types.TransactionDetail getTransactionDetailProper(ResultSet rs, String prefix) throws SQLException {
-    return new synfini.wallet.api.types.TransactionDetail(
-      rs.getString(prefix + "_at_offset"),
-      rs.getTimestamp(prefix + "_effective_at").toInstant()
-    );
+  private static Optional<synfini.wallet.api.types.TransactionDetail> getTransactionDetailProper(ResultSet rs, String prefix) throws SQLException {
+    final var offset = rs.getString(prefix + "_at_offset");
+    final var effectiveAt = rs.getTimestamp(prefix + "_effective_at");
+
+    if (offset != null && effectiveAt != null) {
+      return Optional.of(
+        new synfini.wallet.api.types.TransactionDetail(offset, effectiveAt.toInstant())
+      );
+    } else {
+      return Optional.empty();
+    }
   }
 
   private static InstrumentKey getInstrumentKey(ResultSet rs) throws SQLException {

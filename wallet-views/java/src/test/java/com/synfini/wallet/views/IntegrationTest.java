@@ -1388,7 +1388,7 @@ public class IntegrationTest {
     final var investor1AccountCid = createAccount(investor1Account, List.of(investor1), List.of(), List.of());
     final var investor2Account = new AccountKey(custodian, investor2, new Id("2"));
     createAccount(investor2Account, List.of(investor2), List.of(), List.of(investor1));
-    final var amount = new BigDecimal("100.0");
+    final var amount = new BigDecimal("99.0000000001");
     final var investor1HoldingCid = creditAccount(investor1AccountCid, instrument1(), amount);
 
     // BEGIN batch 1
@@ -2140,7 +2140,7 @@ public class IntegrationTest {
     final var scribeTimeoutSeconds = Long.valueOf(
       Optional.ofNullable(System.getProperty("walletviews.test.scribe-start-timeout-seconds")).orElse("20")
     );
-    logger.info("Waiting for sandbox to start with timeout set to " + scribeTimeoutSeconds + " seconds");
+    logger.info("Waiting for scribe to start with timeout set to " + scribeTimeoutSeconds + " seconds");
     final var ledgerEnd = getLedgerEnd();
     logger.info("Ledger end: " + ledgerEnd);
     while (true) {
