@@ -7,7 +7,6 @@ import com.daml.ledger.rxjava.LedgerClient;
 import com.google.gson.JsonObject;
 import com.synfini.wallet.views.config.LedgerApiConfig;
 import com.synfini.wallet.views.config.WalletViewsApiConfig;
-import com.synfini.wallet.views.schema.response.AccountOpenOffers;
 import com.synfini.wallet.views.schema.response.Holdings;
 import com.synfini.wallet.views.schema.response.Instruments;
 import com.synfini.wallet.views.schema.response.Issuers;
@@ -16,6 +15,7 @@ import io.reactivex.functions.BiFunction;
 import synfini.wallet.api.types.AccountsRaw;
 import synfini.wallet.api.types.AccountFilter;
 import synfini.wallet.api.types.AccountOpenOffersFilter;
+import synfini.wallet.api.types.AccountOpenOffersRaw;
 import synfini.wallet.api.types.BalanceFilter;
 import synfini.wallet.api.types.Balances;
 import synfini.wallet.api.types.HoldingFilter;
@@ -88,8 +88,8 @@ public class WalletViewsController {
   ) throws Exception {
     return withLedgerConnection(auth, (__, userRights) -> {
       final var parties = allParties(userRights);
-      final var accounts = new AccountOpenOffers(walletRepository.accountOpenOffers(parties));
-      return ResponseEntity.ok(accounts);
+      final var offers = new AccountOpenOffersRaw<>(walletRepository.accountOpenOffers(parties));
+      return ResponseEntity.ok(offers);
     });
   }
 

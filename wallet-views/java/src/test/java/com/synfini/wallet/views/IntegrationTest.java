@@ -954,9 +954,9 @@ public class IntegrationTest {
       .andExpect(
         content().json(
           toJson(
-            new AccountOpenOffers(
+            new AccountOpenOffersTyped(
               List.of(
-                new AccountOpenOfferSummary(
+                new AccountOpenOfferSummary<>(
                   cid1,
                   new synfini.interface$.onboarding.account.openoffer.openoffer.View(
                     custodian,
@@ -982,9 +982,9 @@ public class IntegrationTest {
       .andExpect(
         content().json(
           toJson(
-            new AccountOpenOffers(
+            new AccountOpenOffersTyped(
               List.of(
-                new AccountOpenOfferSummary(
+                new AccountOpenOfferSummary<>(
                   cid1,
                   new synfini.interface$.onboarding.account.openoffer.openoffer.View(
                     custodian,
@@ -998,7 +998,7 @@ public class IntegrationTest {
                   ),
                   new TransactionDetail(offset1, Instant.EPOCH)
                 ),
-                new AccountOpenOfferSummary(
+                new AccountOpenOfferSummary<>(
                   cid2,
                   new synfini.interface$.onboarding.account.openoffer.openoffer.View(
                     custodian,
@@ -1027,7 +1027,7 @@ public class IntegrationTest {
     mvc
       .perform(getAccountOpenOffersBuilder().headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new AccountOpenOffers(List.of()))));
+      .andExpect(content().json(toJson(new AccountOpenOffersTyped(List.of()))));
   }
 
   @Test

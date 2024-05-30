@@ -22,10 +22,12 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.daml.ledger.javaapi.data.ExercisedEvent;
 import com.daml.ledger.javaapi.data.Identifier;
@@ -35,7 +37,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import com.synfini.wallet.views.schema.response.AccountOpenOfferSummary;
 import com.synfini.wallet.views.schema.response.HoldingSummary;
 import com.synfini.wallet.views.schema.response.InstrumentSummary;
 import com.synfini.wallet.views.schema.response.IssuerSummary;
@@ -49,6 +50,7 @@ import daml.finance.interface$.types.common.types.Id;
 import daml.finance.interface$.types.common.types.InstrumentKey;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import synfini.wallet.api.types.AccountOpenOfferSummary;
 import synfini.wallet.api.types.AccountSummary;
 // import synfini.wallet.api.types.*;
 import synfini.wallet.api.types.Balance;
@@ -85,7 +87,7 @@ public class WalletRepository {
     );
   }
 
-  public List<AccountOpenOfferSummary> accountOpenOffers(List<String> readAs) {
+  public List<AccountOpenOfferSummary<String, JsonObject>> accountOpenOffers(List<String> readAs) {
     return jdbcTemplate.query(
       multiLineQuery(
         "SELECT",
@@ -452,14 +454,16 @@ public class WalletRepository {
     }
   }
 
-  private static class AccountOpenOfferRowMapper implements RowMapper<AccountOpenOfferSummary> {
+  private static class AccountOpenOfferRowMapper implements RowMapper<AccountOpenOfferSummary<String, JsonObject>> {
     @Override
-    public AccountOpenOfferSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
+    public AccountOpenOfferSummary<String, JsonObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
       final var payload = new Gson().fromJson(rs.getString("payload"), JsonObject.class);
-      return new AccountOpenOfferSummary(
+      return new AccountOpenOfferSummary<>(
         rs.getString("contract_id"),
         payload,
-        getTransactionDetail_(rs, "created")
+        getTransactionDetailProper(rs, "created").orElseThrow(() ->
+          new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR)
+        )
       );
     }
   }
@@ -596,8 +600,11 @@ public class WalletRepository {
           Optional.empty() ;
         final Optional<String> description = batchPayload == null ?
           Optional.empty() :
-          Optional.ofNullable(batchPayload.getAsJsonPrimitive("description")).map(JsonPrimitive::getAsString);
-        final var batchCreate = getTransactionDetailProper(rs, "witness").get();
+          Optional.ofNullable(
+            batchPayload.getAsJsonPrimitive("description")
+          ).map(JsonPrimitive::getAsString);
+        final var batchCreate = getTransactionDetailProper(rs, "witness")
+          .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR));
 
         final var step = new SettlementStep<>(
           instructionPayload.getAsJsonObject("routedStep"),

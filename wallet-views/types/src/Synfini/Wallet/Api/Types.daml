@@ -42,16 +42,18 @@ data AccountFilter = AccountFilter
   deriving (Show, Eq)
 
 -- Account offers
-data AccountOpenOfferSummary = AccountOpenOfferSummary
+data AccountOpenOfferSummary cid view = AccountOpenOfferSummary
   with
-    cid : ContractId AccountOpenOffer.I
-    view : AccountOpenOffer.V
+    cid : cid
+    view : view
     create : TransactionDetail
   deriving (Show, Eq)
 
-data AccountOpenOffers = AccountOpenOffers
-  with
-    accountOpenOffers : [AccountOpenOfferSummary]
+newtype AccountOpenOffersRaw jsonObject = AccountOpenOffersRaw [AccountOpenOfferSummary Text jsonObject]
+  deriving (Show, Eq)
+
+newtype AccountOpenOffersTyped = AccountOpenOffersTyped
+    [AccountOpenOfferSummary (ContractId AccountOpenOffer.I) AccountOpenOffer.V]
   deriving (Show, Eq)
 
 -- TODO may need to add filter parameters here
