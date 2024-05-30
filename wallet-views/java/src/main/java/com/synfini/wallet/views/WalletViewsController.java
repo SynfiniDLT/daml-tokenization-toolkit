@@ -8,12 +8,12 @@ import com.google.gson.JsonObject;
 import com.synfini.wallet.views.config.LedgerApiConfig;
 import com.synfini.wallet.views.config.WalletViewsApiConfig;
 import com.synfini.wallet.views.schema.response.AccountOpenOffers;
-import com.synfini.wallet.views.schema.response.Accounts;
 import com.synfini.wallet.views.schema.response.Holdings;
 import com.synfini.wallet.views.schema.response.Instruments;
 import com.synfini.wallet.views.schema.response.Issuers;
 
 import io.reactivex.functions.BiFunction;
+import synfini.wallet.api.types.AccountsRaw;
 import synfini.wallet.api.types.AccountFilter;
 import synfini.wallet.api.types.AccountOpenOffersFilter;
 import synfini.wallet.api.types.BalanceFilter;
@@ -30,7 +30,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-// import synfini.wallet.api.types.*;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -77,7 +76,7 @@ public class WalletViewsController {
       ) {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN);
       }
-      final var accounts = new Accounts(walletRepository.accounts(filter.custodian, filter.owner));
+      final var accounts = new AccountsRaw<>(walletRepository.accounts(filter.custodian, filter.owner));
       return ResponseEntity.ok(accounts);
     });
   }

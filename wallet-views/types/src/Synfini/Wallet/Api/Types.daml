@@ -25,16 +25,15 @@ data TransactionDetail = TransactionDetail
   deriving (Show, Eq)
 
 -- Accounts
-data AccountSummary = AccountSummary
+data AccountSummary cid view = AccountSummary
   with
-    cid : ContractId Account.I
-    view : Account.V
+    cid : cid
+    view : view
   deriving (Show, Eq)
 
-data Accounts = Accounts
-  with
-    accounts : [AccountSummary]
-  deriving (Show, Eq)
+newtype AccountsRaw jsonObject = AccountsRaw [AccountSummary Text jsonObject] deriving (Show, Eq)
+
+newtype AccountsTyped = AccountsTyped [AccountSummary (ContractId Account.I) Account.V] deriving (Show, Eq)
 
 data AccountFilter = AccountFilter
   with

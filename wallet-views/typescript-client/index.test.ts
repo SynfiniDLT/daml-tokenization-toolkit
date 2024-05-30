@@ -44,8 +44,8 @@ beforeAll(() => {
 
 test("Lists accounts", async () => {
   const resp = await aliceClient.getAccounts({custodian: null, owner: alice});
-  expect(resp.accounts.length).toEqual(1);
-  let account = resp.accounts[0];
+  expect(resp.unpack.length).toEqual(1);
+  let account = resp.unpack[0];
   expect(account.view.owner).toEqual(alice);
   expect(account.view.id.unpack).toEqual(aliceAccountId);
 });
@@ -76,8 +76,8 @@ test("Returns settlements", async () => {
     before: null,
     limit: "10"
   });
-  expect(resp.settlements.length).toEqual(1);
-  const settlement = resp.settlements[0];
+  expect(resp.unpack.length).toEqual(1);
+  const settlement = resp.unpack[0];
   expect(settlement.steps.length).toEqual(1);
   const step = settlement.steps[0];
   expect(step.routedStep.quantity.amount).toEqual("100000.0");

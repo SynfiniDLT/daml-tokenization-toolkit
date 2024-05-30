@@ -795,12 +795,12 @@ public class IntegrationTest {
     mvc
       .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Accounts(Collections.emptyList()))));
+      .andExpect(content().json(toJson(new AccountsTyped(Collections.emptyList()))));
 
     final var account = new AccountKey(custodian, investor1, new Id("1"));
 
     final var accountCid = createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
-    final var investor1Accounts = new Accounts(
+    final var investor1Accounts = new AccountsTyped(
       Collections.singletonList(
         new AccountSummary(
           accountCid,
@@ -840,13 +840,13 @@ public class IntegrationTest {
       .perform(getAccountsBuilder(Optional.of(investor1), investor1).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(new Accounts(List.of())))
+        content().json(toJson(new AccountsTyped(List.of())))
       );
 
     mvc
       .perform(getAccountsBuilder(Optional.empty(), investor2).headers(userTokenHeader(investor2User)))
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Accounts(Collections.emptyList()))));
+      .andExpect(content().json(toJson(new AccountsTyped(Collections.emptyList()))));
 
     final Map<String, Set<String>> obs = new HashMap<>();
     final var newControllers = new Controllers(arrayToSet("X"), arrayToSet("Y"));
@@ -860,7 +860,7 @@ public class IntegrationTest {
       .andExpect(
         content().json(
           toJson(
-            new Accounts(
+            new AccountsTyped(
               Collections.singletonList(
                 new AccountSummary(
                   newAccountCid,
@@ -888,7 +888,7 @@ public class IntegrationTest {
       .andExpect(
         content().json(
           toJson(
-            new Accounts(
+            new AccountsTyped(
               Collections.emptyList()
             )
           )

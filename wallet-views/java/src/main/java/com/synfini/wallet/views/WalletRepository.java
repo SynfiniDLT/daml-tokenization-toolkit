@@ -36,7 +36,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.synfini.wallet.views.schema.response.AccountOpenOfferSummary;
-import com.synfini.wallet.views.schema.response.AccountSummary;
 import com.synfini.wallet.views.schema.response.HoldingSummary;
 import com.synfini.wallet.views.schema.response.InstrumentSummary;
 import com.synfini.wallet.views.schema.response.IssuerSummary;
@@ -50,6 +49,7 @@ import daml.finance.interface$.types.common.types.Id;
 import daml.finance.interface$.types.common.types.InstrumentKey;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import synfini.wallet.api.types.AccountSummary;
 // import synfini.wallet.api.types.*;
 import synfini.wallet.api.types.Balance;
 import synfini.wallet.api.types.SettlementStep;
@@ -68,7 +68,7 @@ public class WalletRepository {
     this.pgDataSource = pgDataSource;
   }
 
-  public List<AccountSummary> accounts(Optional<String> custodian, String owner) {
+  public List<AccountSummary<String, JsonObject>> accounts(Optional<String> custodian, String owner) {
     return jdbcTemplate.query(
       multiLineQuery(
         "SELECT * FROM active(?)",
@@ -441,12 +441,11 @@ public class WalletRepository {
       .blockingGet();
   }
 
-  private static class AccountRowMapper implements RowMapper<AccountSummary> {
-
+  private static class AccountRowMapper implements RowMapper<AccountSummary<String, JsonObject>> {
     @Override
-    public AccountSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
+    public AccountSummary<String, JsonObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
       final var payload = new Gson().fromJson(rs.getString("payload"), JsonObject.class);
-      return new AccountSummary(
+      return new AccountSummary<>(
         rs.getString("contract_id"),
         payload
       );

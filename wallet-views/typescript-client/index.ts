@@ -1,18 +1,18 @@
 import {
   AccountFilter,
-  Accounts,
+  AccountsTyped,
   BalanceFilter,
   Balances,
   Holdings,
   HoldingFilter,
-  Settlements,
   SettlementsFilter,
   InstrumentsFilter,
   Instruments,
   AccountOpenOffersFilter,
   AccountOpenOffers,
   IssuersFilter,
-  Issuers
+  Issuers,
+  SettlementsTyped
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import fetch from "cross-fetch";
 
@@ -30,9 +30,9 @@ export class WalletViewsClient {
     this.baseUrl = baseUrl;
   }
 
-  async getAccounts(filter: AccountFilter): Promise<Accounts> {
+  async getAccounts(filter: AccountFilter): Promise<AccountsTyped> {
     const json = await this.post("/accounts", AccountFilter.encode(filter));
-    return await Accounts.decoder.runPromise(json);
+    return await AccountsTyped.decoder.runPromise(json);
   }
 
   async getAccountOpenOffers(filter: AccountOpenOffersFilter): Promise<AccountOpenOffers> {
@@ -50,9 +50,9 @@ export class WalletViewsClient {
     return await Holdings.decoder.runPromise(json);
   }
 
-  async getSettlements(filter: SettlementsFilter): Promise<Settlements> {
+  async getSettlements(filter: SettlementsFilter): Promise<SettlementsTyped> {
     const json = await this.post("/settlements", SettlementsFilter.encode(filter));
-    return await Settlements.decoder.runPromise(json);
+    return await SettlementsTyped.decoder.runPromise(json);
   }
 
   async getInstruments(filter: InstrumentsFilter): Promise<Instruments> {
