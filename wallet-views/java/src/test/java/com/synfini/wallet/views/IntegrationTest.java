@@ -132,6 +132,8 @@ public class IntegrationTest {
   private static daml.finance.interface$.instrument.token.factory.Factory.ContractId tokenInstrumentFactoryCid;
   private static synfini.interface$.onboarding.issuer.instrument.token.factory.Factory.ContractId tokenInstrumentIssuerFactoryCid;
 
+  private static final JsonCodec jsonCodec = JsonCodec.apply(true, true);
+
   public static PostgreSQLContainer<?> postgresContainer;
 
   @Autowired
@@ -969,7 +971,7 @@ public class IntegrationTest {
                     holdingFactoryCid,
                     description
                   ),
-                  new TransactionDetail_(offset1, Instant.EPOCH)
+                  new TransactionDetail(offset1, Instant.EPOCH)
                 )
               )
             )
@@ -997,7 +999,7 @@ public class IntegrationTest {
                     holdingFactoryCid,
                     description
                   ),
-                  new TransactionDetail_(offset1, Instant.EPOCH)
+                  new TransactionDetail(offset1, Instant.EPOCH)
                 ),
                 new AccountOpenOfferSummary(
                   cid2,
@@ -1011,7 +1013,7 @@ public class IntegrationTest {
                     holdingFactoryCid,
                     description
                   ),
-                  new TransactionDetail_(offset2, Instant.EPOCH)
+                  new TransactionDetail(offset2, Instant.EPOCH)
                 )
               )
             )
@@ -1210,21 +1212,24 @@ public class IntegrationTest {
     );
 
     // Return expected settlements given the optional settlement transaction detail
-    final Function<Optional<TransactionDetail>, Settlements> expectedSettlements = (settle) -> new Settlements(
-      List.of(
-        new SettlementSummary<>(
-          batchId,
-          requestors,
-          settlers,
-          Optional.<daml.finance.interface$.settlement.batch.Batch.ContractId>empty(),
-          Optional.<Id>empty(),
-          Optional.<String>empty(),
-          expectedSteps,
-          new TransactionDetail(createBatchResult.offset, Instant.EPOCH),
-          settle
+    final Function<Optional<TransactionDetail>, SettlementsTyped> expectedSettlements = (settle) ->
+      new SettlementsTyped(
+        new Settlements<>(
+          List.of(
+            new SettlementSummary<>(
+              batchId,
+              requestors,
+              settlers,
+              Optional.<daml.finance.interface$.settlement.batch.Batch.ContractId>empty(),
+              Optional.<Id>empty(),
+              Optional.<String>empty(),
+              expectedSteps,
+              new TransactionDetail(createBatchResult.offset, Instant.EPOCH),
+              settle
+            )
+          )
         )
-      )
-    );
+      );
 
     delayForProjectionIngestion();
     // Check unallocated/unapproved settlement
@@ -1376,7 +1381,7 @@ public class IntegrationTest {
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(new Settlements(List.of())))
+        content().json(toJson(new SettlementsTyped(new Settlements<>(List.of()))))
       );
   }
 
@@ -1504,7 +1509,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(new Settlements(List.of(settlement1, settlement2)))
+          toJson(new SettlementsTyped(new Settlements<>(List.of(settlement1, settlement2))))
         )
       );
 
@@ -1516,7 +1521,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(new Settlements(List.of(settlement1)))
+          toJson(new SettlementsTyped(new Settlements<>(List.of(settlement1))))
         )
       );
 
@@ -1528,7 +1533,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(new Settlements(List.of(settlement2)))
+          toJson(new SettlementsTyped(new Settlements<>(List.of(settlement2))))
         )
       );
 
@@ -1540,7 +1545,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(new Settlements(List.of(settlement2VisibleToCustodian)))
+          toJson(new SettlementsTyped(new Settlements<>(List.of(settlement2VisibleToCustodian))))
         )
       );
   }
@@ -2230,7 +2235,21 @@ public class IntegrationTest {
   }
 
   private static <T> String toJson(DefinedDataType<T> value) {
-    return JsonCodec.apply(true, true).toJsValue(value.toValue()).prettyPrint();
+    return jsonCodec.toJsValue(value.toValue()).compactPrint();
+  }
+
+  private static String toJson(SettlementsTyped settlementsTyped) {
+    return jsonCodec.toJsValue(
+      settlementsTyped.unpack.toValue(
+        Id::toValue,
+        parties -> parties.toValue(party -> new Text(party)),
+        batchCid -> batchCid.toValue(),
+        RoutedStep::toValue,
+        instructionCid -> instructionCid.toValue(),
+        Allocation::toValue,
+        Approval::toValue
+      )
+    ).compactPrint();
   }
 
   private static Base.ContractId unlockHolding(Base.ContractId holdingCid, String context) {

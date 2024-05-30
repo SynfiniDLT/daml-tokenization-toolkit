@@ -313,7 +313,9 @@ public class WalletRepository {
     );
   }
 
-  public SettlementsRaw<JsonObject> settlements(
+  public List<
+    SettlementSummary<JsonObject, JsonObject, String, JsonObject, String, JsonObject, JsonObject>
+  > settlements(
     LedgerClient ledgerClient,
     List<String> readAs,
     Optional<String> before,
@@ -432,13 +434,11 @@ public class WalletRepository {
       },
       new SettlementsResultSetExtractor(ledgerClient, readAs)
     );
-    return new SettlementsRaw<>(
-      Flowable
-        .fromIterable(settlementSingles)
-        .flatMapSingle(s -> s)
-        .toList()
-        .blockingGet()
-    );
+    return Flowable
+      .fromIterable(settlementSingles)
+      .flatMapSingle(s -> s)
+      .toList()
+      .blockingGet();
   }
 
   private static class AccountRowMapper implements RowMapper<AccountSummary> {

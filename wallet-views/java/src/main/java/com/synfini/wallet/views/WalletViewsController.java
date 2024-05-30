@@ -140,7 +140,9 @@ public class WalletViewsController {
       }
       try {
         final var settlements = walletRepository.settlements(ledgerClient, parties, filter.before, limit);
-        return ResponseEntity.ok(settlements);
+        return ResponseEntity.ok(
+          new SettlementsRaw<JsonObject>(new Settlements<>(settlements)).unpack
+        );
       } catch (SQLException e) {
         Util.logger.error("Error reading settlements", e);
         return ResponseEntity.internalServerError().body("Internal server error");
@@ -188,10 +190,6 @@ public class WalletViewsController {
         }
       })
       .collect(Collectors.toList());
-  }
-
-  private static String asJson(DefinedDataType<?> damlPayload) {
-    return jsonCodec.toJsValue(damlPayload.toValue()).compactPrint();
   }
 
   private ResponseEntity<Object> withLedgerConnection(

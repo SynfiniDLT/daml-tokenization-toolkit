@@ -24,12 +24,6 @@ data TransactionDetail = TransactionDetail
     effectiveTime : Time
   deriving (Show, Eq)
 
-data TransactionDetail_ = TransactionDetail_
-  with
-    offset : Text
-    effectiveTime : Time
-  deriving (Show, Eq)
-
 -- Accounts
 data AccountSummary = AccountSummary
   with
@@ -53,7 +47,7 @@ data AccountOpenOfferSummary = AccountOpenOfferSummary
   with
     cid : ContractId AccountOpenOffer.I
     view : AccountOpenOffer.V
-    create : TransactionDetail_
+    create : TransactionDetail
   deriving (Show, Eq)
 
 data AccountOpenOffers = AccountOpenOffers
@@ -100,10 +94,6 @@ data SettlementStep
     approval : approval
   deriving (Show, Eq)
 
--- newtype SettlementStepRaw jsonObject = SettlementStepRaw (
---     SettlementStep jsonObject jsonObject Text jsonObject jsonObject
---   )
-
 data SettlementSummary
   id
   parties
@@ -124,19 +114,25 @@ data SettlementSummary
     execution : Optional TransactionDetail
   deriving (Show, Eq)
 
--- newtype SettlementSummaryRaw jsonObject = SettlementSummaryRaw (
---     SettlementSummary jsonObject jsonObject Text jsonObject Text jsonObject jsonObject
---   )
-
-data Settlements = Settlements
+data Settlements
+  id
+  parties
+  batchCid
+  routedStep
+  instructionCid
+  allocation
+  approval = Settlements
   with
-    settlements : [SettlementSummary Id Parties (ContractId Batch.I) RoutedStep (ContractId Instruction.I) Allocation Approval]
+    settlements : [SettlementSummary id parties batchCid routedStep instructionCid allocation approval]
   deriving (Show, Eq)
 
-data SettlementsRaw jsonObject = SettlementsRaw
-  with
-    settlements : [SettlementSummary jsonObject jsonObject Text jsonObject Text jsonObject jsonObject]
-  deriving (Show, Eq)
+newtype SettlementsRaw jsonObject = SettlementsRaw (
+    Settlements jsonObject jsonObject Text jsonObject Text jsonObject jsonObject
+  ) deriving (Show, Eq)
+
+newtype SettlementsTyped = SettlementsTyped (
+    Settlements Id Parties (ContractId Batch.I) RoutedStep (ContractId Instruction.I) Allocation Approval
+  ) deriving (Show, Eq)
 
 data SettlementsFilter = SettlementsFilter
   with
