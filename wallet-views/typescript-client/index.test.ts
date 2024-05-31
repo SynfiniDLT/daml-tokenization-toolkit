@@ -54,8 +54,8 @@ test("Returns balances", async () => {
   const resp = await aliceClient.getBalance({
     account: { owner: alice, custodian, id: { unpack: aliceAccountId } }
   });
-  expect(resp.balances.length).toEqual(1);
-  let balance = resp.balances[0];
+  expect(resp.unpack.length).toEqual(1);
+  let balance = resp.unpack[0];
   expect(balance.unlocked).toEqual("100000.0");
   expect(balance.instrument.issuer).toEqual(issuer);
 });
@@ -86,8 +86,8 @@ test("Returns settlements", async () => {
 
 test("Returns account open offers", async () => {
   const resp = await aliceClient.getAccountOpenOffers({});
-  expect(resp.accountOpenOffers.length).toEqual(1);
-  const offer = resp.accountOpenOffers[0];
+  expect(resp.unpack.length).toEqual(1);
+  const offer = resp.unpack[0];
   expect(offer.view.custodian).toEqual(custodian);
 });
 

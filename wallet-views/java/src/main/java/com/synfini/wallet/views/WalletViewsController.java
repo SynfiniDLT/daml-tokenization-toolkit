@@ -17,7 +17,8 @@ import synfini.wallet.api.types.AccountFilter;
 import synfini.wallet.api.types.AccountOpenOffersFilter;
 import synfini.wallet.api.types.AccountOpenOffersRaw;
 import synfini.wallet.api.types.BalanceFilter;
-import synfini.wallet.api.types.Balances;
+import synfini.wallet.api.types.BalancesRaw;
+import synfini.wallet.api.types.BalancesTyped;
 import synfini.wallet.api.types.HoldingFilter;
 import synfini.wallet.api.types.InstrumentsFilter;
 import synfini.wallet.api.types.IssuersFilter;
@@ -102,7 +103,7 @@ public class WalletViewsController {
       if (!WalletAuth.canReadAsAnyOf(userRights, filter.account.custodian, filter.account.owner)) {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN);
       }
-      final var balances = new Balances(walletRepository.balanceByAccount(filter.account));
+      final var balances = new BalancesRaw(walletRepository.balanceByAccount(filter.account));
       return ResponseEntity.ok(balances);
     });
   }

@@ -420,7 +420,7 @@ public class IntegrationTest {
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Balances(Collections.emptyList()))));
+      .andExpect(content().json(toJson(new BalancesTyped(Collections.emptyList()))));
 
     // Create new account and check balances
     createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
@@ -428,7 +428,7 @@ public class IntegrationTest {
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Balances(Collections.emptyList()))));
+      .andExpect(content().json(toJson(new BalancesTyped(Collections.emptyList()))));
   }
 
   @Test
@@ -449,7 +449,7 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new Balances(
+              new BalancesTyped(
                 Collections.singletonList(new Balance(account, instrument1(), creditAmount, BigDecimal.ZERO))
               )
             )
@@ -465,7 +465,7 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new Balances(
+              new BalancesTyped(
                 Collections.singletonList(
                   new Balance(account, instrument1(), new BigDecimal("100.01"), BigDecimal.ZERO)
                 )
@@ -495,7 +495,7 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new Balances(
+              new BalancesTyped(
                 Collections.singletonList(
                   new Balance(account, instrument1(), new BigDecimal("105.0"), BigDecimal.ZERO)
                 )
@@ -507,8 +507,7 @@ public class IntegrationTest {
 
   @Test
   void testHasSameBalanceAfterSplit() throws Exception {
-    registerAuthMock(custodianUser, 60 * 60 * 24);
-    startProjectionDaemon(custodian, custodianUser);
+    startScribe(custodian, custodianUser);
     delayForProjectionToStart();
 
     final var account = new AccountKey(custodian, investor1, new Id("1"));
@@ -528,7 +527,7 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new Balances(Collections.singletonList(new Balance(account, instrument1(), creditAmount, BigDecimal.ZERO)))
+              new BalancesTyped(Collections.singletonList(new Balance(account, instrument1(), creditAmount, BigDecimal.ZERO)))
             )
           )
       );
@@ -555,7 +554,7 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new Balances(Collections.singletonList(new Balance(account, instrument1(), BigDecimal.ZERO, creditAmount)))
+              new BalancesTyped(Collections.singletonList(new Balance(account, instrument1(), BigDecimal.ZERO, creditAmount)))
             )
           )
       );
@@ -571,7 +570,7 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new Balances(Collections.singletonList(new Balance(account, instrument1(), BigDecimal.ZERO, creditAmount)))
+              new BalancesTyped(Collections.singletonList(new Balance(account, instrument1(), BigDecimal.ZERO, creditAmount)))
             )
           )
       );
@@ -601,7 +600,7 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new Balances(
+              new BalancesTyped(
                 Collections.singletonList(
                   new Balance(account, instrument1(), creditAmount.subtract(lockAmounts.get(0)), lockAmounts.get(0))
                 )
@@ -625,7 +624,7 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new Balances(
+              new BalancesTyped(
                 Collections.singletonList(
                   new Balance(account, instrument1(), creditAmount.subtract(totalLocked), totalLocked)
                 )
@@ -656,7 +655,7 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new Balances(
+              new BalancesTyped(
                 List.of(
                   new Balance(account, instrument1(), creditAmount1, BigDecimal.ZERO),
                   new Balance(account, instrument2(), creditAmount2, BigDecimal.ZERO)
@@ -692,7 +691,7 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new Balances(
+              new BalancesTyped(
                 Collections.singletonList(
                   new Balance(account1, instrument1(), creditAmount, BigDecimal.ZERO)
                 )
@@ -722,7 +721,7 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new Balances(
+              new BalancesTyped(
                 Collections.singletonList(new Balance(account, instrument1(), creditAmount, BigDecimal.ZERO))
               )
             )

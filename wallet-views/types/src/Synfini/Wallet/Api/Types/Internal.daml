@@ -19,7 +19,8 @@ template UsedTypes
       AccountOpenOffersRaw () :+:
       AccountOpenOffersTyped :+:
       AccountOpenOffersFilter :+:
-      Balances :+:
+      BalancesRaw :+:
+      BalancesTyped :+:
       BalanceFilter :+:
       SettlementsRaw () :+:
       SettlementsTyped :+:

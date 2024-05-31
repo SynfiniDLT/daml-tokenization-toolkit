@@ -70,10 +70,9 @@ data Balance = Balance
     locked : Decimal
   deriving (Show, Eq)
 
-data Balances = Balances
-  with
-    balances : [Balance]
-  deriving (Show, Eq)
+newtype BalancesRaw = BalancesRaw [Balance] deriving (Show, Eq)
+
+newtype BalancesTyped = BalancesTyped [Balance] deriving (Show, Eq)
 
 data BalanceFilter = BalanceFilter
   with
@@ -114,18 +113,6 @@ data SettlementSummary
     witness : TransactionDetail
     execution : Optional TransactionDetail
   deriving (Show, Eq)
-
--- data Settlements
---   id
---   parties
---   batchCid
---   routedStep
---   instructionCid
---   allocation
---   approval = Settlements
---   with
---     settlements : [SettlementSummary id parties batchCid routedStep instructionCid allocation approval]
---   deriving (Show, Eq)
 
 newtype SettlementsRaw jsonObject = SettlementsRaw (
     [SettlementSummary jsonObject jsonObject Text jsonObject Text jsonObject jsonObject]

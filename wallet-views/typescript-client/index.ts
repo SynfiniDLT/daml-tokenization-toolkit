@@ -2,14 +2,14 @@ import {
   AccountFilter,
   AccountsTyped,
   BalanceFilter,
-  Balances,
+  BalancesTyped,
   Holdings,
   HoldingFilter,
   SettlementsFilter,
   InstrumentsFilter,
   Instruments,
   AccountOpenOffersFilter,
-  AccountOpenOffers,
+  AccountOpenOffersTyped,
   IssuersFilter,
   Issuers,
   SettlementsTyped
@@ -35,14 +35,14 @@ export class WalletViewsClient {
     return await AccountsTyped.decoder.runPromise(json);
   }
 
-  async getAccountOpenOffers(filter: AccountOpenOffersFilter): Promise<AccountOpenOffers> {
+  async getAccountOpenOffers(filter: AccountOpenOffersFilter): Promise<AccountOpenOffersTyped> {
     const json = await this.post("/account-open-offers", AccountOpenOffersFilter.encode(filter));
-    return await AccountOpenOffers.decoder.runPromise(json);
+    return await AccountOpenOffersTyped.decoder.runPromise(json);
   }
 
-  async getBalance(filter: BalanceFilter): Promise<Balances> {
+  async getBalance(filter: BalanceFilter): Promise<BalancesTyped> {
     const json = await this.post("/balance", BalanceFilter.encode(filter));
-    return await Balances.decoder.runPromise(json);
+    return await BalancesTyped.decoder.runPromise(json);
   }
 
   async getHoldings(filter: HoldingFilter): Promise<Holdings> {
