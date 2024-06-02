@@ -420,7 +420,7 @@ public class IntegrationTest {
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new BalancesTyped(Collections.emptyList()))));
+      .andExpect(content().json(toJson(new Result<List<BalanceTyped>>(Collections.emptyList()))));
 
     // Create new account and check balances
     createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
@@ -428,7 +428,7 @@ public class IntegrationTest {
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new BalancesTyped(Collections.emptyList()))));
+      .andExpect(content().json(toJson(new Result<List<BalanceTyped>>(Collections.emptyList()))));
   }
 
   @Test
@@ -449,8 +449,10 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new BalancesTyped(
-                Collections.singletonList(new Balance(account, instrument1(), creditAmount, BigDecimal.ZERO))
+              new Result<>(
+                Collections.singletonList(
+                  new BalanceTyped(new Balance(account, instrument1(), creditAmount, BigDecimal.ZERO))
+                )
               )
             )
           )
@@ -465,9 +467,9 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new BalancesTyped(
+              new Result<>(
                 Collections.singletonList(
-                  new Balance(account, instrument1(), new BigDecimal("100.01"), BigDecimal.ZERO)
+                  new BalanceTyped(new Balance(account, instrument1(), new BigDecimal("100.01"), BigDecimal.ZERO))
                 )
               )
             )
@@ -495,9 +497,9 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new BalancesTyped(
+              new Result<>(
                 Collections.singletonList(
-                  new Balance(account, instrument1(), new BigDecimal("105.0"), BigDecimal.ZERO)
+                  new BalanceTyped(new Balance(account, instrument1(), new BigDecimal("105.0"), BigDecimal.ZERO))
                 )
               )
             )
@@ -527,7 +529,11 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new BalancesTyped(Collections.singletonList(new Balance(account, instrument1(), creditAmount, BigDecimal.ZERO)))
+              new Result<>(
+                Collections.singletonList(
+                  new BalanceTyped(new Balance(account, instrument1(), creditAmount, BigDecimal.ZERO))
+                )
+              )
             )
           )
       );
@@ -554,7 +560,11 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new BalancesTyped(Collections.singletonList(new Balance(account, instrument1(), BigDecimal.ZERO, creditAmount)))
+              new Result<>(
+                Collections.singletonList(
+                  new BalanceTyped(new Balance(account, instrument1(), BigDecimal.ZERO, creditAmount))
+                )
+              )
             )
           )
       );
@@ -570,7 +580,13 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new BalancesTyped(Collections.singletonList(new Balance(account, instrument1(), BigDecimal.ZERO, creditAmount)))
+              new Result<>(
+                Collections.singletonList(
+                  new BalanceTyped(
+                    new Balance(account, instrument1(), BigDecimal.ZERO, creditAmount)
+                  )
+                )
+              )
             )
           )
       );
@@ -600,9 +616,11 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new BalancesTyped(
+              new Result<>(
                 Collections.singletonList(
-                  new Balance(account, instrument1(), creditAmount.subtract(lockAmounts.get(0)), lockAmounts.get(0))
+                  new BalanceTyped(
+                    new Balance(account, instrument1(), creditAmount.subtract(lockAmounts.get(0)), lockAmounts.get(0))
+                  )
                 )
               )
             )
@@ -624,9 +642,11 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new BalancesTyped(
+              new Result<>(
                 Collections.singletonList(
-                  new Balance(account, instrument1(), creditAmount.subtract(totalLocked), totalLocked)
+                  new BalanceTyped(
+                    new Balance(account, instrument1(), creditAmount.subtract(totalLocked), totalLocked)
+                  )
                 )
               )
             )
@@ -655,10 +675,10 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new BalancesTyped(
+              new Result<>(
                 List.of(
-                  new Balance(account, instrument1(), creditAmount1, BigDecimal.ZERO),
-                  new Balance(account, instrument2(), creditAmount2, BigDecimal.ZERO)
+                  new BalanceTyped(new Balance(account, instrument1(), creditAmount1, BigDecimal.ZERO)),
+                  new BalanceTyped(new Balance(account, instrument2(), creditAmount2, BigDecimal.ZERO))
                 )
               )
             )
@@ -691,9 +711,9 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new BalancesTyped(
+              new Result<>(
                 Collections.singletonList(
-                  new Balance(account1, instrument1(), creditAmount, BigDecimal.ZERO)
+                  new BalanceTyped(new Balance(account1, instrument1(), creditAmount, BigDecimal.ZERO))
                 )
               )
             )
@@ -721,8 +741,10 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new BalancesTyped(
-                Collections.singletonList(new Balance(account, instrument1(), creditAmount, BigDecimal.ZERO))
+              new Result<>(
+                Collections.singletonList(
+                  new BalanceTyped(new Balance(account, instrument1(), creditAmount, BigDecimal.ZERO))
+                )
               )
             )
           )
@@ -747,12 +769,14 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new Holdings(
+              new Result<>(
                 Collections.singletonList(
-                  new HoldingSummary(
-                    holdingCid,
-                    new View(instrument1(), account, creditAmount, Optional.empty()),
-                    Optional.of(new TransactionDetail(ledgerOffset, Instant.EPOCH))
+                  new HoldingSummaryTyped(
+                    new HoldingSummary<>(
+                      holdingCid,
+                      new View(instrument1(), account, creditAmount, Optional.empty()),
+                      Optional.of(new TransactionDetail(ledgerOffset, Instant.EPOCH))
+                    )
                   )
                 )
               )
@@ -774,11 +798,13 @@ public class IntegrationTest {
         content()
           .json(
             toJson(
-              new Holdings(
+              new Result<>(
                 Collections.singletonList(
-                  new HoldingSummary(
-                    lockedHoldingCid, new View(instrument1(), account, creditAmount, Optional.of(expectedLock)),
-                    Optional.of(new TransactionDetail(newLedgerOffset, Instant.EPOCH))
+                  new HoldingSummaryTyped(
+                    new HoldingSummary<>(
+                      lockedHoldingCid, new View(instrument1(), account, creditAmount, Optional.of(expectedLock)),
+                      Optional.of(new TransactionDetail(newLedgerOffset, Instant.EPOCH))
+                    )
                   )
                 )
               )
@@ -794,22 +820,24 @@ public class IntegrationTest {
     mvc
       .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new AccountsTyped(Collections.emptyList()))));
+      .andExpect(content().json(toJson(new Result<>(Collections.emptyList()))));
 
     final var account = new AccountKey(custodian, investor1, new Id("1"));
 
     final var accountCid = createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
-    final var investor1Accounts = new AccountsTyped(
+    final var investor1Accounts = new Result<>(
       Collections.singletonList(
-        new AccountSummary(
-          accountCid,
-          new daml.finance.interface$.account.account.View(
-            account.custodian,
-            account.owner,
-            account.id,
-            "Testing account",
-            holdingFactoryCid,
-            new Controllers(arrayToSet(investor1), arrayToSet())
+        new AccountSummaryTyped(
+          new AccountSummary<>(
+            accountCid,
+            new daml.finance.interface$.account.account.View(
+              account.custodian,
+              account.owner,
+              account.id,
+              "Testing account",
+              holdingFactoryCid,
+              new Controllers(arrayToSet(investor1), arrayToSet())
+            )
           )
         )
       )
@@ -839,13 +867,13 @@ public class IntegrationTest {
       .perform(getAccountsBuilder(Optional.of(investor1), investor1).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(new AccountsTyped(List.of())))
+        content().json(toJson(new Result<>(List.of())))
       );
 
     mvc
       .perform(getAccountsBuilder(Optional.empty(), investor2).headers(userTokenHeader(investor2User)))
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new AccountsTyped(Collections.emptyList()))));
+      .andExpect(content().json(toJson(new Result<>(Collections.emptyList()))));
 
     final Map<String, Set<String>> obs = new HashMap<>();
     final var newControllers = new Controllers(arrayToSet("X"), arrayToSet("Y"));
@@ -859,17 +887,19 @@ public class IntegrationTest {
       .andExpect(
         content().json(
           toJson(
-            new AccountsTyped(
+            new Result<>(
               Collections.singletonList(
-                new AccountSummary(
-                  newAccountCid,
-                  new daml.finance.interface$.account.account.View(
-                    account.custodian,
-                    account.owner,
-                    account.id,
-                    newDescription,
-                    holdingFactoryCid,
-                    newControllers
+                new AccountSummaryTyped(
+                  new AccountSummary<>(
+                    newAccountCid,
+                    new daml.finance.interface$.account.account.View(
+                      account.custodian,
+                      account.owner,
+                      account.id,
+                      newDescription,
+                      holdingFactoryCid,
+                      newControllers
+                    )
                   )
                 )
               )
@@ -887,7 +917,7 @@ public class IntegrationTest {
       .andExpect(
         content().json(
           toJson(
-            new AccountsTyped(
+            new Result<>(
               Collections.emptyList()
             )
           )
@@ -953,21 +983,23 @@ public class IntegrationTest {
       .andExpect(
         content().json(
           toJson(
-            new AccountOpenOffersTyped(
+            new Result<>(
               List.of(
-                new AccountOpenOfferSummary<>(
-                  cid1,
-                  new synfini.interface$.onboarding.account.openoffer.openoffer.View(
-                    custodian,
-                    ownerIncomingControlled,
-                    ownerOutgoingControlled,
-                    additionalControllers,
-                    Optional.empty(),
-                    accountFactoryCid,
-                    holdingFactoryCid,
-                    description
-                  ),
-                  new TransactionDetail(offset1, Instant.EPOCH)
+                new AccountOpenOfferSummaryTyped(
+                  new AccountOpenOfferSummary<>(
+                    cid1,
+                    new synfini.interface$.onboarding.account.openoffer.openoffer.View(
+                      custodian,
+                      ownerIncomingControlled,
+                      ownerOutgoingControlled,
+                      additionalControllers,
+                      Optional.empty(),
+                      accountFactoryCid,
+                      holdingFactoryCid,
+                      description
+                    ),
+                    new TransactionDetail(offset1, Instant.EPOCH)
+                  )
                 )
               )
             )
@@ -981,35 +1013,39 @@ public class IntegrationTest {
       .andExpect(
         content().json(
           toJson(
-            new AccountOpenOffersTyped(
+            new Result<>(
               List.of(
-                new AccountOpenOfferSummary<>(
-                  cid1,
-                  new synfini.interface$.onboarding.account.openoffer.openoffer.View(
-                    custodian,
-                    ownerIncomingControlled,
-                    ownerOutgoingControlled,
-                    additionalControllers,
-                    Optional.empty(),
-                    accountFactoryCid,
-                    holdingFactoryCid,
-                    description
-                  ),
-                  new TransactionDetail(offset1, Instant.EPOCH)
+                new AccountOpenOfferSummaryTyped(
+                  new AccountOpenOfferSummary<>(
+                    cid1,
+                    new synfini.interface$.onboarding.account.openoffer.openoffer.View(
+                      custodian,
+                      ownerIncomingControlled,
+                      ownerOutgoingControlled,
+                      additionalControllers,
+                      Optional.empty(),
+                      accountFactoryCid,
+                      holdingFactoryCid,
+                      description
+                    ),
+                    new TransactionDetail(offset1, Instant.EPOCH)
+                  )
                 ),
-                new AccountOpenOfferSummary<>(
-                  cid2,
-                  new synfini.interface$.onboarding.account.openoffer.openoffer.View(
-                    custodian,
-                    ownerIncomingControlled,
-                    ownerOutgoingControlled,
-                    additionalControllers,
-                    permittedOwnersInvestor2,
-                    accountFactoryCid,
-                    holdingFactoryCid,
-                    description
-                  ),
-                  new TransactionDetail(offset2, Instant.EPOCH)
+                new AccountOpenOfferSummaryTyped(
+                  new AccountOpenOfferSummary<>(
+                    cid2,
+                    new synfini.interface$.onboarding.account.openoffer.openoffer.View(
+                      custodian,
+                      ownerIncomingControlled,
+                      ownerOutgoingControlled,
+                      additionalControllers,
+                      permittedOwnersInvestor2,
+                      accountFactoryCid,
+                      holdingFactoryCid,
+                      description
+                    ),
+                    new TransactionDetail(offset2, Instant.EPOCH)
+                  )
                 )
               )
             )
@@ -1026,7 +1062,7 @@ public class IntegrationTest {
     mvc
       .perform(getAccountOpenOffersBuilder().headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new AccountOpenOffersTyped(List.of()))));
+      .andExpect(content().json(toJson(new Result<>(List.of()))));
   }
 
   @Test
@@ -1047,14 +1083,16 @@ public class IntegrationTest {
       ).blockingGet().exerciseResult;
     delayForProjectionIngestion();
 
-    final var tokenIssuerSummary = new IssuerSummary(
-      Optional.of(
-        new TokenIssuerSummary(
-          tokenIssuerCid,
-          new synfini.interface$.onboarding.issuer.instrument.token.issuer.View(
-            depository,
-            issuer,
-            tokenInstrumentFactoryCid
+    final var tokenIssuerSummary = new IssuerSummaryTyped(
+      new IssuerSummary<>(
+        Optional.of(
+          new TokenIssuerSummary<>(
+            tokenIssuerCid,
+            new synfini.interface$.onboarding.issuer.instrument.token.issuer.View(
+              depository,
+              issuer,
+              tokenInstrumentFactoryCid
+            )
           )
         )
       )
@@ -1065,21 +1103,21 @@ public class IntegrationTest {
         getIssuersBuilder(Optional.empty(), Optional.empty()).headers(userTokenHeader(issuerUser))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Issuers(List.of(tokenIssuerSummary)))));
+      .andExpect(content().json(toJson(new Result<>(List.of(tokenIssuerSummary)))));
 
     mvc
       .perform(
         getIssuersBuilder(Optional.of(depository), Optional.empty()).headers(userTokenHeader(issuerUser))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Issuers(List.of(tokenIssuerSummary)))));
+      .andExpect(content().json(toJson(new Result<>(List.of(tokenIssuerSummary)))));
 
     mvc
       .perform(
         getIssuersBuilder(Optional.empty(), Optional.of(issuer)).headers(userTokenHeader(issuerUser))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Issuers(List.of(tokenIssuerSummary)))));
+      .andExpect(content().json(toJson(new Result<>(List.of(tokenIssuerSummary)))));
 
     mvc
       .perform(
@@ -1089,7 +1127,7 @@ public class IntegrationTest {
         ).headers(userTokenHeader(issuerUser))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Issuers(List.of()))));
+      .andExpect(content().json(toJson(new Result<>(List.of()))));
 
     mvc
       .perform(
@@ -1099,21 +1137,21 @@ public class IntegrationTest {
         ).headers(userTokenHeader(issuerUser))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Issuers(List.of()))));
+      .andExpect(content().json(toJson(new Result<>(List.of()))));
 
     mvc
       .perform(
         getIssuersBuilder(Optional.empty(), Optional.empty()).headers(userTokenHeader(investor1User))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Issuers(List.of(tokenIssuerSummary)))));
+      .andExpect(content().json(toJson(new Result<>(List.of(tokenIssuerSummary)))));
 
     mvc
       .perform(
         getIssuersBuilder(Optional.empty(), Optional.empty()).headers(userTokenHeader(investor2User))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Issuers(List.of()))));
+      .andExpect(content().json(toJson(new Result<>(List.of()))));
   }
 
   @Test
@@ -1208,19 +1246,21 @@ public class IntegrationTest {
     );
 
     // Return expected settlements given the optional settlement transaction detail
-    final Function<Optional<TransactionDetail>, SettlementsTyped> expectedSettlements = (settle) ->
-      new SettlementsTyped(
+    final Function<Optional<TransactionDetail>, Result<List<SettlementSummaryTyped>>> expectedSettlements = (settle) ->
+      new Result<>(
         List.of(
-          new SettlementSummary<>(
-            batchId,
-            requestors,
-            settlers,
-            Optional.<daml.finance.interface$.settlement.batch.Batch.ContractId>empty(),
-            Optional.<Id>empty(),
-            Optional.<String>empty(),
-            expectedSteps,
-            new TransactionDetail(createBatchResult.offset, Instant.EPOCH),
-            settle
+          new SettlementSummaryTyped(
+            new SettlementSummary<>(
+              batchId,
+              requestors,
+              settlers,
+              Optional.<daml.finance.interface$.settlement.batch.Batch.ContractId>empty(),
+              Optional.<Id>empty(),
+              Optional.<String>empty(),
+              expectedSteps,
+              new TransactionDetail(createBatchResult.offset, Instant.EPOCH),
+              settle
+            )
           )
         )
       );
@@ -1375,7 +1415,7 @@ public class IntegrationTest {
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(new SettlementsTyped(List.of())))
+        content().json(toJson(new Result<>(List.of())))
       );
   }
 
@@ -1444,55 +1484,61 @@ public class IntegrationTest {
 
     delayForProjectionIngestion();
 
-    final var settlement1 = new SettlementSummary<>(
-      batch1Id,
-      requestors1,
-      settlers1,
-      Optional.of(createBatchResult1.batchCid),
-      contextId1,
-      Optional.of(description1),
-      List.of(
-        new SettlementStep<>(
-          routedStep1,
-          createBatchResult1.instructionIds.get(0),
-          approvedInstructionCid1,
-          (Allocation) new Pledge(allocationResult1.allocatedHoldingCid.get()),
-          (Approval) approval1
-        )
-      ),
-      new TransactionDetail(createBatchResult1.offset, Instant.EPOCH),
-      Optional.of(new TransactionDetail(settleOffset1, Instant.EPOCH))
+    final var settlement1 = new SettlementSummaryTyped(
+      new SettlementSummary<>(
+        batch1Id,
+        requestors1,
+        settlers1,
+        Optional.of(createBatchResult1.batchCid),
+        contextId1,
+        Optional.of(description1),
+        List.of(
+          new SettlementStep<>(
+            routedStep1,
+            createBatchResult1.instructionIds.get(0),
+            approvedInstructionCid1,
+            new Pledge(allocationResult1.allocatedHoldingCid.get()),
+            approval1
+          )
+        ),
+        new TransactionDetail(createBatchResult1.offset, Instant.EPOCH),
+        Optional.of(new TransactionDetail(settleOffset1, Instant.EPOCH))
+      )
     );
 
-    final var settlement2 = new SettlementSummary<>(
-      batch2Id,
-      requestors2,
-      settlers2,
-      Optional.of(createBatchResult2.batchCid),
-      contextId2,
-      Optional.of(description2),
-      List.of(
-        new SettlementStep<>(
-          routedStep2,
-          createBatchResult2.instructionIds.get(0),
-          approvedInstruction2Cid,
-          (Allocation) new Unallocated(Unit.getInstance()),
-          (Approval) approval2
-        )
-      ),
-      new TransactionDetail(createBatchResult2.offset, Instant.EPOCH),
-      Optional.empty()
+    final var settlement2 = new SettlementSummaryTyped(
+      new SettlementSummary<>(
+        batch2Id,
+        requestors2,
+        settlers2,
+        Optional.of(createBatchResult2.batchCid),
+        contextId2,
+        Optional.of(description2),
+        List.of(
+          new SettlementStep<>(
+            routedStep2,
+            createBatchResult2.instructionIds.get(0),
+            approvedInstruction2Cid,
+            new Unallocated(Unit.getInstance()),
+            approval2
+          )
+        ),
+        new TransactionDetail(createBatchResult2.offset, Instant.EPOCH),
+        Optional.empty()
+      )
     );
-    final var settlement2VisibleToCustodian = new SettlementSummary<>(
-      settlement2.batchId,
-      settlement2.requestors,
-      settlement2.settlers,
-      Optional.<daml.finance.interface$.settlement.batch.Batch.ContractId>empty(),
-      Optional.<Id>empty(),
-      Optional.<String>empty(),
-      settlement2.steps,
-      new TransactionDetail(approval2LedgerOffset, Instant.EPOCH),
-      Optional.empty()
+    final var settlement2VisibleToCustodian = new SettlementSummaryTyped(
+      new SettlementSummary<>(
+        settlement2.unpack.batchId,
+        settlement2.unpack.requestors,
+        settlement2.unpack.settlers,
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        settlement2.unpack.steps,
+        new TransactionDetail(approval2LedgerOffset, Instant.EPOCH),
+        Optional.empty()
+      )
     );
 
     mvc
@@ -1503,7 +1549,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(new SettlementsTyped(List.of(settlement1, settlement2)))
+          toJson(new Result<>(List.of(settlement1, settlement2)))
         )
       );
 
@@ -1515,7 +1561,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(new SettlementsTyped(List.of(settlement1)))
+          toJson(new Result<>(List.of(settlement1)))
         )
       );
 
@@ -1527,7 +1573,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(new SettlementsTyped(List.of(settlement2)))
+          toJson(new Result<>(List.of(settlement2)))
         )
       );
 
@@ -1539,7 +1585,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(new SettlementsTyped(List.of(settlement2VisibleToCustodian)))
+          toJson(new Result<>(List.of(settlement2VisibleToCustodian)))
         )
       );
   }
@@ -1563,13 +1609,17 @@ public class IntegrationTest {
       ).blockingGet().exerciseResult;
     delayForProjectionIngestion();
 
-    final var instrument1Summary = new InstrumentSummary(
-      new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(token1Cid.contractId),
-      Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token1))
+    final var instrument1Summary = new InstrumentSummaryTyped(
+      new InstrumentSummary<>(
+        new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(token1Cid.contractId),
+        Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token1))
+      )
     );
-    final var instrument2Summary = new InstrumentSummary(
-      new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(token2Cid.contractId),
-      Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token2))
+    final var instrument2Summary = new InstrumentSummaryTyped(
+      new InstrumentSummary<>(
+        new daml.finance.interface$.instrument.base.instrument.Instrument.ContractId(token2Cid.contractId),
+        Optional.of(new daml.finance.interface$.instrument.token.instrument.View(token2))
+      )
     );
     mvc
       .perform(
@@ -1582,7 +1632,7 @@ public class IntegrationTest {
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(new Instruments(List.of(instrument1Summary))))
+        content().json(toJson(new Result<>(List.of(instrument1Summary))))
       );
     mvc
       .perform(
@@ -1595,7 +1645,7 @@ public class IntegrationTest {
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(new Instruments(List.of(instrument1Summary, instrument2Summary))))
+        content().json(toJson(new Result<>(List.of(instrument1Summary, instrument2Summary))))
       );
     mvc
       .perform(
@@ -1608,7 +1658,7 @@ public class IntegrationTest {
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(new Instruments(List.of(instrument1Summary, instrument2Summary))))
+        content().json(toJson(new Result<>(List.of(instrument1Summary, instrument2Summary))))
       );
     mvc
       .perform(
@@ -1621,7 +1671,7 @@ public class IntegrationTest {
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(new Instruments(List.of(instrument1Summary, instrument2Summary))))
+        content().json(toJson(new Result<>(List.of(instrument1Summary, instrument2Summary))))
       );
   }
 
@@ -2226,6 +2276,20 @@ public class IntegrationTest {
     }
 
     return offset;
+  }
+
+  // private static <T> String toJson(DefinedDataType<T> value) {
+  //   return jsonCodec.toJsValue(value.toValue()).compactPrint();
+  // }
+
+  private static <T, D extends DefinedDataType<T>> String toJson(Result<List<D>> result) {
+    return jsonCodec.toJsValue(
+      result.toValue(
+        values -> DamlList.of(
+          values.stream().map(v -> v.toValue()).collect(Collectors.toList())
+        )
+      )
+    ).compactPrint();
   }
 
   private static <T> String toJson(DefinedDataType<T> value) {

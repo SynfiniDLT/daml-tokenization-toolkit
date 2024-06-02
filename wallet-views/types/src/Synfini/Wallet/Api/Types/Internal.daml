@@ -13,23 +13,27 @@ type a :+: b = Either a b
 template UsedTypes
   with
     types :
-      AccountsRaw () :+:
-      AccountsTyped :+:
+      Result () :+:
+      AccountSummaryRaw () :+:
+      AccountSummaryTyped :+:
       AccountFilter :+:
-      AccountOpenOffersRaw () :+:
-      AccountOpenOffersTyped :+:
+      AccountOpenOfferSummaryRaw () :+:
+      AccountOpenOfferSummaryTyped :+:
       AccountOpenOffersFilter :+:
-      BalancesRaw :+:
-      BalancesTyped :+:
+      BalanceRaw :+:
+      BalanceTyped :+:
       BalanceFilter :+:
-      SettlementsRaw () :+:
-      SettlementsTyped :+:
+      SettlementSummaryRaw () :+:
+      SettlementSummaryTyped :+:
       SettlementsFilter :+:
-      Holdings :+:
+      HoldingSummaryRaw () :+:
+      HoldingSummaryTyped :+:
       HoldingFilter :+:
-      Instruments :+:
+      InstrumentSummaryRaw () :+:
+      InstrumentSummaryTyped :+:
       InstrumentsFilter :+:
-      Issuers :+:
+      IssuerSummaryRaw () :+:
+      IssuerSummaryTyped :+:
       IssuersFilter
   where
     signatory undefinedParty

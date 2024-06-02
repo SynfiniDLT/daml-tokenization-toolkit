@@ -37,10 +37,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import com.synfini.wallet.views.schema.response.HoldingSummary;
-import com.synfini.wallet.views.schema.response.InstrumentSummary;
-import com.synfini.wallet.views.schema.response.IssuerSummary;
-import com.synfini.wallet.views.schema.response.TokenIssuerSummary;
 
 import daml.finance.interface$.account.account.Account;
 import daml.finance.interface$.holding.base.Lock;
@@ -52,11 +48,20 @@ import io.reactivex.Flowable;
 import io.reactivex.Single;
 import synfini.wallet.api.types.AccountOpenOfferSummary;
 import synfini.wallet.api.types.AccountSummary;
+import synfini.wallet.api.types.AccountSummaryRaw;
 // import synfini.wallet.api.types.*;
 import synfini.wallet.api.types.Balance;
+import synfini.wallet.api.types.BalanceRaw;
+import synfini.wallet.api.types.HoldingSummary;
+import synfini.wallet.api.types.HoldingSummaryRaw;
+import synfini.wallet.api.types.InstrumentSummary;
+import synfini.wallet.api.types.InstrumentSummaryRaw;
+import synfini.wallet.api.types.IssuerSummary;
+import synfini.wallet.api.types.IssuerSummaryRaw;
 import synfini.wallet.api.types.SettlementStep;
 import synfini.wallet.api.types.SettlementSummary;
-import synfini.wallet.api.types.SettlementsRaw;
+import synfini.wallet.api.types.SettlementSummaryRaw;
+import synfini.wallet.api.types.TokenIssuerSummary;
 import synfini.wallet.api.types.TransactionDetail;
 
 @Component
@@ -70,7 +75,7 @@ public class WalletRepository {
     this.pgDataSource = pgDataSource;
   }
 
-  public List<AccountSummary<String, JsonObject>> accounts(Optional<String> custodian, String owner) {
+  public List<AccountSummaryRaw<JsonObject>> accounts(Optional<String> custodian, String owner) {
     return jdbcTemplate.query(
       multiLineQuery(
         "SELECT * FROM active(?)",
@@ -124,7 +129,7 @@ public class WalletRepository {
     );
   }
 
-  public List<Balance> balanceByAccount(AccountKey account) {
+  public List<BalanceRaw> balanceByAccount(AccountKey account) {
     return jdbcTemplate.query(
       multiLineQuery(
         "SELECT",
@@ -159,7 +164,7 @@ public class WalletRepository {
     );
   }
 
-  public List<HoldingSummary> holdings(AccountKey account, InstrumentKey instrument, List<String> readAs) {
+  public List<HoldingSummaryRaw<JsonObject>> holdings(AccountKey account, InstrumentKey instrument, List<String> readAs) {
     return jdbcTemplate.query(
       multiLineQuery(
         "SELECT",
@@ -215,7 +220,7 @@ public class WalletRepository {
     );
   }
 
-  public List<InstrumentSummary> instruments(
+  public List<InstrumentSummaryRaw<JsonObject>> instruments(
     Optional<String> depository,
     String issuer,
     Optional<Id> id,
@@ -271,7 +276,7 @@ public class WalletRepository {
     );
   }
 
-  public List<IssuerSummary> issuers(Optional<String> depository, Optional<String> issuer, List<String> readAs) {
+  public List<IssuerSummaryRaw<JsonObject>> issuers(Optional<String> depository, Optional<String> issuer, List<String> readAs) {
     return jdbcTemplate.query(
       multiLineQuery(
         "SELECT",
@@ -315,9 +320,7 @@ public class WalletRepository {
     );
   }
 
-  public List<
-    SettlementSummary<JsonObject, JsonObject, String, JsonObject, String, JsonObject, JsonObject>
-  > settlements(
+  public List<SettlementSummaryRaw<JsonObject>> settlements(
     LedgerClient ledgerClient,
     List<String> readAs,
     Optional<String> before,
@@ -443,13 +446,15 @@ public class WalletRepository {
       .blockingGet();
   }
 
-  private static class AccountRowMapper implements RowMapper<AccountSummary<String, JsonObject>> {
+  private static class AccountRowMapper implements RowMapper<AccountSummaryRaw<JsonObject>> {
     @Override
-    public AccountSummary<String, JsonObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
+    public AccountSummaryRaw<JsonObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
       final var payload = new Gson().fromJson(rs.getString("payload"), JsonObject.class);
-      return new AccountSummary<>(
-        rs.getString("contract_id"),
-        payload
+      return new AccountSummaryRaw<>(
+        new AccountSummary<>(
+          rs.getString("contract_id"),
+          payload
+        )
       );
     }
   }
@@ -468,52 +473,57 @@ public class WalletRepository {
     }
   }
 
-  private static class BalanceRowMapperWithAccount implements RowMapper<Balance> {
+  private static class BalanceRowMapperWithAccount implements RowMapper<BalanceRaw> {
     private final AccountKey account;
 
     public BalanceRowMapperWithAccount(AccountKey account) {
       this.account = account;
     }
+
     @Override
-    public Balance mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return new Balance(
-        account,
-        getInstrumentKey(rs),
-        Optional.ofNullable(rs.getBigDecimal("unlocked_balance")).orElse(BigDecimal.ZERO),
-        Optional.ofNullable(rs.getBigDecimal("locked_balance")).orElse(BigDecimal.ZERO)
+    public BalanceRaw mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return new BalanceRaw(
+        new Balance(
+          account,
+          getInstrumentKey(rs),
+          Optional.ofNullable(rs.getBigDecimal("unlocked_balance")).orElse(BigDecimal.ZERO),
+          Optional.ofNullable(rs.getBigDecimal("locked_balance")).orElse(BigDecimal.ZERO)
+        )
       );
     }
   }
 
-  private static class HoldingsRowMapper implements RowMapper<HoldingSummary> {
+  private static class HoldingsRowMapper implements RowMapper<HoldingSummaryRaw<JsonObject>> {
     @Override
-    public HoldingSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return new HoldingSummary(
-        rs.getString("contract_id"),
-        new Gson().fromJson(rs.getString("payload"), JsonObject.class),
-        getTransactionDetail_(rs, "created")
-      );
-    }
-  }
-
-  private static class IssuersRowMapper implements RowMapper<IssuerSummary> {
-    @Override
-    public IssuerSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return new IssuerSummary(
-        new TokenIssuerSummary(
+    public HoldingSummaryRaw<JsonObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return new HoldingSummaryRaw<>(
+        new HoldingSummary<>(
           rs.getString("contract_id"),
-          new Gson().fromJson(rs.getString("token_issuer_payload"), JsonObject.class)
+          new Gson().fromJson(rs.getString("payload"), JsonObject.class),
+          getTransactionDetailProper(rs, "created")
+        )
+      );
+    }
+  }
+
+  private static class IssuersRowMapper implements RowMapper<IssuerSummaryRaw<JsonObject>> {
+    @Override
+    public IssuerSummaryRaw<JsonObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return new IssuerSummaryRaw<>(
+        new IssuerSummary<>(
+          Optional.of(
+            new TokenIssuerSummary<>(
+              rs.getString("contract_id"),
+              new Gson().fromJson(rs.getString("token_issuer_payload"), JsonObject.class)
+            )
+          )
         )
       );
     }
   }
 
   private static class SettlementsResultSetExtractor implements ResultSetExtractor<
-    List<
-      Single<
-        SettlementSummary<JsonObject, JsonObject, String, JsonObject, String, JsonObject, JsonObject>
-      >
-    >
+    List<Single<SettlementSummaryRaw<JsonObject>>>
   > {
     private final LedgerClient ledgerClient;
     private final java.util.Set<String> readAs;
@@ -523,59 +533,14 @@ public class WalletRepository {
       this.readAs = Set.copyOf(readAs);
     }
 
-    private void processCurrent(
-      List<
-        Single<
-          SettlementSummary<JsonObject, JsonObject, String, JsonObject, String, JsonObject, JsonObject>
-        >
-      > settlements,
-      SettlementSummary<JsonObject, JsonObject, String, JsonObject, String, JsonObject, JsonObject> current,
-      Optional<TransactionDetail> currentArchive,
-      Optional<String> currentArchiveEventId
-    ) {
-      if (current != null) {
-        if (currentArchiveEventId.isPresent()) {
-          settlements.add(
-            getExecution(
-              ledgerClient,
-              currentArchiveEventId.get(),
-              readAs
-            ).map(e -> {
-              if (e.isPresent()) {
-                return new SettlementSummary<>(
-                  current.batchId,
-                  current.requestors,
-                  current.settlers,
-                  current.batchCid,
-                  current.contextId,
-                  current.description,
-                  current.steps,
-                  current.witness,
-                  currentArchive
-                );
-              } else {
-                return current;
-              }
-            })
-          );
-        } else {
-          settlements.add(Single.just(current));
-        }
-      }
-    }
-
     @Override
-    public List<
-      Single<
-        SettlementSummary<JsonObject, JsonObject, String, JsonObject, String, JsonObject, JsonObject>
-      >
-    > extractData(ResultSet rs) throws SQLException, DataAccessException {
+    public List<Single<SettlementSummaryRaw<JsonObject>>> extractData(
+      ResultSet rs
+    ) throws SQLException, DataAccessException {
       final var settlements = new ArrayList<
-        Single<
-         SettlementSummary<JsonObject, JsonObject, String, JsonObject, String, JsonObject, JsonObject>
-        >
+        Single<SettlementSummaryRaw<JsonObject>>
       >();
-      SettlementSummary<JsonObject, JsonObject, String, JsonObject, String, JsonObject, JsonObject> current = null;
+      SettlementSummaryRaw<JsonObject> current = null;
       Optional<TransactionDetail> currentArchive = Optional.empty();
       Optional<String> currentArchiveEventId = Optional.empty();
       da.set.types.Set<String> currentRequestors = null;
@@ -616,37 +581,39 @@ public class WalletRepository {
         final Optional<TransactionDetail> archive = getTransactionDetailProper(rs, "instruction_archive");
         final Optional<String> instructionArchiveEventId = Optional.ofNullable(rs.getString("instruction_archive_event_id"));
 
-        if (current == null || !current.batchId.equals(batchId) || !requestorsSet.equals(currentRequestors)) {
+        if (current == null || !current.unpack.batchId.equals(batchId) || !requestorsSet.equals(currentRequestors)) {
           // We have reached a new Batch so we must add the current one into the resulting List
           processCurrent(settlements, current, currentArchive, currentArchiveEventId);
-          final List<SettlementStep<JsonObject, JsonObject, String, JsonObject, JsonObject>> steps = new LinkedList<>();
-          steps.add(step);
-          current = new SettlementSummary<>(
-            batchId,
-            requestors,
-            settlers,
-            batchCid,
-            contextId,
-            description,
-            steps,
-            batchCreate,
-            Optional.empty()
+          current = new SettlementSummaryRaw<>(
+            new SettlementSummary<>(
+              batchId,
+              requestors,
+              settlers,
+              batchCid,
+              contextId,
+              description,
+              new LinkedList<>(),
+              batchCreate,
+              Optional.empty()
+            )
           );
           currentRequestors = requestorsSet;
         } else {
-          current.steps.add(step);
-          current = new SettlementSummary<>(
-            current.batchId,
-            current.requestors,
-            current.settlers,
-            current.batchCid.or(() -> batchCid),
-            current.contextId.or(() -> contextId),
-            current.description.or(() -> description),
-            current.steps,
-            current.witness,
-            Optional.empty()
+          current = new SettlementSummaryRaw<>(
+            new SettlementSummary<>(
+              current.unpack.batchId,
+              current.unpack.requestors,
+              current.unpack.settlers,
+              current.unpack.batchCid.or(() -> batchCid),
+              current.unpack.contextId.or(() -> contextId),
+              current.unpack.description.or(() -> description),
+              current.unpack.steps,
+              current.unpack.witness,
+              Optional.empty()
+            )
           );
         }
+        current.unpack.steps.add(step);
         currentArchive = archive;
         currentArchiveEventId = instructionArchiveEventId;
         Util.logger.info("Current === " + current);
@@ -656,14 +623,55 @@ public class WalletRepository {
 
       return settlements;
     }
+
+    private void processCurrent(
+      List<Single<SettlementSummaryRaw<JsonObject>>> settlements,
+      SettlementSummaryRaw<JsonObject> current,
+      Optional<TransactionDetail> currentArchive,
+      Optional<String> currentArchiveEventId
+    ) {
+      if (current != null) {
+        if (currentArchiveEventId.isPresent()) {
+          settlements.add(
+            getExecution(
+              ledgerClient,
+              currentArchiveEventId.get(),
+              readAs
+            ).map(e -> {
+              if (e.isPresent()) {
+                return new SettlementSummaryRaw<>(
+                  new SettlementSummary<>(
+                    current.unpack.batchId,
+                    current.unpack.requestors,
+                    current.unpack.settlers,
+                    current.unpack.batchCid,
+                    current.unpack.contextId,
+                    current.unpack.description,
+                    current.unpack.steps,
+                    current.unpack.witness,
+                    currentArchive
+                  )
+                );
+              } else {
+                return current;
+              }
+            })
+          );
+        } else {
+          settlements.add(Single.just(current));
+        }
+      }
+    }
   }
 
-  private static class TokenInstrumentRowMapper implements RowMapper<InstrumentSummary> {
+  private static class TokenInstrumentRowMapper implements RowMapper<InstrumentSummaryRaw<JsonObject>> {
     @Override
-    public InstrumentSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return new InstrumentSummary(
-        rs.getString("contract_id"),
-        new Gson().fromJson(rs.getString("token_instrument_payload"), JsonObject.class)
+    public InstrumentSummaryRaw<JsonObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return new InstrumentSummaryRaw<>(
+        new InstrumentSummary<>(
+          rs.getString("contract_id"),
+          Optional.ofNullable(new Gson().fromJson(rs.getString("token_instrument_payload"), JsonObject.class))
+        )
       );
     }
   }
@@ -705,23 +713,6 @@ public class WalletRepository {
 
         return Optional.empty();
       });
-  }
-
-  private static Optional<TransactionDetail> getTransactionDetail(ResultSet rs, String prefix) throws SQLException {
-    String offset = rs.getString(prefix + "_offset");
-    Timestamp effectiveTime = rs.getTimestamp(prefix + "_effective_time");
-    if (offset != null && effectiveTime != null) {
-      return Optional.of(new TransactionDetail(offset, effectiveTime.toInstant()));
-    } else {
-      return Optional.empty();
-    }
-  }
-
-  private static com.synfini.wallet.views.schema.TransactionDetail getTransactionDetail_(ResultSet rs, String prefix) throws SQLException {
-    return new com.synfini.wallet.views.schema.TransactionDetail(
-      rs.getString(prefix + "_at_offset"),
-      rs.getTimestamp(prefix + "_effective_at")
-    );
   }
 
   private static Optional<synfini.wallet.api.types.TransactionDetail> getTransactionDetailProper(ResultSet rs, String prefix) throws SQLException {

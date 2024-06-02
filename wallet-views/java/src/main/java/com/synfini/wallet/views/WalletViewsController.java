@@ -7,24 +7,16 @@ import com.daml.ledger.rxjava.LedgerClient;
 import com.google.gson.JsonObject;
 import com.synfini.wallet.views.config.LedgerApiConfig;
 import com.synfini.wallet.views.config.WalletViewsApiConfig;
-import com.synfini.wallet.views.schema.response.Holdings;
-import com.synfini.wallet.views.schema.response.Instruments;
-import com.synfini.wallet.views.schema.response.Issuers;
 
 import io.reactivex.functions.BiFunction;
-import synfini.wallet.api.types.AccountsRaw;
 import synfini.wallet.api.types.AccountFilter;
 import synfini.wallet.api.types.AccountOpenOffersFilter;
-import synfini.wallet.api.types.AccountOpenOffersRaw;
 import synfini.wallet.api.types.BalanceFilter;
-import synfini.wallet.api.types.BalancesRaw;
-import synfini.wallet.api.types.BalancesTyped;
 import synfini.wallet.api.types.HoldingFilter;
 import synfini.wallet.api.types.InstrumentsFilter;
 import synfini.wallet.api.types.IssuersFilter;
+import synfini.wallet.api.types.Result;
 import synfini.wallet.api.types.SettlementsFilter;
-import synfini.wallet.api.types.SettlementsRaw;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -77,8 +69,8 @@ public class WalletViewsController {
       ) {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN);
       }
-      final var accounts = new AccountsRaw<>(walletRepository.accounts(filter.custodian, filter.owner));
-      return ResponseEntity.ok(accounts);
+      final var accounts = walletRepository.accounts(filter.custodian, filter.owner);
+      return ResponseEntity.ok(new Result<>(accounts));
     });
   }
 
@@ -89,8 +81,8 @@ public class WalletViewsController {
   ) throws Exception {
     return withLedgerConnection(auth, (__, userRights) -> {
       final var parties = allParties(userRights);
-      final var offers = new AccountOpenOffersRaw<>(walletRepository.accountOpenOffers(parties));
-      return ResponseEntity.ok(offers);
+      final var offers = walletRepository.accountOpenOffers(parties);
+      return ResponseEntity.ok(new Result<>(offers));
     });
   }
 
@@ -103,8 +95,8 @@ public class WalletViewsController {
       if (!WalletAuth.canReadAsAnyOf(userRights, filter.account.custodian, filter.account.owner)) {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN);
       }
-      final var balances = new BalancesRaw(walletRepository.balanceByAccount(filter.account));
-      return ResponseEntity.ok(balances);
+      final var balances = walletRepository.balanceByAccount(filter.account);
+      return ResponseEntity.ok(new Result<>(balances));
     });
   }
 
@@ -115,8 +107,8 @@ public class WalletViewsController {
   ) throws Exception {
     return withLedgerConnection(auth, (__, userRights) -> {
       final var parties = allParties(userRights);
-      final var holdings = new Holdings(walletRepository.holdings(filter.account, filter.instrument, parties));
-      return ResponseEntity.ok(holdings);
+      final var holdings = walletRepository.holdings(filter.account, filter.instrument, parties);
+      return ResponseEntity.ok(new Result<>(holdings));
     });
   }
 
@@ -136,7 +128,7 @@ public class WalletViewsController {
       try {
         final var settlements = walletRepository.settlements(ledgerClient, parties, filter.before, limit);
         return ResponseEntity.ok(
-          new SettlementsRaw<JsonObject>(settlements)
+          new Result<>(settlements)
         );
       } catch (SQLException e) {
         Util.logger.error("Error reading settlements", e);
@@ -152,10 +144,10 @@ public class WalletViewsController {
   ) throws Exception {
     return withLedgerConnection(auth, (__, userRights) -> {
       final var parties = allParties(userRights);
-      final var instruments = new Instruments(
-        walletRepository.instruments(filter.depository, filter.issuer, filter.id, filter.version, parties)
+      final var instruments = walletRepository.instruments(
+        filter.depository, filter.issuer, filter.id, filter.version, parties
       );
-      return ResponseEntity.ok(instruments);
+      return ResponseEntity.ok(new Result<>(instruments));
     });
   }
 
@@ -166,8 +158,8 @@ public class WalletViewsController {
   ) throws Exception {
     return withLedgerConnection(auth, (__, userRights) -> {
       final var parties = allParties(userRights);
-      final var instruments = new Issuers(walletRepository.issuers(filter.depository, filter.issuer, parties));
-      return ResponseEntity.ok(Util.gson.toJson(instruments));
+      final var issuers = walletRepository.issuers(filter.depository, filter.issuer, parties);
+      return ResponseEntity.ok(new Result<>(issuers));
     });
   }
 
