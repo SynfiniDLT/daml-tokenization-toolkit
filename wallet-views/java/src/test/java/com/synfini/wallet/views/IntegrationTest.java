@@ -12,7 +12,6 @@ import com.daml.ledger.rxjava.DamlLedgerClient;
 import com.daml.lf.codegen.json.JsonCodec;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import com.google.protobuf.ByteString;
 import da.internal.template.Archive;
 import da.set.types.Set;
@@ -43,8 +42,6 @@ import daml.finance.interface$.types.common.types.Quantity;
 import io.grpc.MethodDescriptor;
 import io.grpc.*;
 import io.grpc.netty.NettyChannelBuilder;
-import kong.unirest.*;
-
 import org.apache.ibatis.jdbc.ScriptRunner;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
@@ -101,16 +98,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class IntegrationTest {
   private static final String walletViewsBasePath = "/wallet-views/v1/";
   private static final Logger logger = LoggerFactory.getLogger(IntegrationTest.class);
-  private static final String mockTokenUrl = "https://myauth.com/token";
   private static final String tokenAudience =
     "https://daml.com/jwt/aud/participant/sandbox::1220facc0504d0689c876c616736695a92dbdd54a2aad49cc7a8b2f54935604c35ac";
-  private static final String clientSecret = "secret";
   private static final JsonCodec jsonCodec = JsonCodec.apply(true, true);
 
-  private static MockClient mockTokenClient;
   private static Integer sandboxPort;
   private static Process sandboxProcess;
   private static Process scribeProcess;
+  private static PostgreSQLContainer<?> postgresContainer;
+  private static ManagedChannel allPartiesChannel;
+  private static ManagedChannel adminChannel;
+  private static DamlLedgerClient allPartiesLedgerClient;
+
   private static String depository;
   private static String issuer;
   private static String custodian;
@@ -121,17 +120,13 @@ public class IntegrationTest {
   private static String investor2User;
   private static String issuerUser;
   private static String allPartiesUser;
-  private static ManagedChannel allPartiesChannel;
-  private static ManagedChannel adminChannel;
-  private static DamlLedgerClient allPartiesLedgerClient;
+
   private static daml.finance.interface$.account.factory.Factory.ContractId accountFactoryCid;
   private static synfini.interface$.onboarding.account.openoffer.factory.Factory.ContractId accountOpenOfferFactoryCid;
   private static daml.finance.interface$.holding.factory.Factory.ContractId holdingFactoryCid;
   private static daml.finance.interface$.settlement.factory.Factory.ContractId settlementFactoryCid;
   private static daml.finance.interface$.instrument.token.factory.Factory.ContractId tokenInstrumentFactoryCid;
   private static synfini.interface$.onboarding.issuer.instrument.token.factory.Factory.ContractId tokenInstrumentIssuerFactoryCid;
-
-  public static PostgreSQLContainer<?> postgresContainer;
 
   @Autowired
   private MockMvc mvc;
@@ -284,8 +279,6 @@ public class IntegrationTest {
       managementDbConn.close();
     }
 
-    mockTokenClient = MockClient.register();
-    mockTokenClient.defaultResponse().thenReturn("Did not match any expected responses").withStatus(400);
     final var entropy = UUID.randomUUID().toString().substring(0, 6);
     // Allocate parties
     final var partyManagementService = PartyManagementServiceGrpc.newBlockingStub(adminChannel);
@@ -403,15 +396,11 @@ public class IntegrationTest {
     if (allPartiesLedgerClient != null) {
       allPartiesLedgerClient.close();
     }
-
-    mockTokenClient.reset();
   }
 
   @Test
   void testHasNoBalancesInitially() throws Exception {
-    registerAuthMock(custodianUser, 60 * 60 * 24);
-    startProjectionDaemon(custodian, custodianUser);
-    delayForProjectionToStart();
+    startScribe(custodian, custodianUser);
 
     final var account = new AccountKey(custodian, investor1, new Id("1"));
 
@@ -434,7 +423,6 @@ public class IntegrationTest {
   @Test
   void testUpdatesBalanceAfterCreditsAndDebits() throws Exception {
     startScribe(custodian, custodianUser);
-    delayForProjectionToStart();
 
     final var account = new AccountKey(custodian, investor1, new Id("1"));
 
@@ -510,7 +498,6 @@ public class IntegrationTest {
   @Test
   void testHasSameBalanceAfterSplit() throws Exception {
     startScribe(custodian, custodianUser);
-    delayForProjectionToStart();
 
     final var account = new AccountKey(custodian, investor1, new Id("1"));
 
@@ -541,9 +528,7 @@ public class IntegrationTest {
 
   @Test
   void returnsLockedBalances() throws Exception {
-    registerAuthMock(custodianUser, 60 * 60 * 24);
-    startProjectionDaemon(custodian, custodianUser);
-    delayForProjectionToStart();
+    startScribe(custodian, custodianUser);
 
     final var account = new AccountKey(custodian, investor1, new Id("1"));
     final var creditAmount= new BigDecimal("99.0");
@@ -656,9 +641,7 @@ public class IntegrationTest {
 
   @Test
   void canReturnBalancesOfMultipleAssets() throws Exception {
-    registerAuthMock(custodianUser, 60 * 60 * 24);
-    startProjectionDaemon(custodian, custodianUser);
-    delayForProjectionToStart();
+    startScribe(custodian, custodianUser);
 
     final var account = new AccountKey(custodian, investor1, new Id("1"));
     final var creditAmount1 = new BigDecimal("99.0");
@@ -688,9 +671,7 @@ public class IntegrationTest {
 
   @Test
   void doesNotReturnBalancesOfOtherAccounts() throws Exception {
-    registerAuthMock(custodianUser, 60 * 60 * 24);
-    startProjectionDaemon(custodian, custodianUser);
-    delayForProjectionToStart();
+    startScribe(custodian, custodianUser);
 
     final var account1 = new AccountKey(custodian, investor1, new Id("1"));
     final var account2 = new AccountKey(custodian, investor1, new Id("2"));
@@ -730,9 +711,7 @@ public class IntegrationTest {
     creditAccount(accountCid, instrument1(), creditAmount);
     delayForProjectionIngestion();
 
-    registerAuthMock(custodianUser, 60 * 60 * 24);
-    startProjectionDaemon(custodian, custodianUser);
-    delayForProjectionToStart();
+    startScribe(custodian, custodianUser);
 
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
@@ -1896,16 +1875,11 @@ public class IntegrationTest {
       .blockingGet();
   }
 
-  // Delay used to account for possible lag between when an event is added to ledger, and custom views writing the event
-  // to the DB
+  // Delay used to account for possible lag between when an event is added to ledger, and writing the event
+  // to the DB. In future, rather than hard coding the delay, we could poll the check point offset in the database and
+  // wait until it reaches the desired value.
   private static void delayForProjectionIngestion() throws InterruptedException {
-    Thread.sleep(8_000);
-  }
-
-  // Delay to account for time taken for the projector to start
-  private static void delayForProjectionToStart() throws InterruptedException {
-    Thread.sleep(20_000);
-    logger.info("Finished delay for projection");
+    Thread.sleep(5_000);
   }
 
   private static String generateToken(
@@ -2053,36 +2027,6 @@ public class IntegrationTest {
       .exerciseResult;
   }
 
-  // Register this client ID in a mocked IAM, which will issue tokens within the given expiry
-  private static void registerAuthMock(String clientId, int expiresInSeconds) {
-    JsonObject resp = new JsonObject();
-    resp.add("access_token", new JsonPrimitive(generateToken(clientId)));
-    resp.add("expires_in", new JsonPrimitive(expiresInSeconds));
-
-    FieldMatcher expectedFields = FieldMatcher.of(
-      "client_id", clientId,
-      "client_secret", clientSecret,
-      "audience", tokenAudience
-    );
-    // The Mock IAM will only return the response if it receives a request which matches the expected HTTP method, URL
-    // and body.
-    mockTokenClient
-      .expect(HttpMethod.POST, mockTokenUrl)
-      .body(
-        new BodyMatcher() {
-          @Override
-          public MatchStatus matches(List<String> list) {
-            // The provided Matcher does not work when the parameters are separated by "&", so we split it first, then
-            // use the provided Matcher
-            List<String> splitted = List.of(list.get(0).split("&"));
-            return expectedFields.matches(splitted);
-          }
-        }
-      )
-      .thenReturn(resp)
-      .withStatus(200);
-  }
-
   private static void removeAccount(AccountKey account) {
     allPartiesLedgerClient
       .getCommandClient()
@@ -2126,23 +2070,6 @@ public class IntegrationTest {
       .submitAndWaitForResult(allPartiesUpdateSubmission(exerciseCommand))
       .blockingGet()
       .exerciseResult;
-  }
-
-  private void startProjectionDaemon(String readAs, String clientId) throws Exception {
-    final JsonObject startBody = new JsonObject();
-    startBody.addProperty("readAs", readAs);
-    startBody.addProperty("tokenUrl", mockTokenUrl);
-    startBody.addProperty("clientId", clientId);
-    startBody.addProperty("clientSecret", clientSecret);
-    startBody.addProperty("audience", tokenAudience);
-    mvc
-      .perform(
-        MockMvcRequestBuilders
-          .post(walletViewsBasePath + "projection/start")
-          .content(new Gson().toJson(startBody))
-          .contentType(MediaType.APPLICATION_JSON)
-      )
-      .andExpect(status().isOk());
   }
 
   private void startScribe(String readAs, String userId) throws Exception {
@@ -2277,10 +2204,6 @@ public class IntegrationTest {
 
     return offset;
   }
-
-  // private static <T> String toJson(DefinedDataType<T> value) {
-  //   return jsonCodec.toJsValue(value.toValue()).compactPrint();
-  // }
 
   private static <T, D extends DefinedDataType<T>> String toJson(Result<List<D>> result) {
     return jsonCodec.toJsValue(

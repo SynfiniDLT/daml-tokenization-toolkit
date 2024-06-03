@@ -47,6 +47,7 @@ import daml.finance.interface$.types.common.types.InstrumentKey;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import synfini.wallet.api.types.AccountOpenOfferSummary;
+import synfini.wallet.api.types.AccountOpenOfferSummaryRaw;
 import synfini.wallet.api.types.AccountSummary;
 import synfini.wallet.api.types.AccountSummaryRaw;
 // import synfini.wallet.api.types.*;
@@ -92,7 +93,7 @@ public class WalletRepository {
     );
   }
 
-  public List<AccountOpenOfferSummary<String, JsonObject>> accountOpenOffers(List<String> readAs) {
+  public List<AccountOpenOfferSummaryRaw<JsonObject>> accountOpenOffers(List<String> readAs) {
     return jdbcTemplate.query(
       multiLineQuery(
         "SELECT",
@@ -459,15 +460,17 @@ public class WalletRepository {
     }
   }
 
-  private static class AccountOpenOfferRowMapper implements RowMapper<AccountOpenOfferSummary<String, JsonObject>> {
+  private static class AccountOpenOfferRowMapper implements RowMapper<AccountOpenOfferSummaryRaw<JsonObject>> {
     @Override
-    public AccountOpenOfferSummary<String, JsonObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
+    public AccountOpenOfferSummaryRaw<JsonObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
       final var payload = new Gson().fromJson(rs.getString("payload"), JsonObject.class);
-      return new AccountOpenOfferSummary<>(
-        rs.getString("contract_id"),
-        payload,
-        getTransactionDetailProper(rs, "created").orElseThrow(() ->
-          new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR)
+      return new AccountOpenOfferSummaryRaw<>(
+        new AccountOpenOfferSummary<>(
+          rs.getString("contract_id"),
+          payload,
+          getTransactionDetailProper(rs, "created").orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR)
+          )
         )
       );
     }
@@ -616,7 +619,6 @@ public class WalletRepository {
         current.unpack.steps.add(step);
         currentArchive = archive;
         currentArchiveEventId = instructionArchiveEventId;
-        Util.logger.info("Current === " + current);
       }
 
       processCurrent(settlements, current, currentArchive, currentArchiveEventId);
@@ -637,8 +639,8 @@ public class WalletRepository {
               ledgerClient,
               currentArchiveEventId.get(),
               readAs
-            ).map(e -> {
-              if (e.isPresent()) {
+            ).map(wasExecuted -> {
+              if (wasExecuted) {
                 return new SettlementSummaryRaw<>(
                   new SettlementSummary<>(
                     current.unpack.batchId,
@@ -676,7 +678,7 @@ public class WalletRepository {
     }
   }
 
-  private static Single<Optional<daml.finance.interface$.settlement.instruction.Execute>> getExecution(
+  private static Single<Boolean> getExecution(
     LedgerClient ledgerClient,
     String instructionArchivedEventId,
     java.util.Set<String> readAs
@@ -685,33 +687,10 @@ public class WalletRepository {
       .getTransactionsClient()
       .getTransactionByEventId(instructionArchivedEventId, readAs)
       .map(transactionTree -> {
-        final var event = transactionTree.getEventsById().get(instructionArchivedEventId);
-
-        if (event == null) {
-          Util.logger.error("Oops the event is NULL!");
-          return Optional.empty();
-        }
-
-        if (event instanceof ExercisedEvent) {
-          final var exercisedEvent = (ExercisedEvent) event;
-          if (
-            exercisedEvent
-              .getChoice()
-              .equals(daml.finance.interface$.settlement.instruction.Instruction.CHOICE_Execute.name)
-          ) {
-            return Optional.of(
-              daml.finance.interface$.settlement.instruction.Execute
-                .valueDecoder()
-                .decode(exercisedEvent.getChoiceArgument())
-            );
-          } else {
-            Util.logger.info("the choice is not the execute choice");
-          }
-        } else {
-          Util.logger.info("oops the event is not an exercised event");
-        }
-
-        return Optional.empty();
+        final var exercisedEvent = (ExercisedEvent) transactionTree.getEventsById().get(instructionArchivedEventId);
+        return exercisedEvent
+          .getChoice()
+          .equals(daml.finance.interface$.settlement.instruction.Instruction.CHOICE_Execute.name);
       });
   }
 
