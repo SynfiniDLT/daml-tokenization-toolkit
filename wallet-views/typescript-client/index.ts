@@ -1,20 +1,23 @@
 import {
   AccountFilter,
-  AccountsTyped,
   BalanceFilter,
-  BalancesTyped,
-  Holdings,
   HoldingFilter,
   SettlementsFilter,
   InstrumentsFilter,
-  Instruments,
   AccountOpenOffersFilter,
-  AccountOpenOffersTyped,
   IssuersFilter,
-  Issuers,
-  SettlementsTyped
+  AccountSummaryTyped,
+  Result,
+  AccountOpenOfferSummaryTyped,
+  BalanceTyped,
+  HoldingSummaryTyped,
+  SettlementSummaryTyped,
+  InstrumentSummaryTyped,
+  IssuerSummaryTyped
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import fetch from "cross-fetch";
+import * as jtv from "@mojotech/json-type-validation";
+import * as damlTypes from "@daml/types";
 
 type WalletViewsClientParams = {
   token: string,
@@ -30,39 +33,46 @@ export class WalletViewsClient {
     this.baseUrl = baseUrl;
   }
 
-  async getAccounts(filter: AccountFilter): Promise<AccountsTyped> {
+  async getAccounts(filter: AccountFilter): Promise<AccountSummaryTyped[]> {
     const json = await this.post("/accounts", AccountFilter.encode(filter));
-    return await AccountsTyped.decoder.runPromise(json);
+    const { result } = await Result(damlTypes.List(AccountSummaryTyped)).decoder.runPromise(json);
+    return result;
   }
 
-  async getAccountOpenOffers(filter: AccountOpenOffersFilter): Promise<AccountOpenOffersTyped> {
+  async getAccountOpenOffers(filter: AccountOpenOffersFilter): Promise<AccountOpenOfferSummaryTyped[]> {
     const json = await this.post("/account-open-offers", AccountOpenOffersFilter.encode(filter));
-    return await AccountOpenOffersTyped.decoder.runPromise(json);
+    const { result } = await Result(damlTypes.List(AccountOpenOfferSummaryTyped)).decoder.runPromise(json);
+    return result;
   }
 
-  async getBalance(filter: BalanceFilter): Promise<BalancesTyped> {
+  async getBalance(filter: BalanceFilter): Promise<BalanceTyped[]> {
     const json = await this.post("/balance", BalanceFilter.encode(filter));
-    return await BalancesTyped.decoder.runPromise(json);
+    const { result } = await Result(damlTypes.List(BalanceTyped)).decoder.runPromise(json);
+    return result;
   }
 
-  async getHoldings(filter: HoldingFilter): Promise<Holdings> {
+  async getHoldings(filter: HoldingFilter): Promise<HoldingSummaryTyped[]> {
     const json = await this.post("/holdings", HoldingFilter.encode(filter));
-    return await Holdings.decoder.runPromise(json);
+    const { result } = await Result(damlTypes.List(HoldingSummaryTyped)).decoder.runPromise(json);
+    return result;
   }
 
-  async getSettlements(filter: SettlementsFilter): Promise<SettlementsTyped> {
+  async getSettlements(filter: SettlementsFilter): Promise<SettlementSummaryTyped[]> {
     const json = await this.post("/settlements", SettlementsFilter.encode(filter));
-    return await SettlementsTyped.decoder.runPromise(json);
+    const { result } = await Result(damlTypes.List(SettlementSummaryTyped)).decoder.runPromise(json);
+    return result;
   }
 
-  async getInstruments(filter: InstrumentsFilter): Promise<Instruments> {
+  async getInstruments(filter: InstrumentsFilter): Promise<InstrumentSummaryTyped[]> {
     const json = await this.post("/instruments", InstrumentsFilter.encode(filter));
-    return await Instruments.decoder.runPromise(json);
+    const { result } = await Result(damlTypes.List(InstrumentSummaryTyped)).decoder.runPromise(json);
+    return result;
   }
 
-  async getIssuers(filter: IssuersFilter): Promise<Issuers> {
+  async getIssuers(filter: IssuersFilter): Promise<IssuerSummaryTyped[]> {
     const json = await this.post("/issuers", IssuersFilter.encode(filter));
-    return await Issuers.decoder.runPromise(json);
+    const { result } = await Result(damlTypes.List(IssuerSummaryTyped)).decoder.runPromise(json);
+    return result;
   }
 
   private async post(endpoint: string, requestBody: any): Promise<any> {

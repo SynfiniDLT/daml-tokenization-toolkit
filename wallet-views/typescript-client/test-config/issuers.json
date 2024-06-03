@@ -2,15 +2,20 @@
   "readAs": [],
   "issuerSettings": [
     {
-      "issuerFactory" : "token",
-      "instrumentFactory" : "token",
-      "instrumentType" : "Token",
       "depository" : "depository",
       "issuer" : "issuer",
+      "instruments" : [
+        {
+          "label": "issuer",
+          "issuerFactory" : "token",
+          "instrumentFactory" : "token",
+          "instrumentType": "Token"
+        }
+      ],
       "observers" : [
         {
-          "context": "public",
-          "parties": ["custodian", "alice"]
+          "context": "o",
+          "parties": ["alice"]
         }
       ]
     }

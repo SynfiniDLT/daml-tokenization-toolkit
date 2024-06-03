@@ -44,8 +44,8 @@ beforeAll(() => {
 
 test("Lists accounts", async () => {
   const resp = await aliceClient.getAccounts({custodian: null, owner: alice});
-  expect(resp.unpack.length).toEqual(1);
-  let account = resp.unpack[0];
+  expect(resp.length).toEqual(1);
+  let account = resp[0].unpack;
   expect(account.view.owner).toEqual(alice);
   expect(account.view.id.unpack).toEqual(aliceAccountId);
 });
@@ -54,9 +54,9 @@ test("Returns balances", async () => {
   const resp = await aliceClient.getBalance({
     account: { owner: alice, custodian, id: { unpack: aliceAccountId } }
   });
-  expect(resp.unpack.length).toEqual(1);
-  let balance = resp.unpack[0];
-  expect(balance.unlocked).toEqual("100000.0");
+  expect(resp.length).toEqual(1);
+  let balance = resp[0].unpack;
+  expect(balance.unlocked).toEqual("1.0000000001");
   expect(balance.instrument.issuer).toEqual(issuer);
 });
 
@@ -65,9 +65,9 @@ test("Returns holdings", async () => {
     account: { owner: alice, custodian, id: { unpack: aliceAccountId } },
     instrument: { issuer, depository, id: { unpack: "Instrument1" }, version: "0" }
   });
-  expect(resp.holdings.length).toEqual(1);
-  const holding = resp.holdings[0];
-  expect(holding.view.amount).toEqual("100000.0");
+  expect(resp.length).toEqual(1);
+  const holding = resp[0].unpack;
+  expect(holding.view.amount).toEqual("1.0000000001");
   expect(holding.view.instrument.issuer).toEqual(issuer);
 });
 
@@ -76,24 +76,24 @@ test("Returns settlements", async () => {
     before: null,
     limit: "10"
   });
-  expect(resp.unpack.length).toEqual(1);
-  const settlement = resp.unpack[0];
+  expect(resp.length).toEqual(1);
+  const settlement = resp[0].unpack;
   expect(settlement.steps.length).toEqual(1);
   const step = settlement.steps[0];
-  expect(step.routedStep.quantity.amount).toEqual("100000.0");
+  expect(step.routedStep.quantity.amount).toEqual("1.0000000001");
   expect(step.routedStep.quantity.unit.issuer).toEqual(issuer);
 });
 
 test("Returns account open offers", async () => {
   const resp = await aliceClient.getAccountOpenOffers({});
-  expect(resp.unpack.length).toEqual(1);
-  const offer = resp.unpack[0];
+  expect(resp.length).toEqual(1);
+  const offer = resp[0].unpack;
   expect(offer.view.custodian).toEqual(custodian);
 });
 
 test("Returns issuers", async () => {
   const resp = await aliceClient.getIssuers({ depository, issuer });
-  expect(resp.issuers.length).toEqual(1);
-  const issuerSummary = resp.issuers[0];
+  expect(resp.length).toEqual(1);
+  const issuerSummary = resp[0].unpack;
   expect(issuerSummary.token?.view.issuer).toEqual(issuer);
 });
