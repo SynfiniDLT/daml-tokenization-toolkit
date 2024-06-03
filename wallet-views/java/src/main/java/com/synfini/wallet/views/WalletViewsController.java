@@ -28,6 +28,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -70,7 +71,11 @@ public class WalletViewsController {
       ) {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN);
       }
-      final var accounts = walletRepository.accounts(filter.custodian, filter.owner);
+      final var accounts = walletRepository
+        .accounts(filter.custodian, filter.owner)
+        .stream()
+        .map(r -> r.unpack)
+        .collect(Collectors.toList());
       return ResponseEntity.ok(new Result<>(accounts));
     });
   }
@@ -82,7 +87,11 @@ public class WalletViewsController {
   ) throws Exception {
     return withLedgerConnection(auth, (__, userRights) -> {
       final var parties = allParties(userRights);
-      final var offers = walletRepository.accountOpenOffers(parties);
+      final var offers = walletRepository
+        .accountOpenOffers(parties)
+        .stream()
+        .map(r -> r.unpack)
+        .collect(Collectors.toList());
       return ResponseEntity.ok(new Result<>(offers));
     });
   }
@@ -96,7 +105,11 @@ public class WalletViewsController {
       if (!canReadAsAnyOf(userRights, filter.account.custodian, filter.account.owner)) {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN);
       }
-      final var balances = walletRepository.balanceByAccount(filter.account);
+      final var balances = walletRepository
+        .balanceByAccount(filter.account)
+        .stream()
+        .map(r -> r.unpack)
+        .collect(Collectors.toList());
       return ResponseEntity.ok(new Result<>(balances));
     });
   }
@@ -108,7 +121,11 @@ public class WalletViewsController {
   ) throws Exception {
     return withLedgerConnection(auth, (__, userRights) -> {
       final var parties = allParties(userRights);
-      final var holdings = walletRepository.holdings(filter.account, filter.instrument, parties);
+      final var holdings = walletRepository
+        .holdings(filter.account, filter.instrument, parties)
+        .stream()
+        .map(r -> r.unpack)
+        .collect(Collectors.toList());
       return ResponseEntity.ok(new Result<>(holdings));
     });
   }
@@ -126,7 +143,11 @@ public class WalletViewsController {
           .badRequest()
           .body("Transactions limit cannot exceed " + walletViewsApiConfig.maxTransactionsResponseSize);
       }
-      final var settlements = walletRepository.settlements(ledgerClient, parties, filter.before, limit);
+      final var settlements = walletRepository
+        .settlements(ledgerClient, parties, filter.before, limit)
+        .stream()
+        .map(r -> r.unpack)
+        .collect(Collectors.toList());
       return ResponseEntity.ok(
         new Result<>(settlements)
       );
@@ -140,9 +161,11 @@ public class WalletViewsController {
   ) throws Exception {
     return withLedgerConnection(auth, (__, userRights) -> {
       final var parties = allParties(userRights);
-      final var instruments = walletRepository.instruments(
-        filter.depository, filter.issuer, filter.id, filter.version, parties
-      );
+      final var instruments = walletRepository
+        .instruments(filter.depository, filter.issuer, filter.id, filter.version, parties)
+        .stream()
+        .map(r -> r.unpack)
+        .collect(Collectors.toList());
       return ResponseEntity.ok(new Result<>(instruments));
     });
   }
@@ -154,7 +177,11 @@ public class WalletViewsController {
   ) throws Exception {
     return withLedgerConnection(auth, (__, userRights) -> {
       final var parties = allParties(userRights);
-      final var issuers = walletRepository.issuers(filter.depository, filter.issuer, parties);
+      final var issuers = walletRepository
+        .issuers(filter.depository, filter.issuer, parties)
+        .stream()
+        .map(r -> r.unpack)
+        .collect(Collectors.toList());
       return ResponseEntity.ok(new Result<>(issuers));
     });
   }

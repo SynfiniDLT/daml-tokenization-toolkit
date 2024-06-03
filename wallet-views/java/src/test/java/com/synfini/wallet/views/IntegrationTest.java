@@ -11,6 +11,8 @@ import com.daml.ledger.javaapi.data.codegen.Update;
 import com.daml.ledger.rxjava.DamlLedgerClient;
 import com.daml.lf.codegen.json.JsonCodec;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.protobuf.ByteString;
 import da.internal.template.Archive;
@@ -2206,13 +2208,21 @@ public class IntegrationTest {
   }
 
   private static <T, D extends DefinedDataType<T>> String toJson(Result<List<D>> result) {
-    return jsonCodec.toJsValue(
+    final var jsonString = jsonCodec.toJsValue(
       result.toValue(
         values -> DamlList.of(
           values.stream().map(v -> v.toValue()).collect(Collectors.toList())
         )
       )
     ).compactPrint();
+    final var json = new Gson().fromJson(jsonString, JsonObject.class);
+    final var resultsArray = new JsonArray();
+    json.get("result").getAsJsonArray().iterator().forEachRemaining(r -> {
+      resultsArray.add(r.getAsJsonObject().get("unpack"));
+    });
+    // json.remove("result");
+    json.add("result", resultsArray);
+    return new Gson().toJson(json);
   }
 
   private static <T> String toJson(DefinedDataType<T> value) {
