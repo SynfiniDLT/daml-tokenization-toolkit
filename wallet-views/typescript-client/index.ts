@@ -24,6 +24,16 @@ type WalletViewsClientParams = {
   baseUrl: string
 }
 
+const accountsResultDecoder = Result(damlTypes.List(unpackedSerializable(AccountSummaryTyped))).decoder;
+const accountOpenOffersResultDecoder = Result(
+  damlTypes.List(unpackedSerializable(AccountOpenOfferSummaryTyped))
+).decoder;
+const balanceResultDecoder = Result(damlTypes.List(unpackedSerializable(BalanceTyped))).decoder;
+const holdingsResultDecoder = Result(damlTypes.List(unpackedSerializable(HoldingSummaryTyped))).decoder;
+const settlementsResultDecoder = Result(damlTypes.List(unpackedSerializable(SettlementSummaryTyped))).decoder;
+const instrumentsResultDecoder = Result(damlTypes.List(unpackedSerializable(InstrumentSummaryTyped))).decoder;
+const issuersResultDecoder = Result(damlTypes.List(unpackedSerializable(IssuerSummaryTyped))).decoder;
+
 export class WalletViewsClient {
   private readonly token: string
   private readonly baseUrl: string
@@ -33,45 +43,45 @@ export class WalletViewsClient {
     this.baseUrl = baseUrl;
   }
 
-  async getAccounts(filter: AccountFilter): Promise<AccountSummaryTyped[]> {
+  getAccounts = async (filter: AccountFilter) => {
     const json = await this.post("/accounts", AccountFilter.encode(filter));
-    const { result } = await Result(damlTypes.List(AccountSummaryTyped)).decoder.runPromise(json);
+    const { result } = await accountsResultDecoder.runPromise(json);
     return result;
   }
 
-  async getAccountOpenOffers(filter: AccountOpenOffersFilter): Promise<AccountOpenOfferSummaryTyped[]> {
+  getAccountOpenOffers = async (filter: AccountOpenOffersFilter) => {
     const json = await this.post("/account-open-offers", AccountOpenOffersFilter.encode(filter));
-    const { result } = await Result(damlTypes.List(AccountOpenOfferSummaryTyped)).decoder.runPromise(json);
+    const { result } = await accountOpenOffersResultDecoder.runPromise(json);
     return result;
   }
 
-  async getBalance(filter: BalanceFilter): Promise<BalanceTyped[]> {
+  getBalance = async (filter: BalanceFilter) => {
     const json = await this.post("/balance", BalanceFilter.encode(filter));
-    const { result } = await Result(damlTypes.List(BalanceTyped)).decoder.runPromise(json);
+    const { result } = await balanceResultDecoder.runPromise(json);
     return result;
   }
 
-  async getHoldings(filter: HoldingFilter): Promise<HoldingSummaryTyped[]> {
+  getHoldings = async (filter: HoldingFilter) => {
     const json = await this.post("/holdings", HoldingFilter.encode(filter));
-    const { result } = await Result(damlTypes.List(HoldingSummaryTyped)).decoder.runPromise(json);
+    const { result } = await holdingsResultDecoder.runPromise(json);
     return result;
   }
 
-  async getSettlements(filter: SettlementsFilter): Promise<SettlementSummaryTyped[]> {
+  getSettlements = async (filter: SettlementsFilter) => {
     const json = await this.post("/settlements", SettlementsFilter.encode(filter));
-    const { result } = await Result(damlTypes.List(SettlementSummaryTyped)).decoder.runPromise(json);
+    const { result } = await settlementsResultDecoder.runPromise(json);
     return result;
   }
 
-  async getInstruments(filter: InstrumentsFilter): Promise<InstrumentSummaryTyped[]> {
+  getInstruments = async (filter: InstrumentsFilter) => {
     const json = await this.post("/instruments", InstrumentsFilter.encode(filter));
-    const { result } = await Result(damlTypes.List(InstrumentSummaryTyped)).decoder.runPromise(json);
+    const { result } = await instrumentsResultDecoder.runPromise(json);
     return result;
   }
 
-  async getIssuers(filter: IssuersFilter): Promise<IssuerSummaryTyped[]> {
+  getIssuers = async (filter: IssuersFilter) => {
     const json = await this.post("/issuers", IssuersFilter.encode(filter));
-    const { result } = await Result(damlTypes.List(IssuerSummaryTyped)).decoder.runPromise(json);
+    const { result } = await issuersResultDecoder.runPromise(json);
     return result;
   }
 
@@ -93,6 +103,23 @@ export class WalletViewsClient {
         status: resp.status,
         message: resp.statusText
       }
+    }
+  }
+}
+
+function unpackedDecoder<T>(packedDecoder: jtv.Decoder<{unpack: T}>): jtv.Decoder<T> {
+  return jtv.Decoder
+    .unknownJson()
+    .map(unknown => ({ unpack: unknown }))
+    .andThen(() => packedDecoder)
+    .map(({ unpack }) => unpack);
+}
+
+function unpackedSerializable<T>(packedSerializable: damlTypes.Serializable<{unpack: T}>): damlTypes.Serializable<T> {
+  return {
+    decoder: unpackedDecoder(packedSerializable.decoder),
+    encode: _ => {
+      throw new Error("Unsupported operation");
     }
   }
 }
