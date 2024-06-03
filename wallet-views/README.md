@@ -654,53 +654,6 @@ List `Issuer` contracts as defined in the `issuer-onboarding` folder at the base
 }
 ```
 
-### Start the projection
-Start the projection runner
-
-#### HTTP Request
-- URL: `/wallet-views/v1/projection/start`
-- Method: `POST`
-- Content-Type: `application/json`
-- Content:
-
-```js
-{
-  "readAs": "Alice::abc123...",
-  "tokenUrl": "https://your-access-token-endpoint", // OAuth access token endpoint - optional (will not use authentication if not provided)
-  "clientId": "abc123...", // OAuth client ID - optional (required if "tokenUrl" is provided)
-  "clientSecret": "abc123...", // OAuth client secret - optional (required if "tokenUrl" is provided)
-  "audience": "abc123..." // OAuth audience - optional (required if "tokenUrl" is provided)
-}
-```
-
-#### Required permissions
-- Authentication for this endpoint is not yet implemented, however the projection runner itself still needs to
-authenticate against the participant
-
-#### HTTP Response
-- Content-Type: `application/json`
-- Content: `null`
-
-### Stop the projection
-Stop the projection runner
-
-#### HTTP Request
-- URL: `/wallet-views/v1/projection/clear`
-- Method: `POST`
-- Content-Type: `application/json`
-- Content:
-
-```js
-{}
-```
-
-#### Required permissions
-- Authentication for this endpoint is not yet implemented
-
-#### HTTP Response
-- Content-Type: `application/json`
-- Content: `null`
-
 ## Building and running
 
 Building/running/testing is only supported on Linux.
