@@ -50,7 +50,6 @@ import synfini.wallet.api.types.AccountOpenOfferSummary;
 import synfini.wallet.api.types.AccountOpenOfferSummaryRaw;
 import synfini.wallet.api.types.AccountSummary;
 import synfini.wallet.api.types.AccountSummaryRaw;
-// import synfini.wallet.api.types.*;
 import synfini.wallet.api.types.Balance;
 import synfini.wallet.api.types.BalanceRaw;
 import synfini.wallet.api.types.HoldingSummary;
@@ -67,6 +66,8 @@ import synfini.wallet.api.types.TransactionDetail;
 
 @Component
 public class WalletRepository {
+  private static final Gson vanillaGson = new Gson();
+
   private final JdbcTemplate jdbcTemplate;
   private final DataSource pgDataSource;
 
@@ -326,8 +327,14 @@ public class WalletRepository {
     List<String> readAs,
     Optional<String> before,
     long limit
-  ) throws SQLException {
-    final var readAsArray = asSqlArray(readAs);
+  ) {
+    Array readAsArray;
+    try {
+      readAsArray = asSqlArray(readAs);
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+
     final var instructionsMinOffsets = multiLineQuery(
       "  SELECT",
       "    instruction.payload->'batchId'->>'unpack' AS batch_id,",
@@ -365,7 +372,7 @@ public class WalletRepository {
         ps.setLong(++pos, limit);
         return pos;
       } catch (SQLException e) {
-        throw new RuntimeException(e); // TODO remove?
+        throw new RuntimeException(e);
       }
     };
 
@@ -402,8 +409,6 @@ public class WalletRepository {
       "  instruction_archive.archive_event_id AS instruction_archive_event_id,",
       "  instruction_archive.archived_at_offset AS instruction_archive_at_offset,",
       "  instruction_archive.archived_effective_at AS instruction_archive_effective_at,",
-      //"  executions.contract_id IS NOT NULL AS instruction_executed,",
-      // "  false AS instruction_executed,",
       "  bs.payload AS batch_payload,",
       "  instructions.payload AS instruction_payload",
       "FROM (\n" + instructionsMinOffsets + "\n) AS instructions_min_offsets",
@@ -415,7 +420,6 @@ public class WalletRepository {
       "LEFT JOIN (\n" + selectBatches + "\n) AS bs ON",
       "  bs.payload->'id'->>'unpack' = instructions.payload->'batchId'->>'unpack' AND",
       "  daml_set_text_values(bs.payload->'requestors') = daml_set_text_values(instructions.payload->'requestors')",
-      // "LEFT JOIN exercises(?) AS executions ON instruction_archive.contract_id = executions.contract_id",
       "ORDER BY",
       "  witness_at_offset DESC,",
       "  batch_id,",
@@ -431,12 +435,6 @@ public class WalletRepository {
         ps.setString(++pos, fullyQualified(daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID));
         ps.setString(++pos, fullyQualified(daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID));
         pos = batchesSetter.apply(pos, ps);
-        // ps.setString(
-        //   ++pos,
-        //   daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID.getPackageId() + ":" +
-        //   daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID.getModuleName() + ":" +
-        //   daml.finance.interface$.settlement.instruction.Instruction.CHOICE_Execute.name
-        // );
       },
       new SettlementsResultSetExtractor(ledgerClient, readAs)
     );
@@ -450,7 +448,7 @@ public class WalletRepository {
   private static class AccountRowMapper implements RowMapper<AccountSummaryRaw<JsonObject>> {
     @Override
     public AccountSummaryRaw<JsonObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
-      final var payload = new Gson().fromJson(rs.getString("payload"), JsonObject.class);
+      final var payload = vanillaGson.fromJson(rs.getString("payload"), JsonObject.class);
       return new AccountSummaryRaw<>(
         new AccountSummary<>(
           rs.getString("contract_id"),
@@ -463,7 +461,7 @@ public class WalletRepository {
   private static class AccountOpenOfferRowMapper implements RowMapper<AccountOpenOfferSummaryRaw<JsonObject>> {
     @Override
     public AccountOpenOfferSummaryRaw<JsonObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
-      final var payload = new Gson().fromJson(rs.getString("payload"), JsonObject.class);
+      final var payload = vanillaGson.fromJson(rs.getString("payload"), JsonObject.class);
       return new AccountOpenOfferSummaryRaw<>(
         new AccountOpenOfferSummary<>(
           rs.getString("contract_id"),
@@ -502,7 +500,7 @@ public class WalletRepository {
       return new HoldingSummaryRaw<>(
         new HoldingSummary<>(
           rs.getString("contract_id"),
-          new Gson().fromJson(rs.getString("payload"), JsonObject.class),
+          vanillaGson.fromJson(rs.getString("payload"), JsonObject.class),
           getTransactionDetailProper(rs, "created")
         )
       );
@@ -517,7 +515,7 @@ public class WalletRepository {
           Optional.of(
             new TokenIssuerSummary<>(
               rs.getString("contract_id"),
-              new Gson().fromJson(rs.getString("token_issuer_payload"), JsonObject.class)
+              vanillaGson.fromJson(rs.getString("token_issuer_payload"), JsonObject.class)
             )
           )
         )
@@ -549,12 +547,12 @@ public class WalletRepository {
       da.set.types.Set<String> currentRequestors = null;
 
       while (rs.next()) {
-        final var instructionPayload = new Gson().fromJson(
+        final var instructionPayload = vanillaGson.fromJson(
           rs.getString("instruction_payload"),
           JsonObject.class
         );
 
-        final var batchPayload = new Gson().fromJson(rs.getString("batch_payload"), JsonObject.class);
+        final var batchPayload = vanillaGson.fromJson(rs.getString("batch_payload"), JsonObject.class);
 
         // Batch
         final var batchId = instructionPayload.getAsJsonObject("batchId");
@@ -672,7 +670,7 @@ public class WalletRepository {
       return new InstrumentSummaryRaw<>(
         new InstrumentSummary<>(
           rs.getString("contract_id"),
-          Optional.ofNullable(new Gson().fromJson(rs.getString("token_instrument_payload"), JsonObject.class))
+          Optional.ofNullable(vanillaGson.fromJson(rs.getString("token_instrument_payload"), JsonObject.class))
         )
       );
     }

@@ -26,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -65,7 +66,7 @@ public class WalletViewsController {
       filter.custodian.ifPresent(permittedReaders::add);
 
       if (
-        !WalletAuth.canReadAsAnyOf(userRights, permittedReaders.toArray(new String[]{}))
+        !canReadAsAnyOf(userRights, permittedReaders.toArray(new String[]{}))
       ) {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN);
       }
@@ -92,7 +93,7 @@ public class WalletViewsController {
     @RequestHeader(value = HttpHeaders.AUTHORIZATION, defaultValue = "") String auth
   ) throws Exception {
     return withLedgerConnection(auth, (__, userRights) -> {
-      if (!WalletAuth.canReadAsAnyOf(userRights, filter.account.custodian, filter.account.owner)) {
+      if (!canReadAsAnyOf(userRights, filter.account.custodian, filter.account.owner)) {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN);
       }
       final var balances = walletRepository.balanceByAccount(filter.account);
@@ -125,15 +126,10 @@ public class WalletViewsController {
           .badRequest()
           .body("Transactions limit cannot exceed " + walletViewsApiConfig.maxTransactionsResponseSize);
       }
-      try {
-        final var settlements = walletRepository.settlements(ledgerClient, parties, filter.before, limit);
-        return ResponseEntity.ok(
-          new Result<>(settlements)
-        );
-      } catch (SQLException e) {
-        Util.logger.error("Error reading settlements", e);
-        return ResponseEntity.internalServerError().body("Internal server error");
-      }
+      final var settlements = walletRepository.settlements(ledgerClient, parties, filter.before, limit);
+      return ResponseEntity.ok(
+        new Result<>(settlements)
+      );
     });
   }
 
@@ -179,6 +175,27 @@ public class WalletViewsController {
       .collect(Collectors.toList());
   }
 
+  private static boolean canReadAsAnyOf(ListUserRightsResponse userRights, String... anyOf) {
+    final var expectedParties = new HashSet<>();
+    expectedParties.addAll(List.of(anyOf));
+
+    for (final User.Right right : userRights.getRights()) {
+      String party;
+      if (right instanceof User.Right.CanActAs) {
+        party = ((User.Right.CanActAs) right).party;
+      } else if (right instanceof User.Right.CanReadAs) {
+        party = ((User.Right.CanReadAs) right).party;
+      } else {
+        continue;
+      }
+      if (expectedParties.contains(party)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   private ResponseEntity<Object> withLedgerConnection(
     String auth,
     BiFunction<LedgerClient, ListUserRightsResponse, ResponseEntity<Object>> generateResponse
@@ -186,9 +203,9 @@ public class WalletViewsController {
     DamlLedgerClient ledgerClient = null;
 
     try {
-      final var token = WalletAuth.getToken(auth);
-      ledgerClient = WalletAuth.connectToLedger(ledgerApiConfig, token);
-      final var userRights = WalletAuth.getUser(ledgerClient, WalletAuth.getTokenSubject(token));
+      final var token = LedgerUtil.getToken(auth);
+      ledgerClient = LedgerUtil.connectToLedger(ledgerApiConfig, token);
+      final var userRights = LedgerUtil.getUser(ledgerClient, LedgerUtil.getTokenSubject(token));
       return generateResponse.apply(ledgerClient, userRights);
     } finally {
       if (ledgerClient != null) {
