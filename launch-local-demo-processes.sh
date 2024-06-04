@@ -48,11 +48,6 @@ make install-operations
 export DOPS_HOME=~/.dops
 export PATH=$PATH:$DOPS_HOME/bin
 
-set +e
-psql -h localhost -p 5432 -U postgres -c 'drop database wallet_views'
-set -e
-psql -h localhost -p 5432 -U postgres -c 'create database wallet_views'
-
 export LEDGER_HOST=localhost
 export LEDGER_PORT=6865
 export LEDGER_PLAINTEXT=true
@@ -75,26 +70,19 @@ dops allocate-parties ${config_dir}/parties/parties.json
 read_as=$(./party-id-from-label.sh WalletOperator)
 dops create-users ${config_dir}/users/users.json
 
+./start-pqs.sh
+
 cd ${tokenization_lib_home}/wallet-views/java
 nohup mvn -Dmaven.test.skip=true spring-boot:run \
   -Dspring-boot.run.jvmArguments="-Dprojection.flyway.migrate-on-start=true" \
   -Dspring-boot.run.arguments=" \
+    --spring.datasource.url=jdbc:postgresql://localhost:5432/wallet_views \
     --walletviews.ledger-host=${LEDGER_HOST} \
     --walletviews.ledger-port=${LEDGER_PORT} \
     --walletviews.ledger-plaintext=true" > springboot.log 2>&1 &
 spring_pid=$!
 spring_pg_id=$(ps --pid $spring_pid -o "pgid" --no-headers)
 echo $spring_pg_id > $tokenization_lib_home/spring.pgid
-sleep 20s
-
-curl http://localhost:8080/wallet-views/v1/projection/start \
-  -H 'Content-Type: application/json' \
-  -d "
-    {
-      \"readAs\": \"${read_as}\",
-      \"tokenUrl\": null
-    }
-  "
 sleep 20s
 
 cd ${tokenization_lib_home}
