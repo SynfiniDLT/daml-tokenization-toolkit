@@ -32,7 +32,7 @@ export WALLET_VIEWS_PORT=${ports_arr[4]}
 export POSTGRES_PORT=${ports_arr[5]}
 scribe_health_port=${ports_arr[6]}
 
-db_name=wallet_views_2
+db_name=wallet_views
 
 docker compose up -d db
 sleep 25s
@@ -117,7 +117,7 @@ dops execute-settlement test-config/execute-settlement.json issuer,alice $batch_
 
 npm test
 exit_code=$?
-  
+
 kill -SIGTERM -- $sandbox_pg_id
 kill -SIGTERM -- $spring_pg_id
 kill -SIGTERM -- $scribe_pg_id

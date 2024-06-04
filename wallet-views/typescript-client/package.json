@@ -19,7 +19,7 @@
     "@daml.js/daml-finance-interface-types-common": "file:daml.js/daml-finance-interface-types-common-1.0.1",
     "@daml.js/synfini-account-onboarding-open-offer-interface": "file:daml.js/synfini-account-onboarding-open-offer-interface-0.0.1",
     "@daml.js/synfini-issuer-onboarding-instrument-token-interface": "file:daml.js/synfini-issuer-onboarding-instrument-token-interface-0.0.1",
-    "@daml.js/synfini-wallet-views-types": "file:daml.js/synfini-wallet-views-types-0.0.3",
+    "@daml.js/synfini-wallet-views-types": "file:daml.js/synfini-wallet-views-types-0.1.0",
     "@daml/ledger": "2.6.3",
     "@daml/types": "2.6.3",
     "@mojotech/json-type-validation": "^3.1.0",

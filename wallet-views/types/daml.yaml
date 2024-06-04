@@ -3,7 +3,7 @@
 sdk-version: 2.6.3
 name: synfini-wallet-views-types
 source: src
-version: 0.0.3
+version: 0.1.0
 dependencies:
   - daml-prim
   - daml-stdlib
