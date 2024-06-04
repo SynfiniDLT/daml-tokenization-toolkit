@@ -17,6 +17,7 @@ import {
 } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import fetch from "cross-fetch";
 import * as jtv from "@mojotech/json-type-validation";
+import  { Result as JtvResult } from "@mojotech/json-type-validation/dist/types/result";
 import * as damlTypes from "@daml/types";
 
 type WalletViewsClientParams = {
@@ -46,43 +47,43 @@ export class WalletViewsClient {
   getAccounts = async (filter: AccountFilter) => {
     const json = await this.post("/accounts", AccountFilter.encode(filter));
     const { result } = await accountsResultDecoder.runPromise(json);
-    return result;
+    return await resultsAsPromise(result);
   }
 
   getAccountOpenOffers = async (filter: AccountOpenOffersFilter) => {
     const json = await this.post("/account-open-offers", AccountOpenOffersFilter.encode(filter));
     const { result } = await accountOpenOffersResultDecoder.runPromise(json);
-    return result;
+    return await resultsAsPromise(result);
   }
 
   getBalance = async (filter: BalanceFilter) => {
     const json = await this.post("/balance", BalanceFilter.encode(filter));
     const { result } = await balanceResultDecoder.runPromise(json);
-    return result;
+    return await resultsAsPromise(result);
   }
 
   getHoldings = async (filter: HoldingFilter) => {
     const json = await this.post("/holdings", HoldingFilter.encode(filter));
     const { result } = await holdingsResultDecoder.runPromise(json);
-    return result;
+    return await resultsAsPromise(result);
   }
 
   getSettlements = async (filter: SettlementsFilter) => {
     const json = await this.post("/settlements", SettlementsFilter.encode(filter));
     const { result } = await settlementsResultDecoder.runPromise(json);
-    return result;
+    return await resultsAsPromise(result);
   }
 
   getInstruments = async (filter: InstrumentsFilter) => {
     const json = await this.post("/instruments", InstrumentsFilter.encode(filter));
     const { result } = await instrumentsResultDecoder.runPromise(json);
-    return result;
+    return await resultsAsPromise(result);
   }
 
   getIssuers = async (filter: IssuersFilter) => {
     const json = await this.post("/issuers", IssuersFilter.encode(filter));
     const { result } = await issuersResultDecoder.runPromise(json);
-    return result;
+    return await resultsAsPromise(result);
   }
 
   private async post(endpoint: string, requestBody: any): Promise<any> {
@@ -107,19 +108,36 @@ export class WalletViewsClient {
   }
 }
 
-function unpackedDecoder<T>(packedDecoder: jtv.Decoder<{unpack: T}>): jtv.Decoder<T> {
+function unpackedDecoder<T>(packedDecoder: jtv.Decoder<{unpack: T}>): jtv.Decoder<JtvResult<T, jtv.DecoderError>> {
   return jtv.Decoder
     .unknownJson()
     .map(unknown => ({ unpack: unknown }))
-    .andThen(() => packedDecoder)
-    .map(({ unpack }) => unpack);
+    .andThen(p => {
+      console.log("Packed result: ", p);
+      console.log("typeof(p)", typeof(p));
+      console.log("props of p", Object.getOwnPropertyNames(p));
+      return jtv.succeed(packedDecoder.run(p))
+    })
+    .map(result => jtv.Result.map(r => r.unpack, result))
 }
 
-function unpackedSerializable<T>(packedSerializable: damlTypes.Serializable<{unpack: T}>): damlTypes.Serializable<T> {
+function unpackedSerializable<T>(
+  packedSerializable: damlTypes.Serializable<{unpack: T}>
+): damlTypes.Serializable<JtvResult<T, jtv.DecoderError>> {
+  return onlyDecodable(
+    unpackedDecoder(packedSerializable.decoder)
+  )
+}
+
+function onlyDecodable<T>(decoder: jtv.Decoder<T>): damlTypes.Serializable<T> {
   return {
-    decoder: unpackedDecoder(packedSerializable.decoder),
+    decoder,
     encode: _ => {
-      throw new Error("Unsupported operation");
+      throw new Error("Unsupported operation: encode")
     }
   }
+}
+
+function resultsAsPromise<T>(results: JtvResult<T, jtv.DecoderError>[]): Promise<T[]> {
+  return Promise.all(results.map(jtv.Result.asPromise));
 }

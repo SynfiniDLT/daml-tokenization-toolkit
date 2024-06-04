@@ -45,7 +45,7 @@ beforeAll(() => {
 test("Lists accounts", async () => {
   const resp = await aliceClient.getAccounts({custodian: null, owner: alice});
   expect(resp.length).toEqual(1);
-  let account = resp[0].unpack;
+  let account = resp[0];
   expect(account.view.owner).toEqual(alice);
   expect(account.view.id.unpack).toEqual(aliceAccountId);
 });
@@ -55,7 +55,7 @@ test("Returns balances", async () => {
     account: { owner: alice, custodian, id: { unpack: aliceAccountId } }
   });
   expect(resp.length).toEqual(1);
-  let balance = resp[0].unpack;
+  let balance = resp[0];
   expect(balance.unlocked).toEqual("1.0000000001");
   expect(balance.instrument.issuer).toEqual(issuer);
 });
@@ -66,7 +66,7 @@ test("Returns holdings", async () => {
     instrument: { issuer, depository, id: { unpack: "Instrument1" }, version: "0" }
   });
   expect(resp.length).toEqual(1);
-  const holding = resp[0].unpack;
+  const holding = resp[0];
   expect(holding.view.amount).toEqual("1.0000000001");
   expect(holding.view.instrument.issuer).toEqual(issuer);
 });
@@ -77,7 +77,7 @@ test("Returns settlements", async () => {
     limit: "10"
   });
   expect(resp.length).toEqual(1);
-  const settlement = resp[0].unpack;
+  const settlement = resp[0];
   expect(settlement.steps.length).toEqual(1);
   const step = settlement.steps[0];
   expect(step.routedStep.quantity.amount).toEqual("1.0000000001");
@@ -87,13 +87,13 @@ test("Returns settlements", async () => {
 test("Returns account open offers", async () => {
   const resp = await aliceClient.getAccountOpenOffers({});
   expect(resp.length).toEqual(1);
-  const offer = resp[0].unpack;
+  const offer = resp[0];
   expect(offer.view.custodian).toEqual(custodian);
 });
 
 test("Returns issuers", async () => {
-  const resp = await aliceClient.getIssuers({ depository, issuer });
+  const resp = await aliceClient.getIssuers({ depository: null, issuer: null });
   expect(resp.length).toEqual(1);
-  const issuerSummary = resp[0].unpack;
+  const issuerSummary = resp[0];
   expect(issuerSummary.token?.view.issuer).toEqual(issuer);
 });

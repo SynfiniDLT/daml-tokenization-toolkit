@@ -15,7 +15,7 @@
       "observers" : [
         {
           "context": "o",
-          "parties": ["alice"]
+          "parties": ["alice", "custodian"]
         }
       ]
     }
