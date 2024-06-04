@@ -1,7 +1,7 @@
-import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { toDateTimeString, truncateParty } from "../../Util";
 import { useNavigate } from "react-router-dom";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
+import { InstrumentSummary } from "@synfini/wallet-views";
 
 export default function InstrumentsToken(props: { instruments?: InstrumentSummary[] }) {
   const nav = useNavigate();

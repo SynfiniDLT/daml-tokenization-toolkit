@@ -1,4 +1,4 @@
-import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { AccountSummary } from "@synfini/wallet-views";
 
 interface AccountsSelectProps {
   accounts?: AccountSummary[];

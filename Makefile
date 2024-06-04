@@ -236,7 +236,17 @@ test-wallet-views: $(wallet_views_main_codegen) $(wallet_views_test_codegen)
 $(wallet_views_ts_client_codegen): $(wallet_views_ts_client_package_json) \
   $(wallet_views_types_dar)
 	rm -rf $(wallet_views_ts_client_codegen)
-	daml codegen js $(wallet_views_types_dar) -o $(wallet_views_ts_client_codegen)
+	daml codegen js \
+		$(daml_finance_dir)/daml-finance-interface-account.dar \
+		$(daml_finance_dir)/daml-finance-interface-holding.dar \
+		$(daml_finance_dir)/daml-finance-interface-instrument-base.dar \
+		$(daml_finance_dir)/daml-finance-interface-instrument-token.dar \
+		$(daml_finance_dir)/daml-finance-interface-settlement.dar \
+		$(daml_finance_dir)/daml-finance-interface-types-common.dar \
+		$(account_onboarding_open_offer_interface_dar) \
+		$(issuer_onboarding_token_interface_dar) \
+		$(wallet_views_types_dar) \
+		-o $(wallet_views_ts_client_codegen)
 
 # TypeScript client
 $(wallet_views_ts_client_node_modules): $(wallet_views_ts_client_package_json) $(wallet_views_ts_client_codegen)
@@ -258,7 +268,6 @@ test-wallet-views-ts-client: install-operations compile-wallet-views $(wallet_vi
 $(wallet_ui_codegen): $(wallet_ui_package_json) \
   $(daml_finance_dir) \
   $(account_onboarding_open_offer_interface_dar) \
-  $(issuer_onboarding_token_interface_dar) \
   $(minter_burner_interface_dar) \
   $(settlement_one_time_offer_interface_dar) \
   $(settlement_open_offer_interface_dar) \
@@ -267,7 +276,6 @@ $(wallet_ui_codegen): $(wallet_ui_package_json) \
 	rm -rf $(wallet_ui_codegen)
 	daml codegen js \
 		$(account_onboarding_open_offer_interface_dar) \
-		$(issuer_onboarding_token_interface_dar) \
 		$(minter_burner_interface_dar) \
 		$(settlement_one_time_offer_interface_dar) \
 		$(settlement_open_offer_interface_dar) \

@@ -5,7 +5,7 @@ import { PageLayout } from "../components/PageLayout";
 import { useLocation } from "react-router-dom";
 import { SettlementDetailsAction } from "../components/layout/settlementDetails";
 import { DivBorderRoundContainer } from "../components/layout/general.styled";
-import { SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { SettlementSummary } from "@synfini/wallet-views";
 
 type SettlementActionScreenState = {
   settlement?: SettlementSummary

@@ -4,13 +4,13 @@ import { PageLoader } from "../components/layout/page-loader";
 import { PageLayout } from "../components/PageLayout";
 import IdentityCards from "../components/layout/IdentityCards";
 import * as damlTypes from "@daml/types";
-import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { Metadata } from "@daml.js/synfini-instrument-metadata-interface/lib/Synfini/Interface/Instrument/Metadata/Metadata";
 import { useWalletUser, useWalletViews, userContext } from "../App";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 import { CreateEvent } from "@daml/ledger";
 import { partyAttributesInstrumentId, sbtCustodian, sbtDepository, sbtIssuer } from "../Configuration";
 import { Base } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Base";
+import { InstrumentSummary } from "@synfini/wallet-views";
 
 const DirectoryScreen: React.FC = () => {
   const ledger = userContext.useLedger();
@@ -33,7 +33,7 @@ const DirectoryScreen: React.FC = () => {
             version: null
           }
         );
-        setInstruments(resp.instruments);
+        setInstruments(resp);
       }
     };
     fetchInstruments();

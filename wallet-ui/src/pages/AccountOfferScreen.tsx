@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { PageLayout } from "../components/PageLayout";
 import { PageLoader } from "../components/layout/page-loader";
-import { AccountOpenOfferSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import AccountOffers from "../components/layout/accountOffers";
 import { useWalletUser, useWalletViews } from "../App";
+import { AccountOpenOfferSummary } from "@synfini/wallet-views";
 
 const AccountOfferScreen: React.FC = () => {
   const walletClient = useWalletViews();
@@ -16,7 +16,7 @@ const AccountOfferScreen: React.FC = () => {
     const fetchAccountOffers = async () => {
       if (primaryParty !== undefined) {
         const resp = await walletClient.getAccountOpenOffers({});
-        setAccountOffers(resp.accountOpenOffers);
+        setAccountOffers(resp);
       }
     };
 

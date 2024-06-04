@@ -7,13 +7,13 @@ import {
   ContainerDiv,
   ContainerColumnValue,
 } from "./general.styled";
-import { AccountOpenOfferSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { OpenOffer } from "@daml.js/synfini-account-onboarding-open-offer-interface/lib/Synfini/Interface/Onboarding/Account/OpenOffer/OpenOffer";
 import { userContext } from "../../App";
 import { arrayToSet, arrayToMap, truncateParty, setToArray, randomIdentifierShort } from "../../Util";
 import HoverPopUp from "./hoverPopUp";
 import { useWalletUser } from "../../App";
 import { walletOperator } from "../../Configuration";
+import { AccountOpenOfferSummary } from "@synfini/wallet-views";
 
 interface AccountOpenOfferSummaryProps {
   accountOffer: AccountOpenOfferSummary;

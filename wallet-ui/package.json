@@ -25,7 +25,6 @@
     "@daml.js/daml-finance-interface-util": "file:daml.js/daml-finance-interface-util-2.0.0",
     "@daml.js/synfini-account-onboarding-open-offer-interface": "file:daml.js/synfini-account-onboarding-open-offer-interface-0.0.1",
     "@daml.js/synfini-instrument-metadata-interface": "file:daml.js/synfini-instrument-metadata-interface-0.0.1",
-    "@daml.js/synfini-issuer-onboarding-instrument-token-interface": "file:daml.js/synfini-issuer-onboarding-instrument-token-interface-0.0.1",
     "@daml.js/synfini-issuer-onboarding-minter-burner-interface": "file:daml.js/synfini-issuer-onboarding-minter-burner-interface-0.0.1",
     "@daml.js/synfini-settlement-helpers": "file:daml.js/synfini-settlement-helpers-0.0.2",
     "@daml.js/synfini-settlement-one-time-offer-interface": "file:daml.js/synfini-settlement-one-time-offer-interface-0.0.2",

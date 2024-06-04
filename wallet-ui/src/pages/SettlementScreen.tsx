@@ -3,9 +3,9 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { PageLoader } from "../components/layout/page-loader";
 import { PageLayout } from "../components/PageLayout";
 import Settlements from "../components/layout/settlements";
-import { SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { useLocation } from "react-router-dom";
 import { useWalletUser, useWalletViews } from "../App";
+import { SettlementSummary } from "@synfini/wallet-views";
 
 // TODO this type can probably be simplified
 type SettlementScreenState = null | {
@@ -25,7 +25,7 @@ const SettlementScreen: React.FC = () => {
     const fetchSettlements = async () => {
       if (primaryParty !== undefined) {
         const resp = await walletClient.getSettlements({ before: null, limit: null });
-        setSettlements(resp.settlements);
+        setSettlements(resp);
       }
     };
 
