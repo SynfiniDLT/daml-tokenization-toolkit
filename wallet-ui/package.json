@@ -29,7 +29,6 @@
     "@daml.js/synfini-settlement-helpers": "file:daml.js/synfini-settlement-helpers-0.0.2",
     "@daml.js/synfini-settlement-one-time-offer-interface": "file:daml.js/synfini-settlement-one-time-offer-interface-0.0.2",
     "@daml.js/synfini-settlement-open-offer-interface": "file:daml.js/synfini-settlement-open-offer-interface-0.1.0",
-    "@daml.js/synfini-wallet-views-types": "file:../wallet-views/typescript-client/daml.js/synfini-wallet-views-types-0.0.3",
     "@daml/ledger": "2.6.3",
     "@daml/react": "2.6.3",
     "@daml/types": "2.6.3",
