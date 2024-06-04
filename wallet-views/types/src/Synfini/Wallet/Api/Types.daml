@@ -136,7 +136,7 @@ data HoldingSummary cid view = HoldingSummary
   with
     cid : cid
     view : view
-    create : Optional TransactionDetail
+    create : TransactionDetail
   deriving (Show, Eq)
 
 newtype HoldingSummaryRaw jsonObject = HoldingSummaryRaw (HoldingSummary Text jsonObject) deriving (Show, Eq)

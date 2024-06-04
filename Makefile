@@ -57,19 +57,6 @@ wallet_ui_node_modules = $(wallet_ui_dir)/node_modules
 $(daml_finance_dir): dependencies.conf
 	./get-dependencies.sh
 
-CUSTOM_VIEWS_JAR = $(proj_root)/$(build_dir)/custom-views-assembly-LOCAL-SNAPSHOT.jar
-.PHONY: install-custom-views
-install-custom-views:
-	cd custom-views && \
-	sbt 'set assembly / test := {}' 'set assembly / assemblyOutputPath := file("${CUSTOM_VIEWS_JAR}")' clean assembly && \
-	mvn install:install-file \
-		-Dfile=${CUSTOM_VIEWS_JAR} \
-		-DgroupId=com.daml \
-		-DartifactId=custom-views_2.13 \
-		-Dversion=assembly-LOCAL-SNAPSHOT \
-		-Dpackaging=jar \
-		-DgeneratePom=true
-
 $(assert_dar): $(shell ./find-daml-project-files.sh $(models_src_dir)/util/assert)
 	cd $(models_src_dir)/util/assert && daml build -o $(proj_root)/$(assert_dar)
 

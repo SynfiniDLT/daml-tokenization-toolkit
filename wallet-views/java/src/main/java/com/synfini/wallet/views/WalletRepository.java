@@ -502,6 +502,7 @@ public class WalletRepository {
           rs.getString("contract_id"),
           vanillaGson.fromJson(rs.getString("payload"), JsonObject.class),
           getTransactionDetailProper(rs, "created")
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR))
         )
       );
     }

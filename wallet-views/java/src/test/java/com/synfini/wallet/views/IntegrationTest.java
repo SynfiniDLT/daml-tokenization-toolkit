@@ -756,7 +756,7 @@ public class IntegrationTest {
                     new HoldingSummary<>(
                       holdingCid,
                       new View(instrument1(), account, creditAmount, Optional.empty()),
-                      Optional.of(new TransactionDetail(ledgerOffset, Instant.EPOCH))
+                      new TransactionDetail(ledgerOffset, Instant.EPOCH)
                     )
                   )
                 )
@@ -784,7 +784,7 @@ public class IntegrationTest {
                   new HoldingSummaryTyped(
                     new HoldingSummary<>(
                       lockedHoldingCid, new View(instrument1(), account, creditAmount, Optional.of(expectedLock)),
-                      Optional.of(new TransactionDetail(newLedgerOffset, Instant.EPOCH))
+                      new TransactionDetail(newLedgerOffset, Instant.EPOCH)
                     )
                   )
                 )
@@ -2090,9 +2090,9 @@ public class IntegrationTest {
       }
     }
 
-    final var scribeLocation = System.getProperty("walletviews.scribe-location");
+    final var scribeLocation = System.getenv("SCRIBE_LOCATION");
     if (scribeLocation == null) {
-      throw new IllegalArgumentException("Please set required system variable: walletviews.scribe-location");
+      throw new IllegalArgumentException("Please set required environment variable: SCRIBE_LOCATION");
     }
 
     final var pb = new ProcessBuilder(

@@ -15,12 +15,10 @@ and requests/responses are in JSON format. The requests and responses are encode
 the [Daml JSON API](https://docs.daml.com/json-api/index.html). The API provides a significantly faster way to query
 wallet information than would otherwise be possible using only the Daml gRPC or JSON APIs.
 
-### Custom views projection
+### PQS
 
 The Spring Boot API does not send requests directly to the ledger API. Instead, it reads from a PostgreSQL database.
-The database is populated using an application written using [Custom Views](https://docs.daml.com/app-dev/custom-views/index.html)
-which is also provided as part of this repository. This application continuously streams events from the ledger and
-writes them to the database.
+The database is populated using Scribe, an application provided by the Participant Query Store (PQS) product. Please refer to the [PQS documentation](https://docs.daml.com/2.8.3/query/pqs-user-guide.html) for more information. Scribe continuously streams events from the ledger and writes them to the database.
 
 ### Javascript client
 
@@ -49,18 +47,10 @@ as it acts as an indexed view of the state of the Daml ledger (visible to the pa
 
 ### Future state
 
-In future, the topology may be changed to use the Daml 3.0 application architecture: the projection runner would read
+In future, the topology may be changed to use the Daml 3.0 application architecture: Scribe would read
 from a separate participant using a party which is an observer of the wallet users' contracts. The wallet users could
 still use their own participant for submitting transactions, thereby maintaining a greater level of control over their
-assets, while delegating operation of the projection runner, database and API to a service provider.
-
-## Database management
-
-It is possible to drop the database and re-start the projection but this is not recommended because transactional
-history will be lost, as when the projection starts from an empty database, it begins by using an Active Contract Set
-snapshot, rather than utilising the Transaction Service. The projection does not remove older events from the database
-i.e. an equivalent to [participant pruning](https://docs.daml.com/ops/pruning.html) for the database is not supported,
-but this feature could be added.
+assets, while delegating operation of PQS and API to a service provider.
 
 ## API Authentication
 
@@ -194,8 +184,7 @@ repository.
         "description": "..."
       },
       "create": {
-        // When the offer was created - optional (present if contract was created after the projection runner first
-        // started)
+        // When the offer was created
         "offset": "...",
         "effectiveTime": "2023-01-01T04:30:23.123456Z"
       }
@@ -504,7 +493,7 @@ or DvP.
 
 ```js
 {
-  "holdings": [ // Zero or more Holdings
+  "result": [ // Zero or more Holdings
     {
       "cid": "abc123...", // Contract ID of the Holding
       "view": { // Interface view of the Daml Finance Holding (Base interface)
@@ -575,7 +564,7 @@ Note: only active contracts are returned.
 
 ```js
 {
-  "instruments": [ // Zero or more Instruments
+  "result": [ // Zero or more Instruments
     {
       "cid": "abc123...", // Contract ID of the Instrument
       "tokenView": { // Interface view of the Instrument if it is a Token Instrument
@@ -639,7 +628,7 @@ List `Issuer` contracts as defined in the `issuer-onboarding` folder at the base
 
 ```js
 {
-  "instruments": [ // Zero or more Issuers
+  "result": [ // Zero or more Issuers
     {
       "token": { // Details of Token issuer (optional as other issuer types may be added in future e.g. Bond Issuer)
         "cid": "abc123...", // Contract ID of the Token Issuer
@@ -700,11 +689,11 @@ The TypeScript client can be built using:
 make build-wallet-views-ts-client
 ```
 
-### Run the projection runner
+### Run Scribe
 
 #### 1. Upload required Daml packages
 
-In order to run the projection you need to upload the required DAR files to the ledger first. You can either use the
+In order to run Scribe you need to upload the required DAR files to the ledger first. You can either use the
 `dops` CLI tool (refer to `operations` folder in the base of this repository) as follows:
 
 ```bash
@@ -716,16 +705,35 @@ dops upload-dar
 or you can directly upload the DAR file found at `.build/synfini-wallet-views-types.dar` using the `daml` assistant
 or ledger API. This DAR file is automatically built by `make compile-wallet-views` or `make build-wallet-views`.
 
-#### 2. Allocate a party for the projection
+#### 2. (Optional) Allocate parties for streaming data
 
-You need to allocate one party on the participant which is used to stream all required contracts from the ledger. This
-party will need to be a stakeholder on all such contracts.
+You may want to allocate one or more parties on the participant which will be used to stream all required contracts from
+the ledger. This party or parties will need to be a stakeholder on the desired contracts. Filtering data by party this
+way can be useful to reduce the amount of data stored in the DB. If, in the future we migrate to a Daml 3.0 architecture,
+then this streaming party/parties can be allocated on a separate participant.
 
 #### 3. Setup a Postgres database
 
-Create a Postgres database. Currently only Postgres version 12 is supported.
+Create a Postgres database. Currently only Postgres version 16 has been tested.
 
-#### 4. Run the application
+#### 4. Setup the utility functions
+
+There are several utility PSQL functions that are used by the API. You need to deploy these by executing the provided
+file `wallet-views/java/src/main/resources/db/functions.sql`.
+
+#### 5. Start scribe
+
+The Scribe process (long-running) must be started. The following positional arguments must be provided:
+
+```bash
+./scribe.jar pipeline ledger postgres-document
+```
+
+Note: the data source must be set to `TransactionStream` (the default). You may need add other CLI options to connect
+to your participant and database. Please consult the PQS manual for more information. You will need to set the
+`--pipeline-filter-parties` option if you allocated specific parties for streaming data.
+
+### Run the application
 
 Create an `application.properties` file by copying the example from `src/main/resources/application.properties`. The
 following properties can be modified as required but the others should not be altered:
@@ -739,47 +747,25 @@ following properties can be modified as required but the others should not be al
 | `walletviews.ledger-port` | Port of the participant node's gRPC API |
 | `walletviews.ledger-plaintext` | Use `true` for plaintext connections to the participant node's gRPC API, otherwise TLS will be used |
 | `walletviews.max-transactions-response-size` | Maximum number of batch settlements the API will return in a single response when no limit is provided in the request |
-| `walletviews.projection.token-refresh-window-seconds` | For the projection runner. If there is less than this amount of time left before its access token expires, it will fetch a fresh token using the OAuth token endpoint |
-| `walletviews.projection.max-retries` | Maximum times the projection runner will re-try on error* |
-| `walletviews.projection.retry-window-seconds` | Retry window of the projection runner* |
-| `walletviews.projection.retry-delay-seconds` | Delay between retries of the projection runner* |
-
-*If the projection runner encounters an error, then it will increment a retry counter variable (initially set to zero)
-and attempt to re-start the projection. If a subsequent error occurs within `retry-window-seconds` then the counter is
-incremented again, otherwise the counter is set to zero. If the counter reaches `walletviews.projection.max-retries`
-then the projection runner will terminate. A delay between retries can be added using
-`walletviews.projection.retry-delay-seconds`.
 
 Next, run `make build-wallet-views`. This will generate a JAR file under the `wallet-views/java/target` directory. You
 can launch the API by running
 
 ```
 java \
-  -Dprojection.flyway.migrate-on-start=true \
   -jar wallet-views/java/target/wallet-views-<version>.jar \
   --spring.config.name=application \
   --spring.config.location=file:<directory containing application.properties>
 ```
 
 This will start the API on port 8080 running over a plaintext connection. TLS support is not currently implemented.
-Note: the projection will not start automatically (see the next step) i.e. the API will not return any data (yet).
-
-#### 5. Create the database schema and run the projection
-
-The projection needs to be started using a HTTP POST call to the `wallet-views/v1/projection/start` endpoint (see the
-API documentation section above for more detail). Note: in the previous step the system variable
-`projection.flyway.migrate-on-start` was set to `true`. This will cause the database schema to be created when the
-projection runner starts. A known issue is that schema creation requires root privelages on the database due to the
-usage of `CREATE EXTENSION` in the schema creation SQL. Therefore you may want to set
-`projection.flyway.migrate-on-start` to `true` the first time you run the projection (using a database user with the
-required privelages), then re-start the application using a different user (with lesser privelages) and set
-`projection.flyway.migrate-on-start` to `false`
 
 ## Running the tests
 
 ### API tests
 
-To run functional test cases on the API, run the below command:
+To run functional test cases on the API, make sure you export an the `SCRIBE_LOCATION` environment variable to point
+to where you have installed the Scribe JAR file. Then run the below command:
 
 ```
 make test-wallet-views
@@ -788,9 +774,11 @@ make test-wallet-views
 This will:
 
 - Start a local Daml sandbox on an available port.
-- Run the projection runner to project events from the sandbox into a Postgres instance managed by [Test Containers](https://www.testcontainers.org/).
+- Run Scribe to stream events from the sandbox into a Postgres instance managed by [Test Containers](https://www.testcontainers.org/).
 - Test that the API correctly returns data based on what commands have been submitted to the ledger API.
 - Tear down the sandbox and wallet views application at the end of the test suite.
+
+Note: in future the JAR file should be replaced by a containerized version of Scribe.
 
 To run specific test cases for the wallet backend, you need to export an enviroment variable for this:
 
@@ -817,7 +805,7 @@ make test-wallet-views-ts-client
 This will:
 
 - Start a local Daml sandbox on an available port.
-- Run the projection runner to project events from the sandbox into a Postgres instance created using `docker compose` on
+- Run PQS (Scribe) to write events from the sandbox into a Postgres instance created using `docker compose` on
 an available port. The compose file can be found under `wallet-views/java`.
 - Perform basic tests to make sure the TypeScript client can retrieve data from the API.
 - Tear down the sandbox and wallet views application at the end of the test suite.
