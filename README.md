@@ -15,6 +15,12 @@ would submit commands through their own participants.
 
 ![alt text](./img/Diagram.JPG)
 
+It is important to note that this solution is designed to work in congunction with other applications. For example,
+there may be another application which implements a customized token with bespoke lifecycling or other functions, but
+users could still authorise and complete the settlement processes through the wallet user interface. Due to the fact
+that this application makes use of the Daml Finance interfaces (rather than specific implementations), the settlement
+instructions can be initiated by a variety of other applications but responded to by users via this solution.
+
 ## Components
 
 The project contains a number of components:
