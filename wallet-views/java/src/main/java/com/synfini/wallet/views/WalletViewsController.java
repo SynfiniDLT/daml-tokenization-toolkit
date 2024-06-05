@@ -66,9 +66,7 @@ public class WalletViewsController {
       permittedReaders.add(filter.owner);
       filter.custodian.ifPresent(permittedReaders::add);
 
-      if (
-        !canReadAsAnyOf(userRights, permittedReaders.toArray(new String[]{}))
-      ) {
+      if (!canReadAsAnyOf(userRights, permittedReaders.toArray(new String[]{}))) {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN);
       }
       final var accounts = walletRepository
