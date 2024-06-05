@@ -410,7 +410,7 @@ public class IntegrationTest {
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Result<List<BalanceTyped>>(Collections.emptyList()))));
+      .andExpect(content().json(toUnpackedJson(new Result<List<BalanceTyped>>(Collections.emptyList()))));
 
     // Create new account and check balances
     createAccount(account, List.of(investor1), Collections.emptyList(), Collections.emptyList());
@@ -418,7 +418,7 @@ public class IntegrationTest {
     mvc
       .perform(getBalanceByAccountBuilder(account).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Result<List<BalanceTyped>>(Collections.emptyList()))));
+      .andExpect(content().json(toUnpackedJson(new Result<List<BalanceTyped>>(Collections.emptyList()))));
   }
 
   @Test
@@ -437,7 +437,7 @@ public class IntegrationTest {
       .andExpect(
         content()
           .json(
-            toJson(
+            toUnpackedJson(
               new Result<>(
                 Collections.singletonList(
                   new BalanceTyped(new Balance(account, instrument1(), creditAmount, BigDecimal.ZERO))
@@ -455,7 +455,7 @@ public class IntegrationTest {
       .andExpect(
         content()
           .json(
-            toJson(
+            toUnpackedJson(
               new Result<>(
                 Collections.singletonList(
                   new BalanceTyped(new Balance(account, instrument1(), new BigDecimal("100.01"), BigDecimal.ZERO))
@@ -485,7 +485,7 @@ public class IntegrationTest {
       .andExpect(
         content()
           .json(
-            toJson(
+            toUnpackedJson(
               new Result<>(
                 Collections.singletonList(
                   new BalanceTyped(new Balance(account, instrument1(), new BigDecimal("105.0"), BigDecimal.ZERO))
@@ -516,7 +516,7 @@ public class IntegrationTest {
       .andExpect(
         content()
           .json(
-            toJson(
+            toUnpackedJson(
               new Result<>(
                 Collections.singletonList(
                   new BalanceTyped(new Balance(account, instrument1(), creditAmount, BigDecimal.ZERO))
@@ -545,7 +545,7 @@ public class IntegrationTest {
       .andExpect(
         content()
           .json(
-            toJson(
+            toUnpackedJson(
               new Result<>(
                 Collections.singletonList(
                   new BalanceTyped(new Balance(account, instrument1(), BigDecimal.ZERO, creditAmount))
@@ -565,7 +565,7 @@ public class IntegrationTest {
       .andExpect(
         content()
           .json(
-            toJson(
+            toUnpackedJson(
               new Result<>(
                 Collections.singletonList(
                   new BalanceTyped(
@@ -601,7 +601,7 @@ public class IntegrationTest {
       .andExpect(
         content()
           .json(
-            toJson(
+            toUnpackedJson(
               new Result<>(
                 Collections.singletonList(
                   new BalanceTyped(
@@ -627,7 +627,7 @@ public class IntegrationTest {
       .andExpect(
         content()
           .json(
-            toJson(
+            toUnpackedJson(
               new Result<>(
                 Collections.singletonList(
                   new BalanceTyped(
@@ -658,7 +658,7 @@ public class IntegrationTest {
       .andExpect(
         content()
           .json(
-            toJson(
+            toUnpackedJson(
               new Result<>(
                 List.of(
                   new BalanceTyped(new Balance(account, instrument1(), creditAmount1, BigDecimal.ZERO)),
@@ -692,7 +692,7 @@ public class IntegrationTest {
       .andExpect(
         content()
           .json(
-            toJson(
+            toUnpackedJson(
               new Result<>(
                 Collections.singletonList(
                   new BalanceTyped(new Balance(account1, instrument1(), creditAmount, BigDecimal.ZERO))
@@ -720,7 +720,7 @@ public class IntegrationTest {
       .andExpect(
         content()
           .json(
-            toJson(
+            toUnpackedJson(
               new Result<>(
                 Collections.singletonList(
                   new BalanceTyped(new Balance(account, instrument1(), creditAmount, BigDecimal.ZERO))
@@ -748,7 +748,7 @@ public class IntegrationTest {
       .andExpect(
         content()
           .json(
-            toJson(
+            toUnpackedJson(
               new Result<>(
                 Collections.singletonList(
                   new HoldingSummaryTyped(
@@ -777,7 +777,7 @@ public class IntegrationTest {
       .andExpect(
         content()
           .json(
-            toJson(
+            toUnpackedJson(
               new Result<>(
                 Collections.singletonList(
                   new HoldingSummaryTyped(
@@ -800,7 +800,7 @@ public class IntegrationTest {
     mvc
       .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Result<>(Collections.emptyList()))));
+      .andExpect(content().json(toUnpackedJson(new Result<>(Collections.emptyList()))));
 
     final var account = new AccountKey(custodian, investor1, new Id("1"));
 
@@ -828,32 +828,32 @@ public class IntegrationTest {
       .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(investor1Accounts)
+        content().json(toUnpackedJson(investor1Accounts)
       )
     );
     mvc
       .perform(getAccountsBuilder(Optional.of(custodian), investor1).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(investor1Accounts))
+        content().json(toUnpackedJson(investor1Accounts))
       );
     mvc
       .perform(getAccountsBuilder(Optional.of(custodian), investor1).headers(userTokenHeader(custodianUser)))
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(investor1Accounts))
+        content().json(toUnpackedJson(investor1Accounts))
       );
     mvc
       .perform(getAccountsBuilder(Optional.of(investor1), investor1).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(new Result<>(List.of())))
+        content().json(toUnpackedJson(new Result<>(List.of())))
       );
 
     mvc
       .perform(getAccountsBuilder(Optional.empty(), investor2).headers(userTokenHeader(investor2User)))
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Result<>(Collections.emptyList()))));
+      .andExpect(content().json(toUnpackedJson(new Result<>(Collections.emptyList()))));
 
     final Map<String, Set<String>> obs = new HashMap<>();
     final var newControllers = new Controllers(arrayToSet("X"), arrayToSet("Y"));
@@ -866,7 +866,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(
+          toUnpackedJson(
             new Result<>(
               Collections.singletonList(
                 new AccountSummaryTyped(
@@ -896,7 +896,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(
+          toUnpackedJson(
             new Result<>(
               Collections.emptyList()
             )
@@ -962,7 +962,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(
+          toUnpackedJson(
             new Result<>(
               List.of(
                 new AccountOpenOfferSummaryTyped(
@@ -992,7 +992,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(
+          toUnpackedJson(
             new Result<>(
               List.of(
                 new AccountOpenOfferSummaryTyped(
@@ -1042,7 +1042,7 @@ public class IntegrationTest {
     mvc
       .perform(getAccountOpenOffersBuilder().headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Result<>(List.of()))));
+      .andExpect(content().json(toUnpackedJson(new Result<>(List.of()))));
   }
 
   @Test
@@ -1083,21 +1083,21 @@ public class IntegrationTest {
         getIssuersBuilder(Optional.empty(), Optional.empty()).headers(userTokenHeader(issuerUser))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Result<>(List.of(tokenIssuerSummary)))));
+      .andExpect(content().json(toUnpackedJson(new Result<>(List.of(tokenIssuerSummary)))));
 
     mvc
       .perform(
         getIssuersBuilder(Optional.of(depository), Optional.empty()).headers(userTokenHeader(issuerUser))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Result<>(List.of(tokenIssuerSummary)))));
+      .andExpect(content().json(toUnpackedJson(new Result<>(List.of(tokenIssuerSummary)))));
 
     mvc
       .perform(
         getIssuersBuilder(Optional.empty(), Optional.of(issuer)).headers(userTokenHeader(issuerUser))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Result<>(List.of(tokenIssuerSummary)))));
+      .andExpect(content().json(toUnpackedJson(new Result<>(List.of(tokenIssuerSummary)))));
 
     mvc
       .perform(
@@ -1107,7 +1107,7 @@ public class IntegrationTest {
         ).headers(userTokenHeader(issuerUser))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Result<>(List.of()))));
+      .andExpect(content().json(toUnpackedJson(new Result<>(List.of()))));
 
     mvc
       .perform(
@@ -1117,21 +1117,21 @@ public class IntegrationTest {
         ).headers(userTokenHeader(issuerUser))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Result<>(List.of()))));
+      .andExpect(content().json(toUnpackedJson(new Result<>(List.of()))));
 
     mvc
       .perform(
         getIssuersBuilder(Optional.empty(), Optional.empty()).headers(userTokenHeader(investor1User))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Result<>(List.of(tokenIssuerSummary)))));
+      .andExpect(content().json(toUnpackedJson(new Result<>(List.of(tokenIssuerSummary)))));
 
     mvc
       .perform(
         getIssuersBuilder(Optional.empty(), Optional.empty()).headers(userTokenHeader(investor2User))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(new Result<>(List.of()))));
+      .andExpect(content().json(toUnpackedJson(new Result<>(List.of()))));
   }
 
   @Test
@@ -1253,7 +1253,7 @@ public class IntegrationTest {
           .headers(userTokenHeader(investor2User))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(expectedSettlements.apply(Optional.empty()))));
+      .andExpect(content().json(toUnpackedJson(expectedSettlements.apply(Optional.empty()))));
 
     // Instruction 0
     final var instruction0Allocation = new CreditReceiver(Unit.getInstance());
@@ -1385,7 +1385,7 @@ public class IntegrationTest {
           .headers(userTokenHeader(investor2User))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toJson(expectedSettlements.apply(Optional.empty()))));
+      .andExpect(content().json(toUnpackedJson(expectedSettlements.apply(Optional.empty()))));
 
     // Check that other party cannot see the batch/instructions
     mvc
@@ -1395,7 +1395,7 @@ public class IntegrationTest {
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(new Result<>(List.of())))
+        content().json(toUnpackedJson(new Result<>(List.of())))
       );
   }
 
@@ -1529,7 +1529,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(new Result<>(List.of(settlement1, settlement2)))
+          toUnpackedJson(new Result<>(List.of(settlement1, settlement2)))
         )
       );
 
@@ -1541,7 +1541,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(new Result<>(List.of(settlement1)))
+          toUnpackedJson(new Result<>(List.of(settlement1)))
         )
       );
 
@@ -1553,7 +1553,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(new Result<>(List.of(settlement2)))
+          toUnpackedJson(new Result<>(List.of(settlement2)))
         )
       );
 
@@ -1565,7 +1565,7 @@ public class IntegrationTest {
       .andExpect(status().isOk())
       .andExpect(
         content().json(
-          toJson(new Result<>(List.of(settlement2VisibleToCustodian)))
+          toUnpackedJson(new Result<>(List.of(settlement2VisibleToCustodian)))
         )
       );
   }
@@ -1612,7 +1612,7 @@ public class IntegrationTest {
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(new Result<>(List.of(instrument1Summary))))
+        content().json(toUnpackedJson(new Result<>(List.of(instrument1Summary))))
       );
     mvc
       .perform(
@@ -1625,7 +1625,7 @@ public class IntegrationTest {
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(new Result<>(List.of(instrument1Summary, instrument2Summary))))
+        content().json(toUnpackedJson(new Result<>(List.of(instrument1Summary, instrument2Summary))))
       );
     mvc
       .perform(
@@ -1638,7 +1638,7 @@ public class IntegrationTest {
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(new Result<>(List.of(instrument1Summary, instrument2Summary))))
+        content().json(toUnpackedJson(new Result<>(List.of(instrument1Summary, instrument2Summary))))
       );
     mvc
       .perform(
@@ -1651,7 +1651,7 @@ public class IntegrationTest {
       )
       .andExpect(status().isOk())
       .andExpect(
-        content().json(toJson(new Result<>(List.of(instrument1Summary, instrument2Summary))))
+        content().json(toUnpackedJson(new Result<>(List.of(instrument1Summary, instrument2Summary))))
       );
   }
 
@@ -2206,7 +2206,7 @@ public class IntegrationTest {
     return offset;
   }
 
-  private static <T, D extends DefinedDataType<T>> String toJson(Result<List<D>> result) {
+  private static <T, D extends DefinedDataType<T>> String toUnpackedJson(Result<List<D>> result) {
     final var jsonString = jsonCodec.toJsValue(
       result.toValue(
         values -> DamlList.of(
@@ -2219,7 +2219,6 @@ public class IntegrationTest {
     json.get("result").getAsJsonArray().iterator().forEachRemaining(r -> {
       resultsArray.add(r.getAsJsonObject().get("unpack"));
     });
-    // json.remove("result");
     json.add("result", resultsArray);
     return new Gson().toJson(json);
   }
