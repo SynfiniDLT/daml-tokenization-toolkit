@@ -40,21 +40,11 @@ Install the following first:
 - Docker (https://docs.docker.com/get-docker/)
 - jq (https://jqlang.github.io/jq/)
 
-Build has been tested with Java version 17, Maven 3.6.3 and npm 8.19.
+Build has been tested with Java version 17, Maven 3.6.3, npm 8.19 and PQS 2.8.0.
 
-Then, clone this repo **including the submodules** which are needed for building:
-
-```bash
-git clone https://github.com/SynfiniDLT/daml-tokenization-lib --recurse-submodules
-```
-
-The Custom Views library needs to be installed as it is used to continuosly stream events and contracts from the ledger
-and store them in a queryable database. In future, this will most likely be replaced with the Daml Participant Query
-Store feature. To install Custom Views run:
-
-```bash
-make install-custom-views
-```
+Download the Scribe component (JAR file) of [PQS](https://docs.daml.com/2.8.3/query/pqs-user-guide.html). You will need
+a Daml Enterpise license in order to access this. Save it to your machine and export the absolute path to the file
+in your terminal envionment using the variable `SCRIBE_LOCATION`.
 
 ## Asset and party configuration of the demo
 
@@ -199,7 +189,6 @@ make clean
 
 There are a number of tasks ahead to complete and enhance this solution. 
 
-1. Update the wallet runer as the custom-views library is deprecated. One option is to upgrade to PQS if the user has Daml Enterprise SDK (https://docs.daml.com/query/pqs-user-guide.html#meet-prerequisites). Another option is to develop a tailored solution to stream data from the ledger to the database. 
 1. Use the latest solution from DA which replaces the public party feature (i.e. use explict disclosure). This will make
 it easier to share commononly used utility contracts (such as factories) without need for a public party hosted on
 multiple participants.
