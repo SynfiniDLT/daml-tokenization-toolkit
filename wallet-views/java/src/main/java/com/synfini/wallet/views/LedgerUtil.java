@@ -68,7 +68,7 @@ public class LedgerUtil {
       return client;
     } catch (Throwable t) {
       final Status.Code grpcStatus = Status.fromThrowable(t).getCode();
-      if (grpcStatus.equals(Status.UNAUTHENTICATED.getCode())) {
+      if (grpcStatus.equals(Status.UNAUTHENTICATED.getCode()) || grpcStatus.equals(Status.NOT_FOUND.getCode())) {
         logger.info("Unable to authenticate user", t);
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
       } else if (grpcStatus.equals(Status.UNAVAILABLE.getCode())) {
