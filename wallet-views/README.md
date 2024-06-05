@@ -788,10 +788,11 @@ export TEST_WALLET_VIEWS_ARGS="-Dtest=IntegrationTest#yourTestMethod"
 make test-wallet-views
 ```
 
-The test cases have configurable timeout for waiting for the sandbox to start. It can be set as follows:
+The test cases have configurable timeouts for waiting for the sandbox and scribe components to start. They can be set as
+follows:
 
 ```bash
-export TEST_WALLET_VIEWS_ARGS="-Dtest=IntegrationTest#yourTestMethod -Dwalletviews.test.sandbox-start-timeout-seconds=200"
+export TEST_WALLET_VIEWS_ARGS="-Dwalletviews.test.sandbox-start-timeout-seconds=60 -Dwalletviews.test.scribe-start-timeout-seconds=30"
 make test-wallet-views
 ```
 
