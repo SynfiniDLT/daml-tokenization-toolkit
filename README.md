@@ -43,8 +43,12 @@ Install the following first:
 Build has been tested with Java version 17, Maven 3.6.3, npm 8.19 and PQS 2.8.0.
 
 Download the Scribe component (JAR file) of [PQS](https://docs.daml.com/2.8.3/query/pqs-user-guide.html). You will need
-a Daml Enterpise license in order to access this. Save it to your machine and export the absolute path to the file
-in your terminal envionment using the variable `SCRIBE_LOCATION`.
+a Daml Enterprise license in order to access this. Save it to your machine and export the absolute path to the file
+in your terminal envionment using the variable `SCRIBE_LOCATION`. Using a component which requires an enterprise
+license is somewhat of a limitation but there are limited alternatives other than writing a custom component for this
+purpose. For reference, the previous version of this project was implemented without need for the enterprise license
+using the (now deprecated) Custom Views library, and can be found
+[here](https://github.com/SynfiniDLT/daml-tokenization-toolkit/releases/tag/v0.2.0).
 
 ## Asset and party configuration of the demo
 
