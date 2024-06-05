@@ -21,7 +21,10 @@ export type WalletViewsClientParams = {
 }
 
 export type AccountSummary = wt.AccountSummary<damlTypes.ContractId<Account>, AccountView>;
-export type AccountOpenOfferSummary = wt.AccountOpenOfferSummary<damlTypes.ContractId<AccountOpenOffer>, AccountOpenOfferView>;
+export type AccountOpenOfferSummary = wt.AccountOpenOfferSummary<
+  damlTypes.ContractId<AccountOpenOffer>,
+  AccountOpenOfferView
+>;
 export type Balance = wt.Balance;
 export type HoldingSummary = wt.HoldingSummary<damlTypes.ContractId<Holding>, HoldingView>
 export type SettlementSummary = wt.SettlementSummary<
@@ -75,7 +78,7 @@ export class WalletViewsClient {
     return await resultsAsPromise(result);
   }
 
-  async getInstruments (filter: wt.InstrumentsFilter): Promise<InstrumentSummary[]> {
+  async getInstruments(filter: wt.InstrumentsFilter): Promise<InstrumentSummary[]> {
     const json = await this.post("/instruments", wt.InstrumentsFilter.encode(filter));
     const { result } = await instrumentsResultDecoder.runPromise(json);
     return await resultsAsPromise(result);
@@ -96,7 +99,7 @@ export class WalletViewsClient {
       },
       method: "post"
     }
-    const resp =  await fetch(this.baseUrl + "/wallet-views/v1" + endpoint, fetchParams);
+    const resp = await fetch(this.baseUrl + "/wallet-views/v1" + endpoint, fetchParams);
     const json = await resp.json();
     if (resp.ok) {
       return json;
@@ -120,9 +123,7 @@ function unpackedDecoder<T>(packedDecoder: jtv.Decoder<{unpack: T}>): jtv.Decode
 function unpackedSerializable<T>(
   packedSerializable: damlTypes.Serializable<{unpack: T}>
 ): damlTypes.Serializable<JtvResult<T, jtv.DecoderError>> {
-  return onlyDecodable(
-    unpackedDecoder(packedSerializable.decoder)
-  )
+  return onlyDecodable(unpackedDecoder(packedSerializable.decoder))
 }
 
 function onlyDecodable<T>(decoder: jtv.Decoder<T>): damlTypes.Serializable<T> {
