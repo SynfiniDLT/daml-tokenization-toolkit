@@ -710,7 +710,8 @@ or ledger API. This DAR file is automatically built by `make compile-wallet-view
 You may want to allocate one or more parties on the participant which will be used to stream all required contracts from
 the ledger. This party or parties will need to be a stakeholder on the desired contracts. Filtering data by party this
 way can be useful to reduce the amount of data stored in the DB. If, in the future we migrate to a Daml 3.0 architecture,
-then this streaming party/parties can be allocated on a separate participant.
+then this streaming party/parties can be allocated on a separate participant. Alternatively, you can stream data for
+all parties on your participant.
 
 #### 3. Setup a Postgres database
 
@@ -729,7 +730,7 @@ The Scribe process (long-running) must be started. The following positional argu
 ./scribe.jar pipeline ledger postgres-document
 ```
 
-Note: the data source must be set to `TransactionStream` (the default). You may need add other CLI options to connect
+Note: the data source must be set to `TransactionStream` (the default). You may need to add other CLI options to connect
 to your participant and database. Please consult the PQS manual for more information. You will need to set the
 `--pipeline-filter-parties` option if you allocated specific parties for streaming data.
 
