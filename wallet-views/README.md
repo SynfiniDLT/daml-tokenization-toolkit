@@ -43,7 +43,7 @@ In the context of [Canton](https://docs.daml.com/canton/about.html), each partic
 of the Wallet Views database and API. There is a one-to-one relationship between the database and the participant node,
 as it acts as an indexed view of the state of the Daml ledger (visible to the participant) and its transaction history.
 
-![alt text](https://github.com/SynfiniDLT/daml-tokenization-lib/blob/main/wallet-views/diagrams/high-level-architecture.jpg?raw=true)
+![alt text](./diagrams/high-level-architecture.jpg)
 
 ### Future state
 
