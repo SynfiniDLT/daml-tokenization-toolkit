@@ -13,7 +13,7 @@ issue any commands which update ledger state. In future this could be migrated t
 in which the wallet application service provider would host the read-only wallet API on its participant, while users
 would submit commands through their own participants.
 
-![alt text](./img/Diagram.JPG)
+![alt text](./img/solution_overview.jpg)
 
 It is important to note that this solution is designed to work in congunction with other applications. For example,
 there may be another application which implements a customized token with bespoke lifecycling or other functions, but
