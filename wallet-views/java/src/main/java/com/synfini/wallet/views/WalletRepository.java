@@ -83,7 +83,7 @@ public class WalletRepository {
         "WHERE",
         "  (? IS NULL OR payload->>'custodian' = ?) AND",
         "  (? IS NULL OR payload->>'owner' = ?) AND",
-        "  (? IS NULL OR payload->>'id' = ?)"
+        "  (? IS NULL OR payload->'id'->>'unpack' = ?)"
       ),
       ps -> {
         int pos = 0;

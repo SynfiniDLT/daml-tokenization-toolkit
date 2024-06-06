@@ -824,7 +824,7 @@ public class IntegrationTest {
     startScribe(custodian, custodianUser);
 
     mvc
-      .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
+      .perform(getAccountsBuilder(Optional.empty(), Optional.of(investor1), Optional.empty()).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(content().json(toUnpackedJson(new Result<>(Collections.emptyList()))));
 
@@ -851,33 +851,55 @@ public class IntegrationTest {
 
     delayForProjectionIngestion();
     mvc
-      .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
+      .perform(getAccountsBuilder(Optional.empty(), Optional.of(investor1), Optional.empty()).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(
         content().json(toUnpackedJson(investor1Accounts)
       )
     );
     mvc
-      .perform(getAccountsBuilder(Optional.of(custodian), investor1).headers(userTokenHeader(investor1User)))
+      .perform(getAccountsBuilder(Optional.empty(), Optional.of(investor1), Optional.of(account.id)).headers(userTokenHeader(investor1User)))
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(toUnpackedJson(investor1Accounts)
+      )
+    );
+    mvc
+      .perform(
+        getAccountsBuilder(Optional.empty(), Optional.of(investor1), Optional.of(new Id("does not exist")))
+          .headers(userTokenHeader(investor1User)))
+      .andExpect(status().isOk())
+      .andExpect(
+        content().json(toUnpackedJson(new Result<>(Collections.emptyList()))
+      )
+    );
+    mvc
+      .perform(getAccountsBuilder(Optional.of(custodian), Optional.of(investor1), Optional.empty()).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
       .andExpect(
         content().json(toUnpackedJson(investor1Accounts))
       );
     mvc
-      .perform(getAccountsBuilder(Optional.of(custodian), investor1).headers(userTokenHeader(custodianUser)))
+      .perform(getAccountsBuilder(Optional.of(custodian), Optional.of(investor1), Optional.empty()).headers(userTokenHeader(custodianUser)))
       .andExpect(status().isOk())
       .andExpect(
         content().json(toUnpackedJson(investor1Accounts))
       );
     mvc
-      .perform(getAccountsBuilder(Optional.of(investor1), investor1).headers(userTokenHeader(investor1User)))
+      .perform(
+        getAccountsBuilder(Optional.of(investor1), Optional.of(investor1), Optional.empty())
+        .headers(userTokenHeader(investor1User))
+      )
       .andExpect(status().isOk())
       .andExpect(
         content().json(toUnpackedJson(new Result<>(List.of())))
       );
 
     mvc
-      .perform(getAccountsBuilder(Optional.empty(), investor2).headers(userTokenHeader(investor2User)))
+      .perform(
+        getAccountsBuilder(Optional.empty(), Optional.of(investor2), Optional.empty())
+          .headers(userTokenHeader(investor2User))
+      )
       .andExpect(status().isOk())
       .andExpect(content().json(toUnpackedJson(new Result<>(Collections.emptyList()))));
 
@@ -888,7 +910,10 @@ public class IntegrationTest {
     delayForProjectionIngestion();
 
     mvc
-      .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
+      .perform(
+        getAccountsBuilder(Optional.empty(), Optional.of(investor1), Optional.empty())
+          .headers(userTokenHeader(investor1User))
+      )
       .andExpect(status().isOk())
       .andExpect(
         content().json(
@@ -918,7 +943,10 @@ public class IntegrationTest {
     delayForProjectionIngestion();
 
     mvc
-      .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor1User)))
+      .perform(
+        getAccountsBuilder(Optional.empty(), Optional.of(investor1), Optional.empty())
+          .headers(userTokenHeader(investor1User))
+      )
       .andExpect(status().isOk())
       .andExpect(
         content().json(
@@ -1700,7 +1728,7 @@ public class IntegrationTest {
   @Test
   void deniesAccessWithoutToken() throws Exception {
     mvc
-      .perform(getAccountsBuilder(Optional.empty(), investor1))
+      .perform(getAccountsBuilder(Optional.empty(), Optional.of(investor1), Optional.empty()))
       .andExpect(status().isUnauthorized());
 
     mvc
@@ -1721,7 +1749,7 @@ public class IntegrationTest {
   @Test
   void deniesAccessToOtherParties() throws Exception {
     mvc
-      .perform(getAccountsBuilder(Optional.empty(), investor1).headers(userTokenHeader(investor2User)))
+      .perform(getAccountsBuilder(Optional.empty(), Optional.of(investor1), Optional.empty()).headers(userTokenHeader(investor2User)))
       .andExpect(status().isForbidden());
 
     mvc
@@ -1957,10 +1985,14 @@ public class IntegrationTest {
     return headerAndPayload + "." + base64(signature);
   }
 
-  private static MockHttpServletRequestBuilder getAccountsBuilder(Optional<String> filterCustodian, String filterOwner) {
+  private static MockHttpServletRequestBuilder getAccountsBuilder(
+    Optional<String> custodian,
+    Optional<String> owner,
+    Optional<Id> id
+  ) {
     return MockMvcRequestBuilders
       .post(walletViewsBasePath + "accounts")
-      .content(toJson(new AccountFilter(filterCustodian, Optional.of(filterOwner), Optional.empty())))
+      .content(toJson(new AccountFilter(custodian, owner, id)))
       .contentType(MediaType.APPLICATION_JSON);
   }
 
