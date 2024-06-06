@@ -85,9 +85,14 @@ The following endpoints are provided the API:
 ```js
 {
   "custodian": "Acme::abc123...", // Only returns accounts which use this custodian - optional
-  "owner": "Alice::abc123..." // Only returns accounts owned by this party
+  "owner": "Alice::abc123..." // Only returns accounts owned by this party - optional
+  "id": { // Only returns accounts with this ID - optional
+    "unpack": "1"
+  }
 }
 ```
+
+Note: at least one of custodian or owner is required.
 
 #### Required permissions
 - actAs or readAs permissions for the account owner; or
@@ -274,6 +279,9 @@ repository.
 
 ```js
 {
+  "batchId": { // Optional. If provided, only returns settlements with this batch ID
+    "unpack": "batch1"
+  },
   "before": "0000...a", // Optional. If provided, only returns transactions that occurred before this (absolute) ledger
   // offset. If not provided, transactions are returned starting from the most recent.
   "limit": 20 // Optional. If provided, it will only return a maximum of this many transactions. If not provided, the API
@@ -466,14 +474,14 @@ or DvP.
 
 ```js
 {
-  "account": {
+  "account": { // Account to filter by (note: all fields within this account object are optional)
     "owner": "Alice::abc123...",
     "custodian": "Custodian::abc123...",
     "id": {
       "unpack": "1"
     }
   },
-  "instrument": {
+  "instrument": { // Instrument to filter by (note: all fields with this instrument object are mandatory)
     "depository": "Depository::abc123...",
     "issuer": "Issuer1::abc123...",
     "id": {
