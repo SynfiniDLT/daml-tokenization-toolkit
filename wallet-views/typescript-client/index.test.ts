@@ -73,6 +73,7 @@ test("Returns holdings", async () => {
 
 test("Returns settlements", async () => {
   const resp = await aliceClient.getSettlements({
+    batchId: null,
     before: null,
     limit: "10"
   });

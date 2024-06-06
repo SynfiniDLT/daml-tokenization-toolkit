@@ -61,7 +61,6 @@ const DirectoryScreen: React.FC = () => {
     fetchMetadatas();
   }, [ledger, instruments]);
 
-  // TODO cannot fetch Holdings from wallet views API until we relax restrictions on `HoldingsFilter`: account ID, and owner should be optional
   useEffect(() => {
     const fetchHoldings = async () => {
       if (instruments !== undefined) {

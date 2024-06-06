@@ -128,6 +128,7 @@ newtype SettlementSummaryTyped = SettlementSummaryTyped (
 
 data SettlementsFilter = SettlementsFilter
   with
+    batchId : Optional Id
     before : Optional Text
     limit : Optional Int
   deriving (Show, Eq)

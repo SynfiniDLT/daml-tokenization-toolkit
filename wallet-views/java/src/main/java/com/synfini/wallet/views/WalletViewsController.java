@@ -139,7 +139,7 @@ public class WalletViewsController {
           .body("Transactions limit cannot exceed " + walletViewsApiConfig.maxTransactionsResponseSize);
       }
       final var settlements = walletRepository
-        .settlements(ledgerClient, parties, filter.before, limit)
+        .settlements(ledgerClient, parties, filter.batchId, filter.before, limit)
         .stream()
         .map(r -> r.unpack)
         .collect(Collectors.toList());

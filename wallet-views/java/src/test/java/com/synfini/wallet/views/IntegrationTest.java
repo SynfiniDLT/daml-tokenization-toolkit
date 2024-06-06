@@ -1275,11 +1275,27 @@ public class IntegrationTest {
     // Check unallocated/unapproved settlement
     mvc
       .perform(
-        getSettlementsBuilder(Optional.empty(), Optional.empty())
+        getSettlementsBuilder(Optional.empty(), Optional.empty(), Optional.empty())
           .headers(userTokenHeader(investor2User))
       )
       .andExpect(status().isOk())
       .andExpect(content().json(toUnpackedJson(expectedSettlements.apply(Optional.empty()))));
+
+    // Check filter by batch ID
+    mvc
+      .perform(
+        getSettlementsBuilder(Optional.of(batchId), Optional.empty(), Optional.empty())
+          .headers(userTokenHeader(investor2User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toUnpackedJson(expectedSettlements.apply(Optional.empty()))));
+    mvc
+      .perform(
+        getSettlementsBuilder(Optional.of(new Id("does not exist")), Optional.empty(), Optional.empty())
+          .headers(userTokenHeader(investor2User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toUnpackedJson(new Result<List<SettlementSummaryTyped>>(Collections.emptyList()))));
 
     // Instruction 0
     final var instruction0Allocation = new CreditReceiver(Unit.getInstance());
@@ -1407,7 +1423,7 @@ public class IntegrationTest {
     delayForProjectionIngestion();
     mvc
       .perform(
-        getSettlementsBuilder(Optional.empty(), Optional.empty())
+        getSettlementsBuilder(Optional.empty(), Optional.empty(), Optional.empty())
           .headers(userTokenHeader(investor2User))
       )
       .andExpect(status().isOk())
@@ -1416,7 +1432,7 @@ public class IntegrationTest {
     // Check that other party cannot see the batch/instructions
     mvc
       .perform(
-        getSettlementsBuilder(Optional.empty(), Optional.empty())
+        getSettlementsBuilder(Optional.empty(), Optional.empty(), Optional.empty())
           .headers(userTokenHeader(issuerUser))
       )
       .andExpect(status().isOk())
@@ -1549,7 +1565,7 @@ public class IntegrationTest {
 
     mvc
       .perform(
-        getSettlementsBuilder(Optional.empty(), Optional.empty())
+        getSettlementsBuilder(Optional.empty(), Optional.empty(), Optional.empty())
           .headers(userTokenHeader(investor1User))
       )
       .andExpect(status().isOk())
@@ -1561,7 +1577,7 @@ public class IntegrationTest {
 
     mvc
       .perform(
-        getSettlementsBuilder(Optional.of(createBatchResult2.offset), Optional.empty())
+        getSettlementsBuilder(Optional.empty(), Optional.of(createBatchResult2.offset), Optional.empty())
           .headers(userTokenHeader(investor1User))
       )
       .andExpect(status().isOk())
@@ -1573,7 +1589,7 @@ public class IntegrationTest {
 
     mvc
       .perform(
-        getSettlementsBuilder(Optional.empty(), Optional.of(1L))
+        getSettlementsBuilder(Optional.empty(), Optional.empty(), Optional.of(1L))
           .headers(userTokenHeader(investor1User))
       )
       .andExpect(status().isOk())
@@ -1585,7 +1601,7 @@ public class IntegrationTest {
 
     mvc
       .perform(
-        getSettlementsBuilder(Optional.empty(), Optional.empty())
+        getSettlementsBuilder(Optional.empty(), Optional.empty(), Optional.empty())
           .headers(userTokenHeader(custodianUser))
       )
       .andExpect(status().isOk())
@@ -2010,12 +2026,13 @@ public class IntegrationTest {
   }
 
   private static MockHttpServletRequestBuilder getSettlementsBuilder(
+    Optional<Id> batchId,
     Optional<String> before,
     Optional<Long> limit
   ) {
     return MockMvcRequestBuilders
       .post(walletViewsBasePath + "settlements")
-      .content(toJson(new SettlementsFilter(before, limit)))
+      .content(toJson(new SettlementsFilter(batchId, before, limit)))
       .contentType(MediaType.APPLICATION_JSON);
   }
 

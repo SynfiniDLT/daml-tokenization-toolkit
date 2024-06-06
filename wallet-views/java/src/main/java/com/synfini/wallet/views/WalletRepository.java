@@ -340,6 +340,7 @@ public class WalletRepository {
   public List<SettlementSummaryRaw<JsonObject>> settlements(
     LedgerClient ledgerClient,
     List<String> readAs,
+    Optional<Id> batchId,
     Optional<String> before,
     long limit
   ) {
@@ -359,13 +360,15 @@ public class WalletRepository {
       "  FROM creates(?) AS instruction",
       "  INNER JOIN creates(?) AS disclosure ON instruction.contract_id = disclosure.contract_id",
       "  WHERE",
-      "    daml_set_text_values(instruction.payload->'requestors') && ? OR",
-      "    daml_set_text_values(instruction.payload->'settlers') && ? OR",
-      "    daml_set_text_values(instruction.payload->'signedSenders') && ? OR",
-      "    daml_set_text_values(instruction.payload->'signedReceivers') && ? OR",
-      "    instruction.payload->'routedStep'->>'sender' = ANY(?) OR",
-      "    instruction.payload->'routedStep'->>'receiver' = ANY(?) OR",
-      "    flatten_observers(disclosure.payload->'observers') && ?",
+      "    (? IS NULL OR instruction.payload->'batchId'->>'unpack' = ?) AND (",
+      "      daml_set_text_values(instruction.payload->'requestors') && ? OR",
+      "      daml_set_text_values(instruction.payload->'settlers') && ? OR",
+      "      daml_set_text_values(instruction.payload->'signedSenders') && ? OR",
+      "      daml_set_text_values(instruction.payload->'signedReceivers') && ? OR",
+      "      instruction.payload->'routedStep'->>'sender' = ANY(?) OR",
+      "      instruction.payload->'routedStep'->>'receiver' = ANY(?) OR",
+      "      flatten_observers(disclosure.payload->'observers') && ?",
+      "    )",
       "  GROUP BY (instruction.payload->'batchId'->>'unpack', daml_set_text_values(instruction.payload->'requestors'))",
       "  HAVING ? IS NULL OR min(instruction.created_at_offset) < ?",
       "  ORDER BY min_create_offset DESC",
@@ -375,6 +378,10 @@ public class WalletRepository {
       try {
         ps.setString(++pos, fullyQualified(daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID));
         ps.setString(++pos, fullyQualified(daml.finance.interface$.util.disclosure.Disclosure.TEMPLATE_ID));
+
+        final var batchId_ = batchId.map(i -> i.unpack).orElse(null);
+        ps.setString(++pos, batchId_);
+        ps.setString(++pos, batchId_);
 
         final var readAsEnd = pos + 7;
         while (pos < readAsEnd) {
