@@ -59,15 +59,15 @@ public class WalletViewsController {
     @RequestHeader(value = HttpHeaders.AUTHORIZATION, defaultValue = "") String auth
   ) throws Exception {
     return withLedgerConnection(auth, (__, userRights) -> {
-      final var permittedReaders = new ArrayList<>();
-      permittedReaders.add(filter.owner);
+      final var permittedReaders = new ArrayList<String>();
+      filter.owner.ifPresent(permittedReaders::add);
       filter.custodian.ifPresent(permittedReaders::add);
 
       if (!canReadAsAnyOf(userRights, permittedReaders.toArray(new String[]{}))) {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN);
       }
       final var accounts = walletRepository
-        .accounts(filter.custodian, filter.owner)
+        .accounts(filter.custodian, filter.owner, filter.id)
         .stream()
         .map(r -> r.unpack)
         .collect(Collectors.toList());

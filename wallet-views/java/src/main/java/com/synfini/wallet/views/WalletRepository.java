@@ -40,6 +40,7 @@ import daml.finance.interface$.types.common.types.Id;
 import daml.finance.interface$.types.common.types.InstrumentKey;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import synfini.wallet.api.types.AccountFilter;
 import synfini.wallet.api.types.AccountOpenOfferSummary;
 import synfini.wallet.api.types.AccountOpenOfferSummaryRaw;
 import synfini.wallet.api.types.AccountSummary;
@@ -71,18 +72,31 @@ public class WalletRepository {
     this.pgDataSource = pgDataSource;
   }
 
-  public List<AccountSummaryRaw<JsonObject>> accounts(Optional<String> custodian, String owner) {
+  public List<AccountSummaryRaw<JsonObject>> accounts(
+    Optional<String> custodian,
+    Optional<String> owner,
+    Optional<Id> id
+  ) {
     return jdbcTemplate.query(
       multiLineQuery(
         "SELECT * FROM active(?)",
-        "WHERE (? IS NULL OR payload->>'custodian' = ?) AND payload->>'owner' = ?"
+        "WHERE",
+        "  (? IS NULL OR payload->>'custodian' = ?) AND",
+        "  (? IS NULL OR payload->>'owner' = ?) AND",
+        "  (? IS NULL OR payload->>'id' = ?)"
       ),
       ps -> {
         int pos = 0;
         ps.setString(++pos, fullyQualified(Account.TEMPLATE_ID));
-        ps.setString(++pos, custodian.orElse(null));
-        ps.setString(++pos, custodian.orElse(null));
-        ps.setString(++pos, owner);
+        final var custodian_ = custodian.orElse(null);
+        ps.setString(++pos, custodian_);
+        ps.setString(++pos, custodian_);
+        final var owner_ = owner.orElse(null);
+        ps.setString(++pos, owner_);
+        ps.setString(++pos, owner_);
+        final var id_ = id.map(i -> i.unpack).orElse(null);
+        ps.setString(++pos, id_);
+        ps.setString(++pos, id_);
       },
       new AccountRowMapper()
     );
@@ -160,7 +174,7 @@ public class WalletRepository {
     );
   }
 
-  public List<HoldingSummaryRaw<JsonObject>> holdings(AccountKey account, InstrumentKey instrument, List<String> readAs) {
+  public List<HoldingSummaryRaw<JsonObject>> holdings(AccountFilter account, InstrumentKey instrument, List<String> readAs) {
     return jdbcTemplate.query(
       multiLineQuery(
         "SELECT",
@@ -171,9 +185,9 @@ public class WalletRepository {
         "FROM active(?) AS holding",
         "INNER JOIN active(?) AS disclosure ON holding.contract_id = disclosure.contract_id",
         "WHERE",
-        "  holding.payload->'account'->>'custodian' = ? AND",
-        "  holding.payload->'account'->>'owner' = ? AND",
-        "  holding.payload->'account'->'id'->>'unpack' = ? AND",
+        "  (? IS NULL OR holding.payload->'account'->>'custodian' = ?) AND",
+        "  (? IS NULL OR holding.payload->'account'->>'owner' = ?) AND",
+        "  (? IS NULL OR holding.payload->'account'->'id'->>'unpack' = ?) AND",
         "  holding.payload->'instrument'->>'depository' = ? AND",
         "  holding.payload->'instrument'->>'issuer' = ? AND",
         "  holding.payload->'instrument'->'id'->>'unpack' = ? AND",
@@ -196,9 +210,16 @@ public class WalletRepository {
           fullyQualified(daml.finance.interface$.util.disclosure.Disclosure.TEMPLATE_ID)
         );
 
-        ps.setString(++pos, account.custodian);
-        ps.setString(++pos, account.owner);
-        ps.setString(++pos, account.id.unpack);
+
+        final var custodian_ = account.custodian.orElse(null);
+        ps.setString(++pos, custodian_);
+        ps.setString(++pos, custodian_);
+        final var owner_ = account.owner.orElse(null);
+        ps.setString(++pos, owner_);
+        ps.setString(++pos, owner_);
+        final var id_ = account.id.map(i -> i.unpack).orElse(null);
+        ps.setString(++pos, id_);
+        ps.setString(++pos, id_);
   
         ps.setString(++pos, instrument.depository);
         ps.setString(++pos, instrument.issuer);

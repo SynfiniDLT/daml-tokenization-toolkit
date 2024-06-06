@@ -543,11 +543,11 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
 
     const fetchAccounts = async (custodian: string) => {
       if (primaryParty !== undefined) {
-        const respAcc = await walletClient.getAccounts({ owner: primaryParty, custodian: custodian });
+        const respAcc = await walletClient.getAccounts({ owner: primaryParty, custodian: custodian, id: null });
         setAccounts(respAcc);
       }
     };
-  
+
     // STEPS LOOP THROUGH
     let stepNotReady = false;
     settlement.steps.forEach(step => {

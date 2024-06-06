@@ -764,6 +764,32 @@ public class IntegrationTest {
           )
       );
 
+    mvc
+      .perform(
+        getHoldingsBuilder(
+          new AccountFilter(Optional.empty(), Optional.empty(), Optional.of(account.id)), instrument1()
+        )
+      .headers(userTokenHeader(investor1User)))
+      .andExpect(status().isOk())
+      .andExpect(
+        content()
+          .json(
+            toUnpackedJson(
+              new Result<>(
+                Collections.singletonList(
+                  new HoldingSummaryTyped(
+                    new HoldingSummary<>(
+                      holdingCid,
+                      new View(instrument1(), account, creditAmount, Optional.empty()),
+                      new TransactionDetail(ledgerOffset, Instant.EPOCH)
+                    )
+                  )
+                )
+              )
+            )
+          )
+      );
+
     final var lockContext = "My context";
     final var lockType = LockType.REENTRANT;
     final var lockedHoldingCid = acquireLock(holdingCid, lockContext, lockType, custodian, investor2);
@@ -1915,10 +1941,10 @@ public class IntegrationTest {
     return headerAndPayload + "." + base64(signature);
   }
 
-  private static MockHttpServletRequestBuilder getAccountsBuilder(Optional<String> custodian, String owner) {
+  private static MockHttpServletRequestBuilder getAccountsBuilder(Optional<String> filterCustodian, String filterOwner) {
     return MockMvcRequestBuilders
       .post(walletViewsBasePath + "accounts")
-      .content(toJson(new AccountFilter(custodian, owner)))
+      .content(toJson(new AccountFilter(filterCustodian, Optional.of(filterOwner), Optional.empty())))
       .contentType(MediaType.APPLICATION_JSON);
   }
 
@@ -1939,7 +1965,28 @@ public class IntegrationTest {
   private static MockHttpServletRequestBuilder getHoldingsBuilder(AccountKey account, InstrumentKey instrument) {
     return MockMvcRequestBuilders
       .post(walletViewsBasePath + "holdings")
-      .content(toJson(new HoldingFilter(account, instrument)))
+      .content(
+        toJson(
+          new HoldingFilter(
+            new AccountFilter(Optional.of(account.custodian), Optional.of(account.owner), Optional.empty()),
+            instrument
+          )
+        )
+      )
+      .contentType(MediaType.APPLICATION_JSON);
+  }
+
+  private static MockHttpServletRequestBuilder getHoldingsBuilder(AccountFilter account, InstrumentKey instrument) {
+    return MockMvcRequestBuilders
+      .post(walletViewsBasePath + "holdings")
+      .content(
+        toJson(
+          new HoldingFilter(
+            account,
+            instrument
+          )
+        )
+      )
       .contentType(MediaType.APPLICATION_JSON);
   }
 
