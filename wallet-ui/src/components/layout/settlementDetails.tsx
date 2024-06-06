@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { AccountSummary, SettlementStep, SettlementSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { arrayToMap, formatCurrency, repairMap, setToArray, toDateTimeString, truncateParty, wait } from "../../Util";
 import styled from "styled-components";
 import { Field, FieldPending, FieldSettled } from "./general.styled";
@@ -26,9 +25,10 @@ import Modal from "react-modal";
 import AccountsSelect from "./accountsSelect";
 import { useWalletUser, useWalletViews } from "../../App";
 import { maxPolls, pollDelay } from "../../Configuration";
-import { RoutedStep } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Types";
+import { Allocation, Approval, RoutedStep } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Types";
 import { Set as DamlSet } from "@daml.js/da-set/lib/DA/Set/Types";
 import { FirstRender } from "../../Util";
+import { AccountSummary, SettlementSummary } from "@synfini/wallet-views";
 
 function isMint(step: RoutedStep): boolean {
   return step.custodian === step.sender ||
@@ -40,11 +40,16 @@ function isBurn(step: RoutedStep): boolean {
     (step.quantity.unit.issuer === step.receiver && step.quantity.unit.issuer !== step.sender);
 }
 
-function requiresIssuerAction(primaryParty: damlTypes.Party, step: SettlementStep): boolean {
-  return primaryParty === step.routedStep.quantity.unit.issuer &&
+function requiresIssuerAction(
+  primaryParty: damlTypes.Party,
+  step: RoutedStep,
+  allocation: Allocation,
+  approval: Approval
+): boolean {
+  return primaryParty === step.quantity.unit.issuer &&
     (
-      (isMint(step.routedStep) && step.allocation.tag === "Unallocated") ||
-      (isBurn(step.routedStep) && step.approval.tag === "Unapproved")
+      (isMint(step) && allocation.tag === "Unallocated") ||
+      (isBurn(step) && approval.tag === "Unapproved")
     );
 }
 
@@ -126,53 +131,55 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
         </div>
 
         <hr></hr>
-        {props.settlement.steps.map((step: SettlementStep) => (
-          <div key={step.instructionId.unpack}>
-            <h5 className="profile__title">Instruction</h5>
-            <div style={{ margin: "15px" }}>
-              <Field>ID:</Field>
-              {step.instructionId.unpack}
-              <br />
-              <Field>Type: </Field>
-              {
-                isMint(step.routedStep) ? <> Issuance<br/></> :
-                isBurn(step.routedStep) ? <> Redemption<br/></> : <> Transfer<br/></>
-              }
-              <Field>Amount: </Field>
-                {formatCurrency(step.routedStep.quantity.amount)}
-              <br />
-              <div id={step.routedStep.quantity.unit.id.unpack} key={step.instructionCid}>
-                <Field>Asset:</Field>
-                  <a onClick={() => handleInstrumentModal(step.routedStep.quantity.unit)}>
-                    {`${step.routedStep.quantity.unit.id.unpack} ${step.routedStep.quantity.unit.version}`}
-                  </a>
+        {
+          props.settlement.steps.map(step =>
+            <div key={step.instructionId.unpack}>
+              <h5 className="profile__title">Instruction</h5>
+              <div style={{ margin: "15px" }}>
+                <Field>ID:</Field>
+                {step.instructionId.unpack}
                 <br />
+                <Field>Type: </Field>
                 {
-                  !isMint(step.routedStep) &&
-                  <>
-                    <Field>Sender: </Field>
-                    {truncateParty(step.routedStep.sender)}
-                    <br />
-                  </>
+                  isMint(step.routedStep) ? <> Issuance<br/></> :
+                  isBurn(step.routedStep) ? <> Redemption<br/></> : <> Transfer<br/></>
                 }
-
-                {
-                  !isBurn(step.routedStep) &&
-                  <>
-                    <Field>Receiver: </Field>
-                    {truncateParty(step.routedStep.receiver)}
-                    <br />
-                  </>
-                }
-
-                <Field>Register: </Field>
-                {truncateParty(step.routedStep.custodian)}
+                <Field>Amount: </Field>
+                  {formatCurrency(step.routedStep.quantity.amount)}
                 <br />
+                <div id={step.routedStep.quantity.unit.id.unpack} key={step.instructionCid}>
+                  <Field>Asset:</Field>
+                    <a onClick={() => handleInstrumentModal(step.routedStep.quantity.unit)}>
+                      {`${step.routedStep.quantity.unit.id.unpack} ${step.routedStep.quantity.unit.version}`}
+                    </a>
+                  <br />
+                  {
+                    !isMint(step.routedStep) &&
+                    <>
+                      <Field>Sender: </Field>
+                      {truncateParty(step.routedStep.sender)}
+                      <br />
+                    </>
+                  }
+
+                  {
+                    !isBurn(step.routedStep) &&
+                    <>
+                      <Field>Receiver: </Field>
+                      {truncateParty(step.routedStep.receiver)}
+                      <br />
+                    </>
+                  }
+
+                  <Field>Register: </Field>
+                  {truncateParty(step.routedStep.custodian)}
+                  <br />
+                </div>
+                <hr></hr>
               </div>
-              <hr></hr>
             </div>
-          </div>
-        ))}
+          )
+        }
         {isActionRequired && <button onClick={() => handleSeeDetails(props.settlement)}>Action Required</button>}
       </div>
     </SettlementDetailsContainer>
@@ -227,7 +234,6 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
 
       const settlements = await walletClient.getSettlements({before: null, limit: null}); // TODO should fetch by contract ID
       const filteredSettlements = settlements
-        .settlements
         .filter(s =>
           s.batchId.unpack === props.batchId.unpack &&
           s.requestors.map.entriesArray().length === props.requestors.map.entriesArray().length &&
@@ -442,7 +448,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
           const activeHoldings = await walletClient.getHoldings({ account, instrument: holdingDescriptor.instrument });
           holdings = holdings.set(
             holdingDescriptor,
-            activeHoldings.holdings.filter((h) => h.view.lock === null).map((h) => h.cid)
+            activeHoldings.filter((h) => h.view.lock === null).map((h) => h.cid)
           );
         }
       }
@@ -538,13 +544,13 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
     const fetchAccounts = async (custodian: string) => {
       if (primaryParty !== undefined) {
         const respAcc = await walletClient.getAccounts({ owner: primaryParty, custodian: custodian });
-        setAccounts(respAcc.accounts);
+        setAccounts(respAcc);
       }
     };
   
     // STEPS LOOP THROUGH
     let stepNotReady = false;
-    settlement.steps.forEach((step: SettlementStep) => {
+    settlement.steps.forEach(step => {
       let inputSelected = "";
 
       // CHECK STEPS APPROVAL / ALLOCATION
@@ -634,8 +640,9 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
           </div>
 
           <hr></hr>
-          {primaryParty === undefined || settlement.steps.map((step: SettlementStep) => {
-            return (
+          {
+            primaryParty !== undefined &&
+            settlement.steps.map(step =>
               <>
                 <div key={step.instructionId.unpack}>
                   <h5 className="profile__title">Instruction</h5>
@@ -645,7 +652,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                     <br />
                     <div
                       style={{
-                        ...(requiresIssuerAction(primaryParty, step)
+                        ...(requiresIssuerAction(primaryParty, step.routedStep, step.allocation, step.approval)
                           ? { border: "1px solid", width: "fit-content" }
                           : {}),
                       }}
@@ -737,8 +744,8 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                   </div>
                 </div>
               </>
-            );
-          })}
+            )
+          }
           <br></br>
           <button type="submit" className="button__login" style={{ width: "180px" }}>
             Apply

@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { PageLoader } from "../components/layout/page-loader";
 import { PageLayout } from "../components/PageLayout";
-import { AccountSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import AccountBalances, { AccountBalanceSummary } from "../components/layout/accountBalances";
 import { useWalletViews, useWalletUser } from "../App";
+import { AccountSummary } from "@synfini/wallet-views";
 
 const WalletScreen: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
@@ -17,7 +17,7 @@ const WalletScreen: React.FC = () => {
     const fetchAccounts = async () => {
       if (primaryParty !== undefined) {
         const resp = await walletClient.getAccounts({ owner: primaryParty, custodian: null });
-        return resp.accounts;
+        return resp;
       } else {
         return [];
       }
@@ -32,7 +32,7 @@ const WalletScreen: React.FC = () => {
             id: account.view.id,
           },
         });
-        return resp.balances;
+        return resp;
       }
       return [];
     };

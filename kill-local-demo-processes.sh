@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 
-for file in sandbox.pgid json-api.pgid spring.pgid
+for file in $(ls *.pgid)
 do
-  if [ -f $file ]; then
-    kill -SIGTERM -- -$(cat $file | tr -d '\n')
-    rm $file
-  fi
+  kill -SIGTERM -- -$(cat $file | tr -d '\n')
+  rm $file
 done

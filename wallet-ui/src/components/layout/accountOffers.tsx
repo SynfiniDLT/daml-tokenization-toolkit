@@ -1,4 +1,4 @@
-import { AccountOpenOfferSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
+import { AccountOpenOfferSummary } from "@synfini/wallet-views";
 import AccountOfferDetails from "./accountOfferDetails";
 
 export default function AccountOffers(props: { accountOffers?: AccountOpenOfferSummary[]}) {

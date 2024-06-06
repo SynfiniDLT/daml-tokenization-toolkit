@@ -15,16 +15,18 @@
           "instrumentIssuer": "issuer",
           "instrumentId": "Instrument1",
           "instrumentVersion": "0",
-          "amount": 1
+          "amount": 1.0000000001
         }
       ],
       "settlementOpenOfferFactory": "default",
       "routeProvider": "default",
       "settlementFactory": "default",
-      "observers" : [{
-        "context": "o",
-        "parties": ["alice"]
-      }]
+      "observers" : [
+        {
+          "context": "o",
+          "parties": ["alice"]
+        }
+      ]
     }
   ]
 }

@@ -4,9 +4,6 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { userContext } from "../App";
 import { PageLayout } from "../components/PageLayout";
 import { PageLoader } from "../components/layout/page-loader";
-import {
-  InstrumentSummary,
-} from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlTypes from "@daml/types";
 import { arrayToSet, flattenObservers, setToArray, toDateTimeString, wait, FirstRender } from "../Util";
 import { useWalletUser, useWalletViews } from "../App";
@@ -20,6 +17,7 @@ import { Fungible } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finan
 import { Transferable } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Transferable";
 import { Set as DamlSet } from "@daml.js/da-set/lib/DA/Set/Types";
 import { pollDelay } from "../Configuration";
+import { InstrumentSummary } from "@synfini/wallet-views";
 
 export type AssetDetailsState = {
   instrument: InstrumentKey
@@ -75,8 +73,8 @@ const AssetDetailsScreen: React.FC = () => {
       }
       const instruments = await walletClient.getInstruments(state.instrument);
 
-      if (instruments.instruments.length === 1) {
-        const ins = instruments.instruments[0];
+      if (instruments.length === 1) {
+        const ins = instruments[0];
         if (instrumentDirtyCid === "FirstRender" || ins.cid !== instrumentDirtyCid) {
           setInstrumentDirtyCid(undefined);
         } else {

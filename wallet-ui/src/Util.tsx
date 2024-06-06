@@ -2,8 +2,8 @@ import { Set as DamlSet } from "@daml.js/da-set/lib/DA/Set/Types";
 import { View as HoldingView } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Base";
 import { View as DisclosureView } from "@daml.js/daml-finance-interface-util/lib/Daml/Finance/Interface/Util/Disclosure";
 import { View as MetadataView } from "@daml.js/synfini-instrument-metadata-interface/lib/Synfini/Interface/Instrument/Metadata/Metadata";
-import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import * as damlTypes from "@daml/types";
+import { InstrumentSummary } from "@synfini/wallet-views";
 import Decimal from "decimal.js";
 import { customAlphabet } from "nanoid";
 

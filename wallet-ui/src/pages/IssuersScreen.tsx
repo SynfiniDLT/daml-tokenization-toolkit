@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { PageLayout } from "../components/PageLayout";
-import { InstrumentSummary } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import InstrumentsToken from "../components/layout/instrumentsToken";
 import { useWalletUser, useWalletViews } from "../App";
+import { InstrumentSummary } from "@synfini/wallet-views";
 
 const IssuersScreen: React.FC = () => {
   const walletClient = useWalletViews();
@@ -19,7 +19,7 @@ const IssuersScreen: React.FC = () => {
           id: null, 
           version: null
         });
-        setInstruments(resp_instrument.instruments);
+        setInstruments(resp_instrument);
       }
     }
 

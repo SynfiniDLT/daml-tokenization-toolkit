@@ -1,6 +1,6 @@
 package com.synfini.wallet.views.config;
 
-import com.google.gson.Gson;
+import com.fatboyindustrial.gsonjavatime.Converters;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
@@ -10,12 +10,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.gson.GsonBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,7 +34,34 @@ public class WalletViewsApiConfig implements WebMvcConfigurer {
     // Enable the spring.gson.* configuration in the configuration file
     customizers.forEach((c) -> c.customize(builder));
     builder.registerTypeAdapterFactory(GsonOptionalTypeAdapter.FACTORY);
+    builder.registerTypeAdapter(BigDecimal.class, new BigDecimalTypeAdapter());
+    Converters.registerInstant(builder);
+    builder.serializeNulls();
     return builder;
+  }
+
+  private static class BigDecimalTypeAdapter extends TypeAdapter<BigDecimal> {
+    @Override
+    public void write(JsonWriter out, BigDecimal value) throws IOException {
+      var valueString = value.toPlainString();
+      // Unfortunately the test cases do not pass without the following additional logic due to differences between
+      // the encoding used by the Daml JSON library and how the `toPlainString` method works
+      if (BigDecimal.ZERO.equals(value)) {
+        out.value("0.0");
+      } else if (valueString.contains(".")) {
+        while (valueString.endsWith("0") && !valueString.endsWith(".0")) {
+          valueString = valueString.substring(0, valueString.length() - 1);
+        }
+        out.value(valueString);
+      } else {
+        out.value(valueString);
+      }
+    }
+
+    @Override
+    public BigDecimal read(JsonReader in) throws IOException {
+      return new Gson().fromJson(in, BigDecimal.class); // Use standard reading method
+    }
   }
 
   private static class GsonOptionalTypeAdapter<E> extends TypeAdapter<Optional<E>> {
@@ -60,10 +87,12 @@ public class WalletViewsApiConfig implements WebMvcConfigurer {
     }
 
     @Override
-    public void write(JsonWriter out, Optional<E> value) {
-      throw new UnsupportedOperationException(
-        "Cannot write Optional types as JSON using gson: use com.daml.lf.codegen.json.JsonCodec instead"
-      );
+    public void write(JsonWriter out, Optional<E> value) throws IOException {
+      if (value.isPresent()){
+        adapter.write(out, value.get());
+      } else {
+        out.nullValue();
+      }
     }
 
     @Override

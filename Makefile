@@ -57,19 +57,6 @@ wallet_ui_node_modules = $(wallet_ui_dir)/node_modules
 $(daml_finance_dir): dependencies.conf
 	./get-dependencies.sh
 
-CUSTOM_VIEWS_JAR = $(proj_root)/$(build_dir)/custom-views-assembly-LOCAL-SNAPSHOT.jar
-.PHONY: install-custom-views
-install-custom-views:
-	cd custom-views && \
-	sbt 'set assembly / test := {}' 'set assembly / assemblyOutputPath := file("${CUSTOM_VIEWS_JAR}")' clean assembly && \
-	mvn install:install-file \
-		-Dfile=${CUSTOM_VIEWS_JAR} \
-		-DgroupId=com.daml \
-		-DartifactId=custom-views_2.13 \
-		-Dversion=assembly-LOCAL-SNAPSHOT \
-		-Dpackaging=jar \
-		-DgeneratePom=true
-
 $(assert_dar): $(shell ./find-daml-project-files.sh $(models_src_dir)/util/assert)
 	cd $(models_src_dir)/util/assert && daml build -o $(proj_root)/$(assert_dar)
 
@@ -196,7 +183,6 @@ $(instrument_metadata_dar): $(daml_finance_dir) \
 $(wallet_views_types_dar): $(daml_finance_dir) \
   $(account_onboarding_open_offer_interface_dar) \
   $(issuer_onboarding_token_interface_dar) \
-  $(instrument_metadata_interface_dar) \
   $(shell ./find-daml-project-files.sh $(wallet_views_types_dir))
 	cd $(wallet_views_types_dir) && daml build -o $(proj_root)/$(wallet_views_types_dar)
 
@@ -207,8 +193,7 @@ $(wallet_views_main_codegen): $(wallet_views_types_dar)
 
 $(wallet_views_test_codegen): $(daml_finance_dir) \
   $(account_onboarding_open_offer_dar) \
-  $(issuer_onboarding_token_dar) \
-  $(instrument_metadata_dar)
+  $(issuer_onboarding_token_dar)
 	rm -rf $(wallet_views_test_codegen)
 	daml codegen java \
 		-o $(wallet_views_test_codegen) \
@@ -217,8 +202,7 @@ $(wallet_views_test_codegen): $(daml_finance_dir) \
 		$(daml_finance_dir)/daml-finance-settlement.dar \
 		$(daml_finance_dir)/daml-finance-instrument-token.dar \
 		$(account_onboarding_open_offer_dar) \
-		$(issuer_onboarding_token_dar) \
-		$(instrument_metadata_dar)
+		$(issuer_onboarding_token_dar)
 
 .PHONY: compile-wallet-views
 compile-wallet-views: $(wallet_views_main_codegen)
@@ -236,7 +220,17 @@ test-wallet-views: $(wallet_views_main_codegen) $(wallet_views_test_codegen)
 $(wallet_views_ts_client_codegen): $(wallet_views_ts_client_package_json) \
   $(wallet_views_types_dar)
 	rm -rf $(wallet_views_ts_client_codegen)
-	daml codegen js $(wallet_views_types_dar) -o $(wallet_views_ts_client_codegen)
+	daml codegen js \
+		$(daml_finance_dir)/daml-finance-interface-account.dar \
+		$(daml_finance_dir)/daml-finance-interface-holding.dar \
+		$(daml_finance_dir)/daml-finance-interface-instrument-base.dar \
+		$(daml_finance_dir)/daml-finance-interface-instrument-token.dar \
+		$(daml_finance_dir)/daml-finance-interface-settlement.dar \
+		$(daml_finance_dir)/daml-finance-interface-types-common.dar \
+		$(account_onboarding_open_offer_interface_dar) \
+		$(issuer_onboarding_token_interface_dar) \
+		$(wallet_views_types_dar) \
+		-o $(wallet_views_ts_client_codegen)
 
 # TypeScript client
 $(wallet_views_ts_client_node_modules): $(wallet_views_ts_client_package_json) $(wallet_views_ts_client_codegen)
@@ -258,7 +252,6 @@ test-wallet-views-ts-client: install-operations compile-wallet-views $(wallet_vi
 $(wallet_ui_codegen): $(wallet_ui_package_json) \
   $(daml_finance_dir) \
   $(account_onboarding_open_offer_interface_dar) \
-  $(issuer_onboarding_token_interface_dar) \
   $(minter_burner_interface_dar) \
   $(settlement_one_time_offer_interface_dar) \
   $(settlement_open_offer_interface_dar) \
@@ -267,7 +260,6 @@ $(wallet_ui_codegen): $(wallet_ui_package_json) \
 	rm -rf $(wallet_ui_codegen)
 	daml codegen js \
 		$(account_onboarding_open_offer_interface_dar) \
-		$(issuer_onboarding_token_interface_dar) \
 		$(minter_burner_interface_dar) \
 		$(settlement_one_time_offer_interface_dar) \
 		$(settlement_open_offer_interface_dar) \

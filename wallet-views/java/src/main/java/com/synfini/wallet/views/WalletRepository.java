@@ -1,48 +1,67 @@
 package com.synfini.wallet.views;
 
-import com.daml.ledger.javaapi.data.Unit;
-import da.types.Tuple2;
-import daml.finance.interface$.account.account.Account;
-import daml.finance.interface$.account.account.Controllers;
-import daml.finance.interface$.holding.base.Base;
-import daml.finance.interface$.holding.base.Lock;
-import daml.finance.interface$.holding.base.LockType;
-import daml.finance.interface$.holding.base.View;
-import daml.finance.interface$.holding.factory.Factory;
-import daml.finance.interface$.instrument.base.instrument.Instrument;
-import daml.finance.interface$.instrument.token.types.Token;
-import daml.finance.interface$.settlement.batch.Batch;
-import daml.finance.interface$.settlement.instruction.Instruction;
-import daml.finance.interface$.settlement.types.Allocation;
-import daml.finance.interface$.settlement.types.Approval;
-import daml.finance.interface$.settlement.types.InstructionKey;
-import daml.finance.interface$.settlement.types.RoutedStep;
-import daml.finance.interface$.settlement.types.allocation.*;
-import daml.finance.interface$.settlement.types.approval.*;
-import daml.finance.interface$.types.common.types.AccountKey;
-import daml.finance.interface$.types.common.types.Id;
-import daml.finance.interface$.types.common.types.InstrumentKey;
-import daml.finance.interface$.types.common.types.Quantity;
+import java.math.BigDecimal;
+import java.sql.Array;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import javax.sql.DataSource;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
-import synfini.interface$.onboarding.account.openoffer.openoffer.OpenOffer;
-import synfini.interface$.onboarding.issuer.instrument.token.issuer.Issuer;
-import synfini.wallet.api.types.*;
+import org.springframework.web.server.ResponseStatusException;
 
-import javax.sql.DataSource;
-import java.math.BigDecimal;
-import java.sql.*;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import com.daml.ledger.javaapi.data.ExercisedEvent;
+import com.daml.ledger.javaapi.data.Identifier;
+import com.daml.ledger.javaapi.data.Unit;
+import com.daml.ledger.rxjava.LedgerClient;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
+
+import daml.finance.interface$.account.account.Account;
+import daml.finance.interface$.types.common.types.AccountKey;
+import daml.finance.interface$.types.common.types.Id;
+import daml.finance.interface$.types.common.types.InstrumentKey;
+import io.reactivex.Flowable;
+import io.reactivex.Single;
+import synfini.wallet.api.types.AccountOpenOfferSummary;
+import synfini.wallet.api.types.AccountOpenOfferSummaryRaw;
+import synfini.wallet.api.types.AccountSummary;
+import synfini.wallet.api.types.AccountSummaryRaw;
+import synfini.wallet.api.types.Balance;
+import synfini.wallet.api.types.BalanceRaw;
+import synfini.wallet.api.types.HoldingSummary;
+import synfini.wallet.api.types.HoldingSummaryRaw;
+import synfini.wallet.api.types.InstrumentSummary;
+import synfini.wallet.api.types.InstrumentSummaryRaw;
+import synfini.wallet.api.types.IssuerSummary;
+import synfini.wallet.api.types.IssuerSummaryRaw;
+import synfini.wallet.api.types.SettlementStep;
+import synfini.wallet.api.types.SettlementSummary;
+import synfini.wallet.api.types.SettlementSummaryRaw;
+import synfini.wallet.api.types.TokenIssuerSummary;
+import synfini.wallet.api.types.TransactionDetail;
 
 @Component
 public class WalletRepository {
+  private static final Gson vanillaGson = new Gson();
+
   private final JdbcTemplate jdbcTemplate;
   private final DataSource pgDataSource;
 
@@ -52,413 +71,446 @@ public class WalletRepository {
     this.pgDataSource = pgDataSource;
   }
 
-  public List<AccountSummary> accounts(Optional<String> custodian, String owner) {
-    final var queryAccounts =
-      "SELECT DISTINCT ON (custodian, owner, account_id) *\n" +
-      "FROM accounts\n" +
-      "ORDER BY custodian, owner, account_id, create_offset DESC\n";
-    final var queryCreates =
-      "SELECT DISTINCT ON (custodian, owner, account_id)\n" +
-      "  a.create_offset,\n" +
-      "  a.create_effective_time,\n" +
-      "  a.owner,\n" +
-      "  a.custodian,\n" +
-      "  a.account_id\n" +
-      "FROM accounts a INNER JOIN account_factory_events e ON e.is_create AND a.cid = e.account_cid\n" +
-      "ORDER BY custodian, owner, account_id, create_offset";
-    final var queryRemoves =
-      "SELECT DISTINCT ON (custodian, owner, account_id)\n" +
-      "  true is_removed,\n" +
-      "  a.owner AS owner,\n" +
-      "  a.custodian custodian,\n" +
-      "  a.account_id account_id\n" +
-      "FROM accounts a INNER JOIN account_factory_events e ON\n" +
-      "  NOT e.is_create AND a.owner = e.account_owner AND a.custodian = e.account_custodian AND a.account_id = e.account_id";
+  public List<AccountSummaryRaw<JsonObject>> accounts(Optional<String> custodian, String owner) {
     return jdbcTemplate.query(
-    "SELECT\n" +
-      "  latest_accounts.cid,\n" +
-      "  latest_accounts.custodian,\n" +
-      "  latest_accounts.owner,\n" +
-      "  latest_accounts.account_id,\n" +
-      "  latest_accounts.controllers_incoming,\n" +
-      "  latest_accounts.controllers_outgoing,\n" +
-      "  latest_accounts.holding_factory_cid,\n" +
-      "  latest_accounts.description,\n" +
-      "  creates.create_offset,\n" +
-      "  creates.create_effective_time,\n" +
-      "  (CASE WHEN is_removed THEN latest_accounts.archive_offset ELSE NULL END) remove_offset,\n" +
-      "  (CASE WHEN is_removed THEN latest_accounts.archive_effective_time ELSE NULL END) remove_effective_time\n" +
-      "FROM (" + queryAccounts + ") latest_accounts\n" +
-      "LEFT OUTER JOIN  (" + queryCreates + ") creates ON\n" +
-      "  latest_accounts.owner = creates.owner AND\n" +
-      "  latest_accounts.custodian = creates.custodian AND\n" +
-      "  latest_accounts.account_id = creates.account_id\n" +
-      "LEFT OUTER JOIN (" + queryRemoves + ") removes ON\n" +
-      "  latest_accounts.owner = removes.owner AND\n" +
-      "  latest_accounts.custodian = removes.custodian AND\n" +
-      "  latest_accounts.account_id = removes.account_id\n" +
-      "WHERE (? IS NULL OR latest_accounts.custodian = ?) AND latest_accounts.owner = ?",
+      multiLineQuery(
+        "SELECT * FROM active(?)",
+        "WHERE (? IS NULL OR payload->>'custodian' = ?) AND payload->>'owner' = ?"
+      ),
       ps -> {
-        ps.setString(1, custodian.orElse(null));
-        ps.setString(2, custodian.orElse(null));
-        ps.setString(3, owner);
+        int pos = 0;
+        ps.setString(++pos, fullyQualified(Account.TEMPLATE_ID));
+        ps.setString(++pos, custodian.orElse(null));
+        ps.setString(++pos, custodian.orElse(null));
+        ps.setString(++pos, owner);
       },
       new AccountRowMapper()
     );
   }
 
-  public List<AccountOpenOfferSummary> accountOpenOffers(List<String> readAs) {
+  public List<AccountOpenOfferSummaryRaw<JsonObject>> accountOpenOffers(List<String> readAs) {
     return jdbcTemplate.query(
-      "SELECT\n" +
-        "  o.cid cid,\n" +
-        "  o.custodian custodian,\n" +
-        "  o.permitted_owners permitted_owners,\n" +
-        "  o.description description,\n" +
-        "  o.owner_incoming_controlled owner_incoming_controlled,\n" +
-        "  o.owner_outgoing_controlled owner_outgoing_controlled,\n" +
-        "  o.additional_controllers_incoming additional_controllers_incoming,\n" +
-        "  o.additional_controllers_outgoing additional_controllers_outgoing,\n" +
-        "  o.account_factory_cid account_factory_cid,\n" +
-        "  o.holding_factory_cid holding_factory_cid,\n" +
-        "  o.create_offset create_offset,\n" +
-        "  o.create_effective_time create_effective_time\n" +
-        "FROM account_open_offers o\n" +
-        "INNER JOIN account_open_offer_witnesses w ON o.cid = w.cid\n" +
-        "WHERE o.archive_offset IS NULL AND w.party = ANY(?)",
+      multiLineQuery(
+        "SELECT",
+        "  offer.contract_id AS contract_id,",
+        "  offer.created_at_offset AS created_at_offset,",
+        "  offer.created_effective_at AS created_effective_at,",
+        "  offer.payload AS payload",
+        "FROM active(?) AS offer",
+        "INNER JOIN active(?) AS disclosure ON offer.contract_id = disclosure.contract_id",
+        "WHERE",
+        "  offer.payload->>'custodian' = ANY(?) OR",
+        "  (flatten_observers(disclosure.payload->'observers') && ?) OR",
+        "  (",
+        "    offer.payload->'permittedOwners' IS NOT NULL AND",
+        "    (daml_set_text_values(offer.payload->'permittedOwners') && ?)",
+        "  )"
+      ),
       ps -> {
-        ps.setArray(1, asSqlArray(readAs));
+        int pos = 0;
+        ps.setString(
+          ++pos,
+          fullyQualified(synfini.interface$.onboarding.account.openoffer.openoffer.OpenOffer.TEMPLATE_ID)
+        );
+        ps.setString(
+          ++pos,
+          fullyQualified(daml.finance.interface$.util.disclosure.Disclosure.TEMPLATE_ID)
+        );
+        final var readAsArray = asSqlArray(readAs);
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
       },
       new AccountOpenOfferRowMapper()
     );
   }
 
-  public List<Balance> balanceByAccount(AccountKey account) {
+  public List<BalanceRaw> balanceByAccount(AccountKey account) {
     return jdbcTemplate.query(
-    "SELECT\n" +
-      "  instrument_depository,\n" +
-      "  instrument_id,\n" +
-      "  instrument_issuer,\n" +
-      "  instrument_version,\n" +
-      "  sum(CASE WHEN lock_type IS NULL THEN amount ELSE 0 END) unlocked_balance,\n" +
-      "  sum(CASE WHEN lock_type IS NOT NULL THEN amount ELSE 0 END) locked_balance\n" +
-      "FROM holdings\n" +
-      "WHERE\n" +
-      "  archive_offset IS NULL AND\n" +
-      "  account_custodian = ? AND\n" +
-      "  account_owner = ? AND\n" +
-      "  account_id = ?\n" +
-      "GROUP BY\n" +
-      "  instrument_depository,\n" +
-      "  instrument_issuer,\n" +
-      "  instrument_id,\n" +
-      "  instrument_version",
+      multiLineQuery(
+        "SELECT",
+        "  holding.payload->'instrument'->>'depository' AS instrument_depository,",
+        "  holding.payload->'instrument'->>'issuer' AS instrument_issuer,",
+        "  holding.payload->'instrument'->'id'->>'unpack' AS instrument_id,",
+        "  holding.payload->'instrument'->>'version' AS instrument_version,",
+        "  sum(CASE WHEN jsonb_typeof(holding.payload->'lock') = 'null' THEN (holding.payload->>'amount') :: DECIMAL ELSE 0 END) unlocked_balance,",
+        "  sum(CASE WHEN jsonb_typeof(holding.payload->'lock') <> 'null' THEN (holding.payload->>'amount') :: DECIMAL ELSE 0 END) locked_balance",
+        "FROM active(?) AS holding",
+        "WHERE",
+        "  holding.payload->'account'->>'custodian' = ? AND",
+        "  holding.payload->'account'->>'owner' = ? AND",
+        "  holding.payload->'account'->'id'->>'unpack' = ?",
+        "GROUP BY",
+        "  holding.payload->'instrument'->>'depository',",
+        "  holding.payload->'instrument'->>'issuer',",
+        "  holding.payload->'instrument'->'id'->>'unpack',",
+        "  holding.payload->'instrument'->>'version'"
+      ),
       ps -> {
-        ps.setString(1, account.custodian);
-        ps.setString(2, account.owner);
-        ps.setString(3, account.id.unpack);
+        int pos = 0;
+        ps.setString(
+          ++pos,
+          fullyQualified(daml.finance.interface$.holding.base.Base.TEMPLATE_ID)
+        );
+        ps.setString(++pos, account.custodian);
+        ps.setString(++pos, account.owner);
+        ps.setString(++pos, account.id.unpack);
       },
       new BalanceRowMapperWithAccount(account)
     );
   }
 
-  public List<HoldingSummary> holdings(AccountKey account, InstrumentKey instrument, List<String> readAs) {
+  public List<HoldingSummaryRaw<JsonObject>> holdings(AccountKey account, InstrumentKey instrument, List<String> readAs) {
     return jdbcTemplate.query(
-  "SELECT DISTINCT ON (cid)\n" +
-      "  h.cid cid,\n" +
-      "  h.amount amount,\n" +
-      "  h.lockers lockers,\n" +
-      "  h.lock_context lock_context,\n" +
-      "  h.lock_type lock_type,\n" +
-      "  h.create_offset create_offset,\n" +
-      "  h.create_effective_time create_effective_time\n" +
-      "FROM holdings h INNER JOIN holding_witnesses ON h.cid = holding_witnesses.cid\n" +
-      "WHERE\n" +
-      "  holding_witnesses.party = ANY(?) AND\n" +
-      "  h.account_custodian = ? AND\n" +
-      "  h.account_owner = ? AND\n" +
-      "  h.account_id = ? AND\n" +
-      "  h.instrument_depository = ? AND\n" +
-      "  h.instrument_issuer = ? AND\n" +
-      "  h.instrument_id = ? AND\n" +
-      "  h.instrument_version = ? AND\n" +
-      "  h.archive_offset IS NULL\n" +
-      "ORDER BY cid",
+      multiLineQuery(
+        "SELECT",
+        "  holding.contract_id AS contract_id,",
+        "  holding.payload AS payload,",
+        "  holding.created_at_offset AS created_at_offset,",
+        "  holding.created_effective_at AS created_effective_at",
+        "FROM active(?) AS holding",
+        "INNER JOIN active(?) AS disclosure ON holding.contract_id = disclosure.contract_id",
+        "WHERE",
+        "  holding.payload->'account'->>'custodian' = ? AND",
+        "  holding.payload->'account'->>'owner' = ? AND",
+        "  holding.payload->'account'->'id'->>'unpack' = ? AND",
+        "  holding.payload->'instrument'->>'depository' = ? AND",
+        "  holding.payload->'instrument'->>'issuer' = ? AND",
+        "  holding.payload->'instrument'->'id'->>'unpack' = ? AND",
+        "  holding.payload->'instrument'->>'version' = ? AND",
+        "  (",
+        "    holding.payload->'account'->>'custodian' = ANY(?) OR",
+        "    holding.payload->'account'->>'owner' = ANY(?) OR",
+        "    flatten_observers(disclosure.payload->'observers') && ? OR",
+        "    daml_set_text_values(holding.payload->'lock'->'lockers') && ?",
+        "  )"
+      ),
       ps -> {
-        ps.setArray(1, asSqlArray(readAs));
-        ps.setString(2, account.custodian);
-        ps.setString(3, account.owner);
-        ps.setString(4, account.id.unpack);
-        ps.setString(5, instrument.depository);
-        ps.setString(6, instrument.issuer);
-        ps.setString(7, instrument.id.unpack);
-        ps.setString(8, instrument.version);
+        int pos = 0;
+        ps.setString(
+          ++pos,
+          fullyQualified(daml.finance.interface$.holding.base.Base.TEMPLATE_ID)
+        );
+        ps.setString(
+          ++pos,
+          fullyQualified(daml.finance.interface$.util.disclosure.Disclosure.TEMPLATE_ID)
+        );
+
+        ps.setString(++pos, account.custodian);
+        ps.setString(++pos, account.owner);
+        ps.setString(++pos, account.id.unpack);
+  
+        ps.setString(++pos, instrument.depository);
+        ps.setString(++pos, instrument.issuer);
+        ps.setString(++pos, instrument.id.unpack);
+        ps.setString(++pos, instrument.version);
+
+        final var readAsArray = asSqlArray(readAs);
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+
       },
-      new HoldingsRowMapper(account, instrument)
+      new HoldingsRowMapper()
     );
   }
 
-  public List<InstrumentSummary> instruments(
+  public List<InstrumentSummaryRaw<JsonObject>> instruments(
     Optional<String> depository,
     String issuer,
     Optional<Id> id,
     Optional<String> version,
     List<String> readAs
   ) {
-    final var commonSelect = "SELECT DISTINCT ON (instrument_depository, instrument_issuer, instrument_id, instrument_version)\n" +
-      "  t.cid cid,\n" +
-      "  t.instrument_depository instrument_depository,\n" +
-      "  t.instrument_issuer instrument_issuer,\n" +
-      "  t.instrument_id instrument_id,\n" +
-      "  t.instrument_version instrument_version,\n" +
-      "  t.description description,\n" +
-      "  t.valid_as_of valid_as_of";
-    final var commonWhereOrder = "WHERE\n" +
-      "  instrument_witnesses.party = ANY(?) AND\n" +
-      "  (? IS NULL OR t.instrument_depository = ?) AND\n" +
-      "  t.instrument_issuer = ? AND\n" +
-      "  (? IS NULL OR t.instrument_id = ?) AND\n" +
-      "  (? IS NULL OR t.instrument_version = ?) AND\n" +
-      "  t.archive_offset IS NULL\n" +
-      "ORDER BY instrument_depository, instrument_issuer, instrument_id, instrument_version";
-    final PreparedStatementSetter commonSetVars = ps -> {
-      ps.setArray(1, asSqlArray(readAs));
-      ps.setString(2, depository.orElse(null));
-      ps.setString(3, depository.orElse(null));
-      ps.setString(4, issuer);
-      final var idStr = id.map(i -> i.unpack).orElse(null);
-      ps.setString(5, idStr);
-      ps.setString(6, idStr);
-      final var versionStr = version.orElse(null);
-      ps.setString(7, versionStr);
-      ps.setString(8, versionStr);
-    };
     return jdbcTemplate.query(
-    commonSelect + "\n" +
-      "FROM token_instruments t INNER JOIN instrument_witnesses ON t.cid = instrument_witnesses.cid\n" +
-      commonWhereOrder,
-      commonSetVars,
+      multiLineQuery(
+        "SELECT",
+        "  base_instrument.contract_id AS contract_id,",
+        "  token_instrument.payload AS token_instrument_payload",
+        "FROM active(?) AS base_instrument",
+        "INNER JOIN active(?) AS token_instrument ON base_instrument.contract_id = token_instrument.contract_id",
+        "INNER JOIN active(?) AS disclosure ON token_instrument.contract_id = disclosure.contract_id",
+        "WHERE",
+        "  (? IS NULL OR base_instrument.payload->>'depository' = ?) AND",
+        "  base_instrument.payload->>'issuer' = ? AND",
+        "  (? IS NULL OR base_instrument.payload->'id'->>'unpack' = ?) AND",
+        "  (? IS NULL OR base_instrument.payload->>'version' = ?) AND",
+        "  (",
+        "    base_instrument.payload->>'depository' = ANY(?) OR",
+        "    base_instrument.payload->>'issuer' = ANY(?) OR",
+        "    flatten_observers(disclosure.payload->'observers') && ?",
+        "  )"
+      ),
+      ps -> {
+        int pos = 0;
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.instrument.base.instrument.Instrument.TEMPLATE_ID));
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.instrument.token.instrument.Instrument.TEMPLATE_ID));
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.util.disclosure.Disclosure.TEMPLATE_ID));
+
+        final var depository_ = depository.orElse(null);
+        ps.setString(++pos, depository_);
+        ps.setString(++pos, depository_);
+
+        ps.setString(++pos, issuer);
+
+        final var id_ = id.map(i -> i.unpack).orElse(null);
+        ps.setString(++pos, id_);
+        ps.setString(++pos, id_);
+
+        final var version_ = version.orElse(null);
+        ps.setString(++pos, version_);
+        ps.setString(++pos, version_);
+
+        final var readAsArray = asSqlArray(readAs);
+
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+      },
       new TokenInstrumentRowMapper()
     );
   }
 
-  public List<IssuerSummary> issuers(Optional<String> depository, Optional<String> issuer, List<String> readAs) {
+  public List<IssuerSummaryRaw<JsonObject>> issuers(Optional<String> depository, Optional<String> issuer, List<String> readAs) {
     return jdbcTemplate.query(
-      "SELECT\n" +
-      "  i.cid cid,\n" +
-      "  i.depository depository,\n" +
-      "  i.issuer issuer,\n" +
-      "  i.instrument_factory_cid instrument_factory_cid\n" +
-      "FROM token_instrument_issuers i INNER JOIN token_instrument_issuer_witnesses w ON i.cid = w.cid\n" +
-      "WHERE (? IS NULL OR i.depository = ?) AND (? IS NULL OR i.issuer = ?) AND w.party = ANY(?)",
+      multiLineQuery(
+        "SELECT",
+        "  token_issuer.contract_id AS contract_id,",
+        "  token_issuer.payload AS token_issuer_payload",
+        "FROM active(?) AS token_issuer",
+        "INNER JOIN active(?) AS disclosure ON token_issuer.contract_id = disclosure.contract_id",
+        "WHERE",
+        "  (? IS NULL OR token_issuer.payload->>'depository' = ?) AND",
+        "  (? IS NULL OR token_issuer.payload->>'issuer' = ?) AND",
+        "  (",
+        "    token_issuer.payload->>'depository' = ANY(?) OR",
+        "    token_issuer.payload->>'issuer' = ANY(?) OR",
+        "    flatten_observers(disclosure.payload->'observers') && ?",
+        "  )"
+      ),
       ps -> {
-        ps.setString(1, depository.orElse(null));
-        ps.setString(2, depository.orElse(null));
+        int pos = 0;
 
-        ps.setString(3, issuer.orElse(null));
-        ps.setString(4, issuer.orElse(null));
+        ps.setString(
+          ++pos,
+          fullyQualified(synfini.interface$.onboarding.issuer.instrument.token.issuer.Issuer.TEMPLATE_ID)
+        );
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.util.disclosure.Disclosure.TEMPLATE_ID));
 
-        ps.setArray(5, asSqlArray(readAs));
+        final var depository_ = depository.orElse(null);
+        ps.setString(++pos, depository_);
+        ps.setString(++pos, depository_);
+
+        final var issuer_ = issuer.orElse(null);
+        ps.setString(++pos, issuer_);
+        ps.setString(++pos, issuer_);
+
+        final var readAsArray = asSqlArray(readAs);
+
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
       },
       new IssuersRowMapper()
     );
   }
 
-  public List<SettlementSummary> settlements(
+  public List<SettlementSummaryRaw<JsonObject>> settlements(
+    LedgerClient ledgerClient,
     List<String> readAs,
     Optional<String> before,
     long limit
   ) {
-    final var selectInstructionsWithMinOffsets =
-      "SELECT\n" +
-      "  batch_id,\n" +
-      "  requestors_hash,\n" +
-      "  min(create_offset) min_create_offset,\n" +
-      "  min(create_effective_time) min_create_effective_time\n" +
-      "FROM instructions JOIN instruction_witnesses ON instructions.cid = instruction_witnesses.cid\n" +
-      "WHERE instructions.create_offset IS NOT NULL AND instruction_witnesses.party = ANY(?)\n" +
-      "GROUP BY (batch_id, requestors_hash)\n" +
-      "HAVING ? IS NULL OR min(create_offset) < ?\n" +  // Must occur prior to "before"
-      "ORDER BY min_create_offset DESC\n" +
-      "LIMIT ?";
-    final var selectBatches =
-      "SELECT\n" +
-      "  batches.cid,\n" +
-      "  batches.batch_id,\n" +
-      "  batches.requestors_hash,\n" +
-      "  batches.description,\n" +
-      "  batches.context_id\n" +
-      "FROM batches JOIN batch_witnesses ON batches.cid = batch_witnesses.cid\n" +
-      "WHERE batch_witnesses.party = ANY(?)";
-    final var selectSettlements =
-      "SELECT DISTINCT ON (witness_offset, batch_id, requestors_hash, instruction_id)\n" +
-      "  instructions.batch_id,\n" +
-      "  instructions.requestors,\n" +
-      "  instructions.requestors_hash,\n" +
-      "  instructions.settlers,\n" +
-      "  bs.cid batch_cid,\n" +
-      "  bs.context_id,\n" +
-      "  bs.description,\n" +
-      "  instructions_min_offsets.min_create_offset witness_offset,\n" +
-      "  instructions_min_offsets.min_create_effective_time witness_effective_time,\n" +
-      "  instructions.instruction_id,\n" +
-      "  instructions.cid instruction_cid,\n" +
-      "  instructions.sender,\n" +
-      "  instructions.receiver,\n" +
-      "  instructions.custodian,\n" +
-      "  instructions.amount,\n" +
-      "  instructions.instrument_issuer,\n" +
-      "  instructions.instrument_depository,\n" +
-      "  instructions.instrument_id,\n" +
-      "  instructions.instrument_version,\n" +
-      "  instructions.allocation_pledge_cid,\n" +
-      "  instructions.allocation_credit_receiver,\n" +
-      "  instructions.allocation_pass_through_from,\n" +
-      "  instructions.allocation_pass_through_from_account_id,\n" +
-      "  instructions.allocation_settle_off_ledger,\n" +
-      "  instructions.approval_account_id,\n" +
-      "  instructions.approval_pass_through_to,\n" +
-      "  instructions.approval_debit_sender,\n" +
-      "  instructions.approval_settle_off_ledger,\n" +
-      "  instructions.create_offset instruction_create_offset,\n" +
-      "  instructions.archive_offset instruction_archive_offset,\n" +
-      "  instructions.archive_effective_time instruction_archive_effective_time,\n" +
-      "  instruction_executions.instruction_cid IS NOT NULL instruction_executed\n" +
-      "FROM (" + selectInstructionsWithMinOffsets + ") instructions_min_offsets JOIN instructions ON\n" +
-      "  instructions.batch_id = instructions_min_offsets.batch_id AND\n" +
-      "  instructions.requestors_hash = instructions_min_offsets.requestors_hash\n" +
-      "LEFT JOIN (" + selectBatches + ") bs ON\n" +
-      "  bs.batch_id = instructions.batch_id AND bs.requestors_hash = instructions.requestors_hash\n" +
-      "JOIN instruction_witnesses ON instructions.cid = instruction_witnesses.cid\n" +
-      "LEFT JOIN instruction_executions ON instructions.cid = instruction_executions.instruction_cid\n" +
-      "WHERE instruction_witnesses.party = ANY(?)\n" +
-      "ORDER BY\n" +
-      "  witness_offset DESC,\n" +
-      "  batch_id,\n" +
-      "  requestors_hash,\n" +
-      "  instruction_id,\n" +
-      "  instruction_create_offset DESC";
-    return jdbcTemplate.query(
-      selectSettlements,
-      ps -> {
-        final var r = asSqlArray(readAs);
-        ps.setArray(1, r);
+    Array readAsArray;
+    try {
+      readAsArray = asSqlArray(readAs);
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+
+    final var instructionsMinOffsets = multiLineQuery(
+      "  SELECT",
+      "    instruction.payload->'batchId'->>'unpack' AS batch_id,",
+      "    daml_set_text_values(instruction.payload->'requestors') AS requestors,",
+      "    min(instruction.created_at_offset) AS min_create_offset,",
+      "    min(instruction.created_effective_at) AS min_create_effective_time",
+      "  FROM creates(?) AS instruction",
+      "  INNER JOIN creates(?) AS disclosure ON instruction.contract_id = disclosure.contract_id",
+      "  WHERE",
+      "    daml_set_text_values(instruction.payload->'requestors') && ? OR",
+      "    daml_set_text_values(instruction.payload->'settlers') && ? OR",
+      "    daml_set_text_values(instruction.payload->'signedSenders') && ? OR",
+      "    daml_set_text_values(instruction.payload->'signedReceivers') && ? OR",
+      "    instruction.payload->'routedStep'->>'sender' = ANY(?) OR",
+      "    instruction.payload->'routedStep'->>'receiver' = ANY(?) OR",
+      "    flatten_observers(disclosure.payload->'observers') && ?",
+      "  GROUP BY (instruction.payload->'batchId'->>'unpack', daml_set_text_values(instruction.payload->'requestors'))",
+      "  HAVING ? IS NULL OR min(instruction.created_at_offset) < ?",
+      "  ORDER BY min_create_offset DESC",
+      "  LIMIT ?"
+    );
+    final java.util.function.BiFunction<Integer, PreparedStatement, Integer> instructionMinOffsetsSetter = (pos, ps) -> {
+      try {
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID));
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.util.disclosure.Disclosure.TEMPLATE_ID));
+
+        final var readAsEnd = pos + 7;
+        while (pos < readAsEnd) {
+          ps.setArray(++pos, readAsArray);
+        }
 
         final var b = before.orElse(null);
-        ps.setString(2, b);
-        ps.setString(3, b);
-        ps.setLong(4, limit);
+        ps.setString(++pos, b);
+        ps.setString(++pos, b);
+        ps.setLong(++pos, limit);
+        return pos;
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
+      }
+    };
 
-        ps.setArray(5, r);
-        ps.setArray(6, r);
-      },
-      new SettlementsResultSetExtractor()
+    final var selectBatches = multiLineQuery(
+      "  SELECT",
+      "    contract_id,",
+      "    payload",
+      "  FROM creates(?) AS batch",
+      "  WHERE",
+      "    daml_set_text_values(batch.payload->'requestors') && ? OR",
+      "    daml_set_text_values(batch.payload->'settlers') && ?"
     );
+    final java.util.function.BiFunction<Integer, PreparedStatement, Integer> batchesSetter = (pos, ps) -> {
+      try {
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.settlement.batch.Batch.TEMPLATE_ID));
+        ps.setArray(++pos, readAsArray);
+        ps.setArray(++pos, readAsArray);
+        return pos;
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
+      }
+    };
+
+    final var selectSettlements = multiLineQuery(
+      "SELECT DISTINCT ON (witness_at_offset, batch_id, requestors, instruction_id)",
+      "  instructions.contract_id AS instruction_cid,",
+      "  instructions.payload->'batchId'->>'unpack' AS batch_id,",
+      "  daml_set_text_values(instructions.payload->'requestors') AS requestors,",
+      "  bs.contract_id AS batch_cid,",
+      "  instructions_min_offsets.min_create_offset AS witness_at_offset,",
+      "  instructions_min_offsets.min_create_effective_time AS witness_effective_at,",
+      "  instructions.payload->'id'->>'unpack' AS instruction_id,",
+      "  instructions.created_at_offset AS instruction_create_offset,",
+      "  instruction_archive.archive_event_id AS instruction_archive_event_id,",
+      "  instruction_archive.archived_at_offset AS instruction_archive_at_offset,",
+      "  instruction_archive.archived_effective_at AS instruction_archive_effective_at,",
+      "  bs.payload AS batch_payload,",
+      "  instructions.payload AS instruction_payload",
+      "FROM (\n" + instructionsMinOffsets + "\n) AS instructions_min_offsets",
+      "INNER JOIN creates(?) AS instructions ON",
+      "  instructions.payload->'batchId'->>'unpack' = instructions_min_offsets.batch_id AND",
+      "  daml_set_text_values(instructions.payload->'requestors') = instructions_min_offsets.requestors",
+      "LEFT JOIN archives(?) AS instruction_archive ON",
+      "  instructions.contract_id = instruction_archive.contract_id",
+      "LEFT JOIN (\n" + selectBatches + "\n) AS bs ON",
+      "  bs.payload->'id'->>'unpack' = instructions.payload->'batchId'->>'unpack' AND",
+      "  daml_set_text_values(bs.payload->'requestors') = daml_set_text_values(instructions.payload->'requestors')",
+      "ORDER BY",
+      "  witness_at_offset DESC,",
+      "  batch_id,",
+      "  requestors,",
+      "  instruction_id,",
+      "  instruction_create_offset DESC"
+    );
+    final var settlementSingles = jdbcTemplate.query(
+      selectSettlements,
+      ps -> {
+        int pos = 0;
+        pos = instructionMinOffsetsSetter.apply(pos, ps);
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID));
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID));
+        pos = batchesSetter.apply(pos, ps);
+      },
+      new SettlementsResultSetExtractor(ledgerClient, readAs)
+    );
+    return Flowable
+      .fromIterable(settlementSingles)
+      .flatMapSingle(s -> s)
+      .toList()
+      .blockingGet();
   }
 
-  private static class AccountRowMapper implements RowMapper<AccountSummary> {
-
+  private static class AccountRowMapper implements RowMapper<AccountSummaryRaw<JsonObject>> {
     @Override
-    public AccountSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return new AccountSummary(
-        new Account.ContractId(rs.getString("cid")),
-        new daml.finance.interface$.account.account.View(
-          rs.getString("custodian"),
-          rs.getString("owner"),
-          new Id(rs.getString("account_id")),
-          rs.getString("description"),
-          new Factory.ContractId(rs.getString("holding_factory_cid")),
-          new Controllers(
-            arrayToSet(rs.getArray("controllers_outgoing")),
-            arrayToSet(rs.getArray("controllers_incoming"))
+    public AccountSummaryRaw<JsonObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
+      final var payload = vanillaGson.fromJson(rs.getString("payload"), JsonObject.class);
+      return new AccountSummaryRaw<>(
+        new AccountSummary<>(
+          rs.getString("contract_id"),
+          payload
+        )
+      );
+    }
+  }
+
+  private static class AccountOpenOfferRowMapper implements RowMapper<AccountOpenOfferSummaryRaw<JsonObject>> {
+    @Override
+    public AccountOpenOfferSummaryRaw<JsonObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
+      final var payload = vanillaGson.fromJson(rs.getString("payload"), JsonObject.class);
+      return new AccountOpenOfferSummaryRaw<>(
+        new AccountOpenOfferSummary<>(
+          rs.getString("contract_id"),
+          payload,
+          getTransactionDetail(rs, "created").orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR)
           )
-        ),
-        getTransactionDetail(rs, "create"),
-        getTransactionDetail(rs, "remove")
+        )
       );
     }
   }
 
-  private static class AccountOpenOfferRowMapper implements RowMapper<AccountOpenOfferSummary> {
-    @Override
-    public AccountOpenOfferSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
-      final var permittedOwnersArray = rs.getArray("permitted_owners");
-      final Optional<da.set.types.Set<String>> permittedOwners = permittedOwnersArray == null ?
-        Optional.empty() :
-        Optional.of(arrayToSet(permittedOwnersArray));
-      return new AccountOpenOfferSummary(
-        new OpenOffer.ContractId(rs.getString("cid")),
-        new synfini.interface$.onboarding.account.openoffer.openoffer.View(
-          rs.getString("custodian"),
-          rs.getBoolean("owner_incoming_controlled"),
-          rs.getBoolean("owner_outgoing_controlled"),
-          new Controllers(
-            arrayToSet(rs.getArray("additional_controllers_outgoing")),
-            arrayToSet(rs.getArray("additional_controllers_incoming"))
-          ),
-          permittedOwners,
-          new daml.finance.interface$.account.factory.Factory.ContractId(rs.getString("account_factory_cid")),
-          new daml.finance.interface$.holding.factory.Factory.ContractId(rs.getString("holding_factory_cid")),
-          rs.getString("description")
-        ),
-        getTransactionDetail(rs, "create")
-      );
-    }
-  }
-
-  private static class BalanceRowMapperWithAccount implements RowMapper<Balance> {
+  private static class BalanceRowMapperWithAccount implements RowMapper<BalanceRaw> {
     private final AccountKey account;
 
     public BalanceRowMapperWithAccount(AccountKey account) {
       this.account = account;
     }
-    @Override
-    public Balance mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return new Balance(
-        account,
-        getInstrumentKey(rs),
-        Optional.ofNullable(rs.getBigDecimal("unlocked_balance")).orElse(BigDecimal.ZERO),
-        Optional.ofNullable(rs.getBigDecimal("locked_balance")).orElse(BigDecimal.ZERO)
-      );
-    }
-  }
-
-  private static class HoldingsRowMapper implements RowMapper<HoldingSummary> {
-    private final AccountKey account;
-    private final InstrumentKey instrument;
-
-    public HoldingsRowMapper(AccountKey account, InstrumentKey instrument) {
-      this.account = account;
-      this.instrument = instrument;
-    }
 
     @Override
-    public HoldingSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return new HoldingSummary(
-        new Base.ContractId(rs.getString("cid")),
-        new View(
-          instrument,
+    public BalanceRaw mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return new BalanceRaw(
+        new Balance(
           account,
-          rs.getBigDecimal("amount"),
-          getLock(rs)
-        ),
-        getTransactionDetail(rs, "create")
+          getInstrumentKey(rs),
+          Optional.ofNullable(rs.getBigDecimal("unlocked_balance")).orElse(BigDecimal.ZERO),
+          Optional.ofNullable(rs.getBigDecimal("locked_balance")).orElse(BigDecimal.ZERO)
+        )
       );
     }
   }
 
-  private static class IssuersRowMapper implements RowMapper<IssuerSummary> {
+  private static class HoldingsRowMapper implements RowMapper<HoldingSummaryRaw<JsonObject>> {
     @Override
-    public IssuerSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return new IssuerSummary(
-        Optional.of(
-          new TokenIssuerSummary(
-            new Issuer.ContractId(rs.getString("cid")),
-            new synfini.interface$.onboarding.issuer.instrument.token.issuer.View(
-              rs.getString("depository"),
-              rs.getString("issuer"),
-              new daml.finance.interface$.instrument.token.factory.Factory.ContractId(
-                rs.getString("instrument_factory_cid")
-              )
+    public HoldingSummaryRaw<JsonObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return new HoldingSummaryRaw<>(
+        new HoldingSummary<>(
+          rs.getString("contract_id"),
+          vanillaGson.fromJson(rs.getString("payload"), JsonObject.class),
+          getTransactionDetail(rs, "created")
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR))
+        )
+      );
+    }
+  }
+
+  private static class IssuersRowMapper implements RowMapper<IssuerSummaryRaw<JsonObject>> {
+    @Override
+    public IssuerSummaryRaw<JsonObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return new IssuerSummaryRaw<>(
+        new IssuerSummary<>(
+          Optional.of(
+            new TokenIssuerSummary<>(
+              rs.getString("contract_id"),
+              vanillaGson.fromJson(rs.getString("token_issuer_payload"), JsonObject.class)
             )
           )
         )
@@ -466,156 +518,186 @@ public class WalletRepository {
     }
   }
 
-  private static class SettlementsResultSetExtractor implements ResultSetExtractor<List<SettlementSummary>> {
+  private static class SettlementsResultSetExtractor implements ResultSetExtractor<
+    List<Single<SettlementSummaryRaw<JsonObject>>>
+  > {
+    private final LedgerClient ledgerClient;
+    private final java.util.Set<String> readAs;
+
+    public SettlementsResultSetExtractor(LedgerClient ledgerClient, List<String> readAs) {
+      this.ledgerClient = ledgerClient;
+      this.readAs = Set.copyOf(readAs);
+    }
+
     @Override
-    public List<SettlementSummary> extractData(ResultSet rs) throws SQLException, DataAccessException {
-      final var settlements =  new ArrayList<SettlementSummary>();
-      SettlementSummary current = null;
-      int currentRequestorsHash = 0;
+    public List<Single<SettlementSummaryRaw<JsonObject>>> extractData(
+      ResultSet rs
+    ) throws SQLException, DataAccessException {
+      final var settlements = new ArrayList<
+        Single<SettlementSummaryRaw<JsonObject>>
+      >();
+      SettlementSummaryRaw<JsonObject> current = null;
+      Optional<TransactionDetail> currentArchive = Optional.empty();
+      Optional<String> currentArchiveEventId = Optional.empty();
+      da.set.types.Set<String> currentRequestors = null;
 
       while (rs.next()) {
+        final var instructionPayload = vanillaGson.fromJson(
+          rs.getString("instruction_payload"),
+          JsonObject.class
+        );
+
+        final var batchPayload = vanillaGson.fromJson(rs.getString("batch_payload"), JsonObject.class);
+
         // Batch
-        final var batchId = new Id(rs.getString("batch_id"));
-        final var requestorsHash = rs.getInt("requestors_hash");
-        final var requestors = arrayToSet(rs.getArray("requestors"));
-        final var settlers = arrayToSet(rs.getArray("settlers"));
-        final var batchCid = Optional.ofNullable(rs.getString("batch_cid")).map(Batch.ContractId::new);
-        final var contextId = Optional.ofNullable(rs.getString("context_id")).map(Id::new);
-        final var description = Optional.ofNullable(rs.getString("description"));
+        final var batchId = instructionPayload.getAsJsonObject("batchId");
+        final var requestors = instructionPayload.getAsJsonObject("requestors");
+        final var requestorsSet = asDamlSet(requestors);
+        final var settlers = instructionPayload.getAsJsonObject("settlers");
+        final var batchCid = Optional.ofNullable(rs.getString("batch_cid"));
+        final Optional<JsonObject> contextId = batchPayload != null &&
+          !batchPayload.get("contextId").isJsonNull() ?
+          Optional.ofNullable(batchPayload.getAsJsonObject("contextId")) :
+          Optional.empty() ;
+        final Optional<String> description = batchPayload == null ?
+          Optional.empty() :
+          Optional.ofNullable(
+            batchPayload.getAsJsonPrimitive("description")
+          ).map(JsonPrimitive::getAsString);
         final var batchCreate = getTransactionDetail(rs, "witness")
-          .orElseThrow(() -> new InternalError("Witness event detail not present"));
+          .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR));
 
-        // Instruction
-        final var instrumentKey = new InstrumentKey(
-          rs.getString("instrument_depository"),
-          rs.getString("instrument_issuer"),
-          new Id(rs.getString("instrument_id")),
-          rs.getString("instrument_version")
+        final var step = new SettlementStep<>(
+          instructionPayload.getAsJsonObject("routedStep"),
+          instructionPayload.getAsJsonObject("id"),
+          rs.getString("instruction_cid"),
+          instructionPayload.getAsJsonObject("allocation"),
+          instructionPayload.getAsJsonObject("approval")
         );
-        final var routedStep = new RoutedStep(
-          rs.getString("sender"),
-          rs.getString("receiver"),
-          rs.getString("custodian"),
-          new Quantity<>(instrumentKey, rs.getBigDecimal("amount"))
-        );
-        final var instructionCid = new Instruction.ContractId(rs.getString("instruction_cid"));
-        final var deliveryAccountId = rs.getString("approval_account_id");
-        final var approvalPassThroughTo = rs.getString("approval_pass_through_to");
-        final var approvalDebitSender = rs.getBoolean("approval_debit_sender");
-        final var approvalSettleOffLedger = rs.getBoolean("approval_settle_off_ledger");
-        final Approval approval;
-        if (deliveryAccountId != null) {
-          final var deliveryAccount = new AccountKey(routedStep.custodian, routedStep.receiver, new Id(deliveryAccountId));
-          if (approvalPassThroughTo != null) {
-            approval = new PassThroughTo(
-              new Tuple2<>(deliveryAccount, new InstructionKey(requestors, batchId, new Id(approvalPassThroughTo)))
-            );
-          } else {
-            approval = new TakeDelivery(deliveryAccount);
-          }
-        } else if (approvalDebitSender) {
-          approval = new DebitSender(Unit.getInstance());
-        } else if (approvalSettleOffLedger) {
-          approval = new SettleOffledgerAcknowledge(Unit.getInstance());
-        } else {
-          approval = new Unapproved(Unit.getInstance());
-        }
-        final var allocationPledgeCid = rs.getString("allocation_pledge_cid");
-        final var allocationCreditReceiver = rs.getBoolean("allocation_credit_receiver");
-        final var allocationPassThroughFrom = rs.getString("allocation_pass_through_from");
-        final var allocationPassThroughFromAccountId = rs.getString("allocation_pass_through_from_account_id");
-        final var allocationSettleOffLedger = rs.getBoolean("allocation_settle_off_ledger");
-        final Allocation allocation;
-        if (allocationPledgeCid != null) {
-          allocation = new Pledge(new Base.ContractId(allocationPledgeCid));
-        } else if (allocationCreditReceiver) {
-          allocation = new CreditReceiver(Unit.getInstance());
-        } else if (allocationPassThroughFrom != null && allocationPassThroughFromAccountId != null) {
-          final var account = new AccountKey(routedStep.custodian, routedStep.sender, new Id(allocationPassThroughFromAccountId));
-          allocation = new PassThroughFrom(
-            new Tuple2<>(account, new InstructionKey(requestors, batchId, new Id(allocationPassThroughFrom)))
-          );
-        } else if (allocationSettleOffLedger) {
-          allocation = new SettleOffledger(Unit.getInstance());
-        } else {
-          allocation = new Unallocated(Unit.getInstance());
-        }
-        final var step = new SettlementStep(
-          routedStep,
-          new Id(rs.getString("instruction_id")),
-          instructionCid,
-          allocation,
-          approval
-        );
-        final Optional<TransactionDetail> execution = rs.getBoolean("instruction_executed") ?
-          getTransactionDetail(rs, "instruction_archive") :
-          Optional.empty();
+        final Optional<TransactionDetail> archive = getTransactionDetail(rs, "instruction_archive");
+        final Optional<String> instructionArchiveEventId = Optional.ofNullable(rs.getString("instruction_archive_event_id"));
 
-        if (current == null || !current.batchId.equals(batchId) || requestorsHash != currentRequestorsHash) {
-          if (current != null) {
-            settlements.add(current);
-          }
-          final List<SettlementStep> steps = new LinkedList<>();
-          steps.add(step);
-          current = new SettlementSummary(
-            batchId,
-            requestors,
-            settlers,
-            batchCid,
-            contextId,
-            description,
-            steps,
-            batchCreate,
-            execution
+        if (current == null || !current.unpack.batchId.equals(batchId) || !requestorsSet.equals(currentRequestors)) {
+          // We have reached a new Batch so we must add the current one into the resulting List
+          processCurrent(settlements, current, currentArchive, currentArchiveEventId);
+          current = new SettlementSummaryRaw<>(
+            new SettlementSummary<>(
+              batchId,
+              requestors,
+              settlers,
+              batchCid,
+              contextId,
+              description,
+              new LinkedList<>(),
+              batchCreate,
+              Optional.empty()
+            )
           );
-          currentRequestorsHash = requestorsHash;
+          currentRequestors = requestorsSet;
         } else {
-          current.steps.add(step);
-          current = new SettlementSummary(
-            current.batchId,
-            current.requestors,
-            current.settlers,
-            current.batchCid.or(() -> batchCid),
-            current.contextId.or(() -> contextId),
-            current.description.or(() -> description),
-            current.steps,
-            current.witness,
-            current.execution.or(() -> execution)
+          current = new SettlementSummaryRaw<>(
+            new SettlementSummary<>(
+              current.unpack.batchId,
+              current.unpack.requestors,
+              current.unpack.settlers,
+              current.unpack.batchCid.or(() -> batchCid),
+              current.unpack.contextId.or(() -> contextId),
+              current.unpack.description.or(() -> description),
+              current.unpack.steps,
+              current.unpack.witness,
+              Optional.empty()
+            )
           );
         }
+        current.unpack.steps.add(step);
+        currentArchive = archive;
+        currentArchiveEventId = instructionArchiveEventId;
       }
 
-      if (current != null) {
-        settlements.add(current);
-      }
+      processCurrent(settlements, current, currentArchive, currentArchiveEventId);
 
       return settlements;
     }
+
+    private void processCurrent(
+      List<Single<SettlementSummaryRaw<JsonObject>>> settlements,
+      SettlementSummaryRaw<JsonObject> current,
+      Optional<TransactionDetail> currentArchive,
+      Optional<String> currentArchiveEventId
+    ) {
+      if (current != null) {
+        if (currentArchiveEventId.isPresent()) {
+          settlements.add(
+            getExecution(
+              ledgerClient,
+              currentArchiveEventId.get(),
+              readAs
+            ).map(wasExecuted -> {
+              if (wasExecuted) {
+                return new SettlementSummaryRaw<>(
+                  new SettlementSummary<>(
+                    current.unpack.batchId,
+                    current.unpack.requestors,
+                    current.unpack.settlers,
+                    current.unpack.batchCid,
+                    current.unpack.contextId,
+                    current.unpack.description,
+                    current.unpack.steps,
+                    current.unpack.witness,
+                    currentArchive
+                  )
+                );
+              } else {
+                return current;
+              }
+            })
+          );
+        } else {
+          settlements.add(Single.just(current));
+        }
+      }
+    }
   }
 
-  private static class TokenInstrumentRowMapper implements RowMapper<InstrumentSummary> {
+  private static class TokenInstrumentRowMapper implements RowMapper<InstrumentSummaryRaw<JsonObject>> {
     @Override
-    public InstrumentSummary mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return new InstrumentSummary(
-        new Instrument.ContractId(rs.getString("cid")),
-        Optional.of(
-          new daml.finance.interface$.instrument.token.instrument.View(
-            new Token(
-              getInstrumentKey(rs),
-              rs.getString("description"),
-              rs.getTimestamp("valid_as_of").toInstant()
-            )
-          )
+    public InstrumentSummaryRaw<JsonObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return new InstrumentSummaryRaw<>(
+        new InstrumentSummary<>(
+          rs.getString("contract_id"),
+          Optional.ofNullable(vanillaGson.fromJson(rs.getString("token_instrument_payload"), JsonObject.class))
         )
       );
     }
   }
 
-  private static Optional<TransactionDetail> getTransactionDetail(ResultSet rs, String prefix) throws SQLException {
-    String offset = rs.getString(prefix + "_offset");
-    Timestamp effectiveTime = rs.getTimestamp(prefix + "_effective_time");
-    if (offset != null && effectiveTime != null) {
-      return Optional.of(new TransactionDetail(offset, effectiveTime.toInstant()));
+  private static Single<Boolean> getExecution(
+    LedgerClient ledgerClient,
+    String instructionArchivedEventId,
+    java.util.Set<String> readAs
+  ) {
+    return ledgerClient
+      .getTransactionsClient()
+      .getTransactionByEventId(instructionArchivedEventId, readAs)
+      .map(transactionTree -> {
+        final var exercisedEvent = (ExercisedEvent) transactionTree.getEventsById().get(instructionArchivedEventId);
+        return exercisedEvent
+          .getChoice()
+          .equals(daml.finance.interface$.settlement.instruction.Instruction.CHOICE_Execute.name);
+      });
+  }
+
+  private static Optional<synfini.wallet.api.types.TransactionDetail> getTransactionDetail(
+    ResultSet rs,
+    String prefix
+  ) throws SQLException {
+    final var offset = rs.getString(prefix + "_at_offset");
+    final var effectiveAt = rs.getTimestamp(prefix + "_effective_at");
+
+    if (offset != null && effectiveAt != null) {
+      return Optional.of(
+        new synfini.wallet.api.types.TransactionDetail(offset, effectiveAt.toInstant())
+      );
     } else {
       return Optional.empty();
     }
@@ -630,25 +712,15 @@ public class WalletRepository {
     );
   }
 
-  private static Optional<Lock> getLock(ResultSet rs) throws SQLException {
-    String lockType = rs.getString("lock_type");
-    if (lockType == null) {
-      return Optional.empty();
-    } else {
-      LockType l = "semaphore".equals(lockType) ? LockType.SEMAPHORE : LockType.REENTRANT;
-      da.set.types.Set<String> lockers = arrayToSet(rs.getArray("lockers"));
-      da.set.types.Set<String> lockContext = arrayToSet(rs.getArray("lock_context"));
-      return Optional.of(
-        new Lock(lockers, lockContext, l)
-      );
-    }
-  }
+  private static da.set.types.Set<String> asDamlSet(JsonObject jsonDamlSet) {
+    final var jsonArray = jsonDamlSet.get("map").getAsJsonArray();
+    final Map<String, Unit> map = new HashMap<>();
 
-  private static da.set.types.Set<String> arrayToSet(java.sql.Array array) throws SQLException {
-    String[] stringArray = (String[]) array.getArray();
-    return new da.set.types.Set<>(
-      Arrays.stream(stringArray).collect(Collectors.toMap(Function.identity(), x -> Unit.getInstance()))
-    );
+    for (JsonElement jsonElement : jsonArray) {
+      map.put(jsonElement.getAsJsonArray().get(0).getAsString(), Unit.getInstance());
+    }
+
+    return new da.set.types.Set<>(map);
   }
 
   private Array asSqlArray(List<String> list) throws SQLException {
@@ -656,12 +728,20 @@ public class WalletRepository {
     Connection conn = null;
     try {
       conn = pgDataSource.getConnection();
-      arr = conn.createArrayOf("varchar", list.toArray());
+      arr = conn.createArrayOf("text", list.toArray());
     } finally {
       if (conn != null) {
         conn.close();
       }
     }
     return arr;
+  }
+
+  private static String multiLineQuery(String... lines) {
+    return Arrays.asList(lines).stream().reduce((a, b) -> a + "\n" + b).orElse("");
+  }
+
+  private static String fullyQualified(Identifier identifier) {
+    return identifier.getPackageId() + ":" + identifier.getModuleName() + ":" + identifier.getEntityName();
   }
 }

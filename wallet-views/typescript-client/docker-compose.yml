@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:16.3-alpine
+    restart: no
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    ports:
+      - '${POSTGRES_PORT}:5432'

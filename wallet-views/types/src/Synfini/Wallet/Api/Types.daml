@@ -2,8 +2,6 @@
 -- Synfini.Wallet.Api.Types.Internal, otherwise they will not appear in the codegen output
 module Synfini.Wallet.Api.Types where
 
-import DA.Set (Set)
-
 import Daml.Finance.Interface.Settlement.Types
 import Daml.Finance.Interface.Types.Common.Types
 
@@ -18,6 +16,11 @@ import Synfini.Interface.Onboarding.Account.OpenOffer.OpenOffer qualified as Acc
 import Synfini.Interface.Onboarding.Issuer.Instrument.Token.Issuer qualified as TokenIssuer
 
 -- Utility types
+data Result r = Result -- TODO add more fields to this such as HTTP response code or errors
+  with
+    result : r
+  deriving (Show, Eq)
+
 data TransactionDetail = TransactionDetail
   with
     offset : Text
@@ -25,18 +28,15 @@ data TransactionDetail = TransactionDetail
   deriving (Show, Eq)
 
 -- Accounts
-data AccountSummary = AccountSummary
+data AccountSummary cid view = AccountSummary
   with
-    cid : ContractId Account.I
-    view : Account.V
-    open : Optional TransactionDetail
-    close : Optional TransactionDetail
+    cid : cid
+    view : view
   deriving (Show, Eq)
 
-data Accounts = Accounts
-  with
-    accounts : [AccountSummary]
-  deriving (Show, Eq)
+newtype AccountSummaryRaw jsonObject = AccountSummaryRaw (AccountSummary Text jsonObject) deriving (Show, Eq)
+
+newtype AccountSummaryTyped = AccountSummaryTyped (AccountSummary (ContractId Account.I) Account.V) deriving (Show, Eq)
 
 data AccountFilter = AccountFilter
   with
@@ -45,16 +45,18 @@ data AccountFilter = AccountFilter
   deriving (Show, Eq)
 
 -- Account offers
-data AccountOpenOfferSummary = AccountOpenOfferSummary
+data AccountOpenOfferSummary cid view = AccountOpenOfferSummary
   with
-    cid : ContractId AccountOpenOffer.I
-    view : AccountOpenOffer.V
-    create : Optional TransactionDetail
+    cid : cid
+    view : view
+    create : TransactionDetail
   deriving (Show, Eq)
 
-data AccountOpenOffers = AccountOpenOffers
-  with
-    accountOpenOffers : [AccountOpenOfferSummary]
+newtype AccountOpenOfferSummaryRaw jsonObject = AccountOpenOfferSummaryRaw (AccountOpenOfferSummary Text jsonObject)
+  deriving (Show, Eq)
+
+newtype AccountOpenOfferSummaryTyped = AccountOpenOfferSummaryTyped
+    (AccountOpenOfferSummary (ContractId AccountOpenOffer.I) AccountOpenOffer.V)
   deriving (Show, Eq)
 
 -- TODO may need to add filter parameters here
@@ -71,10 +73,9 @@ data Balance = Balance
     locked : Decimal
   deriving (Show, Eq)
 
-data Balances = Balances
-  with
-    balances : [Balance]
-  deriving (Show, Eq)
+newtype BalanceRaw = BalanceRaw Balance deriving (Show, Eq)
+
+newtype BalanceTyped = BalanceTyped Balance deriving (Show, Eq)
 
 data BalanceFilter = BalanceFilter
   with
@@ -82,32 +83,47 @@ data BalanceFilter = BalanceFilter
   deriving (Show, Eq)
 
 -- Settlements
-data SettlementStep = SettlementStep
+data SettlementStep
+  routedStep
+  id
+  instructionCid
+  allocation
+  approval = SettlementStep
   with
-    routedStep : RoutedStep
-    instructionId : Id
-    instructionCid : ContractId Instruction.I
-    allocation : Allocation
-    approval : Approval
+    routedStep : routedStep
+    instructionId : id
+    instructionCid : instructionCid
+    allocation : allocation
+    approval : approval
   deriving (Show, Eq)
 
-data SettlementSummary = SettlementSummary
+data SettlementSummary
+  id
+  parties
+  batchCid
+  routedStep
+  instructionCid
+  allocation
+  approval = SettlementSummary
   with
-    batchId : Id
-    requestors : Set Party
-    settlers : Set Party
-    batchCid : Optional (ContractId Batch.I)
-    contextId : Optional Id
+    batchId : id
+    requestors : parties
+    settlers : parties
+    batchCid : Optional batchCid
+    contextId : Optional id
     description : Optional Text
-    steps : [SettlementStep]
+    steps : [SettlementStep routedStep id instructionCid allocation approval]
     witness : TransactionDetail
     execution : Optional TransactionDetail
   deriving (Show, Eq)
 
-data Settlements = Settlements
-  with
-    settlements : [SettlementSummary]
-  deriving (Show, Eq)
+newtype SettlementSummaryRaw jsonObject = SettlementSummaryRaw (
+    SettlementSummary jsonObject jsonObject Text jsonObject Text jsonObject jsonObject
+  ) deriving (Show, Eq)
+
+newtype SettlementSummaryTyped = SettlementSummaryTyped (
+    SettlementSummary Id Parties (ContractId Batch.I) RoutedStep (ContractId Instruction.I) Allocation Approval
+  ) deriving (Show, Eq)
 
 data SettlementsFilter = SettlementsFilter
   with
@@ -116,17 +132,16 @@ data SettlementsFilter = SettlementsFilter
   deriving (Show, Eq)
 
 -- Holdings
-data HoldingSummary = HoldingSummary
+data HoldingSummary cid view = HoldingSummary
   with
-    cid : ContractId Holding.I
-    view : Holding.V
-    create : Optional TransactionDetail
+    cid : cid
+    view : view
+    create : TransactionDetail
   deriving (Show, Eq)
 
-data Holdings = Holdings
-  with
-    holdings : [HoldingSummary]
-  deriving (Show, Eq)
+newtype HoldingSummaryRaw jsonObject = HoldingSummaryRaw (HoldingSummary Text jsonObject) deriving (Show, Eq)
+
+newtype HoldingSummaryTyped = HoldingSummaryTyped (HoldingSummary (ContractId Holding.I) Holding.V) deriving (Show, Eq)
 
 data HoldingFilter = HoldingFilter
   with
@@ -136,15 +151,15 @@ data HoldingFilter = HoldingFilter
 
 -- Instruments
 -- TODO may need to add create/archive TransactionDetail for this type
-data InstrumentSummary = InstrumentSummary
+data InstrumentSummary cid tokenView = InstrumentSummary
   with
-    cid : ContractId Instrument.I
-    tokenView : Optional Token.V
+    cid : cid
+    tokenView : Optional tokenView
   deriving (Show, Eq)
 
-data Instruments = Instruments
-  with
-    instruments : [InstrumentSummary]
+newtype InstrumentSummaryRaw jsonObject = InstrumentSummaryRaw (InstrumentSummary Text jsonObject) deriving (Show, Eq)
+
+newtype InstrumentSummaryTyped = InstrumentSummaryTyped (InstrumentSummary (ContractId Instrument.I) Token.V)
   deriving (Show, Eq)
 
 data InstrumentsFilter = InstrumentsFilter
@@ -156,20 +171,22 @@ data InstrumentsFilter = InstrumentsFilter
   deriving (Show, Eq)
 
 -- Issuers
-data TokenIssuerSummary = TokenIssuerSummary
+data TokenIssuerSummary cid view = TokenIssuerSummary
   with
-    cid : ContractId TokenIssuer.I
-    view : TokenIssuer.V
+    cid : cid
+    view : view
   deriving (Show, Eq)
 
-data IssuerSummary = IssuerSummary
+data IssuerSummary tokenCid tokenView = IssuerSummary
   with
-    token : Optional TokenIssuerSummary -- In future, there may be issuer contracts for other instrument types, so this is an optional field
+    -- In future, there may be issuer contracts for other instrument types, so this is an optional field
+    token : Optional (TokenIssuerSummary tokenCid tokenView)
   deriving (Show, Eq)
 
-data Issuers = Issuers
-  with
-    issuers : [IssuerSummary]
+newtype IssuerSummaryRaw jsonObject = IssuerSummaryRaw (IssuerSummary Text jsonObject)
+  deriving (Show, Eq)
+
+newtype IssuerSummaryTyped = IssuerSummaryTyped (IssuerSummary (ContractId TokenIssuer.I) (TokenIssuer.V))
   deriving (Show, Eq)
 
 data IssuersFilter = IssuersFilter

@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import Modal from "react-modal";
-import { AccountSummary, Balance } from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer";
 import { arrayToSet, formatCurrency, insertIntoSet, randomIdentifierLong, truncateParty } from "../../Util";
 import { ArrowUpRight, BoxArrowUpRight, Coin } from "react-bootstrap-icons";
@@ -15,6 +14,7 @@ import * as damlTypes from "@daml/types";
 import { InstructTransferFromFungiblesHelper } from "@daml.js/synfini-settlement-helpers/lib/Synfini/Settlement/Helpers";
 import { Fungible } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
 import { ContainerColumn, ContainerColumnKey, ContainerColumnValue, ContainerDiv } from "./general.styled";
+import { AccountSummary, Balance } from "@synfini/wallet-views";
 
 Modal.setAppElement("#root");
 
@@ -47,8 +47,8 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
         .flatMap(summary => summary.balances);
       for (const balance of bals) {
         const holdings = await walletViews.getHoldings({account: balance.account, instrument: balance.instrument});
-        if (holdings.holdings.length > 0) {
-          const holding = await ledger.fetch(Fungible, holdings.holdings[0].cid as damlTypes.ContractId<any>);
+        if (holdings.length > 0) {
+          const holding = await ledger.fetch(Fungible, holdings[0].cid as damlTypes.ContractId<any>);
           if (holding !== null) {
             setFungibleAssets(assets => insertIntoSet(assets, balance.instrument));
           }
@@ -131,7 +131,6 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
         instrument: balanceToTransferFrom.instrument
       });
       const holdingCids = availableHoldings
-        .holdings
         .filter(h => h.view.lock === null)
         .map(h => h.cid as damlTypes.ContractId<any>);
       const batchId = {
