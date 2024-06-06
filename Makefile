@@ -183,7 +183,6 @@ $(instrument_metadata_dar): $(daml_finance_dir) \
 $(wallet_views_types_dar): $(daml_finance_dir) \
   $(account_onboarding_open_offer_interface_dar) \
   $(issuer_onboarding_token_interface_dar) \
-  $(instrument_metadata_interface_dar) \
   $(shell ./find-daml-project-files.sh $(wallet_views_types_dir))
 	cd $(wallet_views_types_dir) && daml build -o $(proj_root)/$(wallet_views_types_dar)
 
@@ -194,8 +193,7 @@ $(wallet_views_main_codegen): $(wallet_views_types_dar)
 
 $(wallet_views_test_codegen): $(daml_finance_dir) \
   $(account_onboarding_open_offer_dar) \
-  $(issuer_onboarding_token_dar) \
-  $(instrument_metadata_dar)
+  $(issuer_onboarding_token_dar)
 	rm -rf $(wallet_views_test_codegen)
 	daml codegen java \
 		-o $(wallet_views_test_codegen) \
@@ -204,8 +202,7 @@ $(wallet_views_test_codegen): $(daml_finance_dir) \
 		$(daml_finance_dir)/daml-finance-settlement.dar \
 		$(daml_finance_dir)/daml-finance-instrument-token.dar \
 		$(account_onboarding_open_offer_dar) \
-		$(issuer_onboarding_token_dar) \
-		$(instrument_metadata_dar)
+		$(issuer_onboarding_token_dar)
 
 .PHONY: compile-wallet-views
 compile-wallet-views: $(wallet_views_main_codegen)

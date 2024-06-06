@@ -14,9 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,8 +35,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
 import daml.finance.interface$.account.account.Account;
-import daml.finance.interface$.holding.base.Lock;
-import daml.finance.interface$.holding.base.LockType;
 import daml.finance.interface$.types.common.types.AccountKey;
 import daml.finance.interface$.types.common.types.Id;
 import daml.finance.interface$.types.common.types.InstrumentKey;
@@ -465,7 +460,7 @@ public class WalletRepository {
         new AccountOpenOfferSummary<>(
           rs.getString("contract_id"),
           payload,
-          getTransactionDetailProper(rs, "created").orElseThrow(() ->
+          getTransactionDetail(rs, "created").orElseThrow(() ->
             new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR)
           )
         )
@@ -500,7 +495,7 @@ public class WalletRepository {
         new HoldingSummary<>(
           rs.getString("contract_id"),
           vanillaGson.fromJson(rs.getString("payload"), JsonObject.class),
-          getTransactionDetailProper(rs, "created")
+          getTransactionDetail(rs, "created")
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR))
         )
       );
@@ -569,7 +564,7 @@ public class WalletRepository {
           Optional.ofNullable(
             batchPayload.getAsJsonPrimitive("description")
           ).map(JsonPrimitive::getAsString);
-        final var batchCreate = getTransactionDetailProper(rs, "witness")
+        final var batchCreate = getTransactionDetail(rs, "witness")
           .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR));
 
         final var step = new SettlementStep<>(
@@ -579,7 +574,7 @@ public class WalletRepository {
           instructionPayload.getAsJsonObject("allocation"),
           instructionPayload.getAsJsonObject("approval")
         );
-        final Optional<TransactionDetail> archive = getTransactionDetailProper(rs, "instruction_archive");
+        final Optional<TransactionDetail> archive = getTransactionDetail(rs, "instruction_archive");
         final Optional<String> instructionArchiveEventId = Optional.ofNullable(rs.getString("instruction_archive_event_id"));
 
         if (current == null || !current.unpack.batchId.equals(batchId) || !requestorsSet.equals(currentRequestors)) {
@@ -692,7 +687,10 @@ public class WalletRepository {
       });
   }
 
-  private static Optional<synfini.wallet.api.types.TransactionDetail> getTransactionDetailProper(ResultSet rs, String prefix) throws SQLException {
+  private static Optional<synfini.wallet.api.types.TransactionDetail> getTransactionDetail(
+    ResultSet rs,
+    String prefix
+  ) throws SQLException {
     final var offset = rs.getString(prefix + "_at_offset");
     final var effectiveAt = rs.getTimestamp(prefix + "_effective_at");
 
@@ -711,27 +709,6 @@ public class WalletRepository {
       rs.getString("instrument_issuer"),
       new Id(rs.getString("instrument_id")),
       rs.getString("instrument_version")
-    );
-  }
-
-  private static Optional<Lock> getLock(ResultSet rs) throws SQLException {
-    String lockType = rs.getString("lock_type");
-    if (lockType == null) {
-      return Optional.empty();
-    } else {
-      LockType l = "semaphore".equals(lockType) ? LockType.SEMAPHORE : LockType.REENTRANT;
-      da.set.types.Set<String> lockers = arrayToSet(rs.getArray("lockers"));
-      da.set.types.Set<String> lockContext = arrayToSet(rs.getArray("lock_context"));
-      return Optional.of(
-        new Lock(lockers, lockContext, l)
-      );
-    }
-  }
-
-  private static da.set.types.Set<String> arrayToSet(java.sql.Array array) throws SQLException {
-    String[] stringArray = (String[]) array.getArray();
-    return new da.set.types.Set<>(
-      Arrays.stream(stringArray).collect(Collectors.toMap(Function.identity(), x -> Unit.getInstance()))
     );
   }
 
