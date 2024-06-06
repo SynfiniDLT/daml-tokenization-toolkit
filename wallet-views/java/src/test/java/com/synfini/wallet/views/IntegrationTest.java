@@ -873,6 +873,11 @@ public class IntegrationTest {
         content().json(toUnpackedJson(new Result<>(Collections.emptyList()))
       )
     );
+    // Check authorisation
+    // We don't know who should have access in this case without knowing owner/custodian
+    mvc
+      .perform(getAccountsBuilder(Optional.empty(), Optional.empty(), Optional.empty()))
+      .andExpect(status().isUnauthorized());
     mvc
       .perform(getAccountsBuilder(Optional.of(custodian), Optional.of(investor1), Optional.empty()).headers(userTokenHeader(investor1User)))
       .andExpect(status().isOk())
