@@ -43,7 +43,7 @@ beforeAll(() => {
 });
 
 test("Lists accounts", async () => {
-  const resp = await aliceClient.getAccounts({custodian: null, owner: alice});
+  const resp = await aliceClient.getAccounts({ custodian: null, owner: alice, id: null });
   expect(resp.length).toEqual(1);
   let account = resp[0];
   expect(account.view.owner).toEqual(alice);
@@ -73,6 +73,7 @@ test("Returns holdings", async () => {
 
 test("Returns settlements", async () => {
   const resp = await aliceClient.getSettlements({
+    batchId: null,
     before: null,
     limit: "10"
   });

@@ -24,7 +24,7 @@ const SettlementScreen: React.FC = () => {
   useEffect(() => {
     const fetchSettlements = async () => {
       if (primaryParty !== undefined) {
-        const resp = await walletClient.getSettlements({ before: null, limit: null });
+        const resp = await walletClient.getSettlements({ batchId: null, before: null, limit: null });
         setSettlements(resp);
       }
     };

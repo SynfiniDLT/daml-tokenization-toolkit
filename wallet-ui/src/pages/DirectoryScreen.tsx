@@ -10,7 +10,7 @@ import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/
 import { CreateEvent } from "@daml/ledger";
 import { partyAttributesInstrumentId, sbtCustodian, sbtDepository, sbtIssuer } from "../Configuration";
 import { Base } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Base";
-import { InstrumentSummary } from "@synfini/wallet-views";
+import { HoldingSummary, InstrumentSummary } from "@synfini/wallet-views";
 
 const DirectoryScreen: React.FC = () => {
   const ledger = userContext.useLedger();
@@ -20,7 +20,7 @@ const DirectoryScreen: React.FC = () => {
   const { isLoading } = useAuth0();
   const [instruments, setInstruments] = useState<InstrumentSummary[]>();
   const [metadatas, setMetadatas] = useState<damlTypes.Map<InstrumentKey, CreateEvent<Metadata>>>(damlTypes.emptyMap());
-  const [holdings, setHoldings] = useState<damlTypes.Map<InstrumentKey, CreateEvent<Base>>>(damlTypes.emptyMap());
+  const [holdings, setHoldings] = useState<damlTypes.Map<InstrumentKey, HoldingSummary>>(damlTypes.emptyMap());
 
   useEffect(() => {
     const fetchInstruments = async () => {
@@ -61,7 +61,6 @@ const DirectoryScreen: React.FC = () => {
     fetchMetadatas();
   }, [ledger, instruments]);
 
-  // TODO cannot fetch Holdings from wallet views API until we relax restrictions on `HoldingsFilter`: account ID, and owner should be optional
   useEffect(() => {
     const fetchHoldings = async () => {
       if (instruments !== undefined) {
@@ -70,11 +69,10 @@ const DirectoryScreen: React.FC = () => {
             const instrumentKey = ins.tokenView?.token.instrument
   
             if (instrumentKey !== undefined) {
-              const holdingsResp = await ledger.query(
-                Base,
+              const holdingsResp = await walletClient.getHoldings(
                 {
                   instrument: instrumentKey,
-                  account: { custodian: sbtCustodian }
+                  account: { custodian: sbtCustodian, owner: null, id: null }
                 }
               );
   
@@ -103,7 +101,7 @@ const DirectoryScreen: React.FC = () => {
             cid: metadata.contractId
           },
           holding: {
-            view: holding.payload
+            view: holding.view
           }
         }];
       }

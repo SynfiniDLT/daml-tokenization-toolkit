@@ -17,7 +17,7 @@ import { Fungible } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finan
 import { Transferable } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Transferable";
 import { Set as DamlSet } from "@daml.js/da-set/lib/DA/Set/Types";
 import { pollDelay } from "../Configuration";
-import { InstrumentSummary } from "@synfini/wallet-views";
+import { HoldingSummary, InstrumentSummary } from "@synfini/wallet-views";
 
 export type AssetDetailsState = {
   instrument: InstrumentKey
@@ -51,7 +51,7 @@ const AssetDetailsScreen: React.FC = () => {
   // Contract ID of the metadata prior to exercising a choice in it
   const [metadataDirtyCid, setMetadataDirtyCid] = useState<damlTypes.ContractId<any> | FirstRender | undefined>("FirstRender");
 
-  const [nonFungbileHolding, setNonFungibleHolding] = useState<CreateEvent<Base>>();
+  const [nonFungbileHolding, setNonFungibleHolding] = useState<HoldingSummary>();
   const [holdingDisclosure, setHoldingDisclosure] = useState<DisclosureView>();
   const [isFungible, setIsFungible] = useState<boolean>();
   const [isTransferable, setIsTransferable] = useState<boolean>();
@@ -146,9 +146,18 @@ const AssetDetailsScreen: React.FC = () => {
 
   useEffect(() => {
     const fetchHoldings = async () => {
-      const holdings = await ledger.query(Base, { instrument: state.instrument });
+      const holdings = await walletClient.getHoldings(
+        {
+          account: {
+            custodian: null, // TODO should filter by trusted custodian(s)
+            owner: null,
+            id: null
+          },
+          instrument: state.instrument
+        }
+      );
       if (holdings.length > 0) {
-        const cid = holdings[0].contractId as damlTypes.ContractId<any>;
+        const cid = holdings[0].cid as damlTypes.ContractId<any>;
         const fungible = await ledger.fetch(Fungible, cid);
         if (fungible === null) {
           setIsFungible(false);
@@ -237,7 +246,7 @@ const AssetDetailsScreen: React.FC = () => {
         });
     const removeHoldingsObs =
       nonFungbileHolding !== undefined && holdingDisclosure?.disclosureControllers.map.has(primaryParty) ?
-      ledger.exercise(Disclosure.RemoveObservers, nonFungbileHolding.contractId as damlTypes.ContractId<any>, exerciseArgs) :
+      ledger.exercise(Disclosure.RemoveObservers, nonFungbileHolding.cid as damlTypes.ContractId<any>, exerciseArgs) :
       Promise.resolve();
 
     await Promise.all([removeInstrumentObs, removeMetadataObs, removeHoldingsObs])
@@ -292,7 +301,7 @@ const AssetDetailsScreen: React.FC = () => {
       ledger.exercise(Disclosure.AddObservers, metadata.contractId as damlTypes.ContractId<any>, exerciseArgs);
     const addHoldingsObs =
       nonFungbileHolding !== undefined && holdingDisclosure?.disclosureControllers.map.has(primaryParty) ?
-      ledger.exercise(Disclosure.AddObservers, nonFungbileHolding.contractId as damlTypes.ContractId<any>, exerciseArgs) :
+      ledger.exercise(Disclosure.AddObservers, nonFungbileHolding.cid as damlTypes.ContractId<any>, exerciseArgs) :
       Promise.resolve();
 
     await Promise.all([addInstrumentObs, addMetadataObs, addHoldingsObs])
@@ -400,7 +409,7 @@ const AssetDetailsScreen: React.FC = () => {
             {isFungible === false && nonFungbileHolding !== undefined && (
               <tr>
                 <th>Owner</th>
-                <td>{nonFungbileHolding.payload.account.owner}</td>
+                <td>{nonFungbileHolding.view.account.owner}</td>
               </tr>
             )}
           </tbody>

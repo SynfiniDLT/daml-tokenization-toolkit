@@ -188,7 +188,7 @@ export default function SettlementDetails(props: SettlementDetailsProps) {
 
 export type SettlementDetailsActionProps = {
   requestors: DamlSet<damlTypes.Party>;
-  batchId: Id
+  batchId: Id;
 };
 
 export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
@@ -232,10 +232,9 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
         await wait(pollDelay);
       }
 
-      const settlements = await walletClient.getSettlements({before: null, limit: null}); // TODO should fetch by contract ID
+      const settlements = await walletClient.getSettlements({ batchId: props.batchId, before: null, limit: null });
       const filteredSettlements = settlements
         .filter(s =>
-          s.batchId.unpack === props.batchId.unpack &&
           s.requestors.map.entriesArray().length === props.requestors.map.entriesArray().length &&
           setToArray(s.requestors).every(r => props.requestors.map.has(r))
         );
@@ -543,11 +542,11 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
 
     const fetchAccounts = async (custodian: string) => {
       if (primaryParty !== undefined) {
-        const respAcc = await walletClient.getAccounts({ owner: primaryParty, custodian: custodian });
+        const respAcc = await walletClient.getAccounts({ owner: primaryParty, custodian: custodian, id: null });
         setAccounts(respAcc);
       }
     };
-  
+
     // STEPS LOOP THROUGH
     let stepNotReady = false;
     settlement.steps.forEach(step => {

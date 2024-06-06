@@ -41,7 +41,8 @@ newtype AccountSummaryTyped = AccountSummaryTyped (AccountSummary (ContractId Ac
 data AccountFilter = AccountFilter
   with
     custodian : Optional Party
-    owner : Party
+    owner : Optional Party
+    id : Optional Id
   deriving (Show, Eq)
 
 -- Account offers
@@ -127,6 +128,7 @@ newtype SettlementSummaryTyped = SettlementSummaryTyped (
 
 data SettlementsFilter = SettlementsFilter
   with
+    batchId : Optional Id
     before : Optional Text
     limit : Optional Int
   deriving (Show, Eq)
@@ -145,7 +147,7 @@ newtype HoldingSummaryTyped = HoldingSummaryTyped (HoldingSummary (ContractId Ho
 
 data HoldingFilter = HoldingFilter
   with
-    account : AccountKey
+    account : AccountFilter
     instrument : InstrumentKey
   deriving (Show, Eq)
 

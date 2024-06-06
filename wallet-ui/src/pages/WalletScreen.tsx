@@ -16,7 +16,7 @@ const WalletScreen: React.FC = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       if (primaryParty !== undefined) {
-        const resp = await walletClient.getAccounts({ owner: primaryParty, custodian: null });
+        const resp = await walletClient.getAccounts({ owner: primaryParty, custodian: null, id: null });
         return resp;
       } else {
         return [];
