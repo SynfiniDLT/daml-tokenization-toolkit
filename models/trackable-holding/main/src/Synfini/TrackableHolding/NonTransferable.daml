@@ -1,3 +1,6 @@
+-- Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
 module Synfini.TrackableHolding.NonTransferable where
 
 import Daml.Finance.Holding.NonTransferable qualified as Default

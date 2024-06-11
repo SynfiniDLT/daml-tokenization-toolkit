@@ -1,3 +1,6 @@
+# Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 # Empty daml.yaml file used to set the sdk version when running commands from this directory,
 # and to help when opening Visual Studio
 # Warning: make sure to keep this sdk version updated to be the same as the other daml.yaml files
