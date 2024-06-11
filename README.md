@@ -1,5 +1,8 @@
 # Daml Tokenization Solution
 
+    Copyright (c) 2024, ASX Operations Pty Ltd. All rights reserved.
+    SPDX-License-Identifier: Apache-2.0
+
 A solution that demonstrates
 1. Tokenization of assets using Daml/Canton.
 1. Asset settlement on Canton network.
