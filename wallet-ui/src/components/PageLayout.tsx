@@ -1,3 +1,6 @@
+// Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import React from "react";
 import { NavBar } from "./navigation/desktop/nav-bar";
 import { PageFooter } from "./page-footer";

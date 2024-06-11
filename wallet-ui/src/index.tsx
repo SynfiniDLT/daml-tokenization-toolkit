@@ -1,3 +1,6 @@
+// Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import ReactDOM from "react-dom";
 import "semantic-ui-css/semantic.min.css";
 import "./styles/styles.css";

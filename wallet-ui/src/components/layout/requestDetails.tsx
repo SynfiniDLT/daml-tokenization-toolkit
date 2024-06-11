@@ -1,3 +1,6 @@
+// Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import { useNavigate } from "react-router-dom";
 import HoverPopUp from "./hoverPopUp";
 import { CreateEvent } from "@daml/ledger";

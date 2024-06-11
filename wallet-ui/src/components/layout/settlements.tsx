@@ -1,3 +1,6 @@
+// Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import { SettlementSummary } from "@synfini/wallet-views";
 import SettlementDetails from "./settlementDetails";
 
