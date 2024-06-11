@@ -1,3 +1,6 @@
+// Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import * as fs from "fs";
 import { WalletViewsClient } from ".";
 import * as DamlTypes from "@daml/types";
