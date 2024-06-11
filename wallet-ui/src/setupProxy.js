@@ -1,3 +1,6 @@
+// Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 const { createProxyMiddleware } = require("http-proxy-middleware");
 
 const damlHttpJsonDevUrl =
