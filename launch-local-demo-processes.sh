@@ -77,7 +77,6 @@ dops create-users ${config_dir}/users/users.json
 
 cd ${tokenization_lib_home}/wallet-views/java
 nohup mvn -Dmaven.test.skip=true spring-boot:run \
-  -Dspring-boot.run.jvmArguments="-Dprojection.flyway.migrate-on-start=true" \
   -Dspring-boot.run.arguments=" \
     --spring.datasource.url=jdbc:postgresql://localhost:5432/wallet_views \
     --walletviews.ledger-host=${LEDGER_HOST} \
