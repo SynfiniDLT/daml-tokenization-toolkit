@@ -235,7 +235,15 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
         await wait(pollDelay);
       }
 
-      const settlements = await walletClient.getSettlements({ batchId: props.batchId, before: null, limit: null });
+      const settlements = await walletClient.getSettlements(
+        {
+          batchId: {
+            unpack: props.batchId.unpack
+          },
+          before: null,
+          limit: null
+        }
+      );
       const filteredSettlements = settlements
         .filter(s =>
           s.requestors.map.entriesArray().length === props.requestors.map.entriesArray().length &&

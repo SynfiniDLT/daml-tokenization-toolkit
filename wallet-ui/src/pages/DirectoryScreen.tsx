@@ -12,7 +12,6 @@ import { useWalletUser, useWalletViews, userContext } from "../App";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 import { CreateEvent } from "@daml/ledger";
 import { partyAttributesInstrumentId, sbtCustodian, sbtDepository, sbtIssuer } from "../Configuration";
-import { Base } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Base";
 import { HoldingSummary, InstrumentSummary } from "@synfini/wallet-views";
 
 const DirectoryScreen: React.FC = () => {
@@ -89,7 +88,7 @@ const DirectoryScreen: React.FC = () => {
     }
 
     fetchHoldings();
-  }, [ledger, instruments]);
+  }, [walletClient, instruments]);
 
   const summaries = instruments?.flatMap(ins => {
     const instrumentKey = ins.tokenView?.token.instrument;

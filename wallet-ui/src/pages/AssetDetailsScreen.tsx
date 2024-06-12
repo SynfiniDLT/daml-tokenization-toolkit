@@ -15,7 +15,6 @@ import { Metadata } from "@daml.js/synfini-instrument-metadata-interface/lib/Syn
 import { Disclosure, View as DisclosureView } from "@daml.js/daml-finance-interface-util/lib/Daml/Finance/Interface/Util/Disclosure"
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 import Modal from "react-modal";
-import { Base } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Base";
 import { Fungible } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Fungible";
 import { Transferable } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Transferable";
 import { Set as DamlSet } from "@daml.js/da-set/lib/DA/Set/Types";
@@ -182,7 +181,7 @@ const AssetDetailsScreen: React.FC = () => {
     };
 
     fetchHoldings();
-  }, [ledger, state.instrument, instrumentSummary]);
+  }, [ledger, walletClient, state.instrument, instrumentSummary]);
 
   if (isLoading) {
     return (
