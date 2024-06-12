@@ -1,3 +1,6 @@
+// Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import { Id } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";
 import { Factory as SettlementFactory } from "@daml.js/daml-finance-interface-settlement/lib/Daml/Finance/Interface/Settlement/Factory";
 import * as damlTypes from "@daml/types";

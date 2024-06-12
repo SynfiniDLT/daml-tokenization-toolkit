@@ -1,3 +1,6 @@
+-- Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
 -- Warning: if any types are added to this module they should also be added to the `UsedTypes` in
 -- Synfini.Wallet.Api.Types.Internal, otherwise they will not appear in the codegen output
 module Synfini.Wallet.Api.Types where

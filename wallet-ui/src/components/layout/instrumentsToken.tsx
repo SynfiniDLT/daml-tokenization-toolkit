@@ -1,3 +1,6 @@
+// Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import { toDateTimeString, truncateParty } from "../../Util";
 import { useNavigate } from "react-router-dom";
 import { InstrumentKey } from "@daml.js/daml-finance-interface-types-common/lib/Daml/Finance/Interface/Types/Common/Types";

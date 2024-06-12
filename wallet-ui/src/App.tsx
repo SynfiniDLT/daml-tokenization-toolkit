@@ -1,3 +1,6 @@
+// Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import React, { useState, useEffect, useContext, useMemo } from "react";
 import { Route, Routes } from "react-router-dom";
 import { createLedgerContext } from "@daml/react";

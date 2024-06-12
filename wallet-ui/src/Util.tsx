@@ -1,3 +1,6 @@
+// Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import { Set as DamlSet } from "@daml.js/da-set/lib/DA/Set/Types";
 import { View as HoldingView } from "@daml.js/daml-finance-interface-holding/lib/Daml/Finance/Interface/Holding/Base";
 import { View as DisclosureView } from "@daml.js/daml-finance-interface-util/lib/Daml/Finance/Interface/Util/Disclosure";

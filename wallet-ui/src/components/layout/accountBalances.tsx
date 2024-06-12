@@ -1,3 +1,6 @@
+// Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import { useNavigate } from "react-router-dom";
 import Modal from "react-modal";
 import { OpenOffer as SettlementOpenOffer } from "@daml.js/synfini-settlement-open-offer-interface/lib/Synfini/Interface/Settlement/OpenOffer/OpenOffer";

@@ -1,3 +1,6 @@
+// Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import { useState, ChangeEventHandler } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { userContext } from "../App";

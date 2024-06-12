@@ -1,3 +1,6 @@
+// Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import * as wt from "@daml.js/synfini-wallet-views-types/lib/Synfini/Wallet/Api/Types";
 import fetch from "cross-fetch";
 import * as jtv from "@mojotech/json-type-validation";

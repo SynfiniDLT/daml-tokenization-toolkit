@@ -1,3 +1,6 @@
+// Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import { useState } from "react";
 import { Clipboard, ClipboardCheck } from "react-bootstrap-icons";
 

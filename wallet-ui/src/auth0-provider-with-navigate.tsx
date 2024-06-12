@@ -1,3 +1,6 @@
+// Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import { Auth0Provider } from "@auth0/auth0-react";
 import { useNavigate } from "react-router-dom";
 
