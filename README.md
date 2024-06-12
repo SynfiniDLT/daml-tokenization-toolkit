@@ -44,20 +44,21 @@ Install the following first:
 
 - Daml SDK (https://docs.daml.com/getting-started/installation.html#installing-the-sdk)
 - Maven (https://maven.apache.org/install.html)
-- sbt (https://www.scala-sbt.org/download.html)
 - npm (https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 - Docker (https://docs.docker.com/get-docker/)
 - jq (https://jqlang.github.io/jq/)
+- Python 3 (https://www.python.org) (only needed for running the demo)
+- Participant Query Store (https://docs.daml.com/2.8.3/query/pqs-user-guide.html) (See the instructions below)
 
-Build has been tested with Java version 17, Maven 3.6.3, npm 8.19 and PQS 2.8.0.
-
-Download the Scribe component (JAR file) of [PQS](https://docs.daml.com/2.8.3/query/pqs-user-guide.html). You will need
+Download the Scribe component (JAR file) of PQS. You will need
 a Daml Enterprise license in order to access this. Save it to your machine and export the absolute path to the file
 in your terminal envionment using the variable `SCRIBE_LOCATION`. Using a component which requires an enterprise
-license is somewhat of a limitation but there are limited alternatives other than writing a custom component for this
+license is somewhat of a limitation but there are few alternatives other than writing a custom component for this
 purpose. For reference, the previous version of this project was implemented without need for the enterprise license
 using the (now deprecated) Custom Views library, and can be found
 [here](https://github.com/SynfiniDLT/daml-tokenization-toolkit/releases/tag/v0.2.0).
+
+Build has been tested with Java version 17, Maven 3.6.3, npm 8.19 and PQS 2.8.0.
 
 ## Asset and party configuration of the demo
 
@@ -152,11 +153,12 @@ Replace your-api-identifier with the audience identifier you obtained from the A
 
 #### Step 4: Edit the users.json File for Ledger Identification
 
-1.	In the ~/demo-config/users folder, there is a users.json file to store user information for ledger identification.
-1. The users.json file has an array of user objects, each containing the userId from Auth0 and the corresponding primaryParty for ledger identification. Replace your-auth0-user-id and another-auth0-user-id with the actual user IDs from Auth0.
-1. Ensure that the userId in each object corresponds to the sub (subject) field in the Auth0 user profile. You can find the userId in the Auth0 ID Token received during authentication.
-1. The primaryParty field is the default party used to issue commands to the ledger. If logged into the UI, the user will act as this party.
-1. Save and commit the users.json file to your version control system (e.g., Git) to keep it in sync with your codebase.
+In the demo-config/users folder, there is a users.json file to store user information for ledger identification. The
+users.json file has an array of user objects, each containing the userId from Auth0 and the corresponding primaryParty
+for ledger identification. Replace the user IDs with the actual user IDs from Auth0. Unfortunately this process has not
+yet been automated so manual editing is required. Ensure that the userId in each object corresponds to the sub (subject)
+field in the Auth0 user profile. The primaryParty field is the default party used to issue commands to the ledger. If
+logged into the UI, the user will act as this party. There is no need to edit this field.
 
 Whenever a user logs in, the UI retrieves the user from the participant node which has a user ID matching the Auth0
 subject. This allows it to find the user's corresponding primaryParty.
@@ -200,8 +202,13 @@ make clean
 
 ## Next steps
 
-There are a number of tasks ahead to complete and enhance this solution. 
+There are a number of tasks ahead to complete and enhance this solution. A complete list can be found within the Github
+[issues](https://github.com/SynfiniDLT/daml-tokenization-toolkit/issues). Some of the highest priority tasks are listed
+below:
 
 1. Use the latest solution from DA which replaces the public party feature (i.e. use explict disclosure). This will make
 it easier to share commononly used utility contracts (such as factories) without need for a public party hosted on
-multiple participants.
+multiple participants. Refer to this [issue](https://github.com/SynfiniDLT/daml-tokenization-toolkit/issues/79).
+1. Upgrade to the latest version of Daml Finance. Refer to this [issue](https://github.com/SynfiniDLT/daml-tokenization-toolkit/issues/68).
+1. Adding additional features within the issuer wallet UI, such as a breakdown of who owns the assets they have issued.
+Refer to this [issue](https://github.com/SynfiniDLT/daml-tokenization-toolkit/issues/63).
