@@ -19,6 +19,8 @@ import java.util.Optional;
 import java.util.Set;
 import javax.sql.DataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
@@ -64,6 +66,7 @@ import synfini.wallet.api.types.TransactionDetail;
 
 @Component
 public class WalletRepository {
+  private static final Logger logger = LoggerFactory.getLogger(WalletRepository.class);
   private static final Gson vanillaGson = new Gson();
 
   private final JdbcTemplate jdbcTemplate;
@@ -491,9 +494,10 @@ public class WalletRepository {
         new AccountOpenOfferSummary<>(
           rs.getString("contract_id"),
           payload,
-          getTransactionDetail(rs, "created").orElseThrow(() ->
-            new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR)
-          )
+          getTransactionDetail(rs, "created").orElseThrow(() -> {
+            logger.error("created transaction detail not present on account open offer");
+            return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+          })
         )
       );
     }
@@ -526,8 +530,10 @@ public class WalletRepository {
         new HoldingSummary<>(
           rs.getString("contract_id"),
           vanillaGson.fromJson(rs.getString("payload"), JsonObject.class),
-          getTransactionDetail(rs, "created")
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR))
+          getTransactionDetail(rs, "created").orElseThrow(() -> {
+            logger.error("created transaction detail not present on holding");
+            return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+          })
         )
       );
     }
@@ -595,8 +601,10 @@ public class WalletRepository {
           Optional.ofNullable(
             batchPayload.getAsJsonPrimitive("description")
           ).map(JsonPrimitive::getAsString);
-        final var batchCreate = getTransactionDetail(rs, "witness")
-          .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR));
+        final var batchCreate = getTransactionDetail(rs, "witness").orElseThrow(() -> {
+          logger.error("witness transaction detail not present on settlement");
+          return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+        });
 
         final var step = new SettlementStep<>(
           instructionPayload.getAsJsonObject("routedStep"),

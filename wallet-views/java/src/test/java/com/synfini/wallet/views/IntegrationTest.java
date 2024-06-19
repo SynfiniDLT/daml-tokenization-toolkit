@@ -2219,7 +2219,7 @@ public class IntegrationTest {
     final var startTimeMillis = System.currentTimeMillis();
     scribeProcess = pb.start();
     final var scribeTimeoutSeconds = Long.valueOf(
-      Optional.ofNullable(System.getProperty("walletviews.test.scribe-start-timeout-seconds")).orElse("20")
+      Optional.ofNullable(System.getProperty("walletviews.test.scribe-start-timeout-seconds")).orElse("60")
     );
     logger.info("Waiting for scribe to start with timeout set to " + scribeTimeoutSeconds + " seconds");
     final var ledgerEnd = getLedgerEnd();
