@@ -42,13 +42,13 @@ Please follow these prerequisite steps before running any of the build/run/test 
 
 Install the following first:
 
-- Daml SDK (https://docs.daml.com/getting-started/installation.html#installing-the-sdk)
-- Maven (https://maven.apache.org/install.html)
-- npm (https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
-- Docker (https://docs.docker.com/get-docker/)
-- jq (https://jqlang.github.io/jq/)
-- Python 3 (https://www.python.org) (only needed for running the demo)
-- Participant Query Store (https://docs.daml.com/2.8.3/query/pqs-user-guide.html) (See the instructions below)
+- [Daml SDK](https://docs.daml.com/getting-started/installation.html#installing-the-sdk)
+- [Maven](https://maven.apache.org/install.html)
+- [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
+- [Docker](https://docs.docker.com/get-docker/)
+- [jq](https://jqlang.github.io/jq/)
+- [Python 3](https://www.python.org) (only needed for running the demo)
+- [Participant Query Store (PQS)](https://docs.daml.com/2.8.3/query/pqs-user-guide.html) (See the instructions below)
 
 Download the Scribe component (JAR file) of PQS. You will need
 a Daml Enterprise license in order to access this. Save it to your machine and export the absolute path to the file
