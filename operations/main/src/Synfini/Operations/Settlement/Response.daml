@@ -108,10 +108,15 @@ applyAllocationPreference acceptor (allocations, received, usePassThroughs) (ins
                     Some (accountId, fromInstructionId)
                   )
                 _ ->
+                  let account = AccountKey with
+                        custodian = instruction.routedStep.custodian
+                        owner = instruction.routedStep.sender
+                        id = accountId
+                  in
                   (
                     Some (
-                      PledgeFromFungiblesHelp,
-                      Some (HoldingDescriptor instruction.routedStep.quantity.unit instruction.routedStep.custodian)
+                      PledgeFromFungiblesHelp accountId,
+                      Some (HoldingDescriptor instruction.routedStep.quantity.unit account)
                     ),
                     None
                   )
@@ -215,7 +220,7 @@ acceptSettlement input = do
   pure ()
 
 descriptor : Holding.V -> HoldingDescriptor
-descriptor h = HoldingDescriptor with custodian = h.account.custodian, instrument = h.instrument
+descriptor h = HoldingDescriptor with instrument = h.instrument, account = h.account
 
 data SettleSettings = SettleSettings
   with
