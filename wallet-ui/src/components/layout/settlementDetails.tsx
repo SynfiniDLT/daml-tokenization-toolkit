@@ -1,7 +1,7 @@
 // Copyright (c) 2024 ASX Operations Pty Ltd. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, ChangeEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { arrayToMap, formatCurrency, repairMap, setToArray, toDateTimeString, truncateParty, wait } from "../../Util";
 import styled from "styled-components";
@@ -16,6 +16,7 @@ import {
 import { arrayToSet } from "../../Util";
 import * as damlTypes from "@daml/types";
 import {
+  AccountKey,
   Id,
   InstrumentKey,
   Quantity,
@@ -204,8 +205,9 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
-  const [accounts, setAccounts] = useState<AccountSummary[]>();
-  const [selectAccountInput, setSelectAccountInput] = useState("");
+  // Map from custodian to accounts at that custodian
+  const [accounts, setAccounts] = useState<damlTypes.Map<damlTypes.Party, AccountSummary[]>>(damlTypes.emptyMap());
+  const [selectAccountInput, setSelectAccountInput] = useState<damlTypes.Map<Id, Id>>(damlTypes.emptyMap());
   const [showExecute, setShowExecute] = useState<boolean>(false);
   const [hasExecuted, setHasExecuted] = useState<boolean>(false);
 
@@ -304,8 +306,9 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
     }
   };
 
-  const handleAccountChange: React.ChangeEventHandler<HTMLSelectElement> = (event) => {
-    setSelectAccountInput(event.target.value);
+  const handleAccountChange = (instructionId: Id, event: ChangeEvent<HTMLSelectElement>) => {
+    console.log('event.target.value', event.target.value);
+    setSelectAccountInput(accounts => accounts.set(instructionId, { unpack: event.target.value }));
   };
 
   const SettlementDetailsContainer = styled.div`
@@ -314,37 +317,53 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
   `;
 
   function acceptanceActions(
-    accounts: damlTypes.Map<damlTypes.Party, Id>,
+    accounts: damlTypes.Map<Id, Id>, // Map from instruction ID to account ID
     settlement: SettlementSummary
   ): {
     allocations: damlTypes.Map<Id, AllocationHelp>;
     approvals: damlTypes.Map<Id, ApprovalHelp>;
     pledgeDescriptors: HoldingDescriptor[];
   } {
-    let custodianQuantitiesMap: damlTypes.Map<
-      { custodian: damlTypes.Party; quantity: Quantity<InstrumentKey, string> },
+    // Map from the account and quantity used to the list of instruction IDs which match this criteria
+    let accountQuantitiesMap: damlTypes.Map<
+      { account: AccountKey; quantity: Quantity<InstrumentKey, string> },
       Id[]
     > = damlTypes.emptyMap();
     settlement.steps.forEach((step) => {
-      if (step.routedStep.receiver === primaryParty) {
-        const k = { custodian: step.routedStep.custodian, quantity: step.routedStep.quantity };
-        const ids = custodianQuantitiesMap.get(k) || [];
-        ids.push(step.instructionId);
-        custodianQuantitiesMap = custodianQuantitiesMap.set(k, ids);
+      const accountId = accounts.get(step.instructionId);
+      if (step.routedStep.receiver === primaryParty && accountId !== undefined) {
+          const account = {
+            custodian: step.routedStep.custodian,
+            owner: primaryParty,
+            id: accountId
+          };
+          const k = { account, quantity: step.routedStep.quantity };
+          const ids = accountQuantitiesMap.get(k) || [];
+          ids.push(step.instructionId);
+          accountQuantitiesMap = accountQuantitiesMap.set(k, ids);
+        }
       }
-    });
+    );
     let allocations: damlTypes.Map<Id, AllocationHelp> = damlTypes.emptyMap();
     let approvals: damlTypes.Map<Id, ApprovalHelp> = damlTypes.emptyMap();
     const pledgeDescriptors: HoldingDescriptor[] = [];
 
     // Update allocations
     settlement.steps.forEach((step) => {
+      const accountId = accounts.get(step.instructionId);
+
       if (step.routedStep.sender === primaryParty) {
+        const account =
+          accountId !== undefined ?
+            { custodian: step.routedStep.custodian, owner: primaryParty, id: accountId }
+          :
+            undefined
         const availablePassThroughFroms =
-          custodianQuantitiesMap.get({ custodian: step.routedStep.custodian, quantity: step.routedStep.quantity }) ||
-          [];
-        const accountId = accounts.get(step.routedStep.custodian);
-        if (accountId !== undefined) {
+          account !== undefined ?
+            (accountQuantitiesMap.get({ account, quantity: step.routedStep.quantity }) || [])
+          :
+            [];
+        if (account !== undefined) {
           if (availablePassThroughFroms.length > 0) {
             const passThroughFromId = availablePassThroughFroms.pop();
             if (passThroughFromId === undefined) {
@@ -352,16 +371,19 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
             }
             allocations = allocations.set(step.instructionId, {
               tag: "PassThroughFromHelp",
-              value: { accountId, instructionId: passThroughFromId },
+              value: { accountId: account.id, instructionId: passThroughFromId },
             });
             approvals = approvals.set(passThroughFromId, {
               tag: "PassThroughToHelp",
-              value: { accountId, instructionId: step.instructionId },
+              value: { accountId: account.id, instructionId: step.instructionId },
             });
           } else {
-            allocations = allocations.set(step.instructionId, { tag: "PledgeFromFungiblesHelp", value: {} });
+            allocations = allocations.set(
+              step.instructionId,
+              { tag: "PledgeFromFungiblesHelp", value: { accountId: account.id } }
+            );
             const holdingDescriptor = {
-              custodian: step.routedStep.custodian,
+              account,
               instrument: step.routedStep.quantity.unit,
             };
             pledgeDescriptors.push(holdingDescriptor);
@@ -381,7 +403,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
       .filter((step) => !approvals.has(step.instructionId))
       .forEach((step) => {
         if (step.routedStep.receiver === primaryParty) {
-          const accountId = accounts.get(step.routedStep.custodian);
+          const accountId = accounts.get(step.instructionId);
           if (accountId !== undefined) {
             approvals = approvals.set(step.instructionId, { tag: "TakeDeliveryHelp", value: { accountId } });
           }
@@ -415,12 +437,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
       return;
     }
 
-    const splitAccountInput = selectAccountInput.split("@");
-    const custodianToAccount: damlTypes.Map<damlTypes.Party, Id> = arrayToMap(
-      [[splitAccountInput[0], { unpack: splitAccountInput[1] }]]
-    );
-
-    const { allocations, approvals, pledgeDescriptors } = acceptanceActions(custodianToAccount, settlement);
+    const { allocations, approvals, pledgeDescriptors } = acceptanceActions(selectAccountInput, settlement);
     const instructionIdsToModify = allocations
       .entriesArray()
       .map(([instructionId, _]) => instructionId)
@@ -448,19 +465,14 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
 
     for (const holdingDescriptor of pledgeDescriptors) {
       if (!holdings.has(holdingDescriptor)) {
-        const accountId = custodianToAccount.get(holdingDescriptor.custodian);
-        if (accountId !== undefined) {
-          const account = {
-            custodian: holdingDescriptor.custodian,
-            owner: primaryParty,
-            id: accountId,
-          };
-          const activeHoldings = await walletClient.getHoldings({ account, instrument: holdingDescriptor.instrument });
-          holdings = holdings.set(
-            holdingDescriptor,
-            activeHoldings.filter((h) => h.view.lock === null).map((h) => h.cid)
-          );
-        }
+        const activeHoldings = await walletClient.getHoldings({
+          account: holdingDescriptor.account,
+          instrument: holdingDescriptor.instrument
+        });
+        holdings = holdings.set(
+          holdingDescriptor,
+          activeHoldings.filter((h) => h.view.lock === null).map((h) => h.cid)
+        );
       }
     }
 
@@ -554,45 +566,19 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
     const fetchAccounts = async (custodian: string) => {
       if (primaryParty !== undefined) {
         const respAcc = await walletClient.getAccounts({ owner: primaryParty, custodian: custodian, id: null });
-        setAccounts(respAcc);
+        setAccounts(accounts => accounts.set(custodian, respAcc));
       }
     };
 
     // STEPS LOOP THROUGH
     let stepNotReady = false;
     settlement.steps.forEach(step => {
-      let inputSelected = "";
-
       // CHECK STEPS APPROVAL / ALLOCATION
-      if (step.approval.tag !== "Unapproved" && step.routedStep.receiver === primaryParty) {
-        if (selectAccountInput === "") {
-          fetchAccounts(step.routedStep.custodian);
-          if (step.approval.tag === "TakeDelivery") {
-            inputSelected = step.routedStep.custodian + "@" + step.approval.value.id.unpack;
-          } else if (step.approval.tag === "PassThroughTo") {
-            inputSelected = step.routedStep.custodian + "@" + step.approval.value._1.id.unpack;
-          }
-          if (inputSelected !== "") {
-            setSelectAccountInput(inputSelected);
-          }
-        }
-      } else if (step.routedStep.sender === primaryParty) {
-        fetchAccounts(step.routedStep.custodian);
-        if (step.allocation.tag === "Pledge") {
-          ledger.fetch(
-            Base,
-            step.allocation.value
-          ).then((res) => {
-            inputSelected = res?.payload.account.custodian + "@" + res?.payload.account.id.unpack;
-            setSelectAccountInput(inputSelected);
-          });
-        }
-      } else {
+      if (step.routedStep.sender === primaryParty || step.routedStep.receiver === primaryParty) {
         fetchAccounts(step.routedStep.custodian);
       }
 
       // CHECK IF CAN EXECUTE
-      fetchAccounts(step.routedStep.custodian);
       if (step.approval.tag === "Unapproved" || step.allocation.tag === "Unallocated") {
         stepNotReady = true;
       }
@@ -610,12 +596,6 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
   return (
     <SettlementDetailsContainer>
       <form onSubmit={handleSubmit}>
-        <div style={{ display: "flex", alignItems: "center", marginTop: "5px" }}>
-          <div style={{ padding: "10px" }}>Select Account:</div>
-          <div>
-            <AccountsSelect accounts={accounts} onChange={handleAccountChange} selectedAccount={selectAccountInput} />
-          </div>
-        </div>
         <div key={settlement.batchId.unpack} id={settlement.batchId.unpack}>
           <div>
             <div>
@@ -653,107 +633,125 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
           {
             primaryParty !== undefined &&
             settlement.steps.map(step =>
-              <>
-                <div key={step.instructionId.unpack}>
-                  <h5 className="profile__title">Instruction</h5>
-                  <div style={{ margin: "15px" }}>
-                    <Field>ID:</Field>
-                    {step.instructionId.unpack}
+              <div key={step.instructionId.unpack}>
+                <h5 className="profile__title">Instruction</h5>
+                <div style={{ margin: "15px" }}>
+                  <Field>ID:</Field>
+                  {step.instructionId.unpack}
+                  <br />
+                  <div
+                    style={{
+                      ...(requiresIssuerAction(primaryParty, step.routedStep, step.allocation, step.approval)
+                        ? { border: "1px solid", width: "fit-content" }
+                        : {}),
+                    }}
+                  >
+                    <Field>Type: </Field>
+                    {
+                      isMint(step.routedStep) ? <> Issuance<br/></> :
+                      isBurn(step.routedStep) ? <> Redemption<br/></> : <> Transfer<br/></>
+                    }
+                  </div>
+                  <Field>Amount: </Field>
+                  {formatCurrency(step.routedStep.quantity.amount)}
+                  <br />
+                  <div id={step.routedStep.quantity.unit.id.unpack} key={step.instructionCid}>
+                    <Field>Asset:</Field>
+                    <a onClick={() => handleInstrumentClick(step.routedStep.quantity.unit)}>
+                      {`${step.routedStep.quantity.unit.id.unpack} ${step.routedStep.quantity.unit.version}`}
+                    </a>
                     <br />
-                    <div
-                      style={{
-                        ...(requiresIssuerAction(primaryParty, step.routedStep, step.allocation, step.approval)
-                          ? { border: "1px solid", width: "fit-content" }
-                          : {}),
-                      }}
-                    >
-                      <Field>Type: </Field>
-                      {
-                        isMint(step.routedStep) ? <> Issuance<br/></> :
-                        isBurn(step.routedStep) ? <> Redemption<br/></> : <> Transfer<br/></>
-                      }
-                    </div>
-                    <Field>Amount: </Field>
-                    {formatCurrency(step.routedStep.quantity.amount)}
-                    <br />
-                    <div id={step.routedStep.quantity.unit.id.unpack} key={step.instructionCid}>
-                      <Field>Asset:</Field>
-                      <a onClick={() => handleInstrumentClick(step.routedStep.quantity.unit)}>
-                        {`${step.routedStep.quantity.unit.id.unpack} ${step.routedStep.quantity.unit.version}`}
-                      </a>
-                      <br />
-                      {
-                        !isMint(step.routedStep) &&
-                        <div
-                          style={{
-                            ...(step.routedStep.sender === primaryParty && step.allocation.tag === "Unallocated"
-                              ? { border: "1px solid", width: "fit-content" }
-                              : {}),
-                          }}
-                        >
-                          <Field>Sender: </Field>
-                          <span
-                            style={{
-                              fontWeight: step.routedStep.sender === primaryParty ? "bold" : "normal",
-                            }}
-                          >
-                            {truncateParty(step.routedStep.sender)}
-                          </span>
-                        </div>
-                      }
+                    {
+                      !isMint(step.routedStep) &&
                       <div
                         style={{
-                          ...(step.routedStep.receiver === primaryParty && step.approval.tag === "Unapproved" ?
-                            { border: "1px solid", width: "fit-content" } : {}),
+                          ...(step.routedStep.sender === primaryParty && step.allocation.tag === "Unallocated"
+                            ? { border: "1px solid", width: "fit-content" }
+                            : {}),
                         }}
                       >
-                        <Field>Receiver: </Field>
+                        <Field>Sender: </Field>
                         <span
                           style={{
-                            fontWeight: step.routedStep.receiver === primaryParty ? "bold" : "normal",
+                            fontWeight: step.routedStep.sender === primaryParty ? "bold" : "normal",
                           }}
                         >
-                          {truncateParty(step.routedStep.receiver)}
+                          {truncateParty(step.routedStep.sender)}
                         </span>
                       </div>
-                      <Field>Register: </Field>
-                      {truncateParty(step.routedStep.custodian)}
-                      <br />
-                      <Field>{isMint(step.routedStep) ? "Issuer response:" : "Sender response:"}</Field>
-                      {
-                        step.allocation.tag === "Unallocated" ?
-                          <span style={{ color: "hsl(0, 90%, 80%)" }}>Pending</span>
-                        : step.allocation.tag === "Pledge" ?
-                          `Send from account ${settlementHoldings.get(step.allocation.value)?.account.id.unpack}`
-                        : step.allocation.tag === "PassThroughFrom" ?
-                          `Pass through from instruction ${step.allocation.value._2.id.unpack}`
-                        : step.allocation.tag === "CreditReceiver" ?
-                          "Credit approved"
-                        : step.allocation.tag === "SettleOffledger" ?
-                          "Settle off-ledger"
-                        : "Allocated"
-                      }
-                      <br />
-                      <Field>{isBurn(step.routedStep) && step.routedStep.sender !== step.routedStep.custodian ? "Issuer response:" : "Receiver response:"}</Field>
-                      {
-                        step.approval.tag === "Unapproved" ?
-                          <span style={{ color: "hsl(0, 90%, 80%)" }}>Pending</span>
-                        : step.approval.tag === "TakeDelivery" ?
-                          `Take delivery to account ${step.approval.value.id.unpack}`
-                        : step.approval.tag === "PassThroughTo" ?
-                          `Pass through to instruction ${step.approval.value._2.id.unpack} via account ${step.approval.value._1.id.unpack}`
-                        : step.approval.tag === "DebitSender" ?
-                          "Debit approved"
-                        : step.approval.tag === "SettleOffledgerAcknowledge" ?
-                          "Settle off-ledger"
-                        : "Approved"
-                      }
-                      <br />
+                    }
+                    <div
+                      style={{
+                        ...(step.routedStep.receiver === primaryParty && step.approval.tag === "Unapproved" ?
+                          { border: "1px solid", width: "fit-content" } : {}),
+                      }}
+                    >
+                      <Field>Receiver: </Field>
+                      <span
+                        style={{
+                          fontWeight: step.routedStep.receiver === primaryParty ? "bold" : "normal",
+                        }}
+                      >
+                        {truncateParty(step.routedStep.receiver)}
+                      </span>
                     </div>
-                    <hr></hr>
+                    <Field>Register: </Field>
+                    {truncateParty(step.routedStep.custodian)}
+                    <br />
+                    <Field>{isMint(step.routedStep) ? "Issuer response:" : "Sender response:"}</Field>
+                    {
+                      step.allocation.tag === "Unallocated" ?
+                        <span style={{ color: "hsl(0, 90%, 80%)" }}>Pending</span>
+                      : step.allocation.tag === "Pledge" ?
+                        `Send from account ${settlementHoldings.get(step.allocation.value)?.account.id.unpack}`
+                      : step.allocation.tag === "PassThroughFrom" ?
+                        `Pass through from instruction ${step.allocation.value._2.id.unpack}`
+                      : step.allocation.tag === "CreditReceiver" ?
+                        "Credit approved"
+                      : step.allocation.tag === "SettleOffledger" ?
+                        "Settle off-ledger"
+                      : "Allocated"
+                    }
+                    <br />
+                    <Field>{isBurn(step.routedStep) && step.routedStep.sender !== step.routedStep.custodian ? "Issuer response:" : "Receiver response:"}</Field>
+                    {
+                      step.approval.tag === "Unapproved" ?
+                        <span style={{ color: "hsl(0, 90%, 80%)" }}>Pending</span>
+                      : step.approval.tag === "TakeDelivery" ?
+                        `Take delivery to account ${step.approval.value.id.unpack}`
+                      : step.approval.tag === "PassThroughTo" ?
+                        `Pass through to instruction ${step.approval.value._2.id.unpack} via account ${step.approval.value._1.id.unpack}`
+                      : step.approval.tag === "DebitSender" ?
+                        "Debit approved"
+                      : step.approval.tag === "SettleOffledgerAcknowledge" ?
+                        "Settle off-ledger"
+                      : "Approved"
+                    }
+                    <br />
                   </div>
+
+                  {
+                    (
+                      step.routedStep.sender === primaryParty ||
+                      step.routedStep.receiver === primaryParty ||
+                      (isMint(step.routedStep) && step.routedStep.quantity.unit.issuer === primaryParty) ||
+                      (isBurn(step.routedStep) && step.routedStep.quantity.unit.issuer === primaryParty)
+                    ) &&
+                    <div style={{ display: "flex", alignItems: "center", marginTop: "5px" }}>
+                      <div style={{ padding: "10px" }}>Select Account:</div>
+                      <div>
+                        <AccountsSelect
+                          accounts={accounts.get(step.routedStep.custodian)}
+                          instrument={step.routedStep.quantity.unit}
+                          onChange={event => handleAccountChange(step.instructionId, event)}
+                          selectedAccount={selectAccountInput.get(step.instructionId)?.unpack || ""}
+                        />
+                      </div>
+                    </div>
+                  }
+                  <hr></hr>
                 </div>
-              </>
+              </div>
             )
           }
           <br></br>
