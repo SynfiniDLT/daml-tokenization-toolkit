@@ -165,7 +165,7 @@ subject. This allows it to find the user's corresponding primaryParty.
 
 ### Start the demo on local sandbox
 
-1. Start a local postgres DB by running: `cd wallet-views/java && docker compose up -d db && cd ../..`
+1. Start a local postgres DB by running: `cd wallet-views/typescript-client && docker compose up -d db && cd ../..`
 1. Run: `./launch-local-demo-processes.sh`.
 1. Start the UI using `./run-local-demo-ui.sh`
 
