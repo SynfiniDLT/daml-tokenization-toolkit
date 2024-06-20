@@ -532,8 +532,6 @@ or DvP.
         }
       },
       "create": {
-        // When the Holding contract was created - optional (present if contract was created after the projection runner
-        // first started)
         "offset": "...",
         "effectiveTime": "2023-01-01T04:30:23.123456Z"
       }
@@ -653,30 +651,7 @@ List `Issuer` contracts as defined in the `issuer-onboarding` folder at the base
 
 ## Building and running
 
-Building/running/testing is only supported on Linux.
-
-### Prerequisites
-
-Please install the following first:
-
-- Daml SDK (https://docs.daml.com/getting-started/installation.html#installing-the-sdk)
-- Maven (https://maven.apache.org/install.html)
-- sbt (https://www.scala-sbt.org/download.html)
-- PostgreSql (https://www.postgresql.org/download)
-- Docker (https://docs.docker.com/get-docker/)
-- npm (https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
-
-### Build
-
-Install the custom views library by running:
-
-```
-make install-custom-views
-```
-
-from the base of this repository.
-
-Then the API and projection runner can be compiled using:
+Then the API can be compiled using:
 
 ```
 make compile-wallet-views
