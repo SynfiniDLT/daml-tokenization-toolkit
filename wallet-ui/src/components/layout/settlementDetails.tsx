@@ -802,6 +802,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                       Remove Holdings
                       <input
                         type="checkbox"
+                        checked={burnInput.map.has(step.instructionId)}
                         onChange={_ => handleToggleInstruction(false, step.instructionId)}
                       />
                     </div>
