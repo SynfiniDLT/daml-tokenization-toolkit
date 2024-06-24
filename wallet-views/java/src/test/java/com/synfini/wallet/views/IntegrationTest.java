@@ -1319,29 +1319,29 @@ public class IntegrationTest {
 
     delayForProjectionIngestion();
     // Check unallocated/unapproved settlement
-    // mvc
-    //   .perform(
-    //     getSettlementsBuilder(Optional.empty(), Optional.empty(), Optional.empty())
-    //       .headers(userTokenHeader(investor1User))
-    //   )
-    //   .andExpect(status().isOk())
-    //   .andExpect(content().json(toUnpackedJson(expectedSettlements.apply(false, Optional.empty()))));
+    mvc
+      .perform(
+        getSettlementsBuilder(Optional.empty(), Optional.empty(), Optional.empty())
+          .headers(userTokenHeader(investor1User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toUnpackedJson(expectedSettlements.apply(false, Optional.empty()))));
 
     // Check filter by batch ID
-    // mvc
-    //   .perform(
-    //     getSettlementsBuilder(Optional.of(batchId), Optional.empty(), Optional.empty())
-    //       .headers(userTokenHeader(investor1User))
-    //   )
-    //   .andExpect(status().isOk())
-    //   .andExpect(content().json(toUnpackedJson(expectedSettlements.apply(false, Optional.empty()))));
-    // mvc
-    //   .perform(
-    //     getSettlementsBuilder(Optional.of(new Id("does not exist")), Optional.empty(), Optional.empty())
-    //       .headers(userTokenHeader(investor1User))
-    //   )
-    //   .andExpect(status().isOk())
-    //   .andExpect(content().json(toUnpackedJson(new Result<List<SettlementSummaryTyped>>(Collections.emptyList()))));
+    mvc
+      .perform(
+        getSettlementsBuilder(Optional.of(batchId), Optional.empty(), Optional.empty())
+          .headers(userTokenHeader(investor1User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toUnpackedJson(expectedSettlements.apply(false, Optional.empty()))));
+    mvc
+      .perform(
+        getSettlementsBuilder(Optional.of(new Id("does not exist")), Optional.empty(), Optional.empty())
+          .headers(userTokenHeader(investor1User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toUnpackedJson(new Result<List<SettlementSummaryTyped>>(Collections.emptyList()))));
 
     // Instruction 0
     final var instruction0Allocation = new CreditReceiver(Unit.getInstance());
