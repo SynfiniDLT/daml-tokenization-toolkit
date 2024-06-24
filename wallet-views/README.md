@@ -3,7 +3,11 @@
 This folder contains an API written in Java Spring Boot. This API provides read-only endpoints for querying the
 details of a "Daml wallet", such as account details and balances. The "wallet" refers to assets held by a Daml party,
 modelled using [Daml Finance](https://docs.daml.com/daml-finance/index.html). It is not restricted to any particular
-type of asset. The only requirement is that the assets implement the Daml Finance interfaces.
+type of asset. The only requirement is that the assets implement the Daml Finance interfaces, with the following
+caveats:
+
+- The settlement `Batch` IDs should be unique for each set of settlement `requestors`.
+- The settlement `Instruction`s should use a contract key (which is of the `InstructionKey` type).
 
 ## Components overview
 
