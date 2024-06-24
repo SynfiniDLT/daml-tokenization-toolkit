@@ -3,7 +3,11 @@
 This folder contains an API written in Java Spring Boot. This API provides read-only endpoints for querying the
 details of a "Daml wallet", such as account details and balances. The "wallet" refers to assets held by a Daml party,
 modelled using [Daml Finance](https://docs.daml.com/daml-finance/index.html). It is not restricted to any particular
-type of asset. The only requirement is that the assets implement the Daml Finance interfaces.
+type of asset. The only requirement is that the assets implement the Daml Finance interfaces, with the following
+caveats:
+
+- The settlement `Batch` IDs should be unique for each set of settlement `requestors`.
+- The settlement `Instruction`s should use a contract key (which is of the `InstructionKey` type).
 
 ## Components overview
 
@@ -532,8 +536,6 @@ or DvP.
         }
       },
       "create": {
-        // When the Holding contract was created - optional (present if contract was created after the projection runner
-        // first started)
         "offset": "...",
         "effectiveTime": "2023-01-01T04:30:23.123456Z"
       }
@@ -653,30 +655,7 @@ List `Issuer` contracts as defined in the `issuer-onboarding` folder at the base
 
 ## Building and running
 
-Building/running/testing is only supported on Linux.
-
-### Prerequisites
-
-Please install the following first:
-
-- Daml SDK (https://docs.daml.com/getting-started/installation.html#installing-the-sdk)
-- Maven (https://maven.apache.org/install.html)
-- sbt (https://www.scala-sbt.org/download.html)
-- PostgreSql (https://www.postgresql.org/download)
-- Docker (https://docs.docker.com/get-docker/)
-- npm (https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
-
-### Build
-
-Install the custom views library by running:
-
-```
-make install-custom-views
-```
-
-from the base of this repository.
-
-Then the API and projection runner can be compiled using:
+Then the API can be compiled using:
 
 ```
 make compile-wallet-views

@@ -28,7 +28,7 @@ import Synfini.Interface.Onboarding.Issuer.MinterBurner.MinterBurner qualified a
 -- | The type of allocation to apply to the instruction using the helper function.
 data AllocationHelp =
   UnallocatedHelp | -- ^ Use the 'Unallocated' allocation type.
-  PledgeFromFungiblesHelp | -- ^ Use the 'Pledge' allocation type by allocating fungible 'Holding's.
+  PledgeFromFungiblesHelp with accountId : Id | -- ^ Use the 'Pledge' allocation type by allocating fungible 'Holding's.
   PledgeFromNonFungiblesHelp | -- ^ Use the 'Pledge' allocation type by allocating non-fungible 'Holding's.
   CreditReceiverHelp | -- ^ Use the 'CreditReceiver' allocation type.
   AllocateMintHelp | -- ^ Use a 'MinterBurner' instance to allocate the instruction.
@@ -52,7 +52,7 @@ data ApprovalHelp =
 data HoldingDescriptor = HoldingDescriptor
   with
     instrument : InstrumentKey -- ^ The instrument of the 'Holding'.
-    custodian : Party -- ^ The custodian of the 'Holding'.
+    account : AccountKey -- ^ The account of the 'Holding'
   deriving (Show, Eq, Ord)
 
 -- | Type synonym for 'Holding's contract IDs and their descriptors.
@@ -97,9 +97,6 @@ allocateAndApproveHelper :
 allocateAndApproveHelper actors (instructionsMap, holdingsMap) (instrId, instructionCid, allocation, approval) = do
   let viewer = L.head (Set.toList actors)
   instruction <- exercise instructionCid Instruction.GetView with viewer
-  let holdingDescriptor = HoldingDescriptor with
-        custodian = instruction.routedStep.custodian
-        instrument = instruction.routedStep.quantity.unit
   (holdingsMap, instructionCid) <- case allocation of
     None -> pure (holdingsMap, instructionCid)
     Some UnallocatedHelp -> do
@@ -107,7 +104,13 @@ allocateAndApproveHelper actors (instructionsMap, holdingsMap) (instrId, instruc
         allocation = Unallocated
         actors
       pure (holdingsMap, instructionCid')
-    Some PledgeFromFungiblesHelp -> do
+    Some (PledgeFromFungiblesHelp accountId) -> do
+      let holdingDescriptor = HoldingDescriptor with
+            instrument = instruction.routedStep.quantity.unit
+            account = AccountKey with
+              custodian = instruction.routedStep.custodian
+              owner = instruction.routedStep.sender
+              id = accountId
       let holdings = O.fromSomeNote "Holdings not provided" (Map.lookup holdingDescriptor holdingsMap)
       (holdingCid, remainingHoldingCid) <- mergeAndSplitHelper
         (coerceContractId <$> holdings)

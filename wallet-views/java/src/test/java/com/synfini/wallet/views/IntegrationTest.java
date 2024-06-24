@@ -89,6 +89,7 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -1198,7 +1199,7 @@ public class IntegrationTest {
 
   @Test
   void returnsSingleSettlement() throws Exception {
-    startScribe(investor2, investor2User);
+    startScribe(investor1, investor1User);
 
     final var investor1Account = new AccountKey(custodian, investor1, new Id("1"));
     final var investor1AccountCid = createAccount(investor1Account, List.of(investor1), List.of(), List.of());
@@ -1217,12 +1218,12 @@ public class IntegrationTest {
     // I1: Inv2 -> Custodian: Pledge, DebitSender
     // I2: Inv1 -> Inv2: Pledge, PassThroughTo(I3)
     // I3: Inv2 -> Inv2: PassThroughFrom(I2), TakeDelivery
-    // I4: Inv1 -> Inv2: SettleOffledger, SettleOffledgerAcknowledge
+    // I4: Inv1 -> Inv1: SettleOffledger, SettleOffledgerAcknowledge
     final var s0 = new RoutedStep(custodian, investor2, custodian, q);
     final var s1 = new RoutedStep(investor2, custodian, custodian, q);
     final var s2 = new RoutedStep(investor1, investor2, custodian, q);
     final var s3 = new RoutedStep(investor2, investor2, custodian, q);
-    final var s4 = new RoutedStep(investor1, investor2, custodian, q);
+    final var s4 = new RoutedStep(investor1, investor1, custodian, q);
     final var requestors = arrayToSet(investor1);
     final var settlers = arrayToSet(custodian);
 
@@ -1288,7 +1289,11 @@ public class IntegrationTest {
     );
 
     // Return expected settlements given the optional settlement transaction detail
-    final Function<Optional<TransactionDetail>, Result<List<SettlementSummaryTyped>>> expectedSettlements = (settle) ->
+    final BiFunction<
+      Boolean,
+      Optional<TransactionDetail>,
+      Result<List<SettlementSummaryTyped>>
+    > expectedSettlements = (forInvestor2, settle) ->
       new Result<>(
         List.of(
           new SettlementSummaryTyped(
@@ -1296,10 +1301,15 @@ public class IntegrationTest {
               batchId,
               requestors,
               settlers,
-              Optional.<daml.finance.interface$.settlement.batch.Batch.ContractId>empty(),
-              Optional.<Id>empty(),
-              Optional.<String>empty(),
-              expectedSteps,
+              forInvestor2 ?
+                Optional.<daml.finance.interface$.settlement.batch.Batch.ContractId>empty() :
+                Optional.of(createBatchResult.batchCid),
+              forInvestor2 ? Optional.<Id>empty() : contextId,
+              forInvestor2 ? Optional.<String>empty() : Optional.of(description),
+              expectedSteps
+                .stream()
+                .filter(step -> !forInvestor2 || !step.instructionId.equals(expectedSteps.get(4).instructionId))
+                .collect(Collectors.toList()),
               new TransactionDetail(createBatchResult.offset, Instant.EPOCH),
               settle
             )
@@ -1312,23 +1322,23 @@ public class IntegrationTest {
     mvc
       .perform(
         getSettlementsBuilder(Optional.empty(), Optional.empty(), Optional.empty())
-          .headers(userTokenHeader(investor2User))
+          .headers(userTokenHeader(investor1User))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toUnpackedJson(expectedSettlements.apply(Optional.empty()))));
+      .andExpect(content().json(toUnpackedJson(expectedSettlements.apply(false, Optional.empty()))));
 
     // Check filter by batch ID
     mvc
       .perform(
         getSettlementsBuilder(Optional.of(batchId), Optional.empty(), Optional.empty())
-          .headers(userTokenHeader(investor2User))
+          .headers(userTokenHeader(investor1User))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toUnpackedJson(expectedSettlements.apply(Optional.empty()))));
+      .andExpect(content().json(toUnpackedJson(expectedSettlements.apply(false, Optional.empty()))));
     mvc
       .perform(
         getSettlementsBuilder(Optional.of(new Id("does not exist")), Optional.empty(), Optional.empty())
-          .headers(userTokenHeader(investor2User))
+          .headers(userTokenHeader(investor1User))
       )
       .andExpect(status().isOk())
       .andExpect(content().json(toUnpackedJson(new Result<List<SettlementSummaryTyped>>(Collections.emptyList()))));
@@ -1442,7 +1452,7 @@ public class IntegrationTest {
     final var instructionCid4 = approve(
       instruction4AllocationResult.instructionCid,
       instruction4Approval,
-      List.of(investor2, custodian)
+      List.of(investor1, custodian)
     );
     expectedSteps.set(
       4,
@@ -1460,10 +1470,10 @@ public class IntegrationTest {
     mvc
       .perform(
         getSettlementsBuilder(Optional.empty(), Optional.empty(), Optional.empty())
-          .headers(userTokenHeader(investor2User))
+          .headers(userTokenHeader(investor1User))
       )
       .andExpect(status().isOk())
-      .andExpect(content().json(toUnpackedJson(expectedSettlements.apply(Optional.empty()))));
+      .andExpect(content().json(toUnpackedJson(expectedSettlements.apply(false, Optional.empty()))));
 
     // Check that other party cannot see the batch/instructions
     mvc
@@ -1475,6 +1485,37 @@ public class IntegrationTest {
       .andExpect(
         content().json(toUnpackedJson(new Result<>(List.of())))
       );
+
+    // Check that investor 2 cannot see the Batch contract and only sees some instructions
+    mvc
+    .perform(
+      getSettlementsBuilder(Optional.empty(), Optional.empty(), Optional.empty())
+        .headers(userTokenHeader(investor2User))
+    )
+    .andExpect(status().isOk())
+    .andExpect(
+      content().json(toUnpackedJson(expectedSettlements.apply(true, Optional.empty())))
+    );
+
+    settleBatch(createBatchResult.batchCid, settlers);
+    final var settleTransactionDetail = new TransactionDetail(getLedgerEnd(), Instant.EPOCH);
+    delayForProjectionIngestion();
+
+    // Check response after settlement
+    mvc
+      .perform(
+        getSettlementsBuilder(Optional.empty(), Optional.empty(), Optional.empty())
+          .headers(userTokenHeader(investor1User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toUnpackedJson(expectedSettlements.apply(false, Optional.of(settleTransactionDetail)))));
+    mvc
+      .perform(
+        getSettlementsBuilder(Optional.empty(), Optional.empty(), Optional.empty())
+          .headers(userTokenHeader(investor2User))
+      )
+      .andExpect(status().isOk())
+      .andExpect(content().json(toUnpackedJson(expectedSettlements.apply(true, Optional.of(settleTransactionDetail)))));
   }
 
   @Test
@@ -2148,10 +2189,14 @@ public class IntegrationTest {
   }
 
   private static void settleBatch(Batch.ContractId batchCid, List<String> settlers) {
+    settleBatch(batchCid, listToSet(settlers));
+  }
+
+  private static void settleBatch(Batch.ContractId batchCid, da.set.types.Set<String> settlers) {
     allPartiesLedgerClient
       .getCommandClient()
       .submitAndWaitForResult(
-        allPartiesUpdateSubmission(batchCid.exerciseSettle(listToSet(settlers)))
+        allPartiesUpdateSubmission(batchCid.exerciseSettle(settlers))
       ).blockingGet();
   }
 

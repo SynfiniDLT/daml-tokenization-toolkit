@@ -1,6 +1,6 @@
 {
   "name": "synfini-wallet-ui",
-  "version": "0.3.9",
+  "version": "0.3.10",
   "description": "",
   "private": true,
   "scripts": {
@@ -26,7 +26,7 @@
     "@daml.js/synfini-account-onboarding-open-offer-interface": "file:daml.js/synfini-account-onboarding-open-offer-interface-0.0.1",
     "@daml.js/synfini-instrument-metadata-interface": "file:daml.js/synfini-instrument-metadata-interface-0.0.1",
     "@daml.js/synfini-issuer-onboarding-minter-burner-interface": "file:daml.js/synfini-issuer-onboarding-minter-burner-interface-0.0.1",
-    "@daml.js/synfini-settlement-helpers": "file:daml.js/synfini-settlement-helpers-0.0.2",
+    "@daml.js/synfini-settlement-helpers": "file:daml.js/synfini-settlement-helpers-0.1.0",
     "@daml.js/synfini-settlement-one-time-offer-interface": "file:daml.js/synfini-settlement-one-time-offer-interface-0.0.2",
     "@daml.js/synfini-settlement-open-offer-interface": "file:daml.js/synfini-settlement-open-offer-interface-0.1.0",
     "@daml/ledger": "2.6.3",
