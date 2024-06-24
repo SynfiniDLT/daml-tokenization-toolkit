@@ -207,11 +207,17 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
   const [error, setError] = useState<string>("");
   // Map from custodian to accounts at that custodian
   const [accounts, setAccounts] = useState<damlTypes.Map<damlTypes.Party, AccountSummary[]>>(damlTypes.emptyMap());
-  const [selectAccountInput, setSelectAccountInput] = useState<damlTypes.Map<Id, Id>>(damlTypes.emptyMap());
+  const [selectSendAccountInput, setSelectSendAccountInput] = useState<damlTypes.Map<Id, Id>>(damlTypes.emptyMap());
+  const [selectRecieveAccountInput, setSelectReceiveAccountInput] = useState<damlTypes.Map<Id, Id>>(damlTypes.emptyMap());
+  // Instructions which the user has selected they want to create holdings for
+  const [mintInput, setMintInput] = useState(arrayToSet<Id>([]));
+  // Instructions which the user has selected they want to remove holdings for
+  const [burnInput, setBurnInput] = useState(arrayToSet<Id>([]));
   const [showExecute, setShowExecute] = useState<boolean>(false);
   const [hasExecuted, setHasExecuted] = useState<boolean>(false);
 
   const [settlement, setSettlement] = useState<SettlementSummary>();
+  console.log('settlement details', settlement);
   const [settlementHoldings, setSettlementHoldings] =
     useState<damlTypes.Map<damlTypes.ContractId<Base>, BaseView>>(damlTypes.emptyMap());
 
@@ -306,20 +312,25 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
     }
   };
 
-  const handleAccountChange = (instructionId: Id, event: ChangeEvent<HTMLSelectElement>) => {
+  const handleAccountChange = (send: boolean, instructionId: Id, event: ChangeEvent<HTMLSelectElement>) => {
     console.log('event.target.value', event.target.value);
-    setSelectAccountInput(accounts => accounts.set(instructionId, { unpack: event.target.value }));
+    (send ? setSelectSendAccountInput : setSelectReceiveAccountInput)(accounts =>
+      accounts.set(instructionId, { unpack: event.target.value })
+    );
   };
+
+  const handleToggleInstruction = (mint: boolean, instructionId: Id) => {
+    (mint ? setMintInput : setBurnInput)(set =>
+      set.map.has(instructionId) ? { map: set.map.delete(instructionId) } : { map: set.map.set(instructionId, {}) }
+    );
+  }
 
   const SettlementDetailsContainer = styled.div`
     margin: 5px;
     padding: 10px;
   `;
 
-  function acceptanceActions(
-    accounts: damlTypes.Map<Id, Id>, // Map from instruction ID to account ID
-    settlement: SettlementSummary
-  ): {
+  function acceptanceActions(settlement: SettlementSummary): {
     allocations: damlTypes.Map<Id, AllocationHelp>;
     approvals: damlTypes.Map<Id, ApprovalHelp>;
     pledgeDescriptors: HoldingDescriptor[];
@@ -330,27 +341,26 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
       Id[]
     > = damlTypes.emptyMap();
     settlement.steps.forEach((step) => {
-      const accountId = accounts.get(step.instructionId);
+      const accountId = selectRecieveAccountInput.get(step.instructionId);
       if (step.routedStep.receiver === primaryParty && accountId !== undefined) {
-          const account = {
-            custodian: step.routedStep.custodian,
-            owner: primaryParty,
-            id: accountId
-          };
-          const k = { account, quantity: step.routedStep.quantity };
-          const ids = accountQuantitiesMap.get(k) || [];
-          ids.push(step.instructionId);
-          accountQuantitiesMap = accountQuantitiesMap.set(k, ids);
-        }
+        const account = {
+          custodian: step.routedStep.custodian,
+          owner: primaryParty,
+          id: accountId
+        };
+        const k = { account, quantity: step.routedStep.quantity };
+        const ids = accountQuantitiesMap.get(k) || [];
+        ids.push(step.instructionId);
+        accountQuantitiesMap = accountQuantitiesMap.set(k, ids);
       }
-    );
+    });
     let allocations: damlTypes.Map<Id, AllocationHelp> = damlTypes.emptyMap();
     let approvals: damlTypes.Map<Id, ApprovalHelp> = damlTypes.emptyMap();
     const pledgeDescriptors: HoldingDescriptor[] = [];
 
     // Update allocations
     settlement.steps.forEach((step) => {
-      const accountId = accounts.get(step.instructionId);
+      const accountId = selectSendAccountInput.get(step.instructionId);
 
       if (step.routedStep.sender === primaryParty) {
         const account =
@@ -389,10 +399,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
             pledgeDescriptors.push(holdingDescriptor);
           }
         }
-      } else if (
-        step.routedStep.sender === step.routedStep.custodian &&
-        step.routedStep.quantity.unit.issuer === primaryParty
-      ) {
+      } else if (mintInput.map.has(step.instructionId)) {
         // This is a "mint" instruction to be approved by the issuer
         allocations = allocations.set(step.instructionId, { tag: "AllocateMintHelp", value: {} });
       }
@@ -403,14 +410,11 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
       .filter((step) => !approvals.has(step.instructionId))
       .forEach((step) => {
         if (step.routedStep.receiver === primaryParty) {
-          const accountId = accounts.get(step.instructionId);
+          const accountId = selectRecieveAccountInput.get(step.instructionId);
           if (accountId !== undefined) {
             approvals = approvals.set(step.instructionId, { tag: "TakeDeliveryHelp", value: { accountId } });
           }
-        } else if (
-          step.routedStep.receiver === step.routedStep.custodian &&
-          step.routedStep.quantity.unit.issuer === primaryParty
-        ) {
+        } else if (burnInput.map.has(step.instructionId)) {
           // This is a "burn" instruction to be approved by the issuer
           approvals = approvals.set(step.instructionId, { tag: "ApproveBurnHelp", value: {} });
         }
@@ -437,7 +441,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
       return;
     }
 
-    const { allocations, approvals, pledgeDescriptors } = acceptanceActions(selectAccountInput, settlement);
+    const { allocations, approvals, pledgeDescriptors } = acceptanceActions(settlement);
     const instructionIdsToModify = allocations
       .entriesArray()
       .map(([instructionId, _]) => instructionId)
@@ -563,18 +567,25 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
       return
     }
 
-    const fetchAccounts = async (custodian: string) => {
-      if (primaryParty !== undefined) {
-        const respAcc = await walletClient.getAccounts({ owner: primaryParty, custodian: custodian, id: null });
-        setAccounts(accounts => accounts.set(custodian, respAcc));
-      }
+    const fetchAccounts = async (custodian: damlTypes.Party) => {
+      const respAcc = await walletClient.getAccounts({ owner: primaryParty, custodian, id: null });
+      setAccounts(accounts => accounts.set(custodian, respAcc));
     };
 
     // STEPS LOOP THROUGH
     let stepNotReady = false;
     settlement.steps.forEach(step => {
       // CHECK STEPS APPROVAL / ALLOCATION
-      if (step.routedStep.sender === primaryParty || step.routedStep.receiver === primaryParty) {
+      if (
+        !accounts.has(step.routedStep.custodian) && (
+          step.routedStep.sender === primaryParty ||
+          step.routedStep.receiver === primaryParty ||
+          (
+            (isMint(step.routedStep) || isBurn(step.routedStep)) &&
+            step.routedStep.quantity.unit.issuer === primaryParty
+          )
+        )
+      ) {
         fetchAccounts(step.routedStep.custodian);
       }
 
@@ -587,7 +598,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
     if (!stepNotReady && settlement.settlers.map.has(primaryParty)) {
       setShowExecute(true);
     }
-  }, [primaryParty, ledger, walletClient, selectAccountInput, settlement]);
+  }, [primaryParty, walletClient, settlement]);
 
   if (settlement === undefined) {
     return <></>;
@@ -733,20 +744,66 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                   {
                     (
                       step.routedStep.sender === primaryParty ||
-                      step.routedStep.receiver === primaryParty ||
-                      (isMint(step.routedStep) && step.routedStep.quantity.unit.issuer === primaryParty) ||
-                      (isBurn(step.routedStep) && step.routedStep.quantity.unit.issuer === primaryParty)
+                      (isMint(step.routedStep) && step.routedStep.quantity.unit.issuer === primaryParty)
                     ) &&
                     <div style={{ display: "flex", alignItems: "center", marginTop: "5px" }}>
-                      <div style={{ padding: "10px" }}>Select Account:</div>
+                      <div style={{ padding: "10px" }}>Send from:</div>
                       <div>
                         <AccountsSelect
                           accounts={accounts.get(step.routedStep.custodian)}
                           instrument={step.routedStep.quantity.unit}
-                          onChange={event => handleAccountChange(step.instructionId, event)}
-                          selectedAccount={selectAccountInput.get(step.instructionId)?.unpack || ""}
+                          onChange={event => handleAccountChange(true, step.instructionId, event)}
+                          selectedAccount={selectSendAccountInput.get(step.instructionId)?.unpack || ""}
+                          disabled={mintInput.map.has(step.instructionId)}
                         />
                       </div>
+                    </div>
+                  }
+
+                  {
+                    (
+                      step.routedStep.receiver === primaryParty ||
+                      (isBurn(step.routedStep) && step.routedStep.quantity.unit.issuer === primaryParty)
+                    ) &&
+                    <div style={{ display: "flex", alignItems: "center", marginTop: "5px" }}>
+                      <div style={{ padding: "10px" }}>Take delivery to:</div>
+                      <div>
+                        <AccountsSelect
+                          accounts={accounts.get(step.routedStep.custodian)}
+                          instrument={step.routedStep.quantity.unit}
+                          onChange={event => handleAccountChange(false, step.instructionId, event)}
+                          selectedAccount={selectRecieveAccountInput.get(step.instructionId)?.unpack || ""}
+                          disabled={burnInput.map.has(step.instructionId)}
+                        />
+                      </div>
+                    </div>
+                  }
+
+                  {
+                    (
+                      step.routedStep.sender === step.routedStep.custodian &&
+                      step.routedStep.quantity.unit.issuer === primaryParty
+                    ) &&
+                    <div>
+                      Issue new Holdings
+                      <input
+                        type="checkbox"
+                        checked={mintInput.map.has(step.instructionId)}
+                        onChange={_ => handleToggleInstruction(true, step.instructionId) }
+                      />
+                    </div>
+                  }
+                  {
+                    (
+                      step.routedStep.receiver === step.routedStep.custodian &&
+                      step.routedStep.quantity.unit.issuer === primaryParty
+                    ) &&
+                    <div>
+                      Remove Holdings
+                      <input
+                        type="checkbox"
+                        onChange={_ => handleToggleInstruction(false, step.instructionId)}
+                      />
                     </div>
                   }
                   <hr></hr>

@@ -12,6 +12,7 @@ interface AccountsSelectProps {
   instrument: InstrumentKey;
   onChange: React.ChangeEventHandler<HTMLSelectElement>;
   selectedAccount: string;
+  disabled: boolean
 }
 
 export default function AccountsSelect(props: AccountsSelectProps) {
@@ -20,6 +21,7 @@ export default function AccountsSelect(props: AccountsSelectProps) {
 
   useEffect(() => {
     (props.accounts || []).forEach(async account => {
+      // TODO need to add additional filter by instrument on this endpoint, so that client-side filtering is not needed
       const bals =  await walletClient.getBalance({account: account.view });
       const bal = bals.find(b =>
         b.instrument.depository === props.instrument.depository &&
@@ -27,9 +29,7 @@ export default function AccountsSelect(props: AccountsSelectProps) {
         b.instrument.id.unpack === props.instrument.id.unpack &&
         b.instrument.version === props.instrument.version
       );
-      if (bal !== undefined) {
-        setBalancesMap(m => m.set(account.view.id, bal.unlocked));
-      }
+      setBalancesMap(m => m.set(account.view.id, bal?.unlocked || "0.0"));
     });
   }, [walletClient, props.accounts, props.instrument]);
 
@@ -37,12 +37,12 @@ export default function AccountsSelect(props: AccountsSelectProps) {
     <div>
       {
         props.accounts !== undefined &&
-        <select name="accountSelect" onChange={props.onChange} value={props.selectedAccount}>
+        <select name="accountSelect" onChange={props.onChange} value={props.selectedAccount} disabled={props.disabled}>
           <option value="" defaultValue="">Select one account</option>
           {
             props.accounts.map(account =>
               <option value={account.view.id.unpack} key={account.cid}>
-                {account.view.description} ({account.view.id.unpack}) - Available balance: {balancesMap.get(account.view.id) || "0.0"}
+                {account.view.description} ({account.view.id.unpack}) - Available: {balancesMap.get(account.view.id) || "..."}
               </option>
             )
           }
