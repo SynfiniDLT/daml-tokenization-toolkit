@@ -15,8 +15,14 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import javax.sql.DataSource;
 
 import org.slf4j.Logger;
@@ -30,8 +36,11 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.daml.ledger.javaapi.data.CreatedEvent;
+import com.daml.ledger.javaapi.data.DamlRecord;
 import com.daml.ledger.javaapi.data.ExercisedEvent;
 import com.daml.ledger.javaapi.data.Identifier;
+import com.daml.ledger.javaapi.data.TreeEvent;
 import com.daml.ledger.javaapi.data.Unit;
 import com.daml.ledger.rxjava.LedgerClient;
 import com.google.gson.Gson;
@@ -43,6 +52,7 @@ import daml.finance.interface$.account.account.Account;
 import daml.finance.interface$.types.common.types.AccountKey;
 import daml.finance.interface$.types.common.types.Id;
 import daml.finance.interface$.types.common.types.InstrumentKey;
+import daml.finance.interface$.settlement.types.InstructionKey;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import synfini.wallet.api.types.AccountFilter;
@@ -357,6 +367,28 @@ public class WalletRepository {
       throw new RuntimeException(e);
     }
 
+    final var filterInstructionVisibility = multiLineQuery(
+      "      daml_set_text_values(instruction.payload->'requestors') && ? OR",
+      "      daml_set_text_values(instruction.payload->'settlers') && ? OR",
+      "      daml_set_text_values(instruction.payload->'signedSenders') && ? OR",
+      "      daml_set_text_values(instruction.payload->'signedReceivers') && ? OR",
+      "      instruction.payload->'routedStep'->>'sender' = ANY(?) OR",
+      "      instruction.payload->'routedStep'->>'receiver' = ANY(?) OR",
+      "      flatten_observers(disclosure.payload->'observers') && ?"
+    );
+    final java.util.function.BiFunction<Integer, PreparedStatement, Integer> filterInstructionVisibilitySetter = (pos, ps) -> {
+      final var readAsEnd = pos + 7;
+      while (pos < readAsEnd) {
+        try {
+          ps.setArray(++pos, readAsArray);
+        } catch (SQLException e) {
+          throw new RuntimeException(e);
+        }
+      }
+
+      return pos;
+    };
+
     final var instructionsMinOffsets = multiLineQuery(
       "  SELECT",
       "    instruction.payload->'batchId'->>'unpack' AS batch_id,",
@@ -367,13 +399,7 @@ public class WalletRepository {
       "  INNER JOIN creates(?) AS disclosure ON instruction.contract_id = disclosure.contract_id",
       "  WHERE",
       "    (? IS NULL OR instruction.payload->'batchId'->>'unpack' = ?) AND (",
-      "      daml_set_text_values(instruction.payload->'requestors') && ? OR",
-      "      daml_set_text_values(instruction.payload->'settlers') && ? OR",
-      "      daml_set_text_values(instruction.payload->'signedSenders') && ? OR",
-      "      daml_set_text_values(instruction.payload->'signedReceivers') && ? OR",
-      "      instruction.payload->'routedStep'->>'sender' = ANY(?) OR",
-      "      instruction.payload->'routedStep'->>'receiver' = ANY(?) OR",
-      "      flatten_observers(disclosure.payload->'observers') && ?",
+      filterInstructionVisibility,
       "    )",
       "  GROUP BY (instruction.payload->'batchId'->>'unpack', daml_set_text_values(instruction.payload->'requestors'))",
       "  HAVING ? IS NULL OR min(instruction.created_at_offset) < ?",
@@ -389,10 +415,7 @@ public class WalletRepository {
         ps.setString(++pos, batchId_);
         ps.setString(++pos, batchId_);
 
-        final var readAsEnd = pos + 7;
-        while (pos < readAsEnd) {
-          ps.setArray(++pos, readAsArray);
-        }
+        pos = filterInstructionVisibilitySetter.apply(pos, ps);
 
         final var b = before.orElse(null);
         ps.setString(++pos, b);
@@ -426,28 +449,30 @@ public class WalletRepository {
 
     final var selectSettlements = multiLineQuery(
       "SELECT DISTINCT ON (witness_at_offset, batch_id, requestors, instruction_id)",
-      "  instructions.contract_id AS instruction_cid,",
-      "  instructions.payload->'batchId'->>'unpack' AS batch_id,",
-      "  daml_set_text_values(instructions.payload->'requestors') AS requestors,",
-      "  bs.contract_id AS batch_cid,",
+      "  instruction.contract_id AS instruction_cid,",
+      "  instruction.payload->'batchId'->>'unpack' AS batch_id,",
+      "  daml_set_text_values(instruction.payload->'requestors') AS requestors,",
+      "  batch.contract_id AS batch_cid,",
       "  instructions_min_offsets.min_create_offset AS witness_at_offset,",
       "  instructions_min_offsets.min_create_effective_time AS witness_effective_at,",
-      "  instructions.payload->'id'->>'unpack' AS instruction_id,",
-      "  instructions.created_at_offset AS instruction_create_offset,",
-      "  instruction_archive.archive_event_id AS instruction_archive_event_id,",
-      "  instruction_archive.archived_at_offset AS instruction_archive_at_offset,",
-      "  instruction_archive.archived_effective_at AS instruction_archive_effective_at,",
-      "  bs.payload AS batch_payload,",
-      "  instructions.payload AS instruction_payload",
+      "  instruction.payload->'id'->>'unpack' AS instruction_id,",
+      "  instruction.created_at_offset AS instruction_create_offset,",
+      "  instruction.archive_event_id AS instruction_archive_event_id,",
+      "  instruction.archived_at_offset AS instruction_archive_at_offset,",
+      "  instruction.archived_effective_at AS instruction_archive_effective_at,",
+      "  batch.payload AS batch_payload,",
+      "  instruction.payload AS instruction_payload",
       "FROM (\n" + instructionsMinOffsets + "\n) AS instructions_min_offsets",
-      "INNER JOIN creates(?) AS instructions ON",
-      "  instructions.payload->'batchId'->>'unpack' = instructions_min_offsets.batch_id AND",
-      "  daml_set_text_values(instructions.payload->'requestors') = instructions_min_offsets.requestors",
-      "LEFT JOIN archives(?) AS instruction_archive ON",
-      "  instructions.contract_id = instruction_archive.contract_id",
-      "LEFT JOIN (\n" + selectBatches + "\n) AS bs ON",
-      "  bs.payload->'id'->>'unpack' = instructions.payload->'batchId'->>'unpack' AND",
-      "  daml_set_text_values(bs.payload->'requestors') = daml_set_text_values(instructions.payload->'requestors')",
+      "INNER JOIN creates(?) AS instruction ON",
+      "  instruction.payload->'batchId'->>'unpack' = instructions_min_offsets.batch_id AND",
+      "  daml_set_text_values(instruction.payload->'requestors') = instructions_min_offsets.requestors",
+      "INNER JOIN creates(?) AS disclosure ON",
+      "  instruction.contract_id = disclosure.contract_id",
+      "LEFT JOIN (\n" + selectBatches + "\n) AS batch ON",
+      "  batch.payload->'id'->>'unpack' = instruction.payload->'batchId'->>'unpack' AND",
+      "  daml_set_text_values(batch.payload->'requestors') = daml_set_text_values(instruction.payload->'requestors')",
+      "WHERE",
+      filterInstructionVisibility,
       "ORDER BY",
       "  witness_at_offset DESC,",
       "  batch_id,",
@@ -461,8 +486,9 @@ public class WalletRepository {
         int pos = 0;
         pos = instructionMinOffsetsSetter.apply(pos, ps);
         ps.setString(++pos, fullyQualified(daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID));
-        ps.setString(++pos, fullyQualified(daml.finance.interface$.settlement.instruction.Instruction.TEMPLATE_ID));
+        ps.setString(++pos, fullyQualified(daml.finance.interface$.util.disclosure.Disclosure.TEMPLATE_ID));
         pos = batchesSetter.apply(pos, ps);
+        filterInstructionVisibilitySetter.apply(pos, ps);
       },
       new SettlementsResultSetExtractor(ledgerClient, readAs)
     );
@@ -573,10 +599,12 @@ public class WalletRepository {
       final var settlements = new ArrayList<
         Single<SettlementSummaryRaw<JsonObject>>
       >();
+      Id currentBatchId = null;
+      Id currentInstructionId = null;
+      da.set.types.Set<String> currentRequestors = null;
       SettlementSummaryRaw<JsonObject> current = null;
       Optional<TransactionDetail> currentArchive = Optional.empty();
       Optional<String> currentArchiveEventId = Optional.empty();
-      da.set.types.Set<String> currentRequestors = null;
 
       while (rs.next()) {
         final var instructionPayload = vanillaGson.fromJson(
@@ -587,6 +615,8 @@ public class WalletRepository {
         final var batchPayload = vanillaGson.fromJson(rs.getString("batch_payload"), JsonObject.class);
 
         // Batch
+        currentBatchId = new Id(rs.getString("batch_id"));
+        currentInstructionId = new Id(rs.getString("instruction_id"));
         final var batchId = instructionPayload.getAsJsonObject("batchId");
         final var requestors = instructionPayload.getAsJsonObject("requestors");
         final var requestorsSet = asDamlSet(requestors);
@@ -618,7 +648,13 @@ public class WalletRepository {
 
         if (current == null || !current.unpack.batchId.equals(batchId) || !requestorsSet.equals(currentRequestors)) {
           // We have reached a new Batch so we must add the current one into the resulting List
-          processCurrent(settlements, current, currentArchive, currentArchiveEventId);
+          processCurrent(
+            settlements,
+            new InstructionKey(currentRequestors, currentBatchId, currentInstructionId),
+            current,
+            currentArchive,
+            currentArchiveEventId
+          );
           current = new SettlementSummaryRaw<>(
             new SettlementSummary<>(
               batchId,
@@ -653,13 +689,20 @@ public class WalletRepository {
         currentArchiveEventId = instructionArchiveEventId;
       }
 
-      processCurrent(settlements, current, currentArchive, currentArchiveEventId);
+      processCurrent(
+        settlements,
+        new InstructionKey(currentRequestors, currentBatchId, currentInstructionId),
+        current,
+        currentArchive,
+        currentArchiveEventId
+      );
 
       return settlements;
     }
 
     private void processCurrent(
       List<Single<SettlementSummaryRaw<JsonObject>>> settlements,
+      InstructionKey instructionKey,
       SettlementSummaryRaw<JsonObject> current,
       Optional<TransactionDetail> currentArchive,
       Optional<String> currentArchiveEventId
@@ -669,6 +712,7 @@ public class WalletRepository {
           settlements.add(
             getExecution(
               ledgerClient,
+              instructionKey,
               currentArchiveEventId.get(),
               readAs
             ).map(wasExecuted -> {
@@ -712,6 +756,7 @@ public class WalletRepository {
 
   private static Single<Boolean> getExecution(
     LedgerClient ledgerClient,
+    InstructionKey instructionKey,
     String instructionArchivedEventId,
     java.util.Set<String> readAs
   ) {
@@ -719,11 +764,90 @@ public class WalletRepository {
       .getTransactionsClient()
       .getTransactionByEventId(instructionArchivedEventId, readAs)
       .map(transactionTree -> {
+        final Map<String, ExercisedEvent> exercisedEventsByContractId = transactionTree
+          .getEventsById()
+          .values()
+          .stream()
+          .filter(treeEvent -> (treeEvent instanceof ExercisedEvent) && ((ExercisedEvent) treeEvent).isConsuming())
+          .map(treeEvent -> (ExercisedEvent) treeEvent)
+          .collect(Collectors.toMap(exercisedEvent -> exercisedEvent.getContractId(), exercisedEvent -> exercisedEvent));
         final var exercisedEvent = (ExercisedEvent) transactionTree.getEventsById().get(instructionArchivedEventId);
-        return exercisedEvent
-          .getChoice()
-          .equals(daml.finance.interface$.settlement.instruction.Instruction.CHOICE_Execute.name);
+        return searchExecution(
+          exercisedEvent.getContractId(),
+          instructionKey,
+          exercisedEventsByContractId,
+          transactionTree.getEventsById()
+        );
       });
+  }
+
+  // We search the transaction tree for an ExercisedEvent on the desired instruction for the Execute choice.
+  // This is done by first checking the exercised event on the contractId to see if it matches the above criteria.
+  // If it is not a match, then we attempt to find a consequent event of the ExercisedEvent which result in creation of
+  // a new Instruction with the same contract key. We then repeat the above steps on the found contract ID.
+  private static Boolean searchExecution(
+    String contractId,
+    InstructionKey instructionKey,
+    Map<String, ExercisedEvent> exerciseEventsByContractId,
+    Map<String, TreeEvent> eventsById
+  ) {
+    Optional<Boolean> result = Optional.empty();
+
+    while (result.isEmpty()) {
+      final var event = exerciseEventsByContractId.get(contractId);
+
+      if (event == null) {
+        result = Optional.of(false);
+      } else if (
+        event.getChoice().equals(daml.finance.interface$.settlement.instruction.Instruction.CHOICE_Execute.name)
+      ) {
+        result = Optional.of(true);
+      } else {
+        result = Optional.of(false);
+        final var descendantEventIds = new LinkedList<String>();
+        descendantEventIds.addAll(event.getChildEventIds());
+
+        while (!descendantEventIds.isEmpty()) {
+          final var childEvent = eventsById.get(descendantEventIds.pop());
+
+          if (childEvent instanceof ExercisedEvent) {
+            descendantEventIds.addAll(((ExercisedEvent) childEvent).getChildEventIds());
+            continue;
+          }
+          if (!(childEvent instanceof CreatedEvent)) {
+            continue;
+          }
+          final var childCreatedEvent = (CreatedEvent) childEvent;
+          final var childKeyOptional = childCreatedEvent.getContractKey();
+          if (childKeyOptional.isEmpty()) {
+            continue;
+          }
+          if (!(childKeyOptional.get() instanceof DamlRecord)) {
+            continue;
+          }
+          final var childKeyRecord = (DamlRecord) childKeyOptional.get();
+          if (
+            !childKeyRecord
+              .getRecordId()
+              .map(recordId ->
+                recordId.getPackageId().equals(InstructionKey._packageId) &&
+                recordId.getEntityName().equals("InstructionKey")
+              )
+              .orElse(false)
+          ) {
+            continue;
+          }
+
+          if (InstructionKey.valueDecoder().decode(childKeyRecord).equals(instructionKey)) {
+            result = Optional.empty();
+            contractId = childCreatedEvent.getContractId();
+            break;
+          }
+        }
+      }
+    }
+
+    return result.get();
   }
 
   private static Optional<synfini.wallet.api.types.TransactionDetail> getTransactionDetail(
