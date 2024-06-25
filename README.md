@@ -24,6 +24,37 @@ users could still authorise and complete the settlement processes through the wa
 that this application makes use of the Daml Finance interfaces (rather than specific implementations), the settlement
 instructions can be initiated by a variety of other applications but responded to by users via this solution.
 
+## UI Demonstration
+
+The following examples showcase the functionality provided by the application. One of the primary usecases for this
+solution is back office integration, i.e. the backend components and Daml contracts could be consumed by back office
+systems and then displayed as desired by the organisation on their own UI. Therefore the UI provided here is only a
+sample to show what could be done using the underlying contracts and API.
+
+### Login and Account Setup
+
+The sample UI allows the user to authenticate using Auth0. Once authenticated, the user will be able to issue commands
+via the JSON API to their participant node using their primary party. They can also read data from the wallet views API.
+Once logged in, the user can see the Daml Finance accounts and assets they own. In the below example, the user has one
+non-transferable asset - their "soul-bound token" (SBT). This is a special type of asset issued to the investor which
+assigns them a human-readable name so that others can identify them.
+
+![Alt Text](./gif/login.gif)
+
+As show above, the user can also view transactions (Daml Finance settlements) for their accounts. In this case we have
+one transaction in which the user was issued the soul-bound token. Each transaction is implemented using the
+settlement `Batch` workflow provided by Daml Finance.
+
+The user can open a new Daml Finance accounts to hold other types of assets. They are provided non-consuming choices to
+create new accounts with the given custodian. In this example they can create an account for transferable, fungible
+assets:
+
+In this UI, custodian is referred to as "register" i.e. they are responsible for keeping a register of ownership of an
+asset. They onboard investors and issuers but do not play an active role in the settlement workflows. Their participant
+node must provide confirmations for all transactions on their register. There is nothing to stop this application
+allowing the investor to use multiple custodians/registers to hold their assets, as all interactions the user has go
+via their own participant, not the custodians'.
+
 ## Components
 
 The project contains a number of components:
