@@ -29,7 +29,7 @@ instructions can be initiated by a variety of other applications but responded t
 The following examples showcase the functionality provided by the application. One of the primary usecases for this
 solution is back office integration, i.e. the backend components and Daml contracts could be consumed by back office
 systems and then displayed as desired by the organisation on their own UI. Therefore the UI provided here is only a
-sample to show what could be done using the underlying contracts and API.
+basic sample to illustrate what could be achived using the underlying contracts and API.
 
 ### Login and Account Setup
 
@@ -39,7 +39,7 @@ Once logged in, the user can see the Daml Finance accounts and assets they own. 
 non-transferable asset - their "soul-bound token" (SBT). This is a special type of asset issued to the investor which
 assigns them a human-readable name so that others can identify them.
 
-![Alt Text](./gif/login.gif)
+![Alt Text](./img/login.gif)
 
 As show above, the user can also view transactions (Daml Finance settlements) for their accounts. In this case we have
 one transaction in which the user was issued the soul-bound token. Each transaction is implemented using the
@@ -49,11 +49,43 @@ The user can open a new Daml Finance accounts to hold other types of assets. The
 create new accounts with the given custodian. In this example they can create an account for transferable, fungible
 assets:
 
+![Alt Text](./img/open_account.gif)
+
 In this UI, custodian is referred to as "register" i.e. they are responsible for keeping a register of ownership of an
 asset. They onboard investors and issuers but do not play an active role in the settlement workflows. Their participant
 node must provide confirmations for all transactions on their register. There is nothing to stop this application
 allowing the investor to use multiple custodians/registers to hold their assets, as all interactions the user has go
 via their own participant, not the custodians'.
+
+## Asset issuance and settlement
+
+Through the Offers tab the user has the ability to take up settlement offers provided by the asset issuers or other
+parties. These offers are open up until such time as the signatories off the
+[`OpenOffer`](./models/settlement/open-offer-interface/src/Synfini/Interface/Settlement/OpenOffer/OpenOffer.daml) contract
+choose to archive it. The `OpenOffer`s are not restricted to any particular type of settlement. Depending on the payload
+of the `OpenOffer` any Daml Finance settlement `Batch` and `Instruction`(s) can be created. In the following example,
+a stablecoin issuer has provided an `OpenOffer` for the investors through which they can request allocation of the
+stablecoin - assuming an off-ledger payment process is implemented.
+
+![Alt Text](./img/stablecoin_onramp_offer.gif)
+
+The user can input a quantity of the asset. The `OpenOffer` payload can (optionally) specify an increment size - in this
+case only a whole number of cents are permitted. Upon submitting the form, an exercise command id submitted to the
+ledger API to exercise the `Take` choice on the `OpenOffer`, resulting in the creation of the settlement `Instruction`s.
+The settlement `Instruction`s then require response from the required parties in order to execute the settlement.
+
+The stablecoin issuer also sees the same transaction and can respond to it. The issuer can either select to deliver the
+asset from an existing account which they own, or they may choose create a new `Holding` and issue it to the investor -
+as is done below. In this case, the register/custodian has created a
+[`MinterBurner`](./models/issuer-onboarding/minter-burner-interface/src/Synfini/Interface/Onboarding/Issuer/MinterBurner/MinterBurner.daml)
+contract to allow the issuer to create the `Holding`. After both issuer and investor have selected their preferences,
+any of the settlers can choose click the execute button to perform the settlement.
+
+![Alt Text](./img/stablecoin_onramp_execute.gif)
+
+Finally, the settled transaction and updated balance is visible to the investor:
+
+![Alt Text](./img/stablecoin_onramp_complete.gif)
 
 ## Components
 
