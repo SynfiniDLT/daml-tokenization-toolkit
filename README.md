@@ -39,9 +39,7 @@ Once logged in, the user can see the Daml Finance accounts and assets they own. 
 non-transferable asset - their "soul-bound token" (SBT). This is a special type of asset issued to the investor which
 assigns them a human-readable name so that others can identify them.
 
-<!-- ![Alt Text](./gif/login.gif | width=100) -->
-
-<img src="./gif/login.gif" width="50000"/>
+![Alt Text](./gif/login.gif)
 
 As show above, the user can also view transactions (Daml Finance settlements) for their accounts. In this case we have
 one transaction in which the user was issued the soul-bound token. Each transaction is implemented using the
