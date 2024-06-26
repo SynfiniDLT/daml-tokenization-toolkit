@@ -114,6 +114,16 @@ Finally, the fund issuer can execute the settlement:
 
 ### Secondary market transactions
 
+The application also allows users to engage in secondary market transactions with other users. The simplest example is
+an asset transfer without payment. First, the sender must instruct the settlement for this:
+
+![Alt Text](./img/transfer_instruct.gif)
+
+Note that the sender must enter the full party ID of the receiver but in future this could be made easier using an SBT
+to identify the counter party. Next, the receiver can choose to accept the transaction:
+
+![Alt Text](./img/transfer_execute.gif)
+
 ## Components
 
 The project contains a number of components:
