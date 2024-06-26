@@ -122,7 +122,16 @@ an asset transfer without payment. First, the sender must instruct the settlemen
 Note that the sender must enter the full party ID of the receiver but in future this could be made easier using an SBT
 to identify the counter party. Next, the receiver can choose to accept the transaction:
 
-![Alt Text](./img/transfer_execute.gif)
+<!-- ![Alt Text](./img/transfer_execute.gif) -->
+
+<img src="./img/transfer_execute-ezgif.com-loop-count.gif">
+
+<img src="./img/transfer_execute.gif" loopcount=1>
+
+The application also has a "requests" tab where users can see any outstanding settlement
+[`OneTimeOffer`s](./models/settlement/one-time-offer-interface/src/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer.daml).
+The settlement `OneTimeOffer` contracts are similiar to the `OpenOffer` contracts except that they can only be used
+once. It is possible to use a `OneTimeOffer` to propose a Delivery-versus-Payment (DvP) transaction with another party.
 
 ## Components
 
