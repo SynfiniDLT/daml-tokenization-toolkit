@@ -102,10 +102,7 @@ applications.
 For example, here we have a 3-way settlement between fund issuer, fund manager and investor, in which the fund manager
 receives a comission payment from the investor:
 
-<!-- ![Alt Text](./img/fund_issuance_offer.gif) -->
-
-
-<video src='./img/fund_issuance_offer.mov'></video>
+[Fund issuance offer](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/1080efcd-f47a-4400-9f64-0449f737c4e5)
 
 The user can select different accounts for each settlement `Instruction` if required. Upon applying the account
 prefences, the user pledges their `Holding`s for the settlement and the available balances on their account(s) will
@@ -113,7 +110,7 @@ decrease accordingly.
 
 The fund manager can then view and respond to the settlement instruction:
 
-![Alt Text](./img/fund_issuance_manager_accept.gif)
+[Fund issuance manager accept](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/d7a3d1d0-b51c-4ec6-9761-f4e07e0244a9)
 
 Finally, the fund issuer can execute the settlement:
 
