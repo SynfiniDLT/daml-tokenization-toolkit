@@ -114,19 +114,19 @@ The fund manager can then view and respond to the settlement instruction:
 
 Finally, the fund issuer can execute the settlement:
 
-![Alt Text](./img/fund_issuance_execute.gif)
+[Execute fund issuance](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/47898c9a-9dcf-44d7-a8aa-5a907ccf53d6)
 
 ### Secondary market transactions
 
 The application also allows users to engage in secondary market transactions with other users. The simplest example is
 a free-of-payment transfer. First, the sender must instruct the settlement for this:
 
-![Alt Text](./img/transfer_instruct.gif)
+[Instruct transfer](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/2a499afc-fdc8-425e-86b5-fa3c57e5195e)
 
 Note that the sender must enter the full party ID of the receiver but in future this could be made easier using an SBT
 to identify the counter party. Next, the receiver can choose to accept the transaction:
 
-![Alt Text](./img/transfer_execute.gif)
+[Execute transfer](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/e31ac0ad-e09d-4a86-beaf-87fa23f6cd74)
 
 The application also has a "requests" tab where users can see any outstanding settlement
 [`OneTimeOffer`s](./models/settlement/one-time-offer-interface/src/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer.daml).
