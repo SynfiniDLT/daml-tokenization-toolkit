@@ -221,9 +221,6 @@ Each user on the ledger needs to use one or many parties to communicate with the
 | Issuer | FundA | The party manages the fund issuing |
 | N/A (UI login not required) | FundDepository | Depository for the fund instrument |
 | Investor | FundManagerA | The party which takes the commission in fund settlement workflow |
-| Issuer | EnvironmentalTokenIssuer | The party manages issuance of environmental tokens |
-| N/A (UI login not required) | EnvironmentalTokenDepository | Depository for the environmental token instruments |
-| Investor | ProducerA | Producer of environmentally-friendly products/projects, who can be awarded points by the EnvironmentalTokenIssuer |
 | N/A (UI login not required) | SynfiniValidator | This party witnesses and validates the movements of assets (act as custodian in Daml Finance). They delegate responsibility for minting/burning `Holding`s to the asset issuers |
 | Investor | InvestorA | Investor party |
 | Investor | InvestorB | Investor party |
