@@ -157,6 +157,12 @@ provided a unique `Instrument` contract. Access can be controlled as shown:
 
 [SBT share](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/3d71e70b-bfba-4864-a5e7-08ed7ea42cd7)
 
+Note that some parties cannot be removed as observers as they have been tagged on the contract with a different on
+"context" (purpose for including them as observer). This helps to prevent different applications from interfering with
+eachother when adding/removing observers. In this case, the "WalletOperator" party cannot be removed via the UI - the
+purpose of sharing with this party is so that the contract payloads can be written by this party into the Wallet Views
+database (read by the backend API).
+
 After sharing, the other user can see the SBT contents through the "Directory" tab:
 
 [SBT_directory](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/fe7ae777-9475-4240-af00-511374a4fd0b)
