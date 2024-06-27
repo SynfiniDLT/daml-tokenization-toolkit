@@ -283,7 +283,7 @@ Replace your-api-identifier with the audience identifier you obtained from the A
 
 In the demo-config/users folder, there is a users.json file to store user information for ledger identification. The
 users.json file has an array of user objects, each containing the userId from Auth0 and the corresponding primaryParty
-for ledger identification. Replace the user IDs with the actual user IDs from Auth0. Unfortunately this process has not
+for ledger identification. Replace the user IDs with the actual user IDs from Auth0. Unfortunately, this process has not
 yet been automated so manual editing is required. Ensure that the userId in each object corresponds to the sub (subject)
 field in the Auth0 user profile. The primaryParty field is the default party used to issue commands to the ledger. If
 logged into the UI, the user will act as this party. There is no need to edit this field.
@@ -334,7 +334,7 @@ There are a number of tasks ahead to complete and enhance this solution. A compl
 [issues](https://github.com/SynfiniDLT/daml-tokenization-toolkit/issues). Some of the highest priority tasks are listed
 below:
 
-1. Use the latest solution from DA which replaces the public party feature (i.e. use explict disclosure). This will make
+1. Use the latest solution from DA which replaces the public party feature (i.e. use explicit disclosure). This will make
 it easier to share commononly used utility contracts (such as factories) without need for a public party hosted on
 multiple participants. Refer to this [issue](https://github.com/SynfiniDLT/daml-tokenization-toolkit/issues/79).
 1. Upgrade to the latest version of Daml Finance. Refer to this [issue](https://github.com/SynfiniDLT/daml-tokenization-toolkit/issues/68).
