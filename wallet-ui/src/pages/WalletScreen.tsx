@@ -11,6 +11,7 @@ import { AccountSummary } from "@synfini/wallet-views";
 import { partyAttributesInstrumentId, partyNameAttribute, sbtDepository, sbtIssuer } from "../Configuration";
 import { Metadata } from "@daml.js/synfini-instrument-metadata-interface/lib/Synfini/Interface/Instrument/Metadata/Metadata";
 import Decimal from "decimal.js";
+import { FirstRender } from "../Util";
 
 const WalletScreen: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
@@ -18,8 +19,8 @@ const WalletScreen: React.FC = () => {
   const walletClient = useWalletViews();
   const { primaryParty } = useWalletUser();
 
-  const [accountBalances, setAccountBalances] = useState<AccountBalanceSummary[]>([]);
-  const [displayName, setDisplayName] = useState<string>();
+  const [accountBalances, setAccountBalances] = useState<AccountBalanceSummary[]>();
+  const [displayName, setDisplayName] = useState<string | FirstRender | undefined>("FirstRender");
 
   useEffect(() => {
     const fetchAccounts = async () => {
@@ -59,7 +60,7 @@ const WalletScreen: React.FC = () => {
   }, [primaryParty, walletClient]);
 
   useEffect(() => {
-    if (primaryParty === undefined) {
+    if (primaryParty === undefined || accountBalances === undefined) {
       return;
     }
 
@@ -73,18 +74,22 @@ const WalletScreen: React.FC = () => {
           )
         );
       if (sbtBals.length !== 1 || new Decimal(sbtBals[0].unlocked).equals(0)) {
+        setDisplayName(undefined);
         return;
       }
       const sbtInstruments = await walletClient.getInstruments(sbtBals[0].instrument);
       if (sbtInstruments.length !== 1) {
+        setDisplayName(undefined);
         return;
       }
       const metadatas = await ledger.query(Metadata, { instrument: sbtBals[0].instrument });
       if (metadatas.length !== 1) {
+        setDisplayName(undefined);
         return;
       }
       const partyName = metadatas[0].payload.attributes.get(partyNameAttribute);
       if (partyName === undefined) {
+        setDisplayName(undefined);
         return;
       }
       setDisplayName(partyName.attributeValue);
@@ -109,7 +114,10 @@ const WalletScreen: React.FC = () => {
           <div className="profile__header">
             <img src={user.picture} alt="Profile" className="profile__avatar" />
             <div className="profile__headline">
-              <h2 className="profile__title">{displayName !== undefined ? displayName : "Anonymous User"}</h2>
+              {
+                displayName !== "FirstRender" &&
+                <h2 className="profile__title">{displayName !== undefined ? displayName : "Anonymous User"}</h2>
+              }
               {primaryParty !== undefined && <span className="profile__description">{primaryParty}</span>}
               <span className="profile__description">{user.email}</span>
             </div>
@@ -120,7 +128,7 @@ const WalletScreen: React.FC = () => {
 
       <div>
         <h3 className="profile__title">{isAuthenticated ? "Accounts" : "Please login to view your assets"}</h3>
-        <AccountBalances accountBalances={accountBalances} />
+        <AccountBalances accountBalances={accountBalances || []} />
       </div>
     </PageLayout>
   );

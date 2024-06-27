@@ -379,192 +379,202 @@ const AssetDetailsScreen: React.FC = () => {
       <h3 className="profile__title" style={{ marginTop: "10px" }}>
         Asset Details
       </h3>
-      {instrumentSummary !== undefined && instrumentDisclosure !== undefined && (
-        <table className="assets">
-          <caption>
-            <h3 className="profile__title" style={{ marginTop: "10px" }}>
-              {`${state.instrument.id.unpack} ${state.instrument.version}`}
-            </h3>
-            <h5 className="profile__title" style={{ marginTop: "10px", paddingBottom: "10px" }}>
-              {instrumentSummary.tokenView?.token.description}
-            </h5>
-          </caption>
-          <tbody>
-            <tr>
-              <th style={{width: "15%"}}>Issuer</th>
-              <td>{state.instrument.issuer}</td>
-            </tr>
-            <tr>
-              <th>Asset type</th>
-              <td>{assetTypeDescriptionCapitalised}</td>
-            </tr>
-            <tr>
-              <th>Valid as of</th>
-              <td>
-                {
-                  instrumentSummary.tokenView?.token.validAsOf !== undefined ?
-                  toDateTimeString(instrumentSummary.tokenView?.token.validAsOf) :
-                  "N/A"
-                }
-              </td>
-            </tr>
-            {isFungible === false && nonFungbileHolding !== undefined && (
+      <div style={{width: "90%", paddingLeft: "30px"}}>
+        {
+          instrumentSummary !== undefined && instrumentDisclosure !== undefined &&
+          <table className="assets">
+            <caption>
+              <h3 className="profile__title" style={{ marginTop: "10px" }}>
+                {`${state.instrument.id.unpack} ${state.instrument.version}`}
+              </h3>
+              <h5 className="profile__title" style={{ marginTop: "10px", paddingBottom: "10px" }}>
+                {instrumentSummary.tokenView?.token.description}
+              </h5>
+            </caption>
+            <tbody>
               <tr>
-                <th>Owner</th>
-                <td>{nonFungbileHolding.view.account.owner}</td>
+                <th style={{width: "15%"}}>Issuer</th>
+                <td>{state.instrument.issuer}</td>
               </tr>
-            )}
-          </tbody>
-        </table>
-      )}
-
-      {metadata !== undefined && (
-        <table className="assets">
-          <caption>
-            <h4 className="profile__title" style={{ paddingTop: "30px", paddingBottom: "10px" }}>
-              Attributes
-            </h4>
-          </caption>
-          <tbody>
-            {metadata.payload.attributes.entriesArray().map(([attributeName, attribute]) =>
-              <tr key={attributeName}>
-                <th style={{width: "15%"}}>{attributeName}</th>
-                <td>{attribute.attributeValue}</td>
+              <tr>
+                <th>Asset type</th>
+                <td>{assetTypeDescriptionCapitalised}</td>
               </tr>
-            )}
-          </tbody>
-        </table>
-      )}
+              <tr>
+                <th>Valid as of</th>
+                <td>
+                  {
+                    instrumentSummary.tokenView?.token.validAsOf !== undefined ?
+                      toDateTimeString(instrumentSummary.tokenView?.token.validAsOf)
+                    :
+                      "N/A"
+                  }
+                </td>
+              </tr>
+              {
+                isFungible === false && nonFungbileHolding !== undefined &&
+                <tr>
+                  <th>Owner</th>
+                  <td>{nonFungbileHolding.view.account.owner}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
 
-      {partiesSharedWith !== undefined && (
-        <>
+        {
+          metadata !== undefined &&
           <table className="assets">
             <caption>
               <h4 className="profile__title" style={{ paddingTop: "30px", paddingBottom: "10px" }}>
-                Asset observers
+                Attributes
               </h4>
             </caption>
-            <thead>
-              <tr>
-                <th>
-                  Party
-                </th>
-                {canDisclose && <th> Unshare </th>}
-              </tr>
-            </thead>
             <tbody>
-              {partiesSharedWith?.map(p =>
-                <tr key={p}>
-                  <td>{p}</td>
-                  {canDisclose &&
-                    <td>
-                      <input
-                        type="checkbox"
-                        onChange={_ => handleCheckboxChange(p)}
-                        disabled={
-                          metadataDisclosure !== undefined ?
-                            !removableMetadataObservers.map.has(p) :
-                            !removableInstrumentObservers.map.has(p)
-                        }
-                      />
-                    </td>
-                  }
+              {metadata.payload.attributes.entriesArray().map(([attributeName, attribute]) =>
+                <tr key={attributeName}>
+                  <th style={{width: "15%"}}>{attributeName}</th>
+                  <td>{attribute.attributeValue}</td>
                 </tr>
               )}
             </tbody>
           </table>
+        }
 
-          {canDisclose && toUnshare.entriesArray().length > 0 &&
-            <>
-              <br/>
-              <button
-                type="button"
-                className="button__login"
-                onClick={_ => handleRemoveObservers()}
-                style={{margin: "auto", width: "200px"}}
-              >
-                Remove access
-              </button>
-            </>
-          }
+        {
+          partiesSharedWith !== undefined &&
+          <>
+            <table className="assets">
+              <caption>
+                <h4 className="profile__title" style={{ paddingTop: "30px", paddingBottom: "10px" }}>
+                  Asset observers
+                </h4>
+              </caption>
+              <thead>
+                <tr>
+                  <th>
+                    Party
+                  </th>
+                  {canDisclose && <th> Unshare </th>}
+                </tr>
+              </thead>
+              <tbody>
+                {
+                  partiesSharedWith?.map(p =>
+                    <tr key={p}>
+                      <td>{p}</td>
+                      {
+                        canDisclose &&
+                        <td>
+                          <input
+                            type="checkbox"
+                            onChange={_ => handleCheckboxChange(p)}
+                            disabled={
+                              metadataDisclosure !== undefined ?
+                                !removableMetadataObservers.map.has(p)
+                              :
+                                !removableInstrumentObservers.map.has(p)
+                            }
+                          />
+                        </td>
+                      }
+                    </tr>
+                  )
+                }
+              </tbody>
+            </table>
 
-          {canDisclose &&
-            <p>
-              <br/>
-              <br/>
-              Share asset details:
-              <br/>
-              <input
-                type="text"
-                id="partyToShare"
-                name="partyToShare"
-                value={partyToShareWith}
-                style={{ width: "400px" }}
-                onChange={event => setPartyToShareWith(event.target.value)}
-              />
-
-              <button
-                type="button"
-                className="button__login"
-                style={{ width: "100px" }}
-                onClick={_ => handleAddObserver()}
-              >
-                Share
-              </button>
-            </p>
-          }
-
-          <Modal
-            id="handleCloseMessageModal"
-            className="MessageModal"
-            isOpen={isModalOpen}
-            onRequestClose={_ => handleCloseModal()}
-            contentLabel="Share asset details"
-          >
-            <>
-              <div>
-                {message !== "" ? (
-                  <>
-                    <span
-                      style={{
-                        color: "#66FF99",
-                        fontSize: "1.5rem",
-                        whiteSpace: "pre-line",
-                      }}
-                    >
-                      {message}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span
-                      style={{
-                        color: "#FF6699",
-                        fontSize: "1.5rem",
-                        whiteSpace: "pre-line",
-                      }}
-                    >
-                      {error}
-                    </span>
-                  </>
-                )}
-              </div>
-              <p></p>
-              <div>
+            {
+              canDisclose && toUnshare.entriesArray().length > 0 &&
+              <>
+                <br/>
                 <button
                   type="button"
                   className="button__login"
-                  onClick={_ => handleClickOk()}
+                  onClick={_ => handleRemoveObservers()}
+                  style={{margin: "auto", width: "200px"}}
                 >
-                  Ok
+                  Remove access
                 </button>
-              </div>
-              <p></p>
-            </>
-          </Modal>
-        
-        </>
-      )}
+              </>
+            }
+
+            {
+              canDisclose &&
+              <p>
+                <br/>
+                <br/>
+                Share asset details:
+                <br/>
+                <input
+                  type="text"
+                  id="partyToShare"
+                  name="partyToShare"
+                  value={partyToShareWith}
+                  style={{ width: "400px" }}
+                  onChange={event => setPartyToShareWith(event.target.value)}
+                />
+
+                <button
+                  type="button"
+                  className="button__login"
+                  style={{ width: "100px" }}
+                  onClick={_ => handleAddObserver()}
+                >
+                  Share
+                </button>
+              </p>
+            }
+
+            <Modal
+              id="handleCloseMessageModal"
+              className="MessageModal"
+              isOpen={isModalOpen}
+              onRequestClose={_ => handleCloseModal()}
+              contentLabel="Share asset details"
+            >
+              <>
+                <div>
+                  {
+                    message !== "" ?
+                      <span
+                        style={{
+                          color: "#66FF99",
+                          fontSize: "1.5rem",
+                          whiteSpace: "pre-line",
+                        }}
+                      >
+                        {message}
+                      </span>
+                    :
+                      <span
+                        style={{
+                          color: "#FF6699",
+                          fontSize: "1.5rem",
+                          whiteSpace: "pre-line",
+                        }}
+                      >
+                        {error}
+                      </span>
+                  }
+                </div>
+                <p></p>
+                <div>
+                  <button
+                    type="button"
+                    className="button__login"
+                    onClick={_ => handleClickOk()}
+                  >
+                    Ok
+                  </button>
+                </div>
+                <p></p>
+              </>
+            </Modal>
+          </>
+        }
+      </div>
+
     </PageLayout>
   );
 };
