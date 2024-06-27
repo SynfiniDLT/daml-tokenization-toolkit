@@ -28,7 +28,7 @@ instructions can be initiated by a variety of other applications but responded t
 
 The following examples showcase the functionality provided by the application. One of the primary usecases for this
 solution is back office integration, i.e. the backend components and Daml contracts could be consumed by back office
-systems and then displayed as desired by the organisation on their own UI. Therefore the UI provided here is only a
+systems and then displayed as desired by the organisation through their own UI. Therefore the UI provided here is only a
 basic sample to illustrate what could be achived using the underlying contracts and API.
 
 ### Login and Account Setup
@@ -37,8 +37,10 @@ The sample UI allows the user to authenticate using Auth0. Once authenticated, t
 via the JSON API to their participant node using their primary party. They can also read data from the wallet views API.
 Once logged in, the user can see the Daml Finance accounts and assets they own. In the below example, the user has one
 non-transferable asset - their "soul-bound token" (SBT). This is a special type of asset issued to the investor which
-assigns them a human-readable name so that others can identify them.
-
+assigns them a human-readable name so that others can identify them. Clicking on the asset name brings up detailed
+information about the asset which they hold - taken from the `Instrument` and
+[`Metadata`](./models/instrument-metadata/interface/src/Synfini/Interface/Instrument/Metadata/Metadata.daml) contracts.
+ 
 ![Alt Text](./img/login.gif)
 
 The user can see both their total balance as well as their available balance - the latter being equal to the total
@@ -47,8 +49,7 @@ balance minus the sum of any `Holding` contracts which are locked. As shown abov
 soul-bound token. Each transaction is implemented using the settlement `Batch` workflow provided by Daml Finance.
 
 The user can open new Daml Finance accounts to hold other types of assets. They are provided non-consuming choices to
-create new accounts with the given custodian. In this example they can create an account for transferable, fungible
-assets:
+create new accounts with the given custodian. In this example they create an account for transferable, fungible assets:
 
 ![Alt Text](./img/open_account.gif)
 
@@ -65,22 +66,23 @@ parties. These offers are open up until such time as the signatories off the
 [`OpenOffer`](./models/settlement/open-offer-interface/src/Synfini/Interface/Settlement/OpenOffer/OpenOffer.daml) contract
 choose to archive it. The `OpenOffer`s are not restricted to any particular type of settlement. Depending on the payload
 of the `OpenOffer` any Daml Finance settlement `Batch` and `Instruction`(s) can be created. In the following example,
-a stablecoin issuer has provided an `OpenOffer` for the investors through which they can request allocation of the
-stablecoin - assuming an off-ledger payment process is implemented.
+a stablecoin issuer has provided an `OpenOffer` for the investors through which they can request issuance of the
+stablecoin - assuming the issuer has implemented an off-ledger payment process triggered by the generation of the
+settlement instruction.
 
 ![Alt Text](./img/stablecoin_onramp_offer.gif)
 
 The user can input a quantity of the asset. The `OpenOffer` payload can (optionally) specify an increment size - in this
-case only a whole number of cents are permitted. Upon submitting the form, an exercise command id submitted to the
-ledger API to exercise the `Take` choice on the `OpenOffer`, resulting in the creation of the settlement `Instruction`s.
-The settlement `Instruction`s then require response from the required parties in order to execute the settlement.
+case cents are the smallest increment. Upon submitting the form, an exercise command id submitted to the ledger API to
+exercise the `Take` choice on the `OpenOffer`, resulting in the creation of the settlement `Instruction`s. The
+settlement `Instruction`s then require response from the investor and issuer in order to execute the settlement.
 
-The stablecoin issuer also sees the same transaction and can respond to it. The issuer can either select to deliver the
-asset from an existing account which they own, or they may choose create a new `Holding` and issue it to the investor -
-as is done below. In this case, the register/custodian has created a
+The stablecoin issuer also sees the same transaction and can respond to it. In this case, in order to settle they must
+elect to create a new `Holding` and issue it to the investor - as is done below. In this case, the register/custodian
+has created a
 [`MinterBurner`](./models/issuer-onboarding/minter-burner-interface/src/Synfini/Interface/Onboarding/Issuer/MinterBurner/MinterBurner.daml)
-contract to allow the issuer to create the `Holding`. After both issuer and investor have selected their preferences,
-any of the settlers can click the execute button to perform the settlement.
+contract to delegate the ability to create the `Holding` to the issuer. After both issuer and investor have selected
+their preferences, any of the settlers can click the execute button to perform the settlement.
 
 ![Alt Text](./img/stablecoin_onramp_execute.gif)
 
@@ -90,10 +92,12 @@ Finally, the settled transaction and updated balance is visible to the investor:
 
 ### Bespoke settlements
 
-This application is not designed to serve every possible usecase, instead it can complement other applications. Various
-contracts, such as the settlement `OpenOffer`s shown previously, could be generated by other usecase-specific
-applications (such as a stablecoin application or fund application) and then responded to by the users using the wallet.
-The exact process of how such contracts are created is left out of this project.
+This application is designed can complement other applications. Various contracts, such as the settlement `OpenOffer`s
+shown previously, could be generated by other usecase-specific applications (such as a stablecoin application or a
+fund application) and then responded to by the users using the wallet. The exact details of how such contract are
+created is left out of this project. Alternatively, a single end-to-end application could also be developed with all
+desired functionality which may simplify the process for the users, but limit options for the users to engage in other
+applications.
 
 For example, here we have a 3-way settlement between fund issuer, fund manager and investor, in which the fund manager
 receives a comission payment from the investor:
@@ -115,7 +119,7 @@ Finally, the fund issuer can execute the settlement:
 ### Secondary market transactions
 
 The application also allows users to engage in secondary market transactions with other users. The simplest example is
-an asset transfer without payment. First, the sender must instruct the settlement for this:
+a free-of-payment transfer. First, the sender must instruct the settlement for this:
 
 ![Alt Text](./img/transfer_instruct.gif)
 
@@ -129,10 +133,13 @@ The application also has a "requests" tab where users can see any outstanding se
 The settlement `OneTimeOffer` contracts are similiar to the `OpenOffer` contracts except that they can only be used
 once. It is possible to use a `OneTimeOffer` to propose a Delivery-versus-Payment (DvP) transaction with another party.
 In the example below, InvestorB accepts an offer from InvestorA and selects their account preferences. Subsequently,
-InvestorA would then need to apply their prefences and the settlement can be executed, in the same way as has been
+InvestorA would then need to apply their prefences and the settlement can be executed in the same way as has been
 demonstrated in the previous examples.
 
 ![Alt Text](./img/dvp_accept.gif)
+
+As with the `OpenOffer`, a `OneTimeOffer` can be used to instruct any type of settlement desired by altering the
+contract payload.
 
 ## Components
 
