@@ -104,6 +104,9 @@ receives a comission payment from the investor:
 
 ![Alt Text](./img/fund_issuance_offer.gif)
 
+
+<video src='./img/fund_issuance_offer.webm'></video>
+
 The user can select different accounts for each settlement `Instruction` if required. Upon applying the account
 prefences, the user pledges their `Holding`s for the settlement and the available balances on their account(s) will
 decrease accordingly.
