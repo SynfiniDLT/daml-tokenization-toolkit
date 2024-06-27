@@ -151,9 +151,11 @@ issuer of the SBT is a Know Your Customer (KYC) service provider, who then deleg
 SBTs to the SBT holders. The SBT contents (such as name) are stored on a `Metadata` contract. Each holder is also
 provided a unique `Instrument` contract. Access can be controlled as shown:
 
-[sbt_share.webm](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/3d71e70b-bfba-4864-a5e7-08ed7ea42cd7)
+[SBT share](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/3d71e70b-bfba-4864-a5e7-08ed7ea42cd7)
 
 After sharing, the other user can see the SBT contents through the "Directory" tab:
+
+[SBT_directory](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/fe7ae777-9475-4240-af00-511374a4fd0b)
 
 ## Components
 
