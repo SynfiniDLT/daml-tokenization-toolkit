@@ -1,7 +1,7 @@
 {
   "users": [
     {
-      "userId": "auth0|650280f1c095c872cb1aaf03",
+      "userId": "auth0|<CHANGEME>",
       "primaryParty": "InvestorA",
       "actAs": [
         "InvestorA"
@@ -11,7 +11,7 @@
       ]
     },
     {
-      "userId": "auth0|65028110be549c74406d2f74",
+      "userId": "auth0|<CHANGEME>",
       "primaryParty": "InvestorB",
       "actAs": [
         "InvestorB"
@@ -21,7 +21,7 @@
       ]
     },
     {
-      "userId": "auth0|6502812f87540693daa0a66b",
+      "userId": "auth0|<CHANGEME>",
       "primaryParty": "StableCoinIssuer",
       "actAs": [
         "StableCoinIssuer"
@@ -31,7 +31,7 @@
       ]
     },
     {
-      "userId": "auth0|6502814dd572a3455f2cf5e1",
+      "userId": "auth0|<CHANGEME>",
       "primaryParty": "StableCoinIssuer",
       "actAs": [],
       "readAs": [
@@ -40,7 +40,7 @@
       ]
     },
     {
-      "userId": "auth0|6539e1a7025cc8f4268a128b",
+      "userId": "auth0|<CHANGEME>",
       "primaryParty": "FundA",
       "actAs": [
         "FundA"
@@ -50,7 +50,7 @@
       ]
     },
     {
-      "userId": "auth0|65641a6c58d9a1107831cf3b",
+      "userId": "auth0|<CHANGEME>",
       "primaryParty": "FundManagerA",
       "actAs": [
         "FundManagerA"
@@ -60,7 +60,7 @@
       ]
     },
     {
-      "userId": "auth0|65f8eed446d77a57585e7409",
+      "userId": "auth0|<CHANGEME>",
       "primaryParty": "EnvironmentalTokenIssuer",
       "actAs": [
         "EnvironmentalTokenIssuer"
@@ -70,7 +70,7 @@
       ]
     },
     {
-      "userId": "auth0|65f8ef0c46d77a57585e742e",
+      "userId": "auth0|<CHANGEME>",
       "primaryParty": "ProducerA",
       "actAs": [
         "ProducerA"
@@ -80,7 +80,7 @@
       ]
     },
     {
-      "userId": "auth0|6620701796f4af12900c8182",
+      "userId": "auth0|<CHANGEME>",
       "primaryParty": "SbtIssuer",
       "actAs": [
         "SbtIssuer"

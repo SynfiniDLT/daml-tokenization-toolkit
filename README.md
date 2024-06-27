@@ -18,11 +18,145 @@ would submit commands through their own participants.
 
 ![alt text](./img/solution_overview.jpg)
 
-It is important to note that this solution is designed to work in congunction with other applications. For example,
+It is important to note that this solution is designed to work in conjunction with other applications. For example,
 there may be another application which implements a customized token with bespoke lifecycling or other functions, but
 users could still authorise and complete the settlement processes through the wallet user interface. Due to the fact
 that this application makes use of the Daml Finance interfaces (rather than specific implementations), the settlement
 instructions can be initiated by a variety of other applications but responded to by users via this solution.
+
+## UI Demonstration
+
+The following examples showcase the functionality provided by the application. One of the primary usecases for this
+solution is back office integration, i.e. the backend components and Daml contracts could be consumed by back office
+systems and then displayed as desired by an organisation through its own UI. Therefore the UI provided here is only a
+basic sample to illustrate what could be achieved using the underlying contracts and API which are included in this
+repository.
+
+### Login and Account Setup
+
+The sample UI allows the user to authenticate using Auth0. Once authenticated, the user will be able to issue commands
+via the JSON API to their participant node using their primary party. They can also read data from the wallet views API.
+Once logged in, the user can see the Daml Finance accounts and assets they own. In the below example, the user has one
+non-transferable asset - their "soul-bound token" (SBT). This is a special type of asset issued to the investor which
+assigns them a human-readable name so that others can identify them. Clicking on the balance brings up detailed
+information about the asset that they hold - taken from the `Instrument` and
+[`Metadata`](./models/instrument-metadata/interface/src/Synfini/Interface/Instrument/Metadata/Metadata.daml) contracts.
+The user's name is also displayed by looking up their SBT.
+
+[Login](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/d08a3517-5d30-400b-a228-f9e5e9f17f07)
+
+The user can see both their total balance as well as their available balance - the latter being equal to the total
+balance minus the sum of any `Holding` contracts that are locked. As shown above, the user can also view transactions
+(Daml Finance settlements) for their accounts. In this case, we have one transaction in which the user was issued the
+soul-bound token. Each transaction is implemented using the settlement `Batch` workflow provided by Daml Finance.
+
+The user can open new Daml Finance accounts to hold other types of assets. They are provided non-consuming choices to
+create new accounts with the given custodian. In this example, they create an account for transferable, fungible assets:
+
+[Open account](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/c4504b8e-4785-4b97-b4e4-acd026856196)
+
+In this UI, the custodian is referred to as a "register". This party is responsible for keeping a register of ownership of an
+asset. They onboard investors and issuers but do not play an active role in the settlement workflows. Their other
+primary responsibility is operating their participant node which must provide confirmations for all transactions on
+their register. There is nothing to stop this application from allowing the investor to use multiple custodians/registers to
+hold their assets, as all interactions the user has to go via their own participant, not the custodians'.
+
+### Asset issuance and settlement
+
+Through the Offers tab, the user has the ability to take up settlement offers provided by the asset issuers or other
+parties. These offers are open until such time as the signatories of the
+[`OpenOffer`](./models/settlement/open-offer-interface/src/Synfini/Interface/Settlement/OpenOffer/OpenOffer.daml) contract
+choose to archive it. The `OpenOffer`s are not restricted to any particular type of settlement. Depending on the payload
+of the `OpenOffer` any Daml Finance settlement `Batch` and `Instruction`(s) can be created. In the following example,
+a stablecoin issuer has provided an `OpenOffer` for the investors through which they can request issuance of the
+stablecoin - assuming the issuer has implemented an off-ledger payment process triggered by the generation of the
+settlement instruction.
+
+[Stablecoin onramp offer](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/70aa7bd2-54e7-4486-a230-a2038875c985)
+
+The user can input a quantity of the asset. The `OpenOffer` payload can (optionally) specify an increment size - in this
+case, cents are the smallest increment. Upon submitting the form, an exercise command is submitted to the ledger API to
+exercise the `Take` choice on the `OpenOffer`, resulting in the creation of the settlement `Instruction`s. The
+settlement `Instruction`s then require a response from the investor and issuer to execute the settlement.
+
+The stablecoin issuer also sees the same transaction and can respond to it. In this case, in order to settle they must
+elect to create a new `Holding` and issue it to the investor - as is done below. In this case, the register/custodian
+has created a
+[`MinterBurner`](./models/issuer-onboarding/minter-burner-interface/src/Synfini/Interface/Onboarding/Issuer/MinterBurner/MinterBurner.daml)
+contract to delegate the ability to create the `Holding` to the issuer. After both the issuer and investor have selected
+their preferences, any of the settlers can click the execute button to perform the settlement.
+
+[Stablecoin onramp execute](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/369a245c-c9e6-4f08-abfc-925d4da06ced)
+
+Finally, the settled transaction and updated balance is visible to the investor:
+
+[Stablecoin onramp complete](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/6f96bde4-e6d1-48b0-8717-b8fac5ade19c)
+
+### Bespoke settlements
+
+This application is designed to complement other applications. Various contracts, such as the settlement `OpenOffer`s
+shown previously, could be generated by other usecase-specific applications (such as a stablecoin application or a
+fund application) and then responded to by the users using the wallet. The exact details of how such contracts are
+created are left out of this project. Alternatively, a single end-to-end application could also be developed with all
+desired functionality which may simplify the process for the users, but limit options for the users to engage in other
+applications.
+
+For example, here we have a 3-way settlement between fund issuer, fund manager and investor, in which the fund manager
+receives a commission payment from the investor:
+
+[Fund issuance offer](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/1080efcd-f47a-4400-9f64-0449f737c4e5)
+
+The user can select different accounts for each settlement `Instruction` if required. Upon applying the account
+preferences, the user's `Holding`s will be pledged for the settlement and the available balances on their account(s) will
+decrease accordingly.
+
+The fund manager can then view and respond to the settlement instructions:
+
+[Fund issuance manager accept](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/d7a3d1d0-b51c-4ec6-9761-f4e07e0244a9)
+
+Finally, the fund issuer can execute the settlement:
+
+[Execute fund issuance](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/47898c9a-9dcf-44d7-a8aa-5a907ccf53d6)
+
+### Secondary market transactions
+
+The application also allows users to engage in secondary market transactions with other users. The simplest example is
+a free-of-payment transfer. First, the sender must instruct the settlement for this:
+
+[Instruct transfer](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/2a499afc-fdc8-425e-86b5-fa3c57e5195e)
+
+Note that the sender must enter the full party ID of the receiver but in future this could be made easier using an SBT
+to identify the counterparty. Next, the receiver can choose to accept the transaction:
+
+[Execute transfer](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/e31ac0ad-e09d-4a86-beaf-87fa23f6cd74)
+
+The application also has a "requests" tab where users can see any outstanding settlement
+[`OneTimeOffer`s](./models/settlement/one-time-offer-interface/src/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer.daml).
+The settlement `OneTimeOffer` contracts are similar to the `OpenOffer` contracts except that they can only be used
+once. It is possible to use a `OneTimeOffer` to propose a Delivery-versus-Payment (DvP) transaction with another party.
+In the example below, InvestorB accepts an offer from InvestorA and selects their account preferences.
+
+[Accept DvP Request](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/00badd42-6d28-4531-9545-f3b4ebca753d)
+
+Subsequently, InvestorA would then need to apply their preferences and the settlement can be executed in the same way as
+has been demonstrated in the previous examples.
+
+As with the `OpenOffer`, a `OneTimeOffer` can be used to instruct any type of settlement desired by altering the
+contract payload.
+
+### Sharing Asset Details
+
+Users can alter who else on the network can view `Instrument`s and associated `Metadata`. This functionality is allowed
+for the asset issuers and also other parties (if the issuer has delegated this to them). In the following example, the
+issuer of the SBT is a Know Your Customer (KYC) service provider, who then delegates the ability to share/unshare the
+SBTs to the SBT holders. The SBT contents (such as name) are stored on a `Metadata` contract. Each holder is also
+provided a unique `Instrument` contract. Access can be controlled as shown:
+
+[SBT share](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/3d71e70b-bfba-4864-a5e7-08ed7ea42cd7)
+
+After sharing, the other user can see the SBT contents through the "Directory" tab:
+
+[SBT_directory](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/fe7ae777-9475-4240-af00-511374a4fd0b)
 
 ## Components
 
@@ -52,24 +186,18 @@ Install the following first:
 
 Download the Scribe component (JAR file) of PQS. You will need
 a Daml Enterprise license in order to access this. Save it to your machine and export the absolute path to the file
-in your terminal envionment using the variable `SCRIBE_LOCATION`. Using a component which requires an enterprise
+in your terminal environment using the variable `SCRIBE_LOCATION`. Using a component which requires an enterprise
 license is somewhat of a limitation but there are few alternatives other than writing a custom component for this
 purpose. For reference, the previous version of this project was implemented without need for the enterprise license
 using the (now deprecated) Custom Views library, and can be found
 [here](https://github.com/SynfiniDLT/daml-tokenization-toolkit/releases/tag/v0.2.0).
 
-Build has been tested with Java version 17, Maven 3.6.3, npm 8.19 and PQS 2.8.0.
+The build has been tested with Java version 17, Maven 3.6.3, npm 8.19 and PQS 2.8.0.
 
 ## Asset and party configuration of the demo
 
-This repository comes with a demo which demonstrates how the wallet can be used by investors, issuers and other parties.
-
-### Asset/Account support
-
-1. The demo onboards multiple issuers: a stable coin issuer, a fund issuer, an ESG asset issuer and a "Soul-bound token"
-issuer.
-1. The demo supports investors to create multiple accounts through offer contracts created by the custodian.
-1. The demo supports DvP settlements amongst asset issuer, investor and other parties.
+This repository comes with a demo that demonstrates how the wallet can be used by investors, issuers and other parties,
+as shown in the above videos. This section explains the configuration of the UI, users and parties.
 
 ### UI User profile
 
@@ -93,9 +221,6 @@ Each user on the ledger needs to use one or many parties to communicate with the
 | Issuer | FundA | The party manages the fund issuing |
 | N/A (UI login not required) | FundDepository | Depository for the fund instrument |
 | Investor | FundManagerA | The party which takes the commission in fund settlement workflow |
-| Issuer | EnvironmentalTokenIssuer | The party manages issuance of environmental tokens |
-| N/A (UI login not required) | EnvironmentalTokenDepository | Depository for the environmental token instruments |
-| Investor | ProducerA | Producer of environmentally-friendly products/projects, who can be awarded points by the EnvironmentalTokenIssuer |
 | N/A (UI login not required) | SynfiniValidator | This party witnesses and validates the movements of assets (act as custodian in Daml Finance). They delegate responsibility for minting/burning `Holding`s to the asset issuers |
 | Investor | InvestorA | Investor party |
 | Investor | InvestorB | Investor party |
@@ -155,7 +280,7 @@ Replace your-api-identifier with the audience identifier you obtained from the A
 
 In the demo-config/users folder, there is a users.json file to store user information for ledger identification. The
 users.json file has an array of user objects, each containing the userId from Auth0 and the corresponding primaryParty
-for ledger identification. Replace the user IDs with the actual user IDs from Auth0. Unfortunately this process has not
+for ledger identification. Replace the user IDs with the actual user IDs from Auth0. Unfortunately, this process has not
 yet been automated so manual editing is required. Ensure that the userId in each object corresponds to the sub (subject)
 field in the Auth0 user profile. The primaryParty field is the default party used to issue commands to the ledger. If
 logged into the UI, the user will act as this party. There is no need to edit this field.
@@ -197,7 +322,7 @@ make clean
 
 ## Deployment
 
-1. Refer to [wallet views readme](./wallet-views/README.md) for deploying daml packages, projection runner and wallet API.
+1. Refer to [wallet views readme](./wallet-views/README.md) for deploying daml packages, Scribe and the wallet API.
 2. Refer to [wallet ui readme](./wallet-ui/README.md) for deploying wallet ui.
 
 ## Next steps
@@ -206,7 +331,7 @@ There are a number of tasks ahead to complete and enhance this solution. A compl
 [issues](https://github.com/SynfiniDLT/daml-tokenization-toolkit/issues). Some of the highest priority tasks are listed
 below:
 
-1. Use the latest solution from DA which replaces the public party feature (i.e. use explict disclosure). This will make
+1. Use the latest solution from DA which replaces the public party feature (i.e. use explicit disclosure). This will make
 it easier to share commononly used utility contracts (such as factories) without need for a public party hosted on
 multiple participants. Refer to this [issue](https://github.com/SynfiniDLT/daml-tokenization-toolkit/issues/79).
 1. Upgrade to the latest version of Daml Finance. Refer to this [issue](https://github.com/SynfiniDLT/daml-tokenization-toolkit/issues/68).
