@@ -141,6 +141,9 @@ demonstrated in the previous examples.
 As with the `OpenOffer`, a `OneTimeOffer` can be used to instruct any type of settlement desired by altering the
 contract payload.
 
+[dvp_accept.webm](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/00badd42-6d28-4531-9545-f3b4ebca753d)
+
+
 ## Components
 
 The project contains a number of components:
