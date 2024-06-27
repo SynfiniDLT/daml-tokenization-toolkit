@@ -70,7 +70,7 @@ a stablecoin issuer has provided an `OpenOffer` for the investors through which 
 stablecoin - assuming the issuer has implemented an off-ledger payment process triggered by the generation of the
 settlement instruction.
 
-![Alt Text](./img/stablecoin_onramp_offer.gif)
+[Stablecoin onramp offer](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/70aa7bd2-54e7-4486-a230-a2038875c985)
 
 The user can input a quantity of the asset. The `OpenOffer` payload can (optionally) specify an increment size - in this
 case cents are the smallest increment. Upon submitting the form, an exercise command id submitted to the ledger API to
@@ -84,11 +84,11 @@ has created a
 contract to delegate the ability to create the `Holding` to the issuer. After both issuer and investor have selected
 their preferences, any of the settlers can click the execute button to perform the settlement.
 
-![Alt Text](./img/stablecoin_onramp_execute.gif)
+[Stablecoin onramp execute](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/369a245c-c9e6-4f08-abfc-925d4da06ced)
 
 Finally, the settled transaction and updated balance is visible to the investor:
 
-![Alt Text](./img/stablecoin_onramp_complete.gif)
+[Stablecoin onramp complete](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/6f96bde4-e6d1-48b0-8717-b8fac5ade19c)
 
 ### Bespoke settlements
 
