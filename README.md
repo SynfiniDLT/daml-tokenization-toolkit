@@ -6,23 +6,24 @@
 A solution that demonstrates
 1. Tokenization of assets using Daml/Canton.
 1. Asset settlement on Canton network.
-1. Wallet to support the asset tokenization.
+1. Wallet (user portal) to support the asset tokenization and settlement processes.
 
 ## High-level solution design
 
 This diagram shows the overall intended deployment structure of the wallet. Each participant is expected to host their
 own instance of the wallet API and wallet UI. The wallet API is read-only, therefore UI users must use the JSON API to
-issue any commands which update ledger state. In future this could be migrated to the Daml 3.0 application architecture
+issue any commands which update the ledger state. In future, this could be migrated to the Daml 3.0 application architecture
 in which the wallet application service provider would host the read-only wallet API on its participant, while users
 would submit commands through their own participants.
 
 ![alt text](./img/solution_overview.jpg)
 
 It is important to note that this solution is designed to work in conjunction with other applications. For example,
-there may be another application which implements a customized token with bespoke lifecycling or other functions, but
+there may be another application that implements a customized token with bespoke lifecycling or other functions, but
 users could still authorise and complete the settlement processes through the wallet user interface. Due to the fact
-that this application makes use of the Daml Finance interfaces (rather than specific implementations), the settlement
-instructions can be initiated by a variety of other applications but responded to by users via this solution.
+that this application makes use of the
+[Daml Finance](https://docs.daml.com/daml-finance/index.html) interfaces (rather than specific implementations), the
+settlement instructions can be initiated by a variety of other applications but responded to by users via this solution.
 
 ## UI Demonstration
 
