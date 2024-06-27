@@ -40,8 +40,8 @@ non-transferable asset - their "soul-bound token" (SBT). This is a special type 
 assigns them a human-readable name so that others can identify them. Clicking on the asset name brings up detailed
 information about the asset which they hold - taken from the `Instrument` and
 [`Metadata`](./models/instrument-metadata/interface/src/Synfini/Interface/Instrument/Metadata/Metadata.daml) contracts.
- 
-![Alt Text](./img/login.gif)
+
+[Login](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/d08a3517-5d30-400b-a228-f9e5e9f17f07)
 
 The user can see both their total balance as well as their available balance - the latter being equal to the total
 balance minus the sum of any `Holding` contracts which are locked. As shown above, the user can also view transactions
@@ -51,7 +51,7 @@ soul-bound token. Each transaction is implemented using the settlement `Batch` w
 The user can open new Daml Finance accounts to hold other types of assets. They are provided non-consuming choices to
 create new accounts with the given custodian. In this example they create an account for transferable, fungible assets:
 
-![Alt Text](./img/open_account.gif)
+[Open account](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/c4504b8e-4785-4b97-b4e4-acd026856196)
 
 In this UI, custodian is referred to as "register". This party is responsible for keeping a register of ownership of an
 asset. They onboard investors and issuers but do not play an active role in the settlement workflows. Their other
