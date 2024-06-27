@@ -102,7 +102,7 @@ applications.
 For example, here we have a 3-way settlement between fund issuer, fund manager and investor, in which the fund manager
 receives a comission payment from the investor:
 
-![Alt Text](./img/fund_issuance_offer.gif)
+<!-- ![Alt Text](./img/fund_issuance_offer.gif) -->
 
 
 <video src='./img/fund_issuance_offer.webm'></video>
