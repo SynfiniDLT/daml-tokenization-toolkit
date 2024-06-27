@@ -196,14 +196,8 @@ The build has been tested with Java version 17, Maven 3.6.3, npm 8.19 and PQS 2.
 
 ## Asset and party configuration of the demo
 
-This repository comes with a demo that demonstrates how the wallet can be used by investors, issuers and other parties.
-
-### Asset/Account support
-
-1. The demo onboards multiple issuers: a stable coin issuer, a fund issuer, an ESG asset issuer and a "Soul-bound token"
-issuer.
-1. The demo supports investors to create multiple accounts through offer contracts created by the custodian.
-1. The demo supports DvP settlements amongst asset issuer, investor and other parties.
+This repository comes with a demo that demonstrates how the wallet can be used by investors, issuers and other parties,
+as shown in the above videos. This section explains the configuration of the UI, users and parties.
 
 ### UI User profile
 
@@ -331,7 +325,7 @@ make clean
 
 ## Deployment
 
-1. Refer to [wallet views readme](./wallet-views/README.md) for deploying daml packages, projection runner and wallet API.
+1. Refer to [wallet views readme](./wallet-views/README.md) for deploying daml packages, Scribe and the wallet API.
 2. Refer to [wallet ui readme](./wallet-ui/README.md) for deploying wallet ui.
 
 ## Next steps
