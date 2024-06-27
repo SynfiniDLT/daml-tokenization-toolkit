@@ -37,9 +37,10 @@ The sample UI allows the user to authenticate using Auth0. Once authenticated, t
 via the JSON API to their participant node using their primary party. They can also read data from the wallet views API.
 Once logged in, the user can see the Daml Finance accounts and assets they own. In the below example, the user has one
 non-transferable asset - their "soul-bound token" (SBT). This is a special type of asset issued to the investor which
-assigns them a human-readable name so that others can identify them. Clicking on the asset name brings up detailed
+assigns them a human-readable name so that others can identify them. Clicking on the balance brings up detailed
 information about the asset which they hold - taken from the `Instrument` and
 [`Metadata`](./models/instrument-metadata/interface/src/Synfini/Interface/Instrument/Metadata/Metadata.daml) contracts.
+The user's name is also displayed by looking up their SBT.
 
 [Login](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/d08a3517-5d30-400b-a228-f9e5e9f17f07)
 
@@ -105,7 +106,7 @@ receives a comission payment from the investor:
 [Fund issuance offer](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/1080efcd-f47a-4400-9f64-0449f737c4e5)
 
 The user can select different accounts for each settlement `Instruction` if required. Upon applying the account
-prefences, the user pledges their `Holding`s for the settlement and the available balances on their account(s) will
+prefences, the user's `Holding`s will be pledged for the settlement and the available balances on their account(s) will
 decrease accordingly.
 
 The fund manager can then view and respond to the settlement instruction:
@@ -132,11 +133,12 @@ The application also has a "requests" tab where users can see any outstanding se
 [`OneTimeOffer`s](./models/settlement/one-time-offer-interface/src/Synfini/Interface/Settlement/OneTimeOffer/OneTimeOffer.daml).
 The settlement `OneTimeOffer` contracts are similiar to the `OpenOffer` contracts except that they can only be used
 once. It is possible to use a `OneTimeOffer` to propose a Delivery-versus-Payment (DvP) transaction with another party.
-In the example below, InvestorB accepts an offer from InvestorA and selects their account preferences. Subsequently,
-InvestorA would then need to apply their prefences and the settlement can be executed in the same way as has been
-demonstrated in the previous examples.
+In the example below, InvestorB accepts an offer from InvestorA and selects their account preferences.
 
 [Accept DvP Request](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/00badd42-6d28-4531-9545-f3b4ebca753d)
+
+Subsequently, InvestorA would then need to apply their prefences and the settlement can be executed in the same way as
+has been demonstrated in the previous examples.
 
 As with the `OpenOffer`, a `OneTimeOffer` can be used to instruct any type of settlement desired by altering the
 contract payload.
