@@ -28,8 +28,9 @@ instructions can be initiated by a variety of other applications but responded t
 
 The following examples showcase the functionality provided by the application. One of the primary usecases for this
 solution is back office integration, i.e. the backend components and Daml contracts could be consumed by back office
-systems and then displayed as desired by the organisation through their own UI. Therefore the UI provided here is only a
-basic sample to illustrate what could be achived using the underlying contracts and API.
+systems and then displayed as desired by an organisation through their own UI. Therefore the UI provided here is only a
+basic sample to illustrate what could be achived using the underlying contracts and API which are included in this
+repository.
 
 ### Login and Account Setup
 
