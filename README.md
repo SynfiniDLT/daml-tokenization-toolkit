@@ -85,11 +85,13 @@ elect to create a new `Holding` and issue it to the investor - as is done below.
 has created a
 [`MinterBurner`](./models/issuer-onboarding/minter-burner-interface/src/Synfini/Interface/Onboarding/Issuer/MinterBurner/MinterBurner.daml)
 contract to delegate the ability to create the `Holding` to the issuer. After both the issuer and investor have selected
-their preferences, any of the settlers can click the execute button to perform the settlement.
+their preferences, any of the settlers can click the execute button to perform the settlement. In this case, there is
+only one settler - the issuer - as they would need to check that they have received the off-ledger payment before the
+settlement should be executed.
 
 [Stablecoin onramp execute](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/369a245c-c9e6-4f08-abfc-925d4da06ced)
 
-Finally, the settled transaction and updated balance is visible to the investor:
+Finally, the settled transaction and updated balance are visible to the investor:
 
 [Stablecoin onramp complete](https://github.com/SynfiniDLT/daml-tokenization-toolkit/assets/18343245/6f96bde4-e6d1-48b0-8717-b8fac5ade19c)
 
