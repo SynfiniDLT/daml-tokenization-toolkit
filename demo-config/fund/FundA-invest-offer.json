@@ -3,9 +3,9 @@
   "settlementOpenOfferSettings": [
     {
       "offerId": "FundInvestment",
-      "offerers": ["FundA"],
+      "offerers": ["FundA", "FundManagerA"],
       "offerDescription": "Purchase units in FundA",
-      "settlementInstructors": [{"party": "FundA"}, {"taker": {}}],
+      "settlementInstructors": [{"party": "FundA"}, {"party": "FundManagerA"}, {"taker": {}}],
       "settlers": [{"party": "FundA"}],
       "steps": [
         {
@@ -24,7 +24,7 @@
           "instrumentIssuer": "StableCoinIssuer",
           "instrumentId": "StableCoin",
           "instrumentVersion": "v1",
-          "amount": 42
+          "amount": 23
         },
         {
           "sender": {"taker": {}},
@@ -33,7 +33,7 @@
           "instrumentIssuer": "StableCoinIssuer",
           "instrumentId": "StableCoin",
           "instrumentVersion": "v1",
-          "amount": 0.42
+          "amount": 0.23
         }
       ],
       "increment": 1.0,
