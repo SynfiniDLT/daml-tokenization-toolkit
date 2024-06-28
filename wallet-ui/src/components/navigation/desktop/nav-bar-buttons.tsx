@@ -15,26 +15,26 @@ export const NavBarButtons = () => {
 
   return (
     <div className="nav-bar__buttons">
-      {!isAuthenticated && (
-        <>
-          <LoginButton />
-        </>
-      )}
-      {isAuthenticated && (
+      {!isAuthenticated && <LoginButton />}
+      {
+        isAuthenticated &&
         <>
           <div style={{ position: "relative", right: "20%", bottom: "15%" }}>
             {user !== undefined && user.email} <br />
-            <HoverPopUp popUpContent={primaryParty} triggerText={primaryParty === undefined ? "" : truncateParty(primaryParty)}></HoverPopUp>
+            <HoverPopUp
+              popUpContent={primaryParty}
+              triggerText={primaryParty === undefined ? "" : truncateParty(primaryParty)}>
+            </HoverPopUp>
             <br />
             {walletMode[0].toUpperCase() + walletMode.substring(1)} Wallet 
             <br/>
-            {readOnly && ("Observer mode")}
+            {readOnly && "Observer mode"}
           </div>
           <div>
             <LogoutButton />
           </div>
         </>
-      )}
+      }
     </div>
   );
 };

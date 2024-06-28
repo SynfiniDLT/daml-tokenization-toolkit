@@ -7,7 +7,7 @@ import { CopyToClipboardFromPopUp } from "./copyToClipboard";
 
 interface PopUpProps {
   isVisible: boolean;
-  customLeft: string;
+  customLeft?: string;
 }
 
 const ContainerPopUp = styled.div`
@@ -44,7 +44,9 @@ const HoverPopUp: React.FC<HoverPopUpProps> = ({ triggerText, popUpContent, cust
   return (
     <ContainerPopUp onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
         <span>{triggerText}</span>
-      <PopUp isVisible={isHovered} customLeft={customLeft as string}>{<CopyToClipboardFromPopUp paramToCopy={popUpContent}   />}</PopUp>
+      <PopUp isVisible={isHovered} customLeft={customLeft}>
+        {<CopyToClipboardFromPopUp paramToCopy={popUpContent}/>}
+      </PopUp>
     </ContainerPopUp>
   );
 };

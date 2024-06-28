@@ -284,8 +284,8 @@ export default function AccountBalances(props: { accountBalances: AccountBalance
   const tableRows: [AccountSummary, JSX.Element[]][] = props.accountBalances.map(accountBalance => {
     const trs = accountBalance.balances.map(balance => {
       const redeemButton =
-        (balance.instrument.id.unpack === stableCoinInstrumentId.unpack) && offRampOffer !== undefined &&
-          <>&nbsp;&nbsp;<button onClick={handleRedeem}>Redeem</button></>;
+        balance.instrument.id.unpack === stableCoinInstrumentId.unpack && offRampOffer !== undefined &&
+        <>&nbsp;&nbsp;<button onClick={handleRedeem}>Redeem</button></>;
       const transferButton =
         fungibleAssets.map.has(balance.instrument) &&
         <button style={{float: "right"}} onClick={() => handleClickTransfer(balance)}>

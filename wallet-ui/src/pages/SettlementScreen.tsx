@@ -72,10 +72,18 @@ const SettlementScreen: React.FC = () => {
         </div>
         <div>
         <div style={{ marginLeft: "200px",display: "flex", justifyContent: "left"  }} >
-          <button type="button" className={transactionPendingStyle} style={{width: "100px"}} onClick={() => setFilter("pending")}>
+          <button
+            type="button"
+            className={transactionPendingStyle}
+            style={{width: "100px"}}
+            onClick={() => setFilter("pending")}>
             Pending
           </button>
-          <button type="button" className={transactionSettledStyle} style={{width: "100px"}} onClick={() => setFilter("settled")}>
+          <button
+            type="button"
+            className={transactionSettledStyle}
+            style={{width: "100px"}}
+            onClick={() => setFilter("settled")}>
             Settled
           </button>
         </div>
