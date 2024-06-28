@@ -49,7 +49,7 @@ as it acts as an indexed view of the state of the Daml ledger (visible to the pa
 
 ![alt text](./img/high_level_architecture.jpg)
 
-### Future state
+### Future State
 
 In the future, the topology may be changed to use the Daml 3.0 application architecture: Scribe would read
 from a separate participant using a party that is an observer of the wallet users' contracts. The wallet users could
@@ -463,7 +463,7 @@ future.
 
 The API assumes that the batch key is a unique identifier for each `Batch`, where the batch key is defined as the
 combination of batch ID and the set of requesting parties. This applies even for `Batch`es which are already archived
-on the ledger. The `Batch`es and `Instruction`es are grouped together by the batch key. This requires the requesting
+on the ledger. The `Batch`es and `Instruction`s are grouped together by the batch key. This requires the requesting
 parties to use a trusted supplier of unique identifiers from off the ledger.
 
 ### List Holding Contracts
@@ -566,7 +566,7 @@ Note: only active contracts are returned.
 ```
 
 #### Required permissions
-- N/A (only returns data which is visible to parties that the user has readAs or actAs rights for).
+- N/A (only returns data that is visible to parties that the user has readAs or actAs rights for).
 
 #### HTTP Response
 - Content-Type: `application/json`
