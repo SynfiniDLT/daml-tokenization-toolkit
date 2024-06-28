@@ -460,7 +460,7 @@ const AssetDetailsScreen: React.FC = () => {
               </thead>
               <tbody>
                 {
-                  partiesSharedWith?.map(p =>
+                  partiesSharedWith.map(p =>
                     <tr key={p}>
                       <td>{p}</td>
                       {

@@ -598,7 +598,7 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
     if (!stepNotReady && settlement.settlers.map.has(primaryParty)) {
       setShowExecute(true);
     }
-  }, [primaryParty, walletClient, settlement]);
+  }, [primaryParty, walletClient, settlement, accounts]);
 
   if (settlement === undefined) {
     return <></>;
@@ -659,8 +659,12 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                   >
                     <Field>Type: </Field>
                     {
-                      isMint(step.routedStep) ? <> Issuance<br/></> :
-                      isBurn(step.routedStep) ? <> Redemption<br/></> : <> Transfer<br/></>
+                      isMint(step.routedStep) ?
+                        <> Issuance<br/></>
+                      : isBurn(step.routedStep) ?
+                        <> Redemption<br/></>
+                      :
+                        <> Transfer<br/></>
                     }
                   </div>
                   <Field>Amount: </Field>
@@ -721,7 +725,8 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                         "Credit approved"
                       : step.allocation.tag === "SettleOffledger" ?
                         "Settle off-ledger"
-                      : "Allocated"
+                      :
+                        "Allocated"
                     }
                     <br />
                     <Field>{isBurn(step.routedStep) && step.routedStep.sender !== step.routedStep.custodian ? "Issuer response:" : "Receiver response:"}</Field>
@@ -736,7 +741,8 @@ export function SettlementDetailsAction(props: SettlementDetailsActionProps) {
                         "Debit approved"
                       : step.approval.tag === "SettleOffledgerAcknowledge" ?
                         "Settle off-ledger"
-                      : "Approved"
+                      :
+                        "Approved"
                     }
                     <br />
                   </div>

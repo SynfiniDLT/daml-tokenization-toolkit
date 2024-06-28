@@ -230,11 +230,12 @@ export const RequestAcceptFormScreen: React.FC = () => {
       >
         <>
           <div>
-            {message !== "" ? (
-              <span style={{ color: "#66FF99", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{message}</span>
-            ) : (
-              <span style={{ color: "#FF6699", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{error}</span>
-            )}
+            {
+              message !== "" ?
+                <span style={{ color: "#66FF99", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{message}</span>
+              :
+                <span style={{ color: "#FF6699", fontSize: "1.5rem", whiteSpace: "pre-line" }}>{error}</span>
+            }
           </div>
           <p></p>
           <div className="containerButton">

@@ -29,16 +29,14 @@ export const SettlementActionScreen: React.FC = () => {
   return (
     <PageLayout>
       <DivBorderRoundContainer>
-          <div>
-            {
-              state.settlement !== undefined &&
-              <SettlementDetailsAction
-                requestors={state.settlement.requestors}
-                batchId={state.settlement.batchId}
-                key={state.settlement.batchCid}
-              />
-            }
-          </div>
+        {
+          state.settlement !== undefined &&
+          <SettlementDetailsAction
+            requestors={state.settlement.requestors}
+            batchId={state.settlement.batchId}
+            key={state.settlement.batchCid}
+          />
+        }
       </DivBorderRoundContainer>
     </PageLayout>
   );
