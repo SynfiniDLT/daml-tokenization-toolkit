@@ -2,14 +2,14 @@
 
 This folder contains an API written in Java Spring Boot. This API provides read-only endpoints for querying the
 details of a "Daml wallet", such as account details and balances. The "wallet" refers to assets held by a Daml party,
-modelled using [Daml Finance](https://docs.daml.com/daml-finance/index.html). It is not restricted to any particular
+modeled using [Daml Finance](https://docs.daml.com/daml-finance/index.html). It is not restricted to any particular
 type of asset. The only requirement is that the assets implement the Daml Finance interfaces, with the following
 caveats:
 
 - The settlement `Batch` IDs should be unique for each set of settlement `requestors`.
 - The settlement `Instruction`s should use a contract key (which is of the `InstructionKey` type).
 
-## Components overview
+## Components Overview
 
 ### HTTP/JSON API
 
@@ -51,10 +51,10 @@ as it acts as an indexed view of the state of the Daml ledger (visible to the pa
 
 ### Future state
 
-In future, the topology may be changed to use the Daml 3.0 application architecture: Scribe would read
-from a separate participant using a party which is an observer of the wallet users' contracts. The wallet users could
+In the future, the topology may be changed to use the Daml 3.0 application architecture: Scribe would read
+from a separate participant using a party that is an observer of the wallet users' contracts. The wallet users could
 still use their own participant for submitting transactions, thereby maintaining a greater level of control over their
-assets, while delegating operation of PQS and API to a service provider.
+assets, while delegating the operation of PQS and API to a service provider.
 
 ## API Authentication
 
@@ -702,7 +702,7 @@ all parties on your participant.
 
 #### 3. Setup a Postgres database
 
-Create a Postgres database. Currently only Postgres version 16 has been tested.
+Create a Postgres database. Currently, only Postgres version 16 has been tested.
 
 #### 4. Setup the utility functions
 
@@ -752,7 +752,7 @@ This will start the API on port 8080 running over a plaintext connection. TLS su
 
 ### API tests
 
-To run functional test cases on the API, make sure you export an the `SCRIBE_LOCATION` environment variable to point
+To run functional test cases on the API, make sure you export the `SCRIBE_LOCATION` environment variable to point
 to where you have installed the Scribe JAR file. Then run the below command:
 
 ```
@@ -768,7 +768,7 @@ This will:
 
 Note: in future the JAR file should be replaced by a containerized version of Scribe.
 
-To run specific test cases for the wallet backend, you need to export an enviroment variable for this:
+To run specific test cases for the wallet backend, you need to export an environment variable for this:
 
 ```bash
 export TEST_WALLET_VIEWS_ARGS="-Dtest=IntegrationTest#yourTestMethod"
@@ -795,7 +795,7 @@ This will:
 
 - Start a local Daml sandbox on an available port.
 - Run PQS (Scribe) to write events from the sandbox into a Postgres instance created using `docker compose` on
-an available port. The compose file can be found under `wallet-views/java`.
+an available port.
 - Perform basic tests to make sure the TypeScript client can retrieve data from the API.
 - Tear down the sandbox and wallet views application at the end of the test suite.
 - Stop the Postgres docker container.
