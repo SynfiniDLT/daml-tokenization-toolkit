@@ -1,11 +1,11 @@
 # Operational Scripts for Wallet Applications
 
 This folder contains a set of Daml Scripts and a command line tool to invoke them. The scripts are designed for various
-operational activites such as party setup, creation of factory contracts, account creation and settlement.
+operational activities such as party setup, creation of factory contracts, account creation and settlement.
 
 ## Installation
 
-The entrypoint for using the scripts is the `dops` CLI. It uses the `daml` assistant to run the scripts so make sure to
+The entry point for using the scripts is the `dops` CLI. It uses the `daml` assistant to run the scripts so make sure to
 install the Daml SDK first. To install `dops`, run the command below from the base of this repository:
 
 ```bash
@@ -141,8 +141,8 @@ dops create-account-factories <path to JSON file>
 ```
 
 The contract IDs of the factories will be saved with their labels under the `.dops` directory. Finally, we can use them
-to create the `Account`s. The tool supports both a propose-accept worklow and also a unilateral method to do this. For
-simplicity, this is example will show the unilateral way. It assumes we are able to act as both the custodian and owner
+to create the `Account`s. The tool supports both a propose-accept workflow and also a unilateral method to do this. For
+simplicity, this example will show the unilateral way. It assumes we can act as both the custodian and owner
 in a single command. This can be useful for testing on a single participant. For example, to create one `Account` for
 Bob, use this JSON file:
 
@@ -950,7 +950,7 @@ delivery.
     "acceptor": "bob", // Label of the accepting party
     "settlementPreferences": [
       // One or more preferences. Given an `Instruction` contract, the settlement preferences are evaluated from the
-      // first to last element in this array, until a matching prefence is found for the `Instruction` or otherwise
+      // first to last element in this array, until a matching preference is found for the `Instruction` or otherwise
       // no allocation or approval is applied
       {
         "custodian": "alice", // Label of the custodian party. Only matches `Instruction`s which use this custodian
@@ -973,7 +973,7 @@ delivery.
 
 ##### Command
 
-The second argument is a comma-delimited list of the labels of the parties which instructed the settlement. The third
+The second argument is a comma-delimited list of the labels of the parties that instructed the settlement. The third
 argument is the Batch ID. This command will do a scan of the Active Contract Set to find `Instruction`s with matching
 Batch ID and instructors.
 
@@ -1006,7 +1006,7 @@ Execute (settle) a `Batch`.
 
 ##### Command
 
-The second argument is a comma-delimited list of the labels of the parties which instructed the settlement. The third
+The second argument is a comma-delimited list of the labels of the parties that instructed the settlement. The third
 argument is the Batch ID.
 
 ```bash
@@ -1115,7 +1115,7 @@ the `dops` arguments. For example:
 dops execute-settlement preferences.json alice,bob abc123 --application-id MyApp
 ```
 
-The only parameters that cannot be added are ledger host and port, the `--tls` flag  and `--access-token-file`.
+The only parameters that cannot be added are ledger host and port, the `--tls` flag and `--access-token-file`.
 
 ## Importing Other Party or Contract IDs
 
