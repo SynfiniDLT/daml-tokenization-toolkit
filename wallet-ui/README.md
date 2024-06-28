@@ -23,7 +23,7 @@ refresh the UI state when the user interacts with the ledger.
 
 ## Project Deployment Guide
 
-This guide provides step-by-step instructions for building and deploying the frontend applications using Docker. Please deploy the backend according to [wallet view readme](../wallet-views/README.md) before deploying the frontend.
+This guide provides step-by-step instructions for building and deploying the frontend application. Please deploy the backend according to [wallet view readme](../wallet-views/README.md) before deploying the frontend.
 
 To build the project, execute the following command:
 
